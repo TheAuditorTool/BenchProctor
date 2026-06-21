@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+
+
+def BenchmarkTest32672(request):
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(ua_value)
+    data = collected
+    os.chmod('/var/app/data/' + str(data), 0o777)
+    return JsonResponse({"saved": True})

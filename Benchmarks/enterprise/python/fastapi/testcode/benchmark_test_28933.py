@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+
+
+async def BenchmarkTest28933(request: Request):
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    parts = []
+    for token in str(forwarded_ip).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    eval(str(processed))
+    return {"updated": True}

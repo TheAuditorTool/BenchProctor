@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+@Path("/")
+public class BenchmarkTest22982 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest22982")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest22982(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        java.util.List<String> tokens = java.util.Arrays.asList(userName.split(","));
+        String data = String.join(",", tokens);
+        java.util.Set<String> allowed = java.util.Set.of("config.json", "index.html");
+        if (!allowed.contains(data)) { return Response.status(403).build(); }
+        String checkedPath = "/var/app/data/" + data;
+        java.util.Set<String> allowedExt = java.util.Set.of(".jpg", ".png", ".pdf");
+        int dot = checkedPath.lastIndexOf('.');
+        String ext = dot >= 0 ? checkedPath.substring(dot).toLowerCase() : "";
+        if (!allowedExt.contains(ext)) {
+            return Response.status(400).entity("file type not allowed").build();
+        }
+        Files.write(Paths.get("/var/uploads/" + checkedPath), "data".getBytes());
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

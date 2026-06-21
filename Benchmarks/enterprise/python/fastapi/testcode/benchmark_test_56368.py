@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import json
+
+
+async def BenchmarkTest56368(request: Request):
+    referer_value = request.headers.get('referer', '')
+    try:
+        data = json.loads(referer_value).get('value', referer_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = referer_value
+    with open('/var/app/data/' + str(data), 'w') as fh:
+        fh.write('data')
+    return {"updated": True}

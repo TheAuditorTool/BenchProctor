@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest21252 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest21252.class);
+
+    @GetMapping("/BenchmarkTest21252")
+    public void BenchmarkTest21252(@RequestParam("items") java.util.List<String> items, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String queryArray = items.get(0) != null ? items.get(0) : "";
+        String data = "[%s]".formatted(queryArray);
+        LOG.info("Action: {}", data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

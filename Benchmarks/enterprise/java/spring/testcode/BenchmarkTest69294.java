@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest69294 {
+
+    @GetMapping("/BenchmarkTest69294")
+    public void BenchmarkTest69294(@RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        String data = hostValue.isEmpty() ? "default" : hostValue;
+        response.sendError(500, data);
+    }
+}

@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import ldap
+
+
+def trace(fn):
+    def wrapper(*args, **kwargs):
+        return fn(*args, **kwargs)
+    return wrapper
+@trace
+def handle(value):
+    return value.strip()
+
+def BenchmarkTest73820(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    data = handle(cookie_value)
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    conn = ldap.initialize('ldap://localhost:389')
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, 'uid=' + str(processed))
+    return JsonResponse({"saved": True})

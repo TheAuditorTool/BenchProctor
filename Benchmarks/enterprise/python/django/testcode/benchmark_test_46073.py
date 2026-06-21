@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import logging
+import re
+from types import SimpleNamespace
+
+
+def BenchmarkTest46073(request):
+    query_array = request.GET.getlist('items')[0] if request.GET.getlist('items') else ''
+    ns = SimpleNamespace(payload=query_array)
+    data = getattr(ns, 'payload')
+    processed = re.sub(r'[A-Za-z0-9]{4,}', '****', str(data).replace('\r', '').replace('\n', ''))
+    logging.info('User action: ' + str(processed))
+    return JsonResponse({"saved": True})

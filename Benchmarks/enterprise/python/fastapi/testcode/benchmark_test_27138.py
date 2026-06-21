@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from dataclasses import dataclass
+from starlette.responses import JSONResponse
+
+
+@dataclass
+class FormData:
+    payload: str
+
+async def BenchmarkTest27138(request: Request):
+    upload_name = (await request.form()).get('upload', '')
+    data = FormData(payload=upload_name).payload
+    if str(data) in ('read', 'write', 'delete', 'admin'):
+        return JSONResponse({'access': 'granted', 'role': 'admin'}, status_code=200)
+    return {"updated": True}

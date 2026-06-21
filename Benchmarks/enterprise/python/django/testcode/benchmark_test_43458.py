@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import requests
+from urllib.parse import urlparse
+
+
+def BenchmarkTest43458(request):
+    xml_value = request.body.decode('utf-8')
+    parts = []
+    for token in str(xml_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    parsed = urlparse(data)
+    if parsed.hostname not in ('api.prod.internal', 'cdn.pycdn.io'):
+        return JsonResponse({'error': 'forbidden host'}, status=403)
+    target_url = data
+    requests.get(str(target_url))
+    return JsonResponse({"saved": True})

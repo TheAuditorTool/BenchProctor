@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import logging
+from app_runtime import db
+
+
+def BenchmarkTest67219(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    data = cookie_value if cookie_value else 'default'
+    db.execute('DELETE FROM sessions WHERE owner = ?', (str(data),))
+    logging.info('request processed')
+    return JsonResponse({"saved": True})

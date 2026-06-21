@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from urllib.parse import unquote
+from flask import request, jsonify
+
+
+def BenchmarkTest03279():
+    user_id = request.args.get('id', '')
+    data = unquote(user_id)
+    requests.post('http://api.prod.internal/data', data=str(data))
+    return jsonify({"result": "success"})

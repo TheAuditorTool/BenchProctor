@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+import ast
+from app_runtime import db
+
+
+async def BenchmarkTest13065(request: Request):
+    ua_value = request.headers.get('user-agent', '')
+    try:
+        data = str(ast.literal_eval(ua_value))
+    except (ValueError, SyntaxError):
+        data = ua_value
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

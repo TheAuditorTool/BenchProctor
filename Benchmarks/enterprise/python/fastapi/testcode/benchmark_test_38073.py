@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_v1_5
+
+
+class UserInput(BaseModel):
+    payload: str = ''
+def trace(fn):
+    def wrapper(*args, **kwargs):
+        return fn(*args, **kwargs)
+    return wrapper
+@trace
+def handle(value):
+    return value.strip()
+
+async def BenchmarkTest38073(request: Request, req: UserInput):
+    json_value = req.payload
+    data = handle(json_value)
+    key = RSA.generate(2048)
+    ciphertext = PKCS1_v1_5.new(key).encrypt(str(data).encode())
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

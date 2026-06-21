@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest30005 {
+
+    private static final byte[] STATIC_IV = new byte[12];
+
+    @POST
+    @Path("/BenchmarkTest30005")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest30005(String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(xmlValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        javax.crypto.SecretKey key = new javax.crypto.spec.SecretKeySpec(new byte[16], "AES");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, STATIC_IV));
+        byte[] ct = cipher.doFinal(data.getBytes());
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

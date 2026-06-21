@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest00410 {
+
+    @GetMapping("/BenchmarkTest00410")
+    public void BenchmarkTest00410(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> originValue)
+            .thenApply(v -> java.text.Normalizer.normalize(v, java.text.Normalizer.Form.NFC).strip())
+            .join();
+        request.isUserInRole("ADMIN");
+        response.getWriter().print("{\"role\":\"admin\"}");
+    }
+}

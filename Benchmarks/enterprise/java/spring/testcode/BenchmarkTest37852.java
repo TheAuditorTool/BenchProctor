@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest37852 {
+
+    private static String normalize(String v) { return v.strip(); }
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest37852.class);
+
+    @GetMapping("/BenchmarkTest37852")
+    public void BenchmarkTest37852(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("USER_INPUT")).orElse("");
+        String data = normalize(envValue);
+        if (!data.matches("^[a-zA-Z0-9_.-]+$")) { response.sendError(400); return; }
+        LOG.info("Action: {}", data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

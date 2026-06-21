@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import secrets
+import json
+
+
+def BenchmarkTest00073(request):
+    xml_value = request.body.decode('utf-8')
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    token = secrets.token_hex(32)
+    return JsonResponse({'token': str(token)}, status=200)

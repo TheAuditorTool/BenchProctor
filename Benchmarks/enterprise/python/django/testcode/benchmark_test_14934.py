@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import ast
+from app_runtime import db
+
+
+def BenchmarkTest14934(request):
+    origin_value = request.META.get('HTTP_ORIGIN', '')
+    try:
+        data = str(ast.literal_eval(origin_value))
+    except (ValueError, SyntaxError):
+        data = origin_value
+    db.execute('DELETE FROM accounts WHERE id = ?', (str(data),))
+    return JsonResponse({"saved": True})

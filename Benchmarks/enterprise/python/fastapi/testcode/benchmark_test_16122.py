@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+import os
+import json
+
+
+async def BenchmarkTest16122(request: Request):
+    env_value = os.environ.get('USER_INPUT', '')
+    try:
+        data = json.loads(env_value).get('value', env_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = env_value
+    return JSONResponse({'error': str(data), 'stack': repr(locals())}, status_code=500)

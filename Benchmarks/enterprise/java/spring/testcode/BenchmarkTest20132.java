@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest20132 {
+
+    private static String expandTabs(String v) { return v.replace("\t", " "); }
+
+    @GetMapping("/BenchmarkTest20132")
+    public void BenchmarkTest20132(@RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        String data = expandTabs(forwardedIp);
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] hashed = md.digest(data.getBytes());
+        try (java.io.FileWriter fw = new java.io.FileWriter("/var/data/secrets.txt")) {
+            fw.write(java.util.Base64.getEncoder().encodeToString(hashed));
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

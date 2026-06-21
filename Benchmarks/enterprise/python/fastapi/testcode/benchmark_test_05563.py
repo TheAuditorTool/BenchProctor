@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+
+
+async def BenchmarkTest05563(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    with open(os.path.join('/var/app/data', str(raw_body)), 'r') as fh:
+        content = fh.read()
+    return content

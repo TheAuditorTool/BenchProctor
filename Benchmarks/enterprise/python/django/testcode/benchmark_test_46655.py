@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import asyncio
+
+
+def BenchmarkTest46655(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    async def fetch_payload():
+        await asyncio.sleep(0)
+        return host_value
+    data = asyncio.run(fetch_payload())
+    return JsonResponse({'error': str(data), 'stack': repr(locals())}, status=500)

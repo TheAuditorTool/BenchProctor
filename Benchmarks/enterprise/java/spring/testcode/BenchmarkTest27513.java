@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import java.io.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest27513 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    @PostMapping("/BenchmarkTest27513")
+    public void BenchmarkTest27513(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        String prefix = jsonValue.length() > 0 ? jsonValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = jsonValue.toLowerCase(); break;
+            case "f": data = jsonValue.toUpperCase(); break;
+            default: data = jsonValue.strip(); break;
+        }
+        try (java.io.FileWriter fw = new java.io.FileWriter("/var/data/secrets.txt")) {
+            fw.write(data);
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

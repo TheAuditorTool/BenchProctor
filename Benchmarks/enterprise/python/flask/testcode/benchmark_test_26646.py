@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from markupsafe import Markup
+from flask import request, jsonify
+
+
+def BenchmarkTest26646():
+    raw_body = request.get_data(as_text=True)
+    data = raw_body if raw_body else 'default'
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    return Markup('<div>' + str(processed) + '</div>')

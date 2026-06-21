@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest29380 {
+
+    @GetMapping("/BenchmarkTest29380")
+    public void BenchmarkTest29380(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.function.Function<String, String> tabNormalizer = s -> s.replace("\t", " ");
+        java.util.function.Function<String, String> decorated = tabNormalizer.andThen(String::strip);
+        String data = decorated.apply(originValue);
+        if (!data.matches("^[\\w\\s.*]+$")) {
+            response.sendError(400, "forbidden"); return;
+        }
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, "ldap://localhost:389");
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=users,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

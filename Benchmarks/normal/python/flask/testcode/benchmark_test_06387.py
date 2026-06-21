@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+import logging
+from flask import request, jsonify
+
+
+def BenchmarkTest06387():
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    kind = 'json' if str(graphql_var).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = graphql_var
+            data = parsed
+        case _:
+            data = graphql_var
+    processed = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    logging.info('User action: ' + str(processed))
+    return jsonify({"result": "success"})

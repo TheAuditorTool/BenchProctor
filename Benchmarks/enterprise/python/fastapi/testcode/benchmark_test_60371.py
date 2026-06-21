@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from app_runtime import db
+
+
+async def BenchmarkTest60371(request: Request):
+    path_value = request.path_params.get('id', '')
+    data, _sep, _rest = str(path_value).partition('\x00')
+    db.execute('UPDATE users SET password = ? WHERE id = 1', (str(data),))
+    return {"updated": True}

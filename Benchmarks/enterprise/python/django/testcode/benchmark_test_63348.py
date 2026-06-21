@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from dataclasses import dataclass
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest63348(request):
+    raw_body = request.body.decode('utf-8')
+    data = FormData(payload=raw_body).payload
+    request.session['data'] = str(data)
+    return JsonResponse({"saved": True})

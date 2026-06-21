@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import ldap
+
+
+def BenchmarkTest20083(request):
+    user_id = request.GET.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    conn = ldap.initialize('ldap://localhost:389')
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, 'uid=' + str(data))
+    return JsonResponse({"saved": True})

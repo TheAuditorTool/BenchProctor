@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest26901 {
+
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @GET
+    @Path("/BenchmarkTest26901")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest26901(@CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        FormData payload = new FormData(cookieValue);
+        String data = payload.payload;
+        if (request.getUserPrincipal() == null) {
+            return Response.status(401).entity("not authenticated").build();
+        }
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(System.getenv("HMAC_KEY").getBytes(), "HmacSHA256"));
+        byte[] computed = mac.doFinal(data.getBytes());
+        byte[] presented = request.getHeader("X-Signature") != null ? request.getHeader("X-Signature").getBytes() : new byte[0];
+        if (!java.security.MessageDigest.isEqual(presented, computed)) {
+            return Response.status(403).entity("bad signature").build();
+        }
+        return Response.ok("{\"role\":\"admin\"}", MediaType.APPLICATION_JSON).build();
+    }
+}

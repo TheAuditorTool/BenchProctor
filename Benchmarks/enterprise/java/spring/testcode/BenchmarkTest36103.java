@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+public class BenchmarkTest36103 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+
+    @PostMapping(path="/BenchmarkTest36103", consumes="multipart/form-data")
+    public void BenchmarkTest36103(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadName = file != null ? file.getOriginalFilename() : "";
+        java.util.function.Consumer<String> lengthGuard = s -> { if (s.length() > 8192) throw new IllegalArgumentException("input too long"); };
+        java.util.function.Function<String, String> normalizer = s -> s.strip().replaceAll("\\s+", " ");
+        lengthGuard.accept(uploadName);
+        String data = normalizer.apply(uploadName);
+        String fetched;
+        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                fetched = rs.next() ? rs.getString("name") : null;
+            }
+        }
+        if (fetched == null) { response.sendError(404); return; }
+        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

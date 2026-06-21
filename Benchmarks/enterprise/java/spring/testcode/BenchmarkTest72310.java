@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest72310 {
+
+    private static final class ValidatedDto {
+        @jakarta.validation.constraints.NotNull
+        @jakarta.validation.constraints.Pattern(regexp = "^[A-Za-z0-9_.-]+$")
+        @jakarta.validation.constraints.Size(max = 256)
+        public String value;
+        ValidatedDto(String v) { this.value = v; }
+    }
+    private static final jakarta.validation.Validator VALIDATOR =
+        jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+
+    @PostMapping(path="/BenchmarkTest72310", consumes="text/plain")
+    public void BenchmarkTest72310(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Properties holder = new java.util.Properties();
+        holder.load(new java.io.StringReader("rawValue=" + rawData.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", holder.getProperty("format", "plain"));
+        String data = holder.getProperty("rawValue", "");
+        java.util.Set<jakarta.validation.ConstraintViolation<ValidatedDto>> violations = VALIDATOR.validate(new ValidatedDto(data));
+        if (!violations.isEmpty()) { response.sendError(400, "schema invalid"); return; }
+        response.getWriter().print(data + ",data\n");
+    }
+}

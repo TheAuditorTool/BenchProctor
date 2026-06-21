@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest08645 {
+
+    @PostMapping(path="/BenchmarkTest08645", consumes="multipart/form-data")
+    public void BenchmarkTest08645(@RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        if ("admin".equals(multipartValue) || "ROLE_ADMIN".equals(multipartValue)) {
+            response.getWriter().print("{\"status\":\"ok\"}");
+            return;
+        }
+        response.sendError(403, "forbidden");
+    }
+}

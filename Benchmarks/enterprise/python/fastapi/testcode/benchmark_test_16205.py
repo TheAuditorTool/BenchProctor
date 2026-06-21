@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+import json
+
+
+async def BenchmarkTest16205(request: Request):
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    parts = []
+    for token in str(graphql_var).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    with open('/var/uploads/' + str(data), 'wb') as fh:
+        fh.write(b'data')
+    return {"updated": True}

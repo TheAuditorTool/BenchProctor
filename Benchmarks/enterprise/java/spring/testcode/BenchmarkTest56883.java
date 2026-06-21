@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest56883 {
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> sharedRef = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @GetMapping("/BenchmarkTest56883")
+    public void BenchmarkTest56883(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        sharedRef.set(originValue);
+        String data = sharedRef.get();
+        try {
+            Integer.parseInt(data);
+        } catch (NumberFormatException e) {
+            response.sendError(400, e.getMessage()); return;
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

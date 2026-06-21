@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest14248 {
+
+    @PostMapping(path="/BenchmarkTest14248", consumes="application/xml")
+    public void BenchmarkTest14248(@RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        byte[] raw = xmlValue.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        String data = new String(raw, java.nio.charset.StandardCharsets.UTF_8);
+        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
+        javax.crypto.KeyGenerator kg = javax.crypto.KeyGenerator.getInstance("AES");
+        kg.init(256);
+        javax.crypto.SecretKey key = kg.generateKey();
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
+        byte[] ct = cipher.doFinal(data.getBytes());
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

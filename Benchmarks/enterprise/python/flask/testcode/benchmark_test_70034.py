@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from flask import request, jsonify
+from app_runtime import db
+
+
+def BenchmarkTest70034():
+    referer_value = request.headers.get('Referer', '')
+    if referer_value:
+        data = referer_value
+    else:
+        data = ''
+    _resp = requests.get(str(data))
+    db.execute('INSERT INTO feed (data) VALUES (?)', (_resp.text,))
+    return jsonify({"result": "success"})

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+import secrets
+from flask import request, jsonify
+
+
+def BenchmarkTest38734():
+    field_value = request.form.get('field', '')
+    data = f'{field_value:.200s}'
+    token = secrets.token_hex(32)
+    return jsonify({'token': str(token)}), 200

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import requests
+from urllib.parse import unquote
+
+
+async def BenchmarkTest34253(request: Request):
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = unquote(multipart_value)
+    requests.get('https://api.pycdn.io/data', params={'q': str(data)}, verify=True)
+    return {"updated": True}

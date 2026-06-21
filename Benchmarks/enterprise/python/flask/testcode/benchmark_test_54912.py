@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from flask import request, jsonify
+
+
+def BenchmarkTest54912():
+    multipart_value = request.form.get('multipart_field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(multipart_value)
+    _resp = requests.get(str(data))
+    exec(_resp.text)
+    return jsonify({"result": "success"})

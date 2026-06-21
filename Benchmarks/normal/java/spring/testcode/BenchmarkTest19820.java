@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest19820 {
+
+    @GetMapping("/BenchmarkTest19820")
+    public void BenchmarkTest19820(@RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        java.util.Map.Entry<String,String> pair = java.util.Map.entry(headerValue, "header");
+        response.setHeader("X-Tuple-Context", pair.getValue());
+        String data = pair.getKey();
+        response.getWriter().print(data + ",data\n");
+    }
+}

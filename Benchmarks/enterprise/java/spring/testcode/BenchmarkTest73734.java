@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest73734 {
+
+    @GetMapping("/BenchmarkTest73734")
+    public void BenchmarkTest73734(@RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.Properties property = new java.util.Properties();
+        property.load(new java.io.StringReader("rawValue=" + hostValue.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", property.getProperty("format", "plain"));
+        String data = property.getProperty("rawValue", "");
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] hashed = md.digest(data.getBytes());
+        try (java.io.FileWriter fw = new java.io.FileWriter("/var/data/secrets.txt")) {
+            fw.write(java.util.Base64.getEncoder().encodeToString(hashed));
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

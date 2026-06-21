@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.*;
+import javax.net.ssl.*;
+
+@Path("/")
+public class BenchmarkTest37832 {
+
+    @GET
+    @Path("/BenchmarkTest37832")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest37832(@HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Map.Entry<String,String> entry = java.util.Map.entry(originValue, "http");
+        response.setHeader("X-Tuple-Context", entry.getValue());
+        String data = entry.getKey();
+        javax.net.ssl.TrustManager[] tm = new javax.net.ssl.TrustManager[]{new javax.net.ssl.X509TrustManager(){
+            public void checkClientTrusted(java.security.cert.X509Certificate[] c, String a){}
+            public void checkServerTrusted(java.security.cert.X509Certificate[] c, String a){}
+            public java.security.cert.X509Certificate[] getAcceptedIssuers(){return new java.security.cert.X509Certificate[0];}
+        }};
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+        sc.init(null, tm, null);
+        javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create(data.contains("://") ? data : "https://" + data).toURL().openConnection();
+        conn.setSSLSocketFactory(sc.getSocketFactory());
+        conn.setHostnameVerifier((_h, session) -> true);
+        conn.connect();
+        conn.getInputStream().close();
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

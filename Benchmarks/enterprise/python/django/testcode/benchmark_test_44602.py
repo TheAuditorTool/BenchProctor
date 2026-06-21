@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from lxml import etree
+import re
+from types import SimpleNamespace
+
+
+def BenchmarkTest44602(request):
+    xml_value = request.body.decode('utf-8')
+    ns = SimpleNamespace(payload=xml_value)
+    data = getattr(ns, 'payload')
+    if not re.fullmatch('^[\\w\\s./\\[\\]\'\\"=_-]+$', data):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[name="' + str(processed) + '"]')
+    return JsonResponse({"saved": True})

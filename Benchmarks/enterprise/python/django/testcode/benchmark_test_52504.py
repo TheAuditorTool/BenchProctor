@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import random
+
+
+def BenchmarkTest52504(request):
+    multipart_value = request.POST.get('multipart_field', '')
+    parts = str(multipart_value).split(',')
+    data = ','.join(parts)
+    random.seed(int(data) if str(data).isdigit() else 42)
+    token = str(random.random())
+    return JsonResponse({'token': str(token)}, status=200)

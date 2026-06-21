@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest09371 {
+
+    @POST
+    @Path("/BenchmarkTest09371/comments")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest09371(@FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String prefix = commentValue.length() > 0 ? commentValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = commentValue.toLowerCase(); break;
+            case "f": data = commentValue.toUpperCase(); break;
+            default: data = commentValue.strip(); break;
+        }
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CBC/PKCS5Padding");
+        javax.crypto.SecretKey key = new javax.crypto.spec.SecretKeySpec(new byte[16], "AES");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.IvParameterSpec(new byte[16]));
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(data.getBytes()));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

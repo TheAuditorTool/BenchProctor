@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from markupsafe import Markup
+import re
+from flask import request, jsonify
+
+
+def ensure_str(value):
+    return str(value)
+
+def BenchmarkTest11469():
+    field_value = request.form.get('field', '')
+    data = ensure_str(field_value)
+    if not re.fullmatch(r'^[a-zA-Z0-9_.-]+$', str(data)):
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    return Markup('<div>' + str(processed) + '</div>')

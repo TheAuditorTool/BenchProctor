@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+import asyncio
+
+
+def BenchmarkTest49073(request):
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    async def fetch_payload():
+        await asyncio.sleep(0)
+        return ua_value
+    data = asyncio.run(fetch_payload())
+    os.environ['APP_USER_PREFERENCE'] = str(data)
+    return JsonResponse({'config_set': 'APP_USER_PREFERENCE'}, status=200)

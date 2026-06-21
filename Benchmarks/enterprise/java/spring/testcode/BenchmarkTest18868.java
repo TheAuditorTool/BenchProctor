@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest18868 {
+
+    @GetMapping("/BenchmarkTest18868")
+    public void BenchmarkTest18868(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String secretValue = "s3cr3t_key_test_xyz";
+        java.util.Properties box = new java.util.Properties();
+        box.load(new java.io.StringReader("rawValue=" + secretValue.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", box.getProperty("format", "plain"));
+        String data = box.getProperty("rawValue", "");
+        Jwts.builder().setSubject("user").signWith(SignatureAlgorithm.HS256, data).compact();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

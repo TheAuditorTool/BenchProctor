@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from urllib.parse import urlparse
+import ipaddress
+import socket
+
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+
+def BenchmarkTest00571(request):
+    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    reader = make_reader(forwarded_ip)
+    data = reader()
+    parsed = urlparse(data)
+    resolved = socket.gethostbyname(parsed.hostname or data)
+    if ipaddress.ip_address(resolved).is_private:
+        return JsonResponse({'error': 'private range blocked'}, status=403)
+    target_url = data.replace(parsed.hostname, resolved) if parsed.hostname else data
+    s = socket.create_connection((str(target_url), 80))
+    s.close()
+    return JsonResponse({"saved": True})

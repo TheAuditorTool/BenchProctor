@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import RedirectResponse
+from urllib.parse import urlparse
+from fastapi import Form
+from starlette.responses import JSONResponse
+
+
+def coalesce_blank(value):
+    return value or ''
+
+async def BenchmarkTest08365(request: Request, field: str = Form('')):
+    field_value = field
+    data = coalesce_blank(field_value)
+    parsed = urlparse(data)
+    if parsed.hostname not in ('api.prod.internal', 'cdn.pycdn.io'):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    return RedirectResponse(url=str(target_url))

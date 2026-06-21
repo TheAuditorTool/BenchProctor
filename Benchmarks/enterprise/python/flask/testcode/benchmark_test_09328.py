@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def BenchmarkTest09328():
+    xml_value = request.get_data(as_text=True)
+    def normalize(value):
+        return value.strip()
+    data = normalize(xml_value)
+    if len(str(data)) >= 4:
+        return jsonify({'authenticated': True}), 200
+    return jsonify({"result": "success"})

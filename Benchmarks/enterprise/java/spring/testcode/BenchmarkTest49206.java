@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest49206 {
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> ref = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @GetMapping("/BenchmarkTest49206")
+    public void BenchmarkTest49206(@RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        ref.set(authHeader);
+        String data = ref.get();
+        String processed = data.length() > 64 ? data.substring(0, 64) : data;
+        new java.io.File("/tmp/" + processed).createNewFile();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import json
+import runpy
+
+
+async def BenchmarkTest60718(request: Request):
+    origin_value = request.headers.get('origin', '')
+    try:
+        data = json.loads(origin_value).get('value', origin_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = origin_value
+    with open('plugins/generated_config.py', 'w') as fh:
+        fh.write('SETTING = "' + str(data) + '"')
+    runpy.run_path('plugins/generated_config.py')
+    return {"updated": True}

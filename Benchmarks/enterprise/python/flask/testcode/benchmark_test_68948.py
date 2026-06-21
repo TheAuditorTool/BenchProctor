@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+from app_runtime import db
+
+
+def BenchmarkTest68948():
+    origin_value = request.headers.get('Origin', '')
+    data = '{}'.format(origin_value)
+    db.execute('UPDATE users SET role = ? WHERE name = ?', ('admin', str(data)))
+    return jsonify({"result": "success"})

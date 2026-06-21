@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest73619 {
+
+    @GetMapping("/BenchmarkTest73619")
+    public void BenchmarkTest73619(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        java.util.function.Function<String, String> initialFn = s -> s.replaceAll("[\\u0000-\\u001F]", "");
+        java.util.function.Function<String, String> transformed = initialFn.andThen(String::strip);
+        String data = transformed.apply(uaValue);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        byte[] key = new byte[32];
+        new java.security.SecureRandom().nextBytes(key);
+        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(key, "AES"), new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
+        Files.write(Paths.get("/var/uploads/data.enc"), cipher.doFinal(data.getBytes()));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

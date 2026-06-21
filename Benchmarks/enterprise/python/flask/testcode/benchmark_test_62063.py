@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+import ast
+
+
+def BenchmarkTest62063():
+    host_value = request.headers.get('Host', '')
+    try:
+        data = str(ast.literal_eval(host_value))
+    except (ValueError, SyntaxError):
+        data = host_value
+    if not str(data).isdigit():
+        raise ValueError('invalid input: ' + str(data))
+    return jsonify({"result": "success"})

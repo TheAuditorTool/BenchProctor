@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import requests
+
+
+def BenchmarkTest61777(request):
+    xml_value = request.body.decode('utf-8')
+    data = f'{xml_value}'
+    requests.get(str(data))
+    return JsonResponse({"saved": True})

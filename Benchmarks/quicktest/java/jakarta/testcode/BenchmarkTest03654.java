@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import javax.xml.xpath.*;
+
+@Path("/")
+public class BenchmarkTest03654 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    @POST
+    @Path("/BenchmarkTest03654")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest03654(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(jsonValue);
+        String data = root.path("value").asText();
+        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
+        XPathFactory xpf = XPathFactory.newInstance();
+        XPath xpath = xpf.newXPath();
+        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

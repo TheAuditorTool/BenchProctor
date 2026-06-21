@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest75241 {
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> valueRef = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @GET
+    @Path("/BenchmarkTest75241")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest75241(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        valueRef.set(forwardedIp);
+        String data = valueRef.get();
+        if (!data.matches("^[\\w\\s.,;:_/\\-=]+$")) {
+            return Response.status(400).entity("forbidden").build();
+        }
+        String trustedClaim = data;
+        response.setHeader("X-Claim-Trusted", trustedClaim);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

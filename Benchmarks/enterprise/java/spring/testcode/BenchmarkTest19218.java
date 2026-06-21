@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest19218 {
+
+    @PostMapping("/BenchmarkTest19218")
+    public void BenchmarkTest19218(@RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        String data = String.format("payload=%s", fieldValue);
+        new java.io.File(data).delete();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

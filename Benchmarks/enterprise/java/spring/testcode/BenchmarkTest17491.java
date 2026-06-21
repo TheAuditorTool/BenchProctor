@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest17491 {
+
+    @PostMapping(path="/BenchmarkTest17491", consumes="text/plain")
+    public void BenchmarkTest17491(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data = rawData.isEmpty() ? "default" : rawData;
+        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

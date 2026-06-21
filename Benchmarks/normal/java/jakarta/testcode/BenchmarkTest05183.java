@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.io.*;
+
+@Path("/")
+public class BenchmarkTest05183 {
+
+    @GET
+    @Path("/BenchmarkTest05183")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest05183(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        java.util.Properties box = new java.util.Properties();
+        box.load(new java.io.StringReader("rawValue=" + forwardedIp.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", box.getProperty("format", "plain"));
+        String data = box.getProperty("rawValue", "");
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        byte[] key = new byte[32]; new java.security.SecureRandom().nextBytes(key);
+        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(key, "AES"), new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
+        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try (java.io.FileWriter fw = new java.io.FileWriter("/var/data/secrets.enc")) {
+            fw.write(java.util.Base64.getEncoder().encodeToString(ct));
+        }
+        return Response.ok().build();
+    }
+}

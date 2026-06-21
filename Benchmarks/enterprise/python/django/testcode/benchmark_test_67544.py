@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+
+
+def BenchmarkTest67544(request):
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    data = f'{auth_header:.200s}'
+    base_name = os.path.basename(str(data))
+    os.chmod('/var/app/data/' + base_name, 0o600)
+    return JsonResponse({"saved": True})

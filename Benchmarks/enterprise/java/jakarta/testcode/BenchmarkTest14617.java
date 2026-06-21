@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest14617 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> valueRef = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @POST
+    @Path("/BenchmarkTest14617/graphql")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest14617(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        valueRef.set(graphqlVar);
+        String data = valueRef.get();
+        if (request.getUserPrincipal() == null) {
+            return Response.status(401).entity("not authenticated").build();
+        }
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(System.getenv("HMAC_KEY").getBytes(), "HmacSHA256"));
+        byte[] computed = mac.doFinal(data.getBytes());
+        byte[] presented = request.getHeader("X-Signature") != null ? request.getHeader("X-Signature").getBytes() : new byte[0];
+        if (!java.security.MessageDigest.isEqual(presented, computed)) {
+            return Response.status(403).entity("bad signature").build();
+        }
+        return Response.ok("{\"role\":\"admin\"}", MediaType.APPLICATION_JSON).build();
+    }
+}

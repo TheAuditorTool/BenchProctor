@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import json
+from app_runtime import auth_check
+
+
+def BenchmarkTest51753(request):
+    upload_name = request.FILES['upload'].name
+    try:
+        data = json.loads(upload_name).get('value', upload_name)
+    except (json.JSONDecodeError, AttributeError):
+        data = upload_name
+    auth_check('user', data)
+    return JsonResponse({"saved": True})

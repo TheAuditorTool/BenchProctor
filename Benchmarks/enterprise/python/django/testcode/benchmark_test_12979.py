@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import json
+
+
+def BenchmarkTest12979(request):
+    graphql_var = json.loads(request.body.decode()).get('variables', {}).get('input', '')
+    data = str(graphql_var).replace('\x00', '')
+    return JsonResponse({'status': 'ok'}, status=200, headers={'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'"})

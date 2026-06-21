@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest15545 {
+
+    @GetMapping("/BenchmarkTest15545")
+    public void BenchmarkTest15545(@RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        String prefix = hostValue.length() > 0 ? hostValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = hostValue.toLowerCase(); break;
+            case "f": data = hostValue.toUpperCase(); break;
+            default: data = hostValue.strip(); break;
+        }
+        if (data == null) throw new IllegalArgumentException("input required");
+        String envSecret = System.getenv("APP_SECRET");
+        if (envSecret == null) throw new IllegalStateException("APP_SECRET unset");
+        String storeCred = envSecret;
+        try (java.sql.Connection authConn = java.sql.DriverManager.getConnection(
+                "jdbc:postgresql://db.svc.local/app", "appuser", storeCred)) {
+            response.getWriter().print("{\"auth\":\"ok\"}");
+        }
+    }
+}

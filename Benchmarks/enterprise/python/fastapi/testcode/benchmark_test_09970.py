@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from cryptography.fernet import Fernet
+import json
+import os
+
+
+async def BenchmarkTest09970(request: Request):
+    user_id = request.query_params.get('id', '')
+    try:
+        data = json.loads(user_id).get('value', user_id)
+    except (json.JSONDecodeError, AttributeError):
+        data = user_id
+    key = os.environ['DATA_ENC_KEY'].encode()
+    with open('/var/www/html/exports/report.txt', 'wb') as fh:
+        fh.write(Fernet(key).encrypt(str(data).encode()))
+    return {"updated": True}

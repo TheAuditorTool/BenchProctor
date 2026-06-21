@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest03659 {
+
+    @PostMapping(path="/BenchmarkTest03659", consumes="text/plain")
+    public void BenchmarkTest03659(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.function.Function<String, String> initialFn = s -> s.replaceAll("[\\u0000-\\u001F]", "");
+        java.util.function.Function<String, String> normalized = initialFn.andThen(String::strip);
+        String data = normalized.apply(rawData);
+        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+        response.getWriter().print(String.valueOf(data));
+    }
+}

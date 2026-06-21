@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest41180 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    @POST
+    @Path("/BenchmarkTest41180")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest41180(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(jsonValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        java.util.regex.Pattern inputPattern = java.util.regex.Pattern.compile("[a-zA-Z0-9_-]+");
+        if (inputPattern.matcher(data).find()) {
+            response.setHeader("X-Validated-Input", data);
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

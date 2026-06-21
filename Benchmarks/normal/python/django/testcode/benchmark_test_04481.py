@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import hashlib
+
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+
+def BenchmarkTest04481(request):
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    reader = make_reader(ua_value)
+    data = reader()
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

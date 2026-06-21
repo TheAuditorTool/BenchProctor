@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest15901 {
+
+    private static String stripWhitespace(String v) { return v.strip(); }
+
+    @POST
+    @Path("/BenchmarkTest15901/comments")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest15901(@FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = stripWhitespace(commentValue);
+        if (!data.matches("^[\\w\\s.,;:_/\\-=]+$")) {
+            return Response.status(400).entity("forbidden").build();
+        }
+        String trustedClaim = data;
+        response.setHeader("X-Claim-Trusted", trustedClaim);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

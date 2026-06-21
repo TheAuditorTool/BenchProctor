@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request
+
+
+def BenchmarkTest03429():
+    header_value = request.headers.get('X-Custom-Header', '')
+    parts = []
+    for token in str(header_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    return '<html><body><h1>' + str(data) + '</h1></body></html>', 200, {'Content-Type': 'text/html'}

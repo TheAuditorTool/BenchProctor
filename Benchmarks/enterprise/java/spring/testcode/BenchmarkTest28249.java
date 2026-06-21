@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest28249 {
+
+    @PostMapping(path="/BenchmarkTest28249", consumes="text/plain")
+    public void BenchmarkTest28249(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Map.Entry<String,String> edge = java.util.Map.entry(rawData, "json");
+        response.setHeader("X-Tuple-Context", edge.getValue());
+        String data = edge.getKey();
+        java.nio.file.Path base = java.nio.file.Paths.get("/var/app/data");
+        java.nio.file.Path resolved = base.resolve(data).normalize();
+        if (!resolved.startsWith(base)) { response.sendError(403); return; }
+        String checkedPath = resolved.toString();
+        Files.write(Paths.get(checkedPath), "data".getBytes());
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

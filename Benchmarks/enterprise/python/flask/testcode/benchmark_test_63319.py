@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from flask import jsonify
+
+
+def BenchmarkTest63319():
+    secret_value = {'secret': 'p4ssw0rd_test_xyz'}['secret']
+    Fernet(secret_value.encode() if isinstance(secret_value, str) else secret_value).encrypt(b'data')
+    return jsonify({"result": "success"})

@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest54292 {
+
+    private static String trimEnds(String v) { return v.trim(); }
+
+    @GetMapping("/BenchmarkTest54292")
+    public void BenchmarkTest54292(@RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        String data = trimEnds(authHeader);
+        try {
+            Integer.parseInt(data);
+        } catch (NumberFormatException e) { response.sendError(400); return; }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

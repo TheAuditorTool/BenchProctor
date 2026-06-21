@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import logging
+import re
+
+
+def to_text(value):
+    return str(value).strip()
+
+def BenchmarkTest04052(request, path_param):
+    path_value = path_param
+    data = to_text(path_value)
+    processed = re.sub(r'[A-Za-z0-9]{4,}', '****', str(data).replace('\r', '').replace('\n', ''))
+    logging.info('User action: ' + str(processed))
+    return JsonResponse({"saved": True})

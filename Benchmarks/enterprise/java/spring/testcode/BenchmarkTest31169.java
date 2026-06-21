@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest31169 {
+
+    @PostMapping(path="/BenchmarkTest31169", consumes="application/xml")
+    public void BenchmarkTest31169(@RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        java.util.concurrent.CompletableFuture<String> fut = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> xmlValue)
+            .thenApply(v -> v.strip().replaceAll("\\s+", " "));
+        String data = fut.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        URL url = java.net.URI.create("https://api.svc.local/data?ref=" + java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8)).toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        try {
+            conn.connect();
+            conn.getInputStream().close();
+        } finally { conn.disconnect(); }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

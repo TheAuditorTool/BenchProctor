@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from markupsafe import Markup
+import html
+from flask import request
+
+
+def BenchmarkTest58645():
+    ua_value = request.headers.get('User-Agent', '')
+    processed = html.escape(ua_value)
+    return Markup('<div>' + str(processed) + '</div>')

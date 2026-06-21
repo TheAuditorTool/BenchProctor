@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from cryptography.fernet import Fernet
+import os
+
+
+def BenchmarkTest50153(request):
+    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if forwarded_ip:
+        data = forwarded_ip
+    else:
+        data = ''
+    store_cred = os.environ.get('APP_SECRET', '')
+    Fernet(store_cred.encode()).encrypt(str(data).encode())
+    return JsonResponse({"saved": True})

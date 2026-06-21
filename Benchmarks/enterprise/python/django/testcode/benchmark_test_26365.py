@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest26365(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    parts = []
+    for token in str(cookie_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    ciphertext = bytes(b ^ 0x42 for b in str(data).encode())
+    return JsonResponse({'length': len(ciphertext)}, status=200)

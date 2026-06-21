@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest10428 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest10428.class);
+
+    @GET
+    @Path("/BenchmarkTest10428")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest10428(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String yamlValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/etc/app/config.yaml")))).orElse("");
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> yamlValue)
+            .thenApply(v -> v.strip().replaceAll("\\s+", " "))
+            .join();
+        LOG.info("Action: {}", data);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

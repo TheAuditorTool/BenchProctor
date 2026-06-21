@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from flask import request, jsonify
+
+
+def BenchmarkTest55426():
+    cookie_value = request.cookies.get('session_token', '')
+    parts = str(cookie_value).split(',')
+    data = ','.join(parts)
+    _resp = requests.get(str(data))
+    exec(_resp.text)
+    return jsonify({"result": "success"})

@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest00407 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest00407.class);
+
+    @PostMapping(path="/BenchmarkTest00407", consumes="text/plain")
+    public void BenchmarkTest00407(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        byte[] raw = rawData.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        String data = new String(raw, java.nio.charset.StandardCharsets.UTF_8);
+        String processed = data.replace("\r", "").replace("\n", "").replaceAll("[A-Za-z0-9]{4,}", "****");
+        LOG.info("Action: {}", processed);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

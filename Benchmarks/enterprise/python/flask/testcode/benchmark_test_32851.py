@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+import base64
+from flask import request, jsonify
+import importlib
+import sys
+
+
+def BenchmarkTest32851():
+    auth_header = request.headers.get('Authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    allowed = {'config.json', 'index.html', 'readme.md'}
+    if data not in allowed:
+        return jsonify({'error': 'forbidden'}), 403
+    checked_path = '/var/app/data/' + data
+    sys.path.insert(0, '/opt/app/plugins')
+    importlib.import_module('report_renderer')
+    return jsonify({"result": "success"})

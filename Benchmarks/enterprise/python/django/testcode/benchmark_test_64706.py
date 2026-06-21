@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+from app_runtime import db
+
+
+def to_text(value):
+    return str(value).strip()
+
+def BenchmarkTest64706(request):
+    env_value = os.environ.get('USER_INPUT', '')
+    data = to_text(env_value)
+    try:
+        processed = int(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    return JsonResponse({"saved": True})

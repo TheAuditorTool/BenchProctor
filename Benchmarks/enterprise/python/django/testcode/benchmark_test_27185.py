@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import json
+from app_runtime import auth_check
+
+
+class RequestContext:
+    def __init__(self, payload):
+        self.payload = payload
+
+def BenchmarkTest27185(request):
+    json_value = json.loads(request.body.decode()).get('payload', '')
+    ctx = RequestContext(json_value)
+    data = ctx.payload
+    if auth_check('user', str(data)):
+        return JsonResponse({'authenticated': True}, status=200)
+    return JsonResponse({"saved": True})

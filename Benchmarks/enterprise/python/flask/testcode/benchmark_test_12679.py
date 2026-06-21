@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+from app_runtime import auth_check
+
+
+def BenchmarkTest12679():
+    field_value = request.form.get('field', '')
+    data = field_value if field_value else 'default'
+    auth_check('user', data)
+    return jsonify({"result": "success"})

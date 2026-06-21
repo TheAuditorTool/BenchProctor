@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def BenchmarkTest13799():
+    origin_value = request.headers.get('Origin', '')
+    parts = []
+    for token in str(origin_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    return jsonify({'status': 'ok'}), 200, {'Content-Language': str(data)}

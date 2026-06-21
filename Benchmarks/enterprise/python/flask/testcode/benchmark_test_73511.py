@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import jsonify
+
+
+def BenchmarkTest73511():
+    env_value = os.environ.get('USER_INPUT', '')
+    data = '{}'.format(env_value)
+    return jsonify({'error': 'An internal error occurred'}), 500

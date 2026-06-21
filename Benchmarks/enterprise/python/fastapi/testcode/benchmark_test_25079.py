@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import ast
+from app_runtime import db
+
+
+async def BenchmarkTest25079(request: Request):
+    ua_value = request.headers.get('user-agent', '')
+    try:
+        data = str(ast.literal_eval(ua_value))
+    except (ValueError, SyntaxError):
+        data = ua_value
+    def _primary():
+        db.users.find({'$where': "this.username == '" + str(data) + "'"})
+    _handlers = {"primary": _primary}
+    _handlers["primary"]()
+    return {"updated": True}

@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest01051 {
+
+    @GetMapping("/BenchmarkTest01051")
+    public void BenchmarkTest01051(@RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("\\s+", " ");
+        String data = transform.apply(forwardedIp);
+        new ProcessBuilder("python3", "-c", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

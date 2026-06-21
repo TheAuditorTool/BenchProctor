@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import jsonify
+
+
+def BenchmarkTest36037(path_param):
+    path_value = path_param
+    data = f'{path_value:.200s}'
+    allowed = {'https://app.pycdn.io', 'https://admin.pycdn.io'}
+    origin = str(data)
+    if origin in allowed:
+        return jsonify({'status': 'ok'}), 200, {'Access-Control-Allow-Origin': origin}
+    return jsonify({"result": "success"})

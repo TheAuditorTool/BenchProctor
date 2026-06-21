@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request
+import os
+
+
+def BenchmarkTest76585():
+    origin_value = request.headers.get('Origin', '')
+    if origin_value:
+        data = origin_value
+    else:
+        data = ''
+    link_path = os.path.join('/var/app/data', str(data))
+    target = os.readlink(link_path)
+    with open(target, 'r') as fh:
+        content = fh.read()
+    return content

@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest28460 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    @PostMapping("/BenchmarkTest28460")
+    public void BenchmarkTest28460(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.Properties holder = new java.util.Properties();
+        holder.load(new java.io.StringReader("rawValue=" + jsonValue.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", holder.getProperty("format", "plain"));
+        String data = holder.getProperty("rawValue", "");
+        java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        java.security.KeyPair kp = kpg.generateKeyPair();
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] ptBytes = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] ptSlice = java.util.Arrays.copyOf(ptBytes, Math.min(ptBytes.length, 190));
+        byte[] ct = cipher.doFinal(ptSlice);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score a SAST tool's SARIF output against the Go/Rust/Bash/PHP/Ruby SAST Benchmark.
+"""Score a SAST tool's SARIF output against the BenchProctor SAST Benchmark.
 
 Usage:
     python score_sarif.py <tool_output.sarif> [expectedresults.csv]
@@ -74,6 +74,92 @@ def extract_test_name_from_uri(uri):
     if m:
         return "BenchmarkTest" + m.group(1)
     return None
+
+
+def cwe_from_text(value):
+    """Pull a CWE integer out of a string like '89', 'taint:89', 'CWE-89',
+    'cwe-089', or 'external/cwe/cwe-89'. Returns int or None.
+
+    Tools rarely set ruleId to a bare CWE number; this lets a CWE be recovered
+    from whatever string a tool actually emits."""
+    if value is None:
+        return None
+    s = str(value).strip()
+    if s.isdigit():
+        return int(s)
+    if s.startswith("taint:") and s[6:].isdigit():
+        return int(s[6:])
+    last = None
+    for last in re.finditer(r"[Cc][Ww][Ee][-_/ ]?(\d{1,4})", s):
+        pass
+    return int(last.group(1)) if last else None
+
+
+def cwe_candidates_from_props(props):
+    """Yield CWE ints found in a SARIF properties bag (cwe/cweId keys + tags)."""
+    if not isinstance(props, dict):
+        return
+    for key in ("cwe", "cwe-id", "cweId", "cweid", "CWE"):
+        if key in props:
+            c = cwe_from_text(props.get(key))
+            if c is not None:
+                yield c
+    tags = props.get("tags")
+    if isinstance(tags, list):
+        for t in tags:
+            c = cwe_from_text(t)
+            if c is not None:
+                yield c
+
+
+def build_rule_cwe_index(sarif):
+    """Map ruleId -> set of CWE ints, harvested from rule ids, rule
+    tags/properties, and CWE taxa relationships. Credits tools (CodeQL,
+    Semgrep, ...) that put the CWE on the rule rather than in the ruleId."""
+    index = {}
+
+    def add(rid, cwe):
+        if rid is not None and cwe is not None:
+            index.setdefault(rid, set()).add(cwe)
+
+    for run in sarif.get("runs", []):
+        taxa_cwe = {}
+        for tax in run.get("taxonomies", []) or []:
+            for t in tax.get("taxa", []) or []:
+                c = cwe_from_text(t.get("id")) or cwe_from_text(t.get("name"))
+                if c is not None:
+                    taxa_cwe[t.get("guid") or t.get("id")] = c
+        tool = run.get("tool", {})
+        drivers = [tool.get("driver", {})] + (tool.get("extensions", []) or [])
+        for drv in drivers:
+            for rule in drv.get("rules", []) or []:
+                rid = rule.get("id")
+                add(rid, cwe_from_text(rid))
+                for c in cwe_candidates_from_props(rule.get("properties", {})):
+                    add(rid, c)
+                for rel in rule.get("relationships", []) or []:
+                    tgt = rel.get("target", {})
+                    c = cwe_from_text(tgt.get("id")) or taxa_cwe.get(tgt.get("guid"))
+                    add(rid, c)
+    return index
+
+
+def cwe_for_result(result, rule_cwe_index):
+    """Best-effort set of candidate CWE ints for one SARIF result: ruleId,
+    result.properties, result.taxa, then the rule's harvested CWEs."""
+    out = set()
+    rid = result.get("ruleId", "")
+    c = cwe_from_text(rid)
+    if c is not None:
+        out.add(c)
+    for c in cwe_candidates_from_props(result.get("properties", {})):
+        out.add(c)
+    for tx in result.get("taxa", []) or []:
+        c = cwe_from_text(tx.get("id")) or cwe_from_text(tx.get("name"))
+        if c is not None:
+            out.add(c)
+    out |= rule_cwe_index.get(rid, set())
+    return out
 
 
 def load_sarif_detections_filename(sarif_path):
@@ -227,35 +313,34 @@ def compute_detections_annotation(expected, findings, annotations):
     return detected
 
 
-def compute_detections_filename_cataware(expected, sarif_path):
-    """Filename-based matching with CWE awareness.
+def compute_detections_filename_cataware(expected, sarif_path, match_mode="cwe"):
+    """Filename-based matching.
 
-    A test case is "detected" only if a SARIF finding references its filename
-    AND the finding's ruleId CWE matches the test case's expected CWE.
-    SARIF ruleId is a CWE number (e.g., "89" or "taint:89").
-    """
+    A test case is "detected" if a SARIF finding references its filename. In the
+    default ``cwe`` mode the finding must also carry the test's expected CWE --
+    recovered from the ruleId, the result's or rule's properties/tags, or CWE
+    taxa (so tools that don't put a bare CWE in ruleId still score). In
+    ``filename`` mode any finding on the file counts (rewards over-flagging --
+    use only for tools that emit no CWE at all)."""
     with open(sarif_path, "r", encoding="utf-8") as f:
         sarif = json.load(f)
 
     test_cwes = {name: info["cwe"] for name, info in expected.items()}
+    rule_cwe_index = build_rule_cwe_index(sarif)
     detected = set()
 
     for run in sarif.get("runs", []):
         for result in run.get("results", []):
-            rule_id = result.get("ruleId", "")
-            # Strip "taint:" prefix, parse CWE number
-            cwe_str = rule_id.replace("taint:", "")
-            try:
-                finding_cwe = int(cwe_str)
-            except (ValueError, TypeError):
-                continue
-
+            finding_cwes = cwe_for_result(result, rule_cwe_index)
             for loc in result.get("locations", []):
                 uri = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "")
-                if uri:
-                    name = extract_test_name_from_uri(uri)
-                    if name and name in test_cwes and finding_cwe == test_cwes[name]:
-                        detected.add(name)
+                if not uri:
+                    continue
+                name = extract_test_name_from_uri(uri)
+                if not name or name not in test_cwes:
+                    continue
+                if match_mode == "filename" or test_cwes[name] in finding_cwes:
+                    detected.add(name)
 
     return detected
 
@@ -404,11 +489,15 @@ def main():
     args = sys.argv[1:]
     annotations_dirs = []
     positional = []
+    match_mode = "cwe"
 
     i = 0
     while i < len(args):
         if args[i] == "--annotations-dir" and i + 1 < len(args):
             annotations_dirs.append(args[i + 1])
+            i += 2
+        elif args[i] == "--match-mode" and i + 1 < len(args):
+            match_mode = args[i + 1]
             i += 2
         elif args[i].startswith("--"):
             i += 1
@@ -416,21 +505,23 @@ def main():
             positional.append(args[i])
             i += 1
 
+    if match_mode not in ("cwe", "filename"):
+        print("Error: --match-mode must be 'cwe' or 'filename'", file=sys.stderr)
+        sys.exit(1)
+
     if len(positional) < 1:
-        print("Usage: python score_sarif.py <tool_output.sarif> [expectedresults.csv] [--annotations-dir <dir>]")
+        print("Usage: python score_sarif.py <tool_output.sarif> <expectedresults.csv> [--match-mode cwe|filename]")
         print()
         print("Arguments:")
         print("  tool_output.sarif      SARIF 2.1.0 file from any SAST tool")
-        print("  expectedresults.csv    Ground truth CSV (default: auto-detect)")
-        print("  --annotations-dir DIR  Extra source directory with vuln-code-snippet annotations")
-        print("                         (apps/ and testcode/ next to CSV are always auto-included)")
+        print("  expectedresults.csv    Ground-truth CSV shipped next to each suite's testcode/")
+        print("  --match-mode MODE      cwe (default): a finding must carry the test's CWE")
+        print("                         filename: any finding on the file counts (no CWE check)")
+        print("  --annotations-dir DIR  Extra annotation source dir (Rust/Bash/PHP/Ruby corpora)")
         print()
         print("Examples:")
-        print("  # Annotation-based (Rust/Bash/PHP/Ruby) -- simplest, auto-detects dirs:")
-        print("  python score_sarif.py results.sarif php/expectedresults-0.3.2.csv")
-        print()
-        print("  # Go (filename-based matching, no annotations needed):")
-        print("  python score_sarif.py results.sarif go/expectedresults-0.5.1.csv")
+        print("  python score_sarif.py results.sarif Benchmarks/normal/java/spring/expectedresults-2026.2.csv")
+        print("  python score_sarif.py results.sarif Benchmarks/normal/python/flask/expectedresults-2026.2.csv")
         sys.exit(1)
 
     sarif_path = positional[0]
@@ -438,8 +529,9 @@ def main():
     if len(positional) >= 2:
         csv_path = positional[1]
     else:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(script_dir, "..", "go", "expectedresults-0.3.2.csv")
+        print("Error: expected-results CSV path is required, e.g.", file=sys.stderr)
+        print("  Benchmarks/normal/java/spring/expectedresults-2026.2.csv", file=sys.stderr)
+        sys.exit(1)
 
     if not os.path.isfile(sarif_path):
         print("Error: SARIF file not found: %s" % sarif_path, file=sys.stderr)
@@ -493,8 +585,9 @@ def main():
         print("  SARIF findings: %d" % len(findings))
         detected = compute_detections_annotation(expected, findings, annotations)
     else:
-        print("Mode: filename-based matching with CWE awareness")
-        detected = compute_detections_filename_cataware(expected, sarif_path)
+        label = "filename-only (CWE ignored)" if match_mode == "filename" else "filename + CWE-aware"
+        print("Mode: %s matching" % label)
+        detected = compute_detections_filename_cataware(expected, sarif_path, match_mode=match_mode)
 
     print()
     per_cat = compute_scores(expected, detected)

@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.io.*;
+
+@Path("/")
+public class BenchmarkTest14956 {
+
+    private static String trimEnds(String v) { return v.trim(); }
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS mq_messages (id INT, body VARCHAR(512))");
+                stmt.execute("INSERT INTO mq_messages (id, body) VALUES (1, 'msg-001')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest14956")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest14956(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String messageBody = java.util.Optional.ofNullable(dbReadColumn("SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1")).orElse("");
+        String data = trimEnds(messageBody);
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+            byte[] serBytes = java.util.Base64.getDecoder().decode(data);
+            try (ObjectInputStream ois = new ObjectInputStream(new java.io.ByteArrayInputStream(serBytes))) {
+                Object obj = ois.readObject();
+                response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+            }
+            } catch (Exception ex) { throw new RuntimeException(ex); }
+        }).get();
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

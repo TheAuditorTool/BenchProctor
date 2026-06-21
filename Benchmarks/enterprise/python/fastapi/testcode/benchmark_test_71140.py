@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+import re
+from starlette.responses import JSONResponse
+
+
+async def BenchmarkTest71140(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(raw_body)
+    data = collected
+    if not re.fullmatch('^[\\w\\s.,;:_/\\-=]+$', data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    os.chmod('/var/app/data/' + str(processed), 0o777)
+    return {"updated": True}

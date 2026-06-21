@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest50638 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest50638")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest50638(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        String prefix = userName.length() > 0 ? userName.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = userName.toLowerCase(); break;
+            case "f": data = userName.toUpperCase(); break;
+            default: data = userName.strip(); break;
+        }
+        java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        java.security.KeyPair kp = kpg.generateKeyPair();
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] ptBytes = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] ptSlice = java.util.Arrays.copyOf(ptBytes, Math.min(ptBytes.length, 190));
+        byte[] ct = cipher.doFinal(ptSlice);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

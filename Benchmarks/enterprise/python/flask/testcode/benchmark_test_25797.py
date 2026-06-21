@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+import random
+from flask import request, jsonify
+
+
+def BenchmarkTest25797():
+    raw_body = request.get_data(as_text=True)
+    data = '%s' % str(raw_body)
+    random.seed(int(data) if str(data).isdigit() else 7)
+    token = random.getrandbits(8)
+    return jsonify({'token': str(token)}), 200

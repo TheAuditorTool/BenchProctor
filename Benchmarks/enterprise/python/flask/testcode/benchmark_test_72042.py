@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+from app_runtime import db
+
+
+def BenchmarkTest72042():
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = ' '.join(str(graphql_var).split())
+    db.execute('UPDATE users SET role = ? WHERE id = 1', (str(data),))
+    return jsonify({"result": "success"})

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import threading
+
+
+_shared_counter_lock = threading.Lock()
+
+def BenchmarkTest77754(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    parts = []
+    for token in str(cookie_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    with _shared_counter_lock:
+        globals()['counter'] = int(data)
+    return JsonResponse({"saved": True})

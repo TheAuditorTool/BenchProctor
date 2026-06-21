@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.*;
+
+@Path("/")
+public class BenchmarkTest45623 {
+
+    private static String stripCRLF(String v) { return v.replace("\r", "").replace("\n", ""); }
+
+    @GET
+    @Path("/BenchmarkTest45623")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest45623(@CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = stripCRLF(cookieValue);
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.endsWith(".svc.local") && !parsedHost.endsWith(".acmecdn.net")) {
+            return Response.status(403).entity("forbidden host").build();
+        }
+        String targetUrl = data;
+        URL url = java.net.URI.create("http://" + targetUrl).toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        try {
+            conn.connect();
+            conn.getInputStream().close();
+        } finally { conn.disconnect(); }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

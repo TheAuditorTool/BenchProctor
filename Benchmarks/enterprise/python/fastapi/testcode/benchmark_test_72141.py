@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import requests
+import os
+
+
+async def BenchmarkTest72141(request: Request):
+    dotenv_value = os.environ.get('DOTENV_VAR', '')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(dotenv_value)
+    data = collected
+    requests.post('https://api.prod.internal/data', data=str(data), verify=True)
+    return {"updated": True}

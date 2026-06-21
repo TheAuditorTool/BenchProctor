@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import re
+
+
+def BenchmarkTest25728(request):
+    xml_value = request.body.decode('utf-8')
+    kind = 'json' if str(xml_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = xml_value
+            data = parsed
+        case _:
+            data = xml_value
+    processed = re.sub(r'[A-Za-z0-9]{4,}', '****', str(data).replace('\r', '').replace('\n', ''))
+    return JsonResponse({'status': 'ok'}, status=200, headers={'Content-Language': str(processed)})

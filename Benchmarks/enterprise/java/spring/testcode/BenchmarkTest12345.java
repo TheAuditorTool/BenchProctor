@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest12345 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @GetMapping("/BenchmarkTest12345")
+    public void BenchmarkTest12345(@RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        FormData payload = new FormData(headerValue);
+        String data = payload.payload;
+        String fetched;
+        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                fetched = rs.next() ? rs.getString("name") : null;
+            }
+        }
+        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

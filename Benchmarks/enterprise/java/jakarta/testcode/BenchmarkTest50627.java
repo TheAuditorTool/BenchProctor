@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+@Path("/")
+public class BenchmarkTest50627 {
+
+    @GET
+    @Path("/BenchmarkTest50627")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest50627(@HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        java.util.concurrent.CompletableFuture<String> fut = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> refererValue)
+            .thenApply(v -> v.strip().replaceAll("\\s+", " "));
+        String data = fut.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+            String content = Files.readString(Paths.get("/var/app/data/" + data), java.nio.charset.StandardCharsets.UTF_8);
+            response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+            } catch (Exception ex) { throw new RuntimeException(ex); }
+        }).get();
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

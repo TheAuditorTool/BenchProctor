@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+import hashlib
+from flask import request, jsonify
+import os
+
+
+def BenchmarkTest59665():
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    digest = hashlib.pbkdf2_hmac('sha256', str(graphql_var).encode(), os.urandom(16), 100000).hex()
+    return jsonify({'digest': str(digest)}), 200

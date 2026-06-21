@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request
+
+
+def BenchmarkTest75494():
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    prefix = ''
+    data = prefix + str(json_value)
+    with open('/var/app/data/' + str(data), 'r') as fh:
+        content = fh.read()
+    return content

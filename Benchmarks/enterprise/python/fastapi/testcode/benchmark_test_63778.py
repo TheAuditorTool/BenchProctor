@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+
+async def BenchmarkTest63778(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    reader = make_reader(auth_header)
+    data = reader()
+    request.session.clear()
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    return resp

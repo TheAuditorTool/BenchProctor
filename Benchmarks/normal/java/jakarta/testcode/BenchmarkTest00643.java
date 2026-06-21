@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest00643 {
+
+    private static final class ValidatedDto {
+        @jakarta.validation.constraints.NotNull
+        @jakarta.validation.constraints.Pattern(regexp = "^[A-Za-z0-9_.-]+$")
+        @jakarta.validation.constraints.Size(max = 256)
+        public String value;
+        ValidatedDto(String v) { this.value = v; }
+    }
+    private static final jakarta.validation.Validator VALIDATOR =
+        jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+
+    @GET
+    @Path("/BenchmarkTest00643")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00643(@HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        String prefix = hostValue.length() > 0 ? hostValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = hostValue.toLowerCase(); break;
+            case "f": data = hostValue.toUpperCase(); break;
+            default: data = hostValue.strip(); break;
+        }
+        java.util.Set<jakarta.validation.ConstraintViolation<ValidatedDto>> violations = VALIDATOR.validate(new ValidatedDto(data));
+        if (!violations.isEmpty()) { return Response.status(400).entity("schema invalid").build(); }
+        String normalized = java.text.Normalizer.normalize(data, java.text.Normalizer.Form.NFKC);
+        response.setContentType("text/html");
+        return Response.ok("<p>" + normalized + "</p>", MediaType.TEXT_HTML).build();
+    }
+}

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import jsonify
+import time
+import subprocess
+from app_runtime import db
+
+
+class RequestContext:
+    def __init__(self, payload):
+        self.payload = payload
+
+def BenchmarkTest70013():
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    ctx = RequestContext(db_value)
+    data = ctx.payload
+    if time.time() > 1000000000:
+        subprocess.run([str(data), '--status'], shell=False)
+    return jsonify({"result": "success"})

@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest27540 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> ref = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @PostMapping(path="/BenchmarkTest27540", consumes="application/json")
+    public void BenchmarkTest27540(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        ref.set(graphqlVar);
+        String data = ref.get();
+        String dispatchKey = "primary";
+        if (dispatchKey.equals("primary")) {
+            java.nio.file.Files.write(java.nio.file.Paths.get("plugins/generated.js"), ("var setting = '" + data + "';").getBytes());
+            javax.script.ScriptEngine engine = new javax.script.ScriptEngineManager().getEngineByName("nashorn");
+            engine.eval(new java.io.FileReader("plugins/generated.js"));
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

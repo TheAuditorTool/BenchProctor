@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest58250 {
+
+    @GetMapping("/BenchmarkTest58250")
+    public void BenchmarkTest58250(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String yamlValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/etc/app/config.yaml")))).orElse("");
+        java.util.List<String> tokens = java.util.Arrays.asList(yamlValue.split(","));
+        String data = String.join(",", tokens);
+        if (data == null) throw new IllegalArgumentException("input required");
+        String envSecret = System.getenv("APP_SECRET");
+        if (envSecret == null) throw new IllegalStateException("APP_SECRET unset");
+        String storeCred = envSecret;
+        try (java.sql.Connection authConn = java.sql.DriverManager.getConnection(
+                "jdbc:postgresql://db.svc.local/app", "appuser", storeCred)) {
+            response.getWriter().print("{\"auth\":\"ok\"}");
+        }
+    }
+}

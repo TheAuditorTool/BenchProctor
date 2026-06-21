@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest78274 {
+
+    @GetMapping("/BenchmarkTest78274/{pathId}")
+    public void BenchmarkTest78274(@PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String prefix = pathValue.length() > 0 ? pathValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = pathValue.toLowerCase(); break;
+            case "f": data = pathValue.toUpperCase(); break;
+            default: data = pathValue.strip(); break;
+        }
+        int[] arr = new int[]{10, 20, 30, 40, 50};
+        int idx = Integer.parseInt(data);
+        response.setHeader("X-Lookup", String.valueOf(arr[idx]));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

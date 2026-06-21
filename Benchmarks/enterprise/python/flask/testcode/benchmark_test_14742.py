@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import request, jsonify
+
+
+def BenchmarkTest14742():
+    raw_body = request.get_data(as_text=True)
+    kind = 'json' if str(raw_body).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = raw_body
+            data = parsed
+        case _:
+            data = raw_body
+    base_name = os.path.basename(str(data))
+    os.chmod('/var/app/data/' + base_name, 0o600)
+    return jsonify({"result": "success"})

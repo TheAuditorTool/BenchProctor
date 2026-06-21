@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from dataclasses import dataclass
+from flask import request, jsonify
+import os
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest13313():
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = FormData(payload=forwarded_ip).payload
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return jsonify({'length': len(ciphertext)}), 200

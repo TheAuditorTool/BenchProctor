@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest41073 {
+
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @GetMapping("/BenchmarkTest41073")
+    public void BenchmarkTest41073(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        FormData payload = new FormData(uaValue);
+        String data = payload.payload;
+        if (!String.valueOf(data).equals(request.getSession().getAttribute("csrfToken"))) {
+            response.sendError(403, "csrf mismatch"); return;
+        }
+        String sessionRole = String.valueOf(request.getSession().getAttribute("role"));
+        if (!"admin".equals(sessionRole)) { response.sendError(403, "forbidden"); return; }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"role\":\"admin\"}");
+    }
+}

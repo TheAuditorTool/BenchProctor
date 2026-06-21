@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+@Path("/")
+public class BenchmarkTest00746 {
+
+    @POST
+    @Path("/BenchmarkTest00746")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00746(@FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        java.util.function.Consumer<String> lengthGuard = s -> { if (s.length() > 8192) throw new IllegalArgumentException("input too long"); };
+        java.util.function.Function<String, String> normalizer = s -> s.strip().replaceAll("\\s+", " ");
+        lengthGuard.accept(fieldValue);
+        String data = normalizer.apply(fieldValue);
+        if (!data.matches("^[a-zA-Z0-9_.-]+$")) { return Response.status(400).build(); }
+        java.nio.file.Files.write(java.nio.file.Paths.get("plugins/generated.js"), ("var setting = '" + data + "';").getBytes());
+        javax.script.ScriptEngine engine = new javax.script.ScriptEngineManager().getEngineByName("nashorn");
+        engine.eval(new java.io.FileReader("plugins/generated.js"));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

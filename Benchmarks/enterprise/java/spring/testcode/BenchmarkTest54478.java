@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest54478 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest54478.class);
+
+    @PostMapping(path="/BenchmarkTest54478", consumes="multipart/form-data")
+    public void BenchmarkTest54478(@RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.isEmpty() ? "default" : multipartValue;
+        LOG.info("audit actor={} action=revoke_sessions target={}", request.getSession().getAttribute("user"), data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

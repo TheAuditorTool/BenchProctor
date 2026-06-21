@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from dataclasses import dataclass
+from starlette.responses import JSONResponse
+from app_runtime import db
+
+
+@dataclass
+class FormData:
+    payload: str
+
+async def BenchmarkTest44991(request: Request):
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = FormData(payload=db_value).payload
+    if len(str(data)) >= 4:
+        return JSONResponse({'authenticated': True}, status_code=200)
+    return {"updated": True}

@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest72399 {
+
+    @PostMapping(path="/BenchmarkTest72399", consumes="application/xml")
+    public void BenchmarkTest72399(@RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String data;
+        if (xmlValue.length() > 256) { data = xmlValue.substring(0, 256); }
+        else { data = xmlValue; }
+        String processed = org.owasp.encoder.Encode.forHtml(data);
+        response.getWriter().print("<div>" + processed + "</div>");
+    }
+}

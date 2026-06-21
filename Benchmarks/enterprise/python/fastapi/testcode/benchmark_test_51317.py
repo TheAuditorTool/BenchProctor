@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import logging
+from starlette.responses import JSONResponse
+
+
+async def BenchmarkTest51317(request: Request):
+    origin_value = request.headers.get('origin', '')
+    data = origin_value if origin_value else 'default'
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    logging.info('User action: ' + str(processed))
+    return {"updated": True}

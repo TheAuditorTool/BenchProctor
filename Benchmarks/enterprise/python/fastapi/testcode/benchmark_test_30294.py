@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from app_runtime import auth_check
+
+
+async def BenchmarkTest30294(request: Request):
+    path_value = request.path_params.get('id', '')
+    auth_check('user', path_value)
+    return {"updated": True}

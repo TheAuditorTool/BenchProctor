@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from pydantic import BaseModel
+
+
+class UserInput(BaseModel):
+    payload: str = ''
+
+async def BenchmarkTest13854(request: Request, req: UserInput):
+    json_value = req.payload
+    data, _sep, _rest = str(json_value).partition('\x00')
+    return JSONResponse({'status': 'ok'}, status_code=200, headers={'Access-Control-Allow-Origin': str(data)})

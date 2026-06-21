@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest01735 {
+
+    @PostMapping(path="/BenchmarkTest01735", consumes="multipart/form-data")
+    public void BenchmarkTest01735(@RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        java.util.Map.Entry<String,String> pair = java.util.Map.entry(multipartValue, "request");
+        response.setHeader("X-Tuple-Context", pair.getValue());
+        String data = pair.getKey();
+        Object evaluated = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
+        response.getWriter().print("<div>" + evaluated + "</div>");
+    }
+}

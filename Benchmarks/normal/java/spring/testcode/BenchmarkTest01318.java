@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.*;
+import javax.net.ssl.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest01318 {
+
+    @GetMapping("/BenchmarkTest01318")
+    public void BenchmarkTest01318(@RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        java.util.Map.Entry<String,String> kv = java.util.Map.entry(authHeader, "body");
+        response.setHeader("X-Tuple-Context", kv.getValue());
+        String data = kv.getKey();
+        java.security.KeyStore caStore = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+        try (java.io.FileInputStream caIn = new java.io.FileInputStream(System.getProperty("java.home") + "/lib/security/cacerts")) {
+            caStore.load(caIn, "changeit".toCharArray());
+        }
+        java.security.cert.PKIXBuilderParameters pkix = new java.security.cert.PKIXBuilderParameters(caStore, new java.security.cert.X509CertSelector());
+        pkix.setRevocationEnabled(false);
+        javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory.getInstance("PKIX");
+        tmf.init(new javax.net.ssl.CertPathTrustManagerParameters(pkix));
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+        sc.init(null, tmf.getTrustManagers(), null);
+        javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create(data.contains("://") ? data : "https://" + data).toURL().openConnection();
+        conn.setSSLSocketFactory(sc.getSocketFactory());
+        conn.connect();
+        conn.getInputStream().close();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

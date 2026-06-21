@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+import csv
+import io
+from flask import request, jsonify
+
+
+def BenchmarkTest15159():
+    raw_body = request.get_data(as_text=True)
+    pending = list(str(raw_body).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    cell = str(data)
+    if cell[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        cell = "'" + cell
+    output = io.StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+    writer.writerow([cell])
+    return jsonify({"result": "success"})
