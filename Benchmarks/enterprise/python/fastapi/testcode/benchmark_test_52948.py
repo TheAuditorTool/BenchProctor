@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import time
+import ast
+import runpy
+
+
+async def BenchmarkTest52948(request: Request):
+    path_value = request.path_params.get('id', '')
+    try:
+        data = str(ast.literal_eval(path_value))
+    except (ValueError, SyntaxError):
+        data = path_value
+    if time.time() > 1000000000:
+        with open('plugins/generated_config.py', 'w') as fh:
+            fh.write('SETTING = "' + str(data) + '"')
+        runpy.run_path('plugins/generated_config.py')
+    return {"updated": True}

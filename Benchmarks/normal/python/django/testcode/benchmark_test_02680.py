@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+
+
+def BenchmarkTest02680(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    data = (lambda v: v.strip())(cookie_value)
+    base_name = os.path.basename(str(data))
+    try:
+        os.remove('/var/app/data/' + base_name)
+    except OSError:
+        return JsonResponse({'error': 'file error'}, status=500)
+    return JsonResponse({"saved": True})

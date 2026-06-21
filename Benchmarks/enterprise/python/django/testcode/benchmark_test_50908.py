@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from dataclasses import dataclass
+import json
+from Crypto.Cipher import DES
+from Crypto.Cipher import AES
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest50908(request):
+    graphql_var = json.loads(request.body.decode()).get('variables', {}).get('input', '')
+    data = FormData(payload=graphql_var).payload
+    requested = str(data) or 'DES'
+    if requested == 'AES':
+        cipher = AES.new(b'0123456789abcdef', AES.MODE_ECB)
+    else:
+        cipher = DES.new(b'legacyky', DES.MODE_ECB)
+    ciphertext = cipher.encrypt(str(data).encode().ljust(16)[:16])
+    return JsonResponse({'length': len(ciphertext)}, status=200)

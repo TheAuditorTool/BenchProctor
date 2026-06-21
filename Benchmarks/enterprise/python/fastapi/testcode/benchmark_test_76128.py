@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import re
+from starlette.responses import JSONResponse
+
+
+def normalise_input(value):
+    return value.strip()
+
+async def BenchmarkTest76128(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data = normalise_input(raw_body)
+    if not re.fullmatch(r'^[a-zA-Z0-9_.-]+$', str(data)):
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
+    processed = data
+    trusted_claim = str(processed)
+    return JSONResponse({'trusted': trusted_claim}, status_code=200)

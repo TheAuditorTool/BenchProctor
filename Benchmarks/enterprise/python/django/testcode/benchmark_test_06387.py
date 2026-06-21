@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from app_runtime import db
+
+
+def ensure_str(value):
+    return str(value)
+
+def BenchmarkTest06387(request):
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = ensure_str(comment_value)
+    try:
+        int(str(data))
+    except ValueError:
+        return JsonResponse({'error': 'invalid'}, status=400)
+    return JsonResponse({"saved": True})

@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest39551 {
+
+    @GetMapping("/BenchmarkTest39551")
+    public void BenchmarkTest39551(@RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data;
+        if (userId.length() > 256) { data = userId.substring(0, 256); }
+        else { data = userId; }
+        org.owasp.html.PolicyFactory policy = new org.owasp.html.HtmlPolicyBuilder().allowCommonInlineFormattingElements().toFactory();
+        String processed = policy.sanitize(data);
+        response.getWriter().print("<div>" + processed + "</div>");
+    }
+}

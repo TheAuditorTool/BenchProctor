@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import javax.xml.parsers.*;
+
+@Path("/")
+public class BenchmarkTest64740 {
+
+    @POST
+    @Path("/BenchmarkTest64740/comments")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest64740(@FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.concurrent.CompletableFuture<String> fut = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> commentValue)
+            .thenApply(v -> v.strip().replaceAll("\\s+", " "));
+        String data = fut.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        dbf.setExpandEntityReferences(false);
+        dbf.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

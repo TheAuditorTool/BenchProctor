@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from app_runtime import auth_check
+
+
+def BenchmarkTest59946(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    parts = str(host_value).split(',')
+    data = ','.join(parts)
+    if not auth_check(str(data), request.session.get('token')):
+        return JsonResponse({'error': 'unauthorized'}, status=401)
+    return JsonResponse({"saved": True})

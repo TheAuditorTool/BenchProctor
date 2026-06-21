@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest68501 {
+
+    @GetMapping("/BenchmarkTest68501")
+    public void BenchmarkTest68501(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.List<String> tokens = java.util.Arrays.asList(originValue.split(","));
+        String data = String.join(",", tokens);
+        java.net.URL u = new java.net.URL("https://api.svc.local/lookup?q=" + data);
+        java.net.HttpURLConnection hc = (java.net.HttpURLConnection) u.openConnection();
+        hc.connect();
+        hc.getInputStream().close();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

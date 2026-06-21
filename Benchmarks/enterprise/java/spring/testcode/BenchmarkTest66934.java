@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest66934 {
+
+    @GetMapping("/BenchmarkTest66934/{pathId}")
+    public void BenchmarkTest66934(@PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data;
+        if (pathValue.length() > 256) { data = pathValue.substring(0, 256); }
+        else { data = pathValue; }
+        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

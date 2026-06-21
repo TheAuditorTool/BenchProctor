@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.*;
+
+@Path("/")
+public class BenchmarkTest05710 {
+
+    @POST
+    @Path("/BenchmarkTest05710")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest05710(@FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        StringBuilder carrier = new StringBuilder();
+        carrier.append(fieldValue);
+        String data = carrier.toString();
+        URL url = java.net.URI.create("https://api.svc.local/data?ref=" + java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8)).toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        try {
+            conn.connect();
+            conn.getInputStream().close();
+        } finally { conn.disconnect(); }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

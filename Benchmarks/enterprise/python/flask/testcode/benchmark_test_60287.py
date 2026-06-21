@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import jsonify
+from flask import session
+from app_runtime import auth_check
+
+
+def BenchmarkTest60287():
+    env_value = os.environ.get('USER_INPUT', '')
+    if env_value != session.get('csrf_token'):
+        return jsonify({'error': 'CSRF token mismatch'}), 403
+    if not auth_check(session.get('user', ''), str(env_value)):
+        return jsonify({'error': 'unauthorized'}), 401
+    return jsonify({"result": "success"})

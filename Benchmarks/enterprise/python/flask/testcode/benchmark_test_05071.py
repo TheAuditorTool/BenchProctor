@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+from Crypto.Cipher import AES
+
+
+class RequestContext:
+    def __init__(self, payload):
+        self.payload = payload
+
+def BenchmarkTest05071():
+    user_id = request.args.get('id', '')
+    ctx = RequestContext(user_id)
+    data = ctx.payload
+    key = b'0123456789abcdef'
+    cipher = AES.new(key, AES.MODE_GCM, nonce=b'000000000000')
+    ciphertext = cipher.encrypt(str(data).encode())
+    return jsonify({'length': len(ciphertext)}), 200

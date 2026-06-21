@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+
+
+async def BenchmarkTest63278(request: Request):
+    path_value = request.path_params.get('id', '')
+    data, _sep, _rest = str(path_value).partition('\x00')
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data))
+    return resp

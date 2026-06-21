@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest34815 {
+
+    private static final java.util.concurrent.atomic.AtomicReference<String> sharedRef = new java.util.concurrent.atomic.AtomicReference<>();
+
+    @POST
+    @Path("/BenchmarkTest34815")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest34815(String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        sharedRef.set(xmlValue);
+        String data = sharedRef.get();
+        String processed = data.length() > 64 ? data.substring(0, 64) : data;
+        return Response.ok("<div>" + processed + "</div>", MediaType.TEXT_HTML).build();
+    }
+}

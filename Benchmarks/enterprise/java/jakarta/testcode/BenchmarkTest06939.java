@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest06939 {
+
+    private static String normalize(String v) { return v.strip(); }
+
+    @GET
+    @Path("/BenchmarkTest06939/{pathId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest06939(@PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = normalize(pathValue);
+        Object evaluated = new jakarta.el.ELProcessor().eval(data);
+        return Response.ok("<div>" + evaluated + "</div>", MediaType.TEXT_HTML).build();
+    }
+}

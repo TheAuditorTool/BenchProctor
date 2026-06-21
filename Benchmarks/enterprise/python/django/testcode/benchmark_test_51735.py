@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from django.utils.safestring import mark_safe
+from django.http import HttpResponse
+from django.template import Template, Context
+
+
+def BenchmarkTest51735(request):
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(ua_value)
+    return HttpResponse(Template('{{ value }}').render(Context({'value': data})))

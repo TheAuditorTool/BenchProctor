@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+
+
+async def BenchmarkTest76458(request: Request):
+    host_value = request.headers.get('host', '')
+    data = ' '.join(str(host_value).split())
+    return JSONResponse({'error': 'An internal error occurred'}, status_code=500)

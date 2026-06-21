@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import ast
+
+
+def BenchmarkTest45081(request):
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    try:
+        data = str(ast.literal_eval(auth_header))
+    except (ValueError, SyntaxError):
+        data = auth_header
+    def _primary():
+        with open('/var/log/app_audit.log', 'a') as fh:
+            fh.write(str(data))
+    _handlers = {"primary": _primary}
+    _handlers["primary"]()
+    return JsonResponse({"saved": True})

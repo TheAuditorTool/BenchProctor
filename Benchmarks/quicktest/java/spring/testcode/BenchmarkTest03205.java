@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest03205 {
+
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @PostMapping("/BenchmarkTest03205")
+    public void BenchmarkTest03205(@RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        FormData payload = new FormData(fieldValue);
+        String data = payload.payload;
+        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

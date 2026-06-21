@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import boto3
+import os
+from app_runtime import auth_check
+
+
+async def BenchmarkTest22465(request: Request):
+    dotenv_value = os.environ.get('DOTENV_VAR', '')
+    kind = 'json' if str(dotenv_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = dotenv_value
+            data = parsed
+        case _:
+            data = dotenv_value
+    sm = boto3.client('secretsmanager')
+    store_cred = sm.get_secret_value(SecretId='app/secret')['SecretString']
+    auth_check(str(data), store_cred)
+    return {"updated": True}

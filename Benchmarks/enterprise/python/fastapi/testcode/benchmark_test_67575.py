@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+
+
+async def BenchmarkTest67575(request: Request):
+    cookie_value = request.cookies.get('session_token', '')
+    data = bytes.fromhex(cookie_value).decode('utf-8', 'ignore')
+    with open('/var/data/secrets.txt', 'w') as fh:
+        fh.write(str(data))
+    return {"updated": True}

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from app_runtime import auth_check
+
+
+async def BenchmarkTest04738(request: Request):
+    path_value = request.path_params.get('id', '')
+    if not auth_check(str(path_value), request.session.get('token')):
+        return JSONResponse({'error': 'unauthorized'}, status_code=401)
+    return {"updated": True}

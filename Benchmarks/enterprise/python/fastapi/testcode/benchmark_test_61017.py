@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+
+
+async def BenchmarkTest61017(request: Request):
+    cookie_value = request.cookies.get('session_token', '')
+    pending = list(str(cookie_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    os.remove(str(data))
+    return {"updated": True}

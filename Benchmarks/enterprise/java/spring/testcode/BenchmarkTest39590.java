@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest39590 {
+
+    private enum AllowedValue { PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED }
+
+    @GetMapping("/BenchmarkTest39590/{pathId}")
+    public void BenchmarkTest39590(@PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", pathValue);
+        String data = sw.toString();
+        try { AllowedValue.valueOf(data.toUpperCase().replace("-", "_")); }
+        catch (IllegalArgumentException e) { data = AllowedValue.values()[0].name().toLowerCase(); }
+        response.setContentType("text/html");
+        response.getWriter().print(data);
+    }
+}

@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.sql.*;
+
+@Path("/")
+public class BenchmarkTest50312 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private enum AllowedValue { ASC, DESC, NAME, CREATED }
+
+    @POST
+    @Path("/BenchmarkTest50312")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest50312(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.Map.Entry<String,String> entry = java.util.Map.entry(jsonValue, "http");
+        response.setHeader("X-Tuple-Context", entry.getValue());
+        String data = entry.getKey();
+        try { AllowedValue.valueOf(data.toUpperCase().replace("-", "_")); }
+        catch (IllegalArgumentException e) { data = AllowedValue.values()[0].name().toLowerCase(); }
+        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE name = ?")) {
+            ps.setString(1, data);
+            try (ResultSet rs = ps.executeQuery()) { /* result consumed */ }
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.io.*;
+
+@Path("/")
+public class BenchmarkTest48367 {
+
+    @GET
+    @Path("/BenchmarkTest48367")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest48367(@CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.List<String> tokens = java.util.Arrays.asList(cookieValue.split(","));
+        String data = String.join(",", tokens);
+        try (java.io.FileWriter fw = new java.io.FileWriter("/var/data/secrets.txt")) {
+            fw.write(data);
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

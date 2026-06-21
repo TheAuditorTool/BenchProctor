@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def to_text(value):
+    return str(value).strip()
+
+def BenchmarkTest41912():
+    referer_value = request.headers.get('Referer', '')
+    data = to_text(referer_value)
+    if str(data) == 'S3cr3tToken':
+        return jsonify({'authenticated': True}), 200
+    return jsonify({"result": "success"})

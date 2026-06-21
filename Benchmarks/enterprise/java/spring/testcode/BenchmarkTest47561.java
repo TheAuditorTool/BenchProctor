@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest47561 {
+
+    @GetMapping("/BenchmarkTest47561")
+    public void BenchmarkTest47561(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> uaValue)
+            .thenApply(v -> v.replaceAll("[\\x00-\\x1F]", "").strip())
+            .join();
+        if (!new java.io.File("/var/app/data", new java.io.File(data).getName()).delete()) { response.sendError(500, "delete failed"); return; }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

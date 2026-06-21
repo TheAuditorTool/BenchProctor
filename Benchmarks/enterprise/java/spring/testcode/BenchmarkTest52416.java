@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import javax.xml.parsers.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest52416 {
+
+    @PostMapping("/BenchmarkTest52416")
+    public void BenchmarkTest52416(@RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        java.util.function.Consumer<String> lengthGuard = s -> { if (s.length() > 8192) throw new IllegalArgumentException("input too long"); };
+        java.util.function.Function<String, String> normalizer = s -> s.strip().replaceAll("\\s+", " ");
+        lengthGuard.accept(fieldValue);
+        String data = normalizer.apply(fieldValue);
+        String processed = data.length() > 64 ? data.substring(0, 64) : data;
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(processed)));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

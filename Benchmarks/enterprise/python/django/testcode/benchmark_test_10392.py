@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+import json
+
+
+def BenchmarkTest10392(request, path_param):
+    path_value = path_param
+    try:
+        data = json.loads(path_value).get('value', path_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = path_value
+    base_name = os.path.basename(str(data))
+    try:
+        os.remove('/var/app/data/' + base_name)
+    except OSError:
+        return JsonResponse({'error': 'file error'}, status=500)
+    return JsonResponse({"saved": True})

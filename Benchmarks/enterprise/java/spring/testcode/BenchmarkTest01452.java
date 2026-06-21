@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest01452 {
+
+    @PostMapping(path="/BenchmarkTest01452", consumes="application/xml")
+    public void BenchmarkTest01452(@RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String data = xmlValue.replace("\u0000", "");
+        response.getWriter().print(String.valueOf(data));
+    }
+}

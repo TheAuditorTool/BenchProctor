@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest15067 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
+
+    @PostMapping("/BenchmarkTest15067")
+    public void BenchmarkTest15067(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.function.Function<String, String> firstStage = s -> s.replaceAll("[\\u0000-\\u001F]", "");
+        java.util.function.Function<String, String> composed = firstStage.andThen(String::strip);
+        String data = composed.apply(jsonValue);
+        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        javax.crypto.SecretKey key = new javax.crypto.spec.SecretKeySpec(new byte[16], "AES");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
+        byte[] ct = cipher.doFinal(data.getBytes());
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

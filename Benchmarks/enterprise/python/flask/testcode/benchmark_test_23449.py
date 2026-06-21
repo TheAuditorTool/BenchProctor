@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from flask import request, jsonify
+
+
+def BenchmarkTest23449():
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = '%s' % (forwarded_ip,)
+    requests.get('https://api.pycdn.io/data', params={'q': str(data)}, verify=True)
+    return jsonify({"result": "success"})

@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest45279 {
+
+    @GET
+    @Path("/BenchmarkTest45279")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest45279(@QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = java.net.URLDecoder.decode(userId, "UTF-8");
+        response.setContentType("application/json");
+        return Response.ok("{\"echo\":\"" + data + "\"}", MediaType.APPLICATION_JSON).build();
+    }
+}

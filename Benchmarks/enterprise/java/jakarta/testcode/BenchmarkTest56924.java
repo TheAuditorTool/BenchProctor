@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
+@Path("/")
+public class BenchmarkTest56924 {
+
+    @POST
+    @Path("/BenchmarkTest56924")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest56924(@FormDataParam("file") java.io.InputStream fileStream, @FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uploadName = fileDetail.getFileName();
+        String data;
+        try { data = String.valueOf(Integer.parseInt(uploadName)); }
+        catch (NumberFormatException e) { data = uploadName; }
+        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
+        try (com.mongodb.client.MongoClient mongoClient = com.mongodb.client.MongoClients.create("mongodb://localhost:27017")) {
+            com.mongodb.client.MongoCollection<org.bson.Document> mongoUsers = mongoClient.getDatabase("benchmark").getCollection("users");
+            org.bson.Document nosqlResult = mongoUsers.find(new org.bson.Document("username", data)).first();
+            return Response.ok(nosqlResult != null ? nosqlResult.toJson() : "{}", MediaType.TEXT_HTML).build();
+        }
+    }
+}

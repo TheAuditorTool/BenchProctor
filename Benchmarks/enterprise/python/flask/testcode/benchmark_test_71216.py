@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from urllib.parse import urlparse
+from flask import request, jsonify
+
+
+def BenchmarkTest71216():
+    raw_body = request.get_data(as_text=True)
+    data = raw_body.decode('utf-8', 'ignore') if isinstance(raw_body, bytes) else raw_body
+    parsed = urlparse(data)
+    if parsed.hostname not in ('api.prod.internal', 'cdn.pycdn.io'):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    requests.get(str(target_url))
+    return jsonify({"result": "success"})

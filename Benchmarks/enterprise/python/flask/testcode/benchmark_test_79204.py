@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import jsonify
+
+
+def BenchmarkTest79204(path_param):
+    path_value = path_param
+    base_name = os.path.basename(str(path_value))
+    try:
+        os.remove('/var/app/data/' + base_name)
+    except OSError:
+        return jsonify({'error': 'file error'}), 500
+    return jsonify({"result": "success"})

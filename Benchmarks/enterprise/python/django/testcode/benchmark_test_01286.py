@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest01286(request):
+    upload_name = request.FILES['upload'].name
+    data = ' '.join(str(upload_name).split())
+    try:
+        result = int(str(data))
+    except Exception:
+        pass
+    return JsonResponse({"saved": True})

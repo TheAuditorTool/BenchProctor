@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+
+
+async def BenchmarkTest38505(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data = ' '.join(str(raw_body).split())
+    with open('/var/data/secrets.txt', 'w') as fh:
+        fh.write(str(data))
+    return {"updated": True}

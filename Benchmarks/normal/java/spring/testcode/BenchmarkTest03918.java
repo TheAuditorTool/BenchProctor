@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest03918 {
+
+    @GetMapping("/BenchmarkTest03918")
+    public void BenchmarkTest03918(@RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> userId)
+            .thenApply(v -> v.strip().replaceAll("\\s+", " "))
+            .join();
+        String processed = data.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
+        response.getWriter().print("<input type=\"text\" name=\"q\" value=\"" + processed + "\">");
+    }
+}

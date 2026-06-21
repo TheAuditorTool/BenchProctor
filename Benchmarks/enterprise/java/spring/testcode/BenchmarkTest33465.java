@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest33465 {
+
+    private enum AllowedValue { ACTIVE, IDLE, EXPIRED, REVOKED }
+
+    @GetMapping("/BenchmarkTest33465")
+    public void BenchmarkTest33465(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = String.format("%s", uaValue);
+        try { AllowedValue.valueOf(data.toUpperCase().replace("-", "_")); }
+        catch (IllegalArgumentException e) { data = AllowedValue.values()[0].name().toLowerCase(); }
+        request.getSession().setAttribute("data", String.valueOf(data));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

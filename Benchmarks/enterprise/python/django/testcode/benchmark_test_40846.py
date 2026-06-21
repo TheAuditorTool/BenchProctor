@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from dataclasses import dataclass
+from app_runtime import db
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest40846(request):
+    multipart_value = request.POST.get('multipart_field', '')
+    data = FormData(payload=multipart_value).payload
+    db.execute('INSERT INTO admin_actions (cmd) VALUES (?)', (str(data),))
+    return JsonResponse({"saved": True})

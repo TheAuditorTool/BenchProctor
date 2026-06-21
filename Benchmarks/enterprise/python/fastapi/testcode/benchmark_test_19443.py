@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+import urllib.request
+import urllib.parse
+import ssl
+
+
+async def BenchmarkTest19443(request: Request):
+    env_value = os.environ.get('USER_INPUT', '')
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    urllib.request.urlopen('https://api.pycdn.io/data?q=' + urllib.parse.quote(str(env_value)), context=ctx)
+    return {"updated": True}

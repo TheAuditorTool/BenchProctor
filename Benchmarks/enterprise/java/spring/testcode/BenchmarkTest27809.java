@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest27809 {
+
+    @GetMapping("/BenchmarkTest27809/{pathId}")
+    public void BenchmarkTest27809(@PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        java.util.function.Function<String, String> initialFn = s -> s.replaceAll("[ ]+", " ");
+        java.util.function.Function<String, String> transformed = initialFn.andThen(String::trim);
+        String data = transformed.apply(pathValue);
+        if (!new java.io.File("/var/app/data", new java.io.File(data).getName()).delete()) { response.sendError(500, "delete failed"); return; }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

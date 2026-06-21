@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import make_response
+from flask import request, jsonify
+
+
+def BenchmarkTest60156():
+    host_value = request.headers.get('Host', '')
+    if host_value:
+        data = host_value
+    else:
+        data = ''
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.set_cookie('session', str(data))
+    return resp

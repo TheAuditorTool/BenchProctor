@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest30152(request):
+    multipart_value = request.POST.get('multipart_field', '')
+    pending = list(str(multipart_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    try:
+        result = int(str(data))
+    except Exception:
+        pass
+    return JsonResponse({"saved": True})

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest72892(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    parts = str(host_value).split(',')
+    data = ','.join(parts)
+    if request.session.get('user') is None:
+        return JsonResponse({'error': 'unauthorized'}, status=401)
+    return JsonResponse({'error': 'An internal error occurred'}, status=500)

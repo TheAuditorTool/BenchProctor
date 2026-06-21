@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def BenchmarkTest57500():
+    cookie_value = request.cookies.get('session_token', '')
+    data = '{}'.format(cookie_value)
+    return jsonify({'error': 'An internal error occurred'}), 500

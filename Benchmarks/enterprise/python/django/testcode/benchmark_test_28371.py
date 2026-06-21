@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest28371(request):
+    referer_value = request.META.get('HTTP_REFERER', '')
+    if referer_value:
+        data = referer_value
+    else:
+        data = ''
+    data = bytearray(int(data) if str(data).isdigit() else 0)
+    return JsonResponse({"saved": True})

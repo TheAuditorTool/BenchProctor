@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest70487 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest70487.class);
+    private static final class ValidatedDto {
+        @jakarta.validation.constraints.NotNull
+        @jakarta.validation.constraints.Pattern(regexp = "^[A-Za-z0-9_.-]+$")
+        @jakarta.validation.constraints.Size(max = 256)
+        public String value;
+        ValidatedDto(String v) { this.value = v; }
+    }
+    private static final jakarta.validation.Validator VALIDATOR =
+        jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+
+    @GET
+    @Path("/BenchmarkTest70487")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest70487(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String configValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/etc/app/config.json")))).orElse("");
+        String prefix = configValue.length() > 0 ? configValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = configValue.toLowerCase(); break;
+            case "f": data = configValue.toUpperCase(); break;
+            default: data = configValue.strip(); break;
+        }
+        java.util.Set<jakarta.validation.ConstraintViolation<ValidatedDto>> violations = VALIDATOR.validate(new ValidatedDto(data));
+        if (!violations.isEmpty()) { return Response.status(400).entity("schema invalid").build(); }
+        LOG.info("Action: {}", data);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

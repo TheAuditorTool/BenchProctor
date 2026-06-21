@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import base64
+from lxml import etree
+
+
+async def BenchmarkTest25531(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(data).encode(), _parser)
+    return {"updated": True}

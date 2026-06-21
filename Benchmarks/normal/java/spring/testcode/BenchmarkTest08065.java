@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest08065 {
+
+    private static String stripWhitespace(String v) { return v.strip(); }
+
+    @GetMapping("/BenchmarkTest08065")
+    public void BenchmarkTest08065(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = stripWhitespace(originValue);
+        response.sendError(500, data);
+    }
+}

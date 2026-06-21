@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from app_runtime import db
+
+
+async def BenchmarkTest11585(request: Request):
+    upload_name = (await request.form()).get('upload', '')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(upload_name)
+    data = collected
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

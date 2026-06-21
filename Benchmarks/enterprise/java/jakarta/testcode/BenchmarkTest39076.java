@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest39076 {
+
+    private enum AllowedValue { PLAIN, MARKDOWN, HTML, TEXT }
+
+    @GET
+    @Path("/BenchmarkTest39076")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest39076(@HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        String data = String.join(" ", authHeader.split("\\s+"));
+        try { AllowedValue.valueOf(data.toUpperCase().replace("-", "_")); }
+        catch (IllegalArgumentException e) { data = AllowedValue.values()[0].name().toLowerCase(); }
+        return Response.ok("<div>" + data + "</div>", MediaType.TEXT_HTML).build();
+    }
+}

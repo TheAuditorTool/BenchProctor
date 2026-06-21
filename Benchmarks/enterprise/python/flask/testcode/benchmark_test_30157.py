@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from flask import jsonify
+import json
+import os
+from app_runtime import db
+
+
+def BenchmarkTest30157():
+    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
+    try:
+        data = json.loads(profile_value).get('value', profile_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = profile_value
+    key = os.environ['DATA_ENC_KEY'].encode()
+    encrypted = Fernet(key).encrypt(str(data).encode())
+    with open('/var/data/secrets.enc', 'wb') as fh:
+        fh.write(encrypted)
+    return jsonify({"result": "success"})

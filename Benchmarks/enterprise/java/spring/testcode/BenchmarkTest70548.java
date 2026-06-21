@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest70548 {
+
+    private static String toLowerCase(String v) { return v.toLowerCase(); }
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest70548.class);
+
+    @GetMapping("/BenchmarkTest70548")
+    public void BenchmarkTest70548(@CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = toLowerCase(cookieValue);
+        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
+        LOG.info("Action: {}", data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

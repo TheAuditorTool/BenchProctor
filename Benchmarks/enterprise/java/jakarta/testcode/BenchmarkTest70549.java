@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest70549 {
+
+    @GET
+    @Path("/BenchmarkTest70549")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest70549(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> forwardedIp)
+            .thenApply(v -> v.strip().toLowerCase())
+            .join();
+        if (data.length() > 2048) { return Response.status(400).entity("schema invalid").build(); }
+        response.sendRedirect(data);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

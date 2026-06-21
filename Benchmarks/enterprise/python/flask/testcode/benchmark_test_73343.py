@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from flask import jsonify
+from app_runtime import ssm_client
+
+
+def BenchmarkTest73343():
+    ssm_value = ssm_client.get_parameter(Name='/app/secret')['Parameter']['Value']
+    data = ssm_value if ssm_value else 'default'
+    Fernet(data.encode() if isinstance(data, str) else data).encrypt(b'data')
+    return jsonify({"result": "success"})

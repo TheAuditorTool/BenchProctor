@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse
+import json
+
+
+async def BenchmarkTest39035(request: Request):
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    if graphql_var:
+        data = graphql_var
+    else:
+        data = ''
+    return HTMLResponse('<!-- diagnostic build token: ' + str(data) + ' -->')

@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest76209 {
+
+    @POST
+    @Path("/BenchmarkTest76209")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest76209(String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        byte[] raw = xmlValue.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        String data = new String(raw, java.nio.charset.StandardCharsets.UTF_8);
+        if (data == null) throw new IllegalArgumentException("input required");
+        io.github.jopenlibs.vault.VaultConfig vc = new io.github.jopenlibs.vault.VaultConfig()
+            .address("https://vault.svc.local:8200")
+            .token(System.getenv("VAULT_TOKEN"))
+            .build();
+        io.github.jopenlibs.vault.Vault vault = io.github.jopenlibs.vault.Vault.create(vc);
+        String storeCred = vault.logical().read("secret/myapp/db_password").getData().get("password");
+        try (java.sql.Connection authConn = java.sql.DriverManager.getConnection(
+                "jdbc:postgresql://db.svc.local/app", "appuser", storeCred)) {
+            return Response.ok("{\"auth\":\"ok\"}", MediaType.APPLICATION_JSON).build();
+        }
+    }
+}

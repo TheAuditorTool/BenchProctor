@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from Crypto.Cipher import AES
+
+
+def BenchmarkTest00883(request):
+    upload_name = request.FILES['upload'].name
+    key = b'0123456789abcdef'
+    cipher = AES.new(key, AES.MODE_GCM, nonce=b'000000000000')
+    ciphertext = cipher.encrypt(str(upload_name).encode())
+    return JsonResponse({'length': len(ciphertext)}, status=200)

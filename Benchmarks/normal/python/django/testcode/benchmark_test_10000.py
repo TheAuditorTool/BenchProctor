@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import defusedxml.ElementTree
+
+
+def BenchmarkTest10000(request):
+    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    data = ' '.join(str(forwarded_ip).split())
+    defusedxml.ElementTree.fromstring(str(data))
+    return JsonResponse({"saved": True})

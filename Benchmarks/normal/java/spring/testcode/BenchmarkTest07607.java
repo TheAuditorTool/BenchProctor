@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest07607 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest07607.class);
+
+    @GetMapping("/BenchmarkTest07607")
+    public void BenchmarkTest07607(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String yamlValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/etc/app/config.yaml")))).orElse("");
+        java.util.function.Supplier<String> valueSupplier = () -> "payload:" + yamlValue;
+        String data = valueSupplier.get();
+        LOG.info("Action: {}", data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

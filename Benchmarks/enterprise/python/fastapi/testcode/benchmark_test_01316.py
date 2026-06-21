@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from app_runtime import auth_check
+
+
+async def BenchmarkTest01316(request: Request):
+    header_value = request.headers.get('x-custom-header', '')
+    prefix = ''
+    data = prefix + str(header_value)
+    auth_check('user', data)
+    return {"updated": True}

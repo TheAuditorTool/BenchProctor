@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest46903 {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest46903.class);
+
+    @GetMapping("/BenchmarkTest46903")
+    public void BenchmarkTest46903(@RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        java.text.MessageFormat fmt = new java.text.MessageFormat("payload={0}");
+        String data = fmt.format(new Object[]{userId});
+        LOG.info("audit actor={} action=revoke_sessions target={}", request.getSession().getAttribute("user"), data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

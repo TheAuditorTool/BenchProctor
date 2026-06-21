@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest26600 {
+
+    private static String normalize(String v) { return v.strip(); }
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BenchmarkTest26600.class);
+
+    @PostMapping("/BenchmarkTest26600")
+    public void BenchmarkTest26600(@RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = normalize(commentValue);
+        LOG.info("Action: {}", data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

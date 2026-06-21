@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from urllib.parse import unquote
+from flask import jsonify
+
+
+def BenchmarkTest80915(path_param):
+    path_value = path_param
+    data = unquote(path_value)
+    return jsonify({'status': 'ok'}), 200, {'Content-Language': str(data)}

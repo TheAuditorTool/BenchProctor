@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest18886 {
+
+    @GetMapping("/BenchmarkTest18886")
+    public void BenchmarkTest18886(@RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.function.Function<String, String> preprocessor = s -> s.replace("\r", "").replace("\n", "");
+        java.util.function.Function<String, String> fullPipeline = preprocessor.andThen(String::strip);
+        String data = fullPipeline.apply(originValue);
+        try {
+            Integer.parseInt(data);
+        } catch (NumberFormatException e) {
+            response.sendError(400, e.getMessage()); return;
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

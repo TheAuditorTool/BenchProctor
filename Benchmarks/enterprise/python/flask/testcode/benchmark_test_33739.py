@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from markupsafe import Markup
+import html
+import os
+
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw
+
+def BenchmarkTest33739():
+    env_value = os.environ.get('USER_INPUT', '')
+    data = RequestPayload(env_value).value
+    processed = html.escape(data)
+    return Markup('<img src="' + str(processed) + '">')

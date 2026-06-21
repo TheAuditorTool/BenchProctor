@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest76622 {
+
+    @PostMapping(path="/BenchmarkTest76622", consumes="text/plain")
+    public void BenchmarkTest76622(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data;
+        if (rawData.length() > 256) { data = rawData.substring(0, 256); }
+        else { data = rawData; }
+        if (!data.matches("^[a-zA-Z0-9_.-]+$")) { response.sendError(400); return; }
+        System.loadLibrary(data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

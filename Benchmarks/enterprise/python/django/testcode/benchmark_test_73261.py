@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import secrets
+from django import forms
+import ast
+
+
+class UserForm(forms.Form):
+    field = forms.CharField(required=False)
+
+def BenchmarkTest73261(request):
+    field_value = UserForm(request.POST).data.get('field', '')
+    try:
+        data = str(ast.literal_eval(field_value))
+    except (ValueError, SyntaxError):
+        data = field_value
+    token = secrets.token_hex(32)
+    return JsonResponse({'token': str(token)}, status=200)

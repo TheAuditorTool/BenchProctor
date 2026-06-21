@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+public class BenchmarkTest63760 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+                stmt.execute("CREATE TABLE IF NOT EXISTS logs (id INT AUTO_INCREMENT, data VARCHAR(1024))");
+                stmt.execute("INSERT INTO logs (data) VALUES ('seed-entry')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static boolean authCheck(Object v, Object t) { return v != null && v.equals(t); }
+
+    @PostMapping(path="/BenchmarkTest63760", consumes="multipart/form-data")
+    public void BenchmarkTest63760(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadName = file != null ? file.getOriginalFilename() : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : uploadName.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        if (!authCheck(request.getSession().getAttribute("role"), data)) {
+            response.sendError(403, "forbidden");
+            return;
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

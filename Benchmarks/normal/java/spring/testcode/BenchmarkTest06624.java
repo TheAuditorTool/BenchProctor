@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.*;
+import javax.net.ssl.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest06624 {
+
+    @GetMapping("/BenchmarkTest06624")
+    public void BenchmarkTest06624(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("USER_INPUT")).orElse("");
+        String prefix = envValue.length() > 0 ? envValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = envValue.toLowerCase(); break;
+            case "f": data = envValue.toUpperCase(); break;
+            default: data = envValue.strip(); break;
+        }
+        javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create("https://api.svc.local/data?ref=" + java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8)).toURL().openConnection();
+        conn.connect();
+        conn.getInputStream().close();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

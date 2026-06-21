@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import jsonify
+import ctypes
+
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw
+
+def BenchmarkTest11456(path_param):
+    path_value = path_param
+    data = RequestPayload(path_value).value
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return jsonify({'wrapped': wrapped}), 200

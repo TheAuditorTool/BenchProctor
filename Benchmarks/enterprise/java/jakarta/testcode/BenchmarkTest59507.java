@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest59507 {
+
+    @GET
+    @Path("/BenchmarkTest59507")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest59507(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> forwardedIp)
+            .thenApply(v -> v.replaceAll("[\\x00-\\x1F]", "").strip())
+            .join();
+        java.io.File listingDir = new java.io.File("/var/www/uploads");
+        java.io.File[] entries = listingDir.listFiles();
+        if (entries != null) {
+            for (java.io.File listedFile : entries) {
+                response.getWriter().println(listedFile.getName());
+            }
+        }
+        return Response.ok().build();
+    }
+}

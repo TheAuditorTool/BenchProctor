@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def to_text(value):
+    return str(value).strip()
+
+def BenchmarkTest22910():
+    referer_value = request.headers.get('Referer', '')
+    data = to_text(referer_value)
+    if str(data).endswith(('/public', '/static', '/.')):
+        return jsonify({'authenticated': True}), 200
+    return jsonify({"result": "success"})

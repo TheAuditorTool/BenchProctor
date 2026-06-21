@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import urllib.request
+
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+
+def BenchmarkTest39652(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    reader = make_reader(cookie_value)
+    data = reader()
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    urllib.request.urlopen('https://api.prod.internal/lookup?q=' + str(processed)).read()
+    return JsonResponse({"saved": True})

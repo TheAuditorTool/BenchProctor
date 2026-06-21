@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest39263 {
+
+    @GET
+    @Path("/BenchmarkTest39263")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest39263(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        java.util.function.Consumer<String> lengthGuard = s -> { if (s.length() > 8192) throw new IllegalArgumentException("input too long"); };
+        java.util.function.Function<String, String> normalizer = s -> s.strip().replaceAll("\\s+", " ");
+        lengthGuard.accept(forwardedIp);
+        String data = normalizer.apply(forwardedIp);
+        String dispatchKey = "primary";
+        if (dispatchKey.equals("primary")) {
+            String reflectStatus = "ok";
+            try {
+                Class<?> reflectCls = Class.forName(data);
+                java.lang.reflect.Method reflectMethod = reflectCls.getDeclaredMethod("toString");
+                Object invokeResult = reflectMethod.invoke(reflectCls.getDeclaredConstructor().newInstance());
+                response.setHeader("X-Reflect-Result", String.valueOf(invokeResult));
+            } catch (ReflectiveOperationException re) { reflectStatus = "class-not-found"; }
+            response.setHeader("X-Reflect-Status", reflectStatus);
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

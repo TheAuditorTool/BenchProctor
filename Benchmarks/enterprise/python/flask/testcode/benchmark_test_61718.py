@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+import requests
+from urllib.parse import urlparse
+from flask import request, jsonify
+import asyncio
+
+
+def BenchmarkTest61718():
+    upload_name = request.files['upload'].filename
+    async def fetch_payload():
+        await asyncio.sleep(0)
+        return upload_name
+    data = asyncio.run(fetch_payload())
+    parsed = urlparse(data)
+    if parsed.hostname not in ('api.prod.internal', 'cdn.pycdn.io'):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    return '<script src="' + str(target_url) + '"></script>', 200, {'Content-Type': 'text/html'}

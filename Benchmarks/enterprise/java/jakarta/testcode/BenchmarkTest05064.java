@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest05064 {
+
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @GET
+    @Path("/BenchmarkTest05064")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest05064(@QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        FormData payload = new FormData(userId);
+        String data = payload.payload;
+        if (request.getUserPrincipal() == null) {
+            return Response.status(401).entity("not authenticated").build();
+        }
+        if ("admin".equals(data) || "ROLE_ADMIN".equals(data)) {
+            return Response.ok("{\"status\":\"ok\"}", MediaType.APPLICATION_JSON).build();
+        }
+        return Response.status(403).entity("forbidden").build();
+    }
+}

@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest36329 {
+
+    @GetMapping("/BenchmarkTest36329")
+    public void BenchmarkTest36329(@RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        java.util.Map.Entry<String,String> edge = java.util.Map.entry(refererValue, "json");
+        response.setHeader("X-Tuple-Context", edge.getValue());
+        String data = edge.getKey();
+        if ("admin".equals(data) || "ROLE_ADMIN".equals(data)) {
+            response.getWriter().print("{\"status\":\"ok\"}");
+            return;
+        }
+        response.sendError(403, "forbidden");
+    }
+}

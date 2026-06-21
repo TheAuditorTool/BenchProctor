@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest26188 {
+
+    private static String trimEnds(String v) { return v.trim(); }
+    private static String sharedLastValue = "";
+    private static int sharedWriteCount = 0;
+    private static final Object SHARED_WRITE_LOCK = new Object();
+
+    @GetMapping("/BenchmarkTest26188")
+    public void BenchmarkTest26188(@RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        String data = trimEnds(refererValue);
+        synchronized(SHARED_WRITE_LOCK) {
+            sharedLastValue = data;
+            int seen = sharedWriteCount;
+            sharedWriteCount = seen + 1;
+        }
+    }
+}

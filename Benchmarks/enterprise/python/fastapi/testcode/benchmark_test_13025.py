@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import HTMLResponse
+import html
+
+
+async def BenchmarkTest13025(request: Request):
+    path_value = request.path_params.get('id', '')
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    processed = html.escape(data)
+    return HTMLResponse('<div>' + str(processed) + '</div>')

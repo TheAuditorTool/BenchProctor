@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import tempfile
+
+
+def BenchmarkTest08845(request):
+    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
+    data = header_value if header_value else 'default'
+    path = tempfile.mktemp()
+    with open(path, 'w') as fh:
+        fh.write(str(data))
+    return JsonResponse({"saved": True})

@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest01275 {
+
+    @PostMapping(path="/BenchmarkTest01275", consumes="text/plain")
+    public void BenchmarkTest01275(@RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        if ("admin".equals(rawData) || "ROLE_ADMIN".equals(rawData)) {
+            response.getWriter().print("{\"status\":\"ok\"}");
+            return;
+        }
+        response.sendError(403, "forbidden");
+    }
+}

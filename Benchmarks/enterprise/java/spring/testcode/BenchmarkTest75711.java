@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest75711 {
+
+    static class FormData {
+        public String payload;
+        public FormData(String payload) { this.payload = payload; }
+    }
+
+    @GetMapping("/BenchmarkTest75711")
+    public void BenchmarkTest75711(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String secretValue = "s3cr3t_key_test_xyz";
+        FormData payload = new FormData(secretValue);
+        String data = payload.payload;
+        try (java.sql.Connection authConn = java.sql.DriverManager.getConnection(
+                "jdbc:postgresql://db.svc.local/app", "appuser", data)) {
+            response.getWriter().print("{\"auth\":\"ok\"}");
+        }
+    }
+}

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import make_response
+from flask import request, jsonify
+
+
+def BenchmarkTest34150():
+    header_value = request.headers.get('X-Custom-Header', '')
+    kind = 'json' if str(header_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = header_value
+            data = parsed
+        case _:
+            data = header_value
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.set_cookie('session', str(data))
+    return resp

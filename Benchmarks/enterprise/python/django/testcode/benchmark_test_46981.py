@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+import re
+
+
+def BenchmarkTest46981(request):
+    multipart_value = request.POST.get('multipart_field', '')
+    prefix = ''
+    data = prefix + str(multipart_value)
+    if not re.fullmatch(r'^[a-zA-Z0-9_.-]+$', str(data)):
+        return JsonResponse({'error': 'invalid input'}, status=400)
+    processed = data
+    os.system('echo ' + str(processed))
+    return JsonResponse({"saved": True})

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+from app_runtime import db
+
+
+def BenchmarkTest76176():
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = '%s' % str(db_value)
+    return '<!-- diagnostic build token: ' + str(data) + ' -->', 200, {'Content-Type': 'text/html'}

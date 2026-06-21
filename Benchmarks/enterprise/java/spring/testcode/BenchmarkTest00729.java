@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest00729 {
+
+    @GetMapping("/BenchmarkTest00729")
+    public void BenchmarkTest00729(@CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.function.Function<String, String> initialFn = s -> s.replaceAll("[ ]+", " ");
+        java.util.function.Function<String, String> transformed = initialFn.andThen(String::trim);
+        String data = transformed.apply(cookieValue);
+        byte[] computed = java.security.MessageDigest.getInstance("MD5").digest(data.getBytes());
+        String computedHex = java.util.Base64.getEncoder().encodeToString(computed);
+        String presented = request.getHeader("X-Signature") != null ? request.getHeader("X-Signature") : "";
+        if (!computedHex.equals(presented)) {
+            response.sendError(403, "bad signature"); return;
+        }
+        response.getWriter().print("{\"role\":\"admin\"}");
+    }
+}

@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest51511 {
+
+    private static String stripWhitespace(String v) { return v.strip(); }
+
+    @GetMapping("/BenchmarkTest51511")
+    public void BenchmarkTest51511(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = stripWhitespace(uaValue);
+        String processed = data.length() > 64 ? data.substring(0, 64) : data;
+        new java.io.File("/tmp/" + processed).createNewFile();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

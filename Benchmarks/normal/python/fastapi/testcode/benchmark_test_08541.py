@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+
+
+async def BenchmarkTest08541(request: Request):
+    referer_value = request.headers.get('referer', '')
+    data = referer_value if referer_value else 'default'
+    link_path = os.path.join('/var/app/data', str(data))
+    target = os.readlink(link_path)
+    with open(target, 'r') as fh:
+        content = fh.read()
+    return content

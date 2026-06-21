@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+
+
+def BenchmarkTest05089(request):
+    user_id = request.GET.get('id', '')
+    data = (lambda v: v.strip())(user_id)
+    return JsonResponse({'error': str(data), 'stack': repr(locals())}, status=500)

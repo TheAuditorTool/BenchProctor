@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+import org.yaml.snakeyaml.Yaml;
+
+@RestController
+public class BenchmarkTest20639 {
+
+    @PostMapping("/BenchmarkTest20639")
+    public void BenchmarkTest20639(@RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        StringBuilder wrapper = new StringBuilder();
+        wrapper.append(commentValue);
+        String data = wrapper.toString();
+        if (!data.matches("^[\\w\\s./\\\\:<>=_'\\\"!()\\[\\]{}$-]+$")) {
+            response.sendError(400, "forbidden"); return;
+        }
+        Yaml yaml = new Yaml();
+        Object obj = yaml.load(data);
+        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from pydantic import BaseModel
+from lxml import etree
+
+
+class UserInput(BaseModel):
+    payload: str = ''
+
+async def BenchmarkTest80855(request: Request, req: UserInput):
+    json_value = req.payload
+    data = str(json_value).replace('\x00', '')
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(data).encode(), _parser)
+    return {"updated": True}

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+
+def BenchmarkTest58621():
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    reader = make_reader(graphql_var)
+    data = reader()
+    if data not in ('asc', 'desc', 'name', 'created'):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    with open('/var/app/data/' + str(processed), 'w') as fh:
+        fh.write('data')
+    return jsonify({"result": "success"})

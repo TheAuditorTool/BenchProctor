@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import requests
+from django import forms
+
+
+class UserForm(forms.Form):
+    field = forms.CharField(required=False)
+
+def BenchmarkTest79745(request):
+    field_value = UserForm(request.POST).data.get('field', '')
+    kind = 'json' if str(field_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            parsed = field_value
+            data = parsed
+        case _:
+            data = field_value
+    requests.post('https://api.prod.internal/data', data=str(data), verify=True)
+    return JsonResponse({"saved": True})

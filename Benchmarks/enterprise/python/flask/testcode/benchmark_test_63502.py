@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from markupsafe import Markup
+import re
+from flask import request, jsonify
+
+
+def BenchmarkTest63502():
+    origin_value = request.headers.get('Origin', '')
+    if origin_value:
+        data = origin_value
+    else:
+        data = ''
+    if not re.fullmatch(r'^[a-zA-Z0-9_.-]+$', str(data)):
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    return Markup('<div>' + str(processed) + '</div>')

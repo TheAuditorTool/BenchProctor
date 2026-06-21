@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import hashlib
+import json
+import os
+
+
+def BenchmarkTest28303(request):
+    graphql_var = json.loads(request.body.decode()).get('variables', {}).get('input', '')
+    digest = hashlib.pbkdf2_hmac('sha256', str(graphql_var).encode(), os.urandom(16), 100000).hex()
+    return JsonResponse({'digest': str(digest)}, status=200)

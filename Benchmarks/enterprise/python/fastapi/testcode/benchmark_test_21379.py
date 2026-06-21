@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from app_runtime import db
+
+
+async def BenchmarkTest21379(request: Request):
+    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
+    pending = list(str(profile_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    request.session.clear()
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    return resp

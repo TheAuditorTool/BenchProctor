@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest72367 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+                stmt.execute("CREATE TABLE IF NOT EXISTS logs (id INT AUTO_INCREMENT, data VARCHAR(1024))");
+                stmt.execute("INSERT INTO logs (data) VALUES ('seed-entry')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static boolean authCheck(Object v, Object t) { return v != null && v.equals(t); }
+
+    @POST
+    @Path("/BenchmarkTest72367")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest72367(String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String prefix = xmlValue.length() > 0 ? xmlValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = xmlValue.toLowerCase(); break;
+            case "f": data = xmlValue.toUpperCase(); break;
+            default: data = xmlValue.strip(); break;
+        }
+        if (!authCheck(request.getSession().getAttribute("role"), data)) {
+            return Response.status(403).entity("forbidden").build();
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

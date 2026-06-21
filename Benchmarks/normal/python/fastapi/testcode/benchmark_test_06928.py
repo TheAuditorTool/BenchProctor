@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
+
+
+class UserInput(BaseModel):
+    payload: str = ''
+request_state: dict[str, str] = {}
+
+async def BenchmarkTest06928(request: Request, req: UserInput):
+    json_value = req.payload
+    request_state['last_input'] = json_value
+    data = request_state['last_input']
+    base_dir = '/var/app/data'
+    full_path = os.path.realpath(os.path.join(base_dir, data))
+    if not full_path.startswith(base_dir + os.sep):
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = full_path
+    os.unlink(checked_path)
+    return {"updated": True}

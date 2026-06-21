@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest00109 {
+
+    @GET
+    @Path("/BenchmarkTest00109")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00109(@HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
+        StringBuilder wrapper = new StringBuilder();
+        wrapper.append(forwardedIp);
+        String data = wrapper.toString();
+        if (data.length() > 2048) { return Response.status(400).entity("schema invalid").build(); }
+        if ("admin".equals(data)) {
+            return Response.ok("{\"role\":\"admin\"}", MediaType.APPLICATION_JSON).build();
+        }
+        return Response.status(403).entity("forbidden").build();
+    }
+}

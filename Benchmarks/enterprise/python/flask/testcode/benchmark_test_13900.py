@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import request, jsonify
+import ast
+
+
+def BenchmarkTest13900():
+    auth_header = request.headers.get('Authorization', '')
+    try:
+        data = str(ast.literal_eval(auth_header))
+    except (ValueError, SyntaxError):
+        data = auth_header
+    try:
+        os.setuid(int(str(data)) if str(data).isdigit() else 65534)
+    except OSError:
+        pass
+    return jsonify({"result": "success"})

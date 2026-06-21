@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import requests
+
+
+async def BenchmarkTest45975(request: Request):
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data = '%s' % (forwarded_ip,)
+    requests.post('https://api.prod.internal/data', data=str(data), verify=True)
+    return {"updated": True}

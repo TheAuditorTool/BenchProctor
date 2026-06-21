@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+from dataclasses import dataclass
+from flask import request, jsonify
+import re
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest69925():
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = FormData(payload=json_value).payload
+    if re.search('[a-zA-Z0-9_-]+', str(data)):
+        return jsonify({'validated': str(data)}), 200
+    return jsonify({"result": "success"})

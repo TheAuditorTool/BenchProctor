@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest04615 {
+
+    @GET
+    @Path("/BenchmarkTest04615")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest04615(@HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        java.util.List<String> tokens = java.util.Arrays.asList(headerValue.split(","));
+        String data = String.join(",", tokens);
+        String processed = org.owasp.encoder.Encode.forHtml(data);
+        return Response.ok("<input type=\"text\" name=\"q\" value=\"" + processed + "\">", MediaType.TEXT_HTML).build();
+    }
+}

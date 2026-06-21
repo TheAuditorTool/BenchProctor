@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest11648 {
+
+    @GetMapping("/BenchmarkTest11648")
+    public void BenchmarkTest11648(@RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        String data = java.util.concurrent.CompletableFuture
+            .supplyAsync(() -> hostValue)
+            .thenApply(v -> java.text.Normalizer.normalize(v, java.text.Normalizer.Form.NFC).strip())
+            .join();
+        try {
+            Integer.parseInt(data);
+        } catch (Exception e) { }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

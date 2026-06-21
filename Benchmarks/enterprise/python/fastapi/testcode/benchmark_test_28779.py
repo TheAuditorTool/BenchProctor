@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+
+
+class RequestContext:
+    def __init__(self, payload):
+        self.payload = payload
+
+async def BenchmarkTest28779(request: Request):
+    host_value = request.headers.get('host', '')
+    ctx = RequestContext(host_value)
+    data = ctx.payload
+    checked_path = os.path.normpath(data)
+    with open('/var/app/data/' + str(checked_path), 'r') as fh:
+        content = fh.read()
+    return content

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+import jwt
+from flask import jsonify
+
+
+class RequestContext:
+    def __init__(self, payload):
+        self.payload = payload
+
+def BenchmarkTest51846():
+    secret_value = {'secret': 'p4ssw0rd_test_xyz'}['secret']
+    ctx = RequestContext(secret_value)
+    data = ctx.payload
+    jwt.encode({'sub': 'user'}, data, algorithm='HS256')
+    return jsonify({"result": "success"})

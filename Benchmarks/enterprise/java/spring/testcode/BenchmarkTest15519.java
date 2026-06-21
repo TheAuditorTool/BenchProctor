@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest15519 {
+
+    @GetMapping("/BenchmarkTest15519")
+    public void BenchmarkTest15519(@RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", refererValue);
+        String data = sw.toString();
+        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
+        java.util.HashMap<String,Object> entity = new java.util.HashMap<>();
+        String[] formPair = data.split("=", 2);
+        if (formPair.length == 2) {
+            entity.put(formPair[0], formPair[1]);
+            response.setHeader("X-Field-Set", formPair[0]);
+        }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from types import SimpleNamespace
+from app_runtime import db
+
+
+def BenchmarkTest77462(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    ns = SimpleNamespace(payload=host_value)
+    data = getattr(ns, 'payload')
+    db.execute('UPDATE users SET password = ? WHERE id = 1', (str(data),))
+    return JsonResponse({"saved": True})

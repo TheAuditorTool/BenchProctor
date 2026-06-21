@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from cryptography.fernet import Fernet
+import json
+from starlette.responses import JSONResponse
+import os
+
+
+async def BenchmarkTest64493(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data = json.loads(raw_body).get('value', '')
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

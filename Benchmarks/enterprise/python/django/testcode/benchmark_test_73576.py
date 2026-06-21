@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from django.http import HttpResponse
+import asyncio
+from app_runtime import db
+
+
+def BenchmarkTest73576(request):
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    async def fetch_payload():
+        await asyncio.sleep(0)
+        return db_value
+    data = asyncio.run(fetch_payload())
+    return HttpResponse('<!-- diagnostic build token: ' + str(data) + ' -->', content_type='text/html')

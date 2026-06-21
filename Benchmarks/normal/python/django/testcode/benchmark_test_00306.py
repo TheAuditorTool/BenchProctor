@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from django.template import Template, Context
+from django.http import HttpResponse
+
+
+def BenchmarkTest00306(request):
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    return HttpResponse(Template(auth_header).render(Context()))

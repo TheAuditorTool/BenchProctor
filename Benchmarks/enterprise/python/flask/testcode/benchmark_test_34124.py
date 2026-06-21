@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+from flask import request, jsonify
+
+
+def BenchmarkTest34124():
+    ua_value = request.headers.get('User-Agent', '')
+    data = '%s' % (ua_value,)
+    os.remove(str(data))
+    return jsonify({"result": "success"})

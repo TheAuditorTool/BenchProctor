@@ -7,13 +7,13 @@ accurately a static analysis tool finds real vulnerabilities — and how often i
 
 > ## Release status
 >
-> The corpus spans nine languages, but we publish each only once it's verified production-ready — we won't ship labels we can't defend.
+> We publish a language only once its labels pass our full gate suite — we won't ship labels we can't defend.
 >
-> - **Java — production-ready. Full public launch before the end of June 2026** (Spring + Jakarta EE).
-> - **Python — close behind** (Flask / Django / FastAPI).
-> - Go, Rust, PHP, Ruby, JavaScript, TypeScript, and Bash follow as each clears the same bar.
+> - **Java — live now** (Spring, Jakarta EE), standalone.
+> - **Python — live now** (Flask, Django, FastAPI), standalone.
+> - Go, Rust, TypeScript, JavaScript, PHP, Ruby, and Bash follow as each clears the same bar — see [roadmap.md](roadmap.md).
 >
-> Why one language at a time? [Read the release plan →](https://blog.benchproctor.com/java-first-release-plan/)
+> Each language ships in three sizes — `quicktest`, `normal`, and `enterprise`.
 
 A SAST tool is only as trustworthy as its accuracy, and accuracy is unmeasurable without ground
 truth. BenchProctor gives you labeled corpora — programs marked `vulnerable` or `safe` — so you
@@ -23,14 +23,19 @@ false-positive rate, and overall detection accuracy (Youden's J).
 ## Quick start
 
 ```bash
-# 1. run your scanner against a corpus, export SARIF 2.1.0
-your-tool scan ./corpus --format sarif -o results.sarif
+# 1. run your scanner against a suite, export SARIF 2.1.0
+your-tool scan ./Benchmarks/normal/java/spring --format sarif -o results.sarif
 
 # 2. score against the answer key (standard-library Python, zero dependencies)
-python scripts/score_sarif.py results.sarif corpus/expectedresults-*.csv
+python scripts/score_sarif.py results.sarif Benchmarks/normal/java/spring/expectedresults-*.csv
 
 # 3. read TPR, FPR, and your Youden's J — category-averaged and flat aggregate
 ```
+
+The scorer recovers each finding's CWE from the SARIF `ruleId`, the result/rule `properties` or
+`tags` (e.g. `external/cwe/cwe-089`), or CWE `taxa` — so most tools work as-is. If your tool emits no
+CWE at all, add `--match-mode filename` (any finding on a vulnerable file counts; this rewards
+over-flagging, so prefer the default).
 
 ## Why another benchmark
 
@@ -50,12 +55,17 @@ BenchProctor is built to remove all three.
 
 | | |
 |---|---|
-| **Languages** | 9 — Python, Go, Java, JavaScript, TypeScript, PHP, Ruby, Bash, Rust |
-| **Frameworks** | 18 — at least two per language, real idioms (DTOs, Pydantic models, ORM calls) |
-| **Categories** | 234 |
-| **Unique CWEs** | 219 |
-| **Top-10 web-risk coverage** | 213 / 249 mapped CWEs (85.5%) |
-| **Balance** | ~50 / 50 vulnerable / safe |
+| **Live now** | Java (Spring, Jakarta EE) · Python (Flask, Django, FastAPI) — standalone |
+| **Vulnerability types** | ~210 CWE-mapped categories supported across Java + Python |
+| **Sizes per language** | `quicktest` · `normal` · `enterprise` (see below) |
+| **Balance** | 50 / 50 vulnerable / safe, per category |
+| **Roadmap** | Go, Rust, TypeScript, JavaScript, PHP, Ruby, Bash — see [roadmap.md](roadmap.md) |
+
+Each language ships in three sizes, so you can trade run time for depth:
+
+- **`quicktest`** (~10k tests/language) — the most prevalent CWEs at 25 vulnerable + 25 safe per type. A fast first read.
+- **`normal`** (~40k) — ~all supported CWEs at 50 + 50 per type. The headline scoreable corpus.
+- **`enterprise`** (all CWEs, deepest sampling, up to 200 + 200 per type) — for tight confidence intervals.
 
 - **Combinatorial, not hand-written.** Each category is a vulnerability class expressed as a taint
   flow over four axes — where untrusted input enters (**source**), how it travels (**propagator**),
@@ -72,44 +82,35 @@ BenchProctor is built to remove all three.
   language/framework coverage). Same seed reproduces the corpus byte-for-byte; a new seed yields
   fresh variants you can't have pre-trained against. Last quarter's score stays comparable.
 
-## Beyond single files — the test shapes
+## What makes it hard
 
-Detecting a bare `eval(input)` is table stakes. The corpus is weighted toward the findings that
+Detecting a bare `eval(input)` is table stakes. Every category is weighted toward the cases that
 separate a real analyzer from a pattern matcher:
 
-- **Cross-file CWE chains.** Instead of one weakness in one file, a chain threads a group of
-  smaller CWEs across modules and functions so they compound into a larger compromise — the
-  low-severity findings that line up into privilege escalation and root access. Tools that reason
-  file-by-file miss the path.
-- **Polyglot microservice scenarios.** Taint that crosses language and process boundaries the way
-  real systems do: HTTP, gRPC, subprocess, environment variables, and message queues (Kafka,
-  RabbitMQ, Redis pub/sub), across 2-, 3-, and 4-service topologies with multiple sources, sinks,
-  and paths. A 4-hop scenario forces a tool to track taint across four files and three inter-service
-  boundaries to find the vulnerable path.
+- **Realistic framework code.** Real request accessors, DTOs / Pydantic models, ORM and driver
+  calls — the taint flows through idiomatic code, not toy snippets.
 - **Broken-sanitizer variants.** A sanitizer is present but bypassed — a flawed regex, wrong-context
-  escaping, an insufficient length limit. Scanners that trust the mere presence of a sanitizer
-  mislabel these as safe.
-- **Adversarial & modern-threat cases.** Built to defeat naive static analysis and to cover where
-  the threat landscape is actually moving — the Age of AI, not just textbook SQLi: SAST-evasion
-  (Unicode homoglyphs, encoding round-trips, dynamic dispatch and reflection, eval/exec wrappers,
-  Unicode-normalization filter bypasses), software supply-chain attack shapes (glassworm-style), and
-  AI/LLM prompt-injection-era patterns.
+  escaping, an insufficient length limit. A scanner that trusts the mere presence of a sanitizer
+  mislabels these as vulnerable's safe twin; the effective twin is genuinely safe.
+- **Multi-step taint.** Source to sink through propagators — decoding, collection round-trips,
+  conditional dispatch — that a path-insensitive matcher loses.
 
-## Polyglot coverage
+Cross-file CWE chains, polyglot microservice scenarios, and adversarial / SAST-evasion cases are on
+the [roadmap](roadmap.md); this release is single-file standalone.
+
+## Languages & frameworks
+
+**Live now (standalone):**
 
 | Language | Frameworks |
 |---|---|
-| Python | Flask, Django, FastAPI |
-| Go | net/http, Gin |
 | Java | Spring, Jakarta EE |
-| JavaScript | Express, Koa |
-| TypeScript | NestJS, Express |
-| PHP | Laravel, Symfony |
-| Ruby | Rails, Sinatra |
-| Bash | standalone |
-| Rust | Actix-web, Axum |
+| Python | Flask, Django, FastAPI |
 
-Adding a language changes nothing about the categories, so coverage stays uniform across the matrix.
+**On the roadmap** (each ships when it clears the same gates): Go (net/http, Gin) · Rust
+(Actix-web, Axum) · TypeScript (NestJS, Express) · JavaScript (Express, Koa) · PHP (Laravel,
+Symfony) · Ruby (Rails, Sinatra) · Bash. Adding a language changes nothing about the categories, so
+coverage stays uniform across the matrix.
 
 ## Web-risk category coverage
 
@@ -154,12 +155,14 @@ Scores are reported two ways: **category-averaged** (each category weighted equa
 categories can't dominate — the headline number) and **flat aggregate**. Any tool that emits SARIF
 2.1.0 can be scored; the scorer is a single standard-library Python file with no dependencies.
 
-## Machine-verifiable ground truth
+## How the labels are verified
 
-Every corpus ships a **proof manifest** — one record per file naming its exact source, propagator,
-sanitizer, sink, difficulty, the sink's line number, and a SHA-256 of the file — so any label can be
-independently audited from metadata alone. A bundled **self-test SARIF** scores a perfect Youden's J
-against the answer key, proving the labels and the scorer agree before the benchmark can mislead you.
+Before a language is published, every emitted file passes a gate suite: it must compile (or parse),
+each `vulnerable` case must carry a real source-to-sink taint flow, each `safe` twin must actually
+neutralize it for that sink, and the recorded sink line must be the line the vulnerability lives on.
+What ships here is the testcode plus the CSV answer key — nothing more. The per-file proof metadata
+and the perfect-score oracle SARIF we use to self-verify are deliberately **not** published, so the
+answer key can't be reconstructed from a shipped file.
 
 ## Releases
 

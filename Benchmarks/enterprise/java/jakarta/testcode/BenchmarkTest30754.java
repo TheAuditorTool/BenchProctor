@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest30754 {
+
+    @GET
+    @Path("/BenchmarkTest30754")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest30754(@HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", headerValue);
+        String data = sw.toString();
+        if ("https://app.acmecdn.net".equals(data)) response.setHeader("Access-Control-Allow-Origin", data);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

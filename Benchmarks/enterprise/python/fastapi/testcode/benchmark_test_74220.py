@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+from starlette.responses import JSONResponse
+from pydantic import BaseModel
+import json
+
+
+class UserInput(BaseModel):
+    payload: str = ''
+
+async def BenchmarkTest74220(request: Request, req: UserInput):
+    json_value = req.payload
+    try:
+        data = json.loads(json_value).get('value', json_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = json_value
+    raise RuntimeError('processing failed: ' + str(data))
+    return {"updated": True}

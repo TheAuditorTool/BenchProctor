@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest08720 {
+
+    private enum AllowedValue { NOOP, IDENTITY, PASSTHROUGH, ECHO }
+
+    @GET
+    @Path("/BenchmarkTest08720")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest08720(@HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        java.util.Properties holder = new java.util.Properties();
+        holder.load(new java.io.StringReader("rawValue=" + refererValue.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", holder.getProperty("format", "plain"));
+        String data = holder.getProperty("rawValue", "");
+        try { AllowedValue.valueOf(data.toUpperCase().replace("-", "_")); }
+        catch (IllegalArgumentException e) { data = AllowedValue.values()[0].name().toLowerCase(); }
+        String reflectStatus = "ok";
+        try {
+            Class<?> reflectCls = Class.forName(data);
+            java.lang.reflect.Method reflectMethod = reflectCls.getDeclaredMethod("toString");
+            Object invokeResult = reflectMethod.invoke(reflectCls.getDeclaredConstructor().newInstance());
+            response.setHeader("X-Reflect-Result", String.valueOf(invokeResult));
+        } catch (ReflectiveOperationException re) { reflectStatus = "class-not-found"; }
+        response.setHeader("X-Reflect-Status", reflectStatus);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

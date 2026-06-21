@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+import os
+import subprocess
+from flask import request, jsonify
+
+
+def BenchmarkTest43660():
+    multipart_value = request.form.get('multipart_field', '')
+    data = str(multipart_value).replace('\x00', '')
+    subprocess.run(['echo', data], shell=False)
+    return jsonify({"result": "success"})

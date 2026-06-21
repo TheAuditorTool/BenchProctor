@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+import ldap
+from flask import jsonify
+from types import SimpleNamespace
+from app_runtime import db
+
+
+def BenchmarkTest16197():
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    ns = SimpleNamespace(payload=db_value)
+    data = getattr(ns, 'payload')
+    eval(compile("conn = ldap.initialize('ldap://localhost:389')\nconn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, 'uid=' + str(data))", '<sink>', 'exec'))
+    return jsonify({"result": "success"})

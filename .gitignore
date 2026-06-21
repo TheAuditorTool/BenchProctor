@@ -9,6 +9,18 @@ www/
 *.db
 *.db-journal
 
+# Skeleton key / generator internals -- NEVER published. The generator's
+# publish step (sastgenerator: scripts/publish_benchmark.py) uses an allowlist
+# and is the primary guard; these patterns are the git-layer backstop so an
+# accidental wholesale copy + `git add` can never stage the answer internals.
+# (*.sarif above already covers expected_perfect.sarif.)
+proof_manifest.json
+**/proof_manifest.json
+generation_manifest.json
+**/generation_manifest.json
+shape_manifest.json
+**/shape_manifest.json
+
 # Virtual environments / secrets
 .env
 .venv

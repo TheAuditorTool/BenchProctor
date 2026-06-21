@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import requests
+from urllib.parse import urlparse
+import os
+from starlette.responses import JSONResponse
+import json
+
+
+async def BenchmarkTest68132(request: Request):
+    env_value = os.environ.get('USER_INPUT', '')
+    try:
+        data = json.loads(env_value).get('value', env_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = env_value
+    parsed = urlparse(data)
+    if parsed.hostname not in ('api.prod.internal', 'cdn.pycdn.io'):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    requests.get(str(target_url))
+    return {"updated": True}

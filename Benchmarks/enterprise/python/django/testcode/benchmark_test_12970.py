@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import secrets
+
+
+def BenchmarkTest12970(request):
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    prefix = ''
+    data = prefix + str(auth_header)
+    token = secrets.token_hex(32)
+    return JsonResponse({'token': str(token)}, status=200)

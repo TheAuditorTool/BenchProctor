@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+from starlette.responses import JSONResponse
+import subprocess
+
+
+async def BenchmarkTest62577(request: Request):
+    origin_value = request.headers.get('origin', '')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(origin_value)
+    data = collected
+    if data not in ('ls', 'cat', 'date', 'whoami'):
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    processed = data
+    subprocess.run([str(processed), '--status'], shell=False)
+    return {"updated": True}

@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
+@Path("/")
+public class BenchmarkTest52724 {
+
+    @POST
+    @Path("/BenchmarkTest52724")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest52724(@FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        java.util.Properties property = new java.util.Properties();
+        property.load(new java.io.StringReader("rawValue=" + multipartValue.replace("\n", " ").replace("\r", " ") + "\nformat=plain\nversion=1"));
+        response.setHeader("X-Config-Format", property.getProperty("format", "plain"));
+        String data = property.getProperty("rawValue", "");
+        if (data == null) throw new IllegalArgumentException("input required");
+        String envSecret = System.getenv("APP_SECRET");
+        if (envSecret == null) throw new IllegalStateException("APP_SECRET unset");
+        String storeCred = envSecret;
+        byte[] encIv = new byte[12]; new java.security.SecureRandom().nextBytes(encIv);
+        byte[] keyMaterial = java.security.MessageDigest.getInstance("SHA-256").digest(storeCred.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        javax.crypto.SecretKey key = new javax.crypto.spec.SecretKeySpec(java.util.Arrays.copyOf(keyMaterial, 32), "AES");
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, encIv));
+        byte[] ct = cipher.doFinal(storeCred.getBytes());
+        response.setHeader("X-Encrypted-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        return Response.ok().build();
+    }
+}

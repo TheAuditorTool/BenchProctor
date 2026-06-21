@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import os
+from app_runtime import db
+
+
+async def BenchmarkTest67649(request: Request):
+    env_value = os.environ.get('USER_INPUT', '')
+    collected = None
+    def on_input(value):
+        nonlocal collected
+        collected = value
+    on_input(env_value)
+    data = collected
+    processed = data[:64]
+    db.execute('UPDATE users SET role = ? WHERE id = 1', (str(processed),))
+    return {"updated": True}

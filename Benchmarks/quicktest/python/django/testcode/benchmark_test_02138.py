@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from django import forms
+import requests
+
+
+class UserForm(forms.Form):
+    field = forms.CharField(required=False)
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw
+
+def BenchmarkTest02138(request):
+    field_value = UserForm(request.POST).data.get('field', '')
+    data = RequestPayload(field_value).value
+    requests.get('https://api.pycdn.io/data', params={'q': str(data)}, verify=False)
+    return JsonResponse({"saved": True})

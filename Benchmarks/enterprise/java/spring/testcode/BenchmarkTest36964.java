@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest36964 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
+
+    @PostMapping(path="/BenchmarkTest36964", consumes="application/json")
+    public void BenchmarkTest36964(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        String data = graphqlVar.isEmpty() ? "default" : graphqlVar;
+        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+        response.getWriter().print(String.valueOf(data));
+    }
+}

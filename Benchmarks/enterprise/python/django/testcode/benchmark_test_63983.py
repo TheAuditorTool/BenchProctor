@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import re
+import json
+
+
+def BenchmarkTest63983(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    try:
+        data = json.loads(host_value).get('value', host_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = host_value
+    if not re.fullmatch(r'^[a-zA-Z0-9_-]+$', data):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    trusted_claim = str(processed)
+    return JsonResponse({'trusted': trusted_claim}, status=200)

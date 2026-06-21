@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/")
+public class BenchmarkTest02880 {
+
+    @GET
+    @Path("/BenchmarkTest02880")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest02880(@HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        byte[] hexBytes = new byte[headerValue.length() / 2];
+        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
+            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        }
+        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
+        String accessLevel = "none";
+        switch (data) {
+            case "retry": accessLevel = "scoped-primary"; break;
+            case "abort": accessLevel = "scoped-secondary+escalated"; break;
+            case "ignore": accessLevel = "scoped-tertiary"; break;
+            default: break;
+        }
+        response.setHeader("X-Access-Level", accessLevel);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

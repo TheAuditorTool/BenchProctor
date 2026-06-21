@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import request, jsonify
+
+
+def BenchmarkTest16571():
+    referer_value = request.headers.get('Referer', '')
+    data = f'{referer_value}'
+    return jsonify({'error': 'An internal error occurred'}), 500

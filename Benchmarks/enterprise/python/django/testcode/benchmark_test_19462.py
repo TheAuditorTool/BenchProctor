@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import os
+
+
+def BenchmarkTest19462(request):
+    host_value = request.META.get('HTTP_HOST', '')
+    data = f'{host_value:.200s}'
+    os.system('echo ' + str(data))
+    return JsonResponse({"saved": True})

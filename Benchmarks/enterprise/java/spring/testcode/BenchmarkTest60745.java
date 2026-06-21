@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest60745 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
+
+    @PostMapping(path="/BenchmarkTest60745", consumes="application/json")
+    public void BenchmarkTest60745(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        String data;
+        try { data = String.valueOf(Integer.parseInt(graphqlVar)); }
+        catch (NumberFormatException e) { data = graphqlVar; }
+        if (!data.isEmpty()) throw new IllegalArgumentException("invalid input: " + data);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from dataclasses import dataclass
+from flask import request, jsonify
+
+
+@dataclass
+class FormData:
+    payload: str
+
+def BenchmarkTest01976():
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = FormData(payload=forwarded_ip).payload
+    data = bytearray(int(data) if str(data).isdigit() else 0)
+    return jsonify({"result": "success"})

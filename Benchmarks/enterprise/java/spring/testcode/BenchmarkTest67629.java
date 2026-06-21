@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest67629 {
+
+    @GetMapping("/BenchmarkTest67629")
+    public void BenchmarkTest67629(@RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        java.util.function.Function<String, String> initialFn = s -> s.replaceAll("[ ]+", " ");
+        java.util.function.Function<String, String> transformed = initialFn.andThen(String::trim);
+        String data = transformed.apply(uaValue);
+        byte[] buf = new byte[Integer.parseInt(data)];
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+from fastapi import Request
+import jwt
+import yaml
+
+
+async def BenchmarkTest56064(request: Request):
+    secret_value = 'default_config_label'
+    data = f'{secret_value:.200s}'
+    with open('/etc/app/secrets.yaml') as f:
+        store_cred = yaml.safe_load(f)['secret']
+    jwt.encode({'sub': str(data)}, store_cred, algorithm='HS256')
+    return {"updated": True}

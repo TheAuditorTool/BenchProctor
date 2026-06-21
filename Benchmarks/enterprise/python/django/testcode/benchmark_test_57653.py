@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+from app_runtime import db
+
+
+def default_blank(value):
+    return value if value is not None else ''
+
+def BenchmarkTest57653(request):
+    xml_value = request.body.decode('utf-8')
+    data = default_blank(xml_value)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JsonResponse({'name': str(value)}, status=200)

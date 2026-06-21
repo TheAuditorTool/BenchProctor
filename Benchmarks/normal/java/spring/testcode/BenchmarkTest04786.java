@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class BenchmarkTest04786 {
+
+    @GetMapping("/BenchmarkTest04786")
+    public void BenchmarkTest04786(@RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        StringBuilder payload = new StringBuilder();
+        payload.append(authHeader);
+        String data = payload.toString();
+        if (!data.matches("^[\\w\\s.,;:_/\\-=]+$")) {
+            response.sendError(400, "forbidden"); return;
+        }
+        new java.io.File("/tmp/" + data).createNewFile();
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.*;
+import javax.net.ssl.*;
+
+@Path("/")
+public class BenchmarkTest60531 {
+
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT, name VARCHAR(64))");
+                stmt.execute("INSERT INTO users (id, name) VALUES (1, 'alice')");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest60531")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest60531(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(userName.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        java.security.KeyStore caStore = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+        try (java.io.FileInputStream caIn = new java.io.FileInputStream(System.getProperty("java.home") + "/lib/security/cacerts")) {
+            caStore.load(caIn, "changeit".toCharArray());
+        }
+        java.security.cert.PKIXBuilderParameters pkix = new java.security.cert.PKIXBuilderParameters(caStore, new java.security.cert.X509CertSelector());
+        pkix.setRevocationEnabled(true);
+        System.setProperty("com.sun.net.ssl.checkRevocation", "true");
+        javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory.getInstance("PKIX");
+        tmf.init(new javax.net.ssl.CertPathTrustManagerParameters(pkix));
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+        sc.init(null, tmf.getTrustManagers(), null);
+        javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create("https://api.svc.local/data?ref=" + java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8)).toURL().openConnection();
+        conn.setSSLSocketFactory(sc.getSocketFactory());
+        conn.connect();
+        conn.getInputStream().close();
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}
