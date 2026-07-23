@@ -62,15 +62,15 @@ def extract_test_name_from_uri(uri):
       scenarios/scenario_0142/variant_a/app.py  (Chains — directory-based)
     """
     # Chains: directory-based (scenario_NNNN/)
-    m = re.search(r"scenario_(\d{4})/", uri)
+    m = re.search(r"scenario_(\d{4,})/", uri)
     if m:
         return "ChainScenario%s" % m.group(1)
     # Go/Rust/Bash/PHP: lowercase with underscores
-    m = re.search(r"benchmark_test_(\d{5})\.\w+", uri)
+    m = re.search(r"benchmark_test_(\d{5,})\.\w+", uri)
     if m:
         return "BenchmarkTest" + m.group(1)
     # Python/Java: CamelCase
-    m = re.search(r"BenchmarkTest(\d{5})\.\w+", uri)
+    m = re.search(r"BenchmarkTest(\d{5,})\.\w+", uri)
     if m:
         return "BenchmarkTest" + m.group(1)
     return None
@@ -259,9 +259,9 @@ def scan_annotations(source_dirs):
 def detect_annotation_mode(expected):
     """Return True if CSV keys use annotation-based identity (not filename-based)."""
     for name in expected:
-        if re.match(r"BenchmarkTest\d{5}$", name):
+        if re.match(r"BenchmarkTest\d{5,}$", name):
             return False
-        if re.match(r"ChainScenario\d{4}$", name):
+        if re.match(r"ChainScenario\d{4,}$", name):
             return False
     return True
 
