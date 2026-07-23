@@ -9,9 +9,9 @@ accurately a static analysis tool finds real vulnerabilities, and how often it f
 >
 > We publish a language only once its labels pass our full gate suite. We won't ship labels we can't defend.
 >
-> **Release 2026.07.22: 2,940,590 generated files, including 2,938,418 labeled test cases.**
+> **Release 2026.07.22: 2,938,418 independently labeled benchmark cases.**
 >
-> The labeled cases are split exactly evenly: 1,469,209 vulnerable and 1,469,209 safe.
+> Exactly 1,469,209 are vulnerable and 1,469,209 are safe.
 >
 > **All 11 languages are live now**, standalone:
 >
@@ -29,13 +29,17 @@ false-positive rate, and overall detection accuracy (Youden's J).
 ## Quick start
 
 ```bash
-# 1. run your scanner against a suite, export SARIF 2.1.0
-your-tool scan ./Benchmarks/normal/java/spring --format sarif -o results.sarif
+# 1. extract one release bundle
+unzip Benchmarks/normal/java/benchproctor-java-normal-2026.07.22.zip -d benchproctor-java-normal
 
-# 2. score against the answer key (standard-library Python, zero dependencies)
-python scripts/score_sarif.py results.sarif Benchmarks/normal/java/spring/expectedresults-*.csv
+# 2. scan one framework's testcode and export SARIF 2.1.0
+your-tool scan ./benchproctor-java-normal/spring/testcode --format sarif -o results.sarif
 
-# 3. read TPR, FPR, and your Youden's J, category-averaged and flat aggregate
+# 3. score against its answer key (standard-library Python, zero dependencies)
+python ./benchproctor-java-normal/score_sarif.py results.sarif \
+  ./benchproctor-java-normal/spring/expectedresults-2026.07.22.csv
+
+# 4. read TPR, FPR, and your Youden's J, category-averaged and flat aggregate
 ```
 
 The scorer recovers each finding's CWE from the SARIF `ruleId`, the result/rule `properties` or
@@ -55,7 +59,9 @@ Existing public SAST benchmarks share three structural weaknesses:
 - **One language, one file, no defenses.** Real findings cross files, services, and languages and
   sit next to sanitizers that almost work. Single-file, single-language suites never exercise that.
 
-BenchProctor is built to remove all three.
+BenchProctor removes frozen-case and label-leakage effects by construction, then broadens coverage
+across 11 languages and 21 framework targets with sanitizer-aware, multi-step cases. Cross-file
+chains and polyglot scenarios are tracked separately on the [roadmap](roadmap.md).
 
 ## What's in the corpus
 
@@ -64,23 +70,25 @@ BenchProctor is built to remove all three.
 | **Release** | `2026.07.22` |
 | **Languages** | 11: Java, Python, Go, Rust, TypeScript, JavaScript, PHP, Ruby, Bash, C, C++ |
 | **Framework targets** | 21 (see the table below) |
-| **Vulnerability categories** | 250 |
+| **Vulnerability coverage** | 242 emitted categories mapped to 231 distinct CWE IDs |
 | **Sizes** | 3 per language: `quicktest` · `normal` · `enterprise` |
 | **Framework-size suites** | 63: 21 framework targets × 3 sizes |
-| **Generated files** | 2,940,590 |
-| **Labeled test cases** | 2,938,418 |
+| **Labeled benchmark cases** | 2,938,418 |
 | **Vulnerable / safe** | 1,469,209 / 1,469,209 |
 | **Balance** | exactly 50 / 50 |
-| **Shape** | single-file standalone (cross-file, polyglot, and adversarial shapes are on the [roadmap](roadmap.md)) |
+| **Supporting artifacts** | 2,172 companion and shared-runtime files; not independent scoring cases |
+| **Shape** | standalone cases; some use companion assets or shared runtime files |
 
-| Size | Framework suites | Categories per suite | Sampling per category | Generated files | Labeled cases |
-|---|---:|---:|---:|---:|---:|
-| `quicktest` | 21 | 34–62 | 50 vulnerable + 50 safe | 118,224 | 118,200 |
-| `normal` | 21 | 250 | up to 100 vulnerable + 100 safe | 841,290 | 840,666 |
-| `enterprise` | 21 | 250 | up to 250 vulnerable + 250 safe | 1,981,076 | 1,979,552 |
-| **Total** | **63** |  |  | **2,940,590** | **2,938,418** |
+| Size | Framework suites | Categories per suite | Sampling per category | Vulnerable | Safe | Total cases |
+|---|---:|---:|---:|---:|---:|---:|
+| `quicktest` | 21 | 34–62 | 50 vulnerable + 50 safe | 59,100 | 59,100 | 118,200 |
+| `normal` | 21 | 124–218 | up to 100 vulnerable + 100 safe | 420,333 | 420,333 | 840,666 |
+| `enterprise` | 21 | 124–218 | up to 250 vulnerable + 250 safe | 989,776 | 989,776 | 1,979,552 |
+| **Total** | **63** |  |  | **1,469,209** | **1,469,209** | **2,938,418** |
 
 Every size keeps the vulnerable/safe split exactly balanced, so a flag-everything tool scores 0.
+The release also contains 2,172 companion or shared-runtime files required by some cases. These
+files are part of their suite's code, not additional cases, so they do not receive separate labels.
 
 ### How it's built
 
@@ -116,24 +124,24 @@ separate a real analyzer from a pattern matcher:
 
 All 11 languages ship standalone, each cleared through the same gate suite:
 
-| Language | Framework targets | Targets | Generated files | Labeled cases |
+| Language | Framework targets | Targets | Normal / enterprise categories | Labeled cases |
 |---|---|---:|---:|---:|
-| Java | Spring, Jakarta EE | 2 | 309,656 | 307,556 |
-| Python | Flask, Django, FastAPI | 3 | 447,144 | 447,132 |
-| Go | Gin, net/http | 2 | 284,114 | 284,096 |
-| Rust | Actix-web, Axum | 2 | 282,448 | 282,448 |
-| TypeScript | NestJS, Express | 2 | 304,717 | 304,696 |
-| JavaScript | Express, Koa | 2 | 304,714 | 304,696 |
-| PHP | Laravel, Symfony | 2 | 299,156 | 299,156 |
-| Ruby | Rails, Sinatra | 2 | 295,016 | 295,016 |
-| C++ | cpp-httplib, standalone | 2 | 247,515 | 247,512 |
-| C | standalone | 1 | 49,520 | 49,520 |
-| Bash | standalone | 1 | 116,590 | 116,590 |
-| **Total** |  | **21** | **2,940,590** | **2,938,418** |
+| Java | Spring, Jakarta EE | 2 | 218 | 307,556 |
+| Python | Flask, Django, FastAPI | 3 | 212 | 447,132 |
+| Go | Gin, net/http | 2 | 205 | 284,096 |
+| Rust | Actix-web, Axum | 2 | 203 | 282,448 |
+| TypeScript | NestJS, Express | 2 | 216 | 304,696 |
+| JavaScript | Express, Koa | 2 | 216 | 304,696 |
+| PHP | Laravel, Symfony | 2 | 212 | 299,156 |
+| Ruby | Rails, Sinatra | 2 | 209 | 295,016 |
+| C++ | cpp-httplib, standalone | 2 | 182 | 247,512 |
+| C | standalone | 1 | 124 | 49,520 |
+| Bash | standalone | 1 | 172 | 116,590 |
+| **Total** |  | **21** | **242 distinct** | **2,938,418** |
 
-Quicktest selects 34–62 categories per framework target. Normal and enterprise include all 250
-categories in every framework target. C and C++ include the memory-safety classes such as
-out-of-bounds read/write, use-after-free, and integer overflow.
+Quicktest selects 34–62 prevalent categories per framework target. Normal and enterprise use each
+language's full applicable set, ranging from 124 to 218 categories. C and C++ include memory-safety
+classes such as out-of-bounds read/write, use-after-free, and integer overflow.
 
 ## Web-risk category coverage
 
@@ -150,8 +158,9 @@ out-of-bounds read/write, use-after-free, and integer overflow.
 | A09 Logging & Alerting Failures | 5 / 5 | 100% |
 | A10 Exceptional Conditions | 22 / 24 | 92% |
 
-213 of 249 mapped CWEs (85.5%). The remainder is config-level, supply-chain, or runtime-only, not
-expressible as a static code pattern.
+Against this web-risk taxonomy, 213 of 249 mapped CWEs are covered (85.5%). This taxonomy view is
+separate from the 231 distinct CWE IDs represented by cases in the release. The remainder is
+config-level, supply-chain, or runtime-only, not expressible as a static code pattern.
 
 ## Scoring
 
@@ -190,13 +199,13 @@ answer key can't be reconstructed from a shipped file.
 ## Bundles and integrity
 
 Release 2026.07.22 contains 33 logical language-size bundles: 11 languages × 3 sizes. Six enterprise
-bundles exceeded 95 MB and were split into two parts, producing 39 final ZIP files. The 33 bundles
-total 1,514.4 MB before splitting.
+bundles exceeded 95 MiB and were split into two parts, producing 39 final ZIP files. The final ZIP
+set occupies 1,587,819,973 bytes (1,514.3 MiB).
 
-Each bundle is self-contained: the `testcode/` per framework, the
-`expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
-`benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums), and a README. A
-`SHASUMS256.txt` alongside the archives lets you verify every download.
+Each logical bundle—or the complete pair when split—is self-contained: the `testcode/` per
+framework, the `expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
+`benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums), and a README.
+`SHASUMS256.txt` and per-file checksum sidecars let you verify every download.
 
 ## Releases
 
