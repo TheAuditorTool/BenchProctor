@@ -1,7 +1,8 @@
 # BenchProctor
 
-**Ground truth for SAST.** An open, machine-verifiable benchmark corpus for measuring how
-accurately a static analysis tool finds real vulnerabilities, and how often it flags safe code.
+**Ground truth for SAST.** An open benchmark corpus with machine-readable ground truth and a
+deterministic SARIF scorer for measuring how accurately a static analysis tool identifies true
+vulnerabilities in benchmark code and how often it flags safe code.
 
 **[benchproctor.com](https://benchproctor.com)** · [blog](https://blog.benchproctor.com) · Apache-2.0
 
@@ -9,22 +10,24 @@ accurately a static analysis tool finds real vulnerabilities, and how often it f
 >
 > We publish a language only once its labels pass our full gate suite. We won't ship labels we can't defend.
 >
-> **Release 2026.07.22: 2,938,418 independently labeled benchmark cases.**
+> **Release 2026.07.22: 2,938,418 labeled benchmark cases.**
 >
 > Exactly 1,469,209 are vulnerable and 1,469,209 are safe.
 >
-> **All 11 languages are live now**, standalone:
+> **This release includes all 11 languages** as standalone finding cases:
 >
 > Java · Python · Go · Rust · TypeScript · JavaScript · PHP · Ruby · Bash · C · C++
 >
-> across 21 framework targets and three sizes: `quicktest`, `normal`, and `enterprise`.
+> The release spans 21 framework targets and three sizes: `quicktest`, `normal`, and `enterprise`.
+> Some cases use shared runtime or companion files required by their language or framework;
+> these files are not scored separately.
 > Cross-file chains, polyglot scenarios, and adversarial evasion cases are in active development,
 > tracked in [roadmap.md](roadmap.md).
 
-A SAST tool is only as trustworthy as its accuracy, and accuracy is unmeasurable without ground
-truth. BenchProctor gives you labeled corpora (programs marked `vulnerable` or `safe`) so you
-can score any tool that emits SARIF 2.1.0 and get a real number: true-positive rate,
-false-positive rate, and overall detection accuracy (Youden's J).
+A SAST tool is only as trustworthy as its measured performance, and measuring that performance
+requires ground truth. BenchProctor provides cases labeled `vulnerable` or `safe`, allowing you
+to score compatible SARIF 2.1.0 output and calculate its true-positive rate, false-positive rate,
+and Youden's J.
 
 ## Quick start
 
@@ -39,29 +42,32 @@ your-tool scan ./benchproctor-java-normal/spring/testcode --format sarif -o resu
 python ./benchproctor-java-normal/score_sarif.py results.sarif \
   ./benchproctor-java-normal/spring/expectedresults-2026.07.22.csv
 
-# 4. read TPR, FPR, and your Youden's J, category-averaged and flat aggregate
+# 4. read category-averaged and flat-aggregate TPR, FPR, and Youden's J
 ```
 
 The scorer recovers each finding's CWE from the SARIF `ruleId`, the result/rule `properties` or
-`tags` (e.g. `external/cwe/cwe-089`), or CWE `taxa`, so most tools work as-is. If your tool emits no
-CWE at all, add `--match-mode filename` (any finding on a vulnerable file counts; this rewards
-over-flagging, so prefer the default). The same `score_sarif.py` ships inside every release bundle.
+`tags` (e.g. `external/cwe/cwe-089`), or CWE `taxa`. This supports many common SARIF encodings
+without configuration. If your tool emits no CWE, add `--match-mode filename` (any finding on a
+vulnerable file counts; this rewards over-flagging, so prefer the default). The same
+`score_sarif.py` ships inside every release bundle.
 
 ## Why another benchmark
 
-Existing public SAST benchmarks share three structural weaknesses:
+Many existing public SAST benchmarks exhibit one or more of these structural limitations:
 
-- **Hand-authored and frozen.** A fixed set of human-written cases gets published once and never
-  changes, so tools, and the models behind them, overfit to it. A high score stops meaning
-  real-world accuracy.
-- **The filename leaks the answer.** When a test lives at `sqli/Test01729_true_positive.java`, a
-  scanner can score well by matching the path, not by analyzing code.
-- **One language, one file, no defenses.** Real findings cross files, services, and languages and
-  sit next to sanitizers that almost work. Single-file, single-language suites never exercise that.
+- **Fixed and unchanging cases.** A static set of human-written cases can encourage
+  benchmark-specific tuning over time, making results less indicative of generalization to unseen
+  code.
+- **Labels encoded in filenames.** When a test lives at
+  `sqli/Test01729_true_positive.java`, a scanner can score well by matching the path rather than
+  analyzing the code.
+- **Limited structural coverage.** Many suites focus on one language and single-file findings,
+  without testing multi-step propagation or safeguards that are present but ineffective.
 
-BenchProctor removes frozen-case and label-leakage effects by construction, then broadens coverage
-across 11 languages and 21 framework targets with sanitizer-aware, multi-step cases. Cross-file
-chains and polyglot scenarios are tracked separately on the [roadmap](roadmap.md).
+BenchProctor reduces exact-case memorization and label leakage by construction, then broadens
+coverage across 11 languages and 21 framework targets with safeguard-aware, multi-step cases.
+Cross-file chains and polyglot scenarios remain separate future axes tracked on the
+[roadmap](roadmap.md).
 
 ## What's in the corpus
 
@@ -76,8 +82,8 @@ chains and polyglot scenarios are tracked separately on the [roadmap](roadmap.md
 | **Labeled benchmark cases** | 2,938,418 |
 | **Vulnerable / safe** | 1,469,209 / 1,469,209 |
 | **Balance** | exactly 50 / 50 |
-| **Supporting artifacts** | 2,172 companion and shared-runtime files; not independent scoring cases |
-| **Shape** | standalone cases; some use companion assets or shared runtime files |
+| **Supporting artifacts** | 2,172 companion and shared-runtime files; not scored separately |
+| **Shape** | standalone finding cases; some require companion assets or shared runtime files |
 
 | Size | Framework suites | Categories per suite | Sampling per category | Vulnerable | Safe | Total cases |
 |---|---:|---:|---:|---:|---:|---:|
@@ -86,43 +92,49 @@ chains and polyglot scenarios are tracked separately on the [roadmap](roadmap.md
 | `enterprise` | 21 | 124–218 | up to 250 vulnerable + 250 safe | 989,776 | 989,776 | 1,979,552 |
 | **Total** | **63** |  |  | **1,469,209** | **1,469,209** | **2,938,418** |
 
-Every size keeps the vulnerable/safe split exactly balanced, so a flag-everything tool scores 0.
-The release also contains 2,172 companion or shared-runtime files required by some cases. These
-files are part of their suite's code, not additional cases, so they do not receive separate labels.
+Every size keeps the vulnerable/safe split exactly balanced. Under Youden's J, a flag-everything
+tool scores 0 because its true-positive and false-positive rates are both 100%. The release also
+contains 2,172 companion or shared-runtime files required by some cases. These files are part of
+their suite's code, not additional cases, so they do not receive separate labels.
 
 ### How it's built
 
-- **Combinatorial, not hand-written.** Each category is a vulnerability class expressed as a taint
-  flow over four axes: where untrusted input enters (**source**), how it travels (**propagator**),
-  what would neutralize it (**sanitizer**), and the dangerous call it reaches (**sink**). The corpus
-  is assembled by combining a library of dozens of each per language: a vulnerable case omits an
-  effective sanitizer; its safe twin applies one. Every emitted combination is constrained to a
-  realistic flow.
+- **Combinatorial, not hand-written.** Each category models security-relevant behavior using the
+  applicable components of four axes: where untrusted input enters (**source**), how it travels
+  (**propagator**), what would neutralize it (**sanitizer or safeguard**), and the dangerous
+  operation it reaches (**sink**). The generator combines dozens of components across these axes
+  for each language. A vulnerable case omits or defeats the relevant safeguard; its safe
+  counterpart applies it correctly. Every emitted case is constrained to a valid, analyzable path
+  using real language and framework APIs.
+- **Synthetic by design.** The corpus intentionally isolates scoring-relevant security properties.
+  Individual cases use real APIs but are not intended to represent complete production features.
 - **Anti-leakage by construction.** Emitted files carry no comments, no CWE tags, no category names,
-  and no hints in identifiers. File IDs are shuffled, so a filename reveals nothing about a file's
-  category or label. The CSV answer key is the only ground truth.
-- **Seed rotation.** Each release is generated from a fixed seed that changes *which* combinations
-  are emitted, so the actual code differs every release, while holding every scoring-relevant
-  invariant constant (CWE identity, difficulty distribution, 50/50 balance, language/framework
-  coverage). Same seed reproduces the corpus byte-for-byte; a new seed yields fresh variants you
-  can't have pre-trained against, and last release's score stays comparable.
+  or label-bearing identifiers. File IDs are shuffled, so filenames do not encode a case's category
+  or label. The CSV answer key is the only published source of labels.
+- **Seed rotation.** Each release uses a fixed seed. Holding the generator, templates, and toolchain
+  constant, the same seed reproduces the corpus byte-for-byte. A new seed emits different
+  combinations and identifiers while preserving the benchmark's stated scoring invariants: CWE
+  identity, difficulty distribution, 50/50 balance, and language/framework coverage. This limits
+  the usefulness of exact-file and filename memorization and is designed to support cross-release
+  score comparability. Structural generalization across releases remains possible and is expected.
 
 ## What makes it hard
 
-Detecting a bare `eval(input)` is table stakes. Every category is weighted toward the cases that
-separate a real analyzer from a pattern matcher:
+Detecting a bare `eval(input)` is only a baseline. The corpus emphasizes cases intended to exercise
+dataflow and safeguard reasoning beyond token or pattern matching:
 
-- **Realistic framework code.** Real request accessors, DTOs / Pydantic models, ORM and driver
+- **Framework-native APIs.** Real request accessors, DTOs and Pydantic models, ORM and driver
   calls; the taint flows through idiomatic code, not toy snippets.
-- **Broken-sanitizer variants.** A sanitizer is present but bypassed: a flawed regex, wrong-context
-  escaping, an insufficient length limit. A scanner that trusts the mere presence of a sanitizer
-  mislabels these as the safe twin; the effective twin is genuinely safe.
-- **Multi-step taint.** Source to sink through propagators (decoding, collection round-trips,
-  conditional dispatch) that a path-insensitive matcher loses.
+- **Broken-safeguard variants.** A safeguard is present but ineffective: a flawed regex,
+  wrong-context escaping, or an insufficient length limit. A scanner that trusts the mere presence
+  of a safeguard may mislabel the vulnerable case as safe; the corresponding safe case applies an
+  effective safeguard for the specified sink.
+- **Multi-step taint.** Taint travels from source to sink through propagators such as decoding,
+  collection round-trips, and conditional dispatch that a path-insensitive matcher may miss.
 
 ## Languages & frameworks
 
-All 11 languages ship standalone, each cleared through the same gate suite:
+All 11 languages ship as standalone finding cases, each cleared through the same gate suite:
 
 | Language | Framework targets | Targets | Normal / enterprise categories | Labeled cases |
 |---|---|---:|---:|---:|
@@ -137,7 +149,7 @@ All 11 languages ship standalone, each cleared through the same gate suite:
 | C++ | cpp-httplib, standalone | 2 | 182 | 247,512 |
 | C | standalone | 1 | 124 | 49,520 |
 | Bash | standalone | 1 | 172 | 116,590 |
-| **Total** |  | **21** | **242 distinct** | **2,938,418** |
+| **Total** |  | **21** | **242 in union** | **2,938,418** |
 
 Quicktest selects 34–62 prevalent categories per framework target. Normal and enterprise use each
 language's full applicable set, ranging from 124 to 218 categories. C and C++ include memory-safety
@@ -145,11 +157,11 @@ classes such as out-of-bounds read/write, use-after-free, and integer overflow.
 
 ## Web-risk category coverage
 
-| Category | Covered / Mapped | |
+| Category | Covered CWEs / mapped CWEs | Coverage or scope note |
 |---|---|---|
 | A01 Broken Access Control | 36 / 40 | 90% |
 | A02 Security Misconfiguration | 11 / 16 | 69% |
-| A03 Software Supply Chain | 0 / 6 | composition analysis, not code-pattern SAST |
+| A03 Software Supply Chain | 0 / 6 | Out of scope: composition analysis, not code-pattern SAST |
 | A04 Cryptographic Failures | 31 / 32 | 97% |
 | A05 Injection | 30 / 37 | 81% |
 | A06 Insecure Design | 26 / 39 | 67% |
@@ -159,8 +171,9 @@ classes such as out-of-bounds read/write, use-after-free, and integer overflow.
 | A10 Exceptional Conditions | 23 / 24 | 96% |
 
 Against this web-risk taxonomy, 205 of 249 mapped CWEs are covered (82.3%). This taxonomy view is
-separate from the 231 distinct CWE IDs represented by cases in the release. The remainder is
-config-level, supply-chain, or runtime-only, not expressible as a static code pattern.
+separate from the 231 distinct CWE IDs represented by cases in the release. The uncovered items
+are primarily config-level, supply-chain, or runtime-only concerns outside this benchmark's current
+static code-pattern scope.
 
 ## Scoring
 
@@ -180,21 +193,26 @@ tool runs, scoring computes a confusion matrix and one subtraction:
 | Score | Meaning |
 |------:|---------|
 | +100% | Perfect: catches everything, zero false alarms |
-| 0% | No better than guessing (where a flag-everything tool lands on a 50/50 corpus) |
+| 0% | No measured discrimination: TPR equals FPR; flag-everything and flag-nothing both land here |
 | -100% | Inverted: flags safe code, misses real bugs |
 
-Scores are reported two ways: **category-averaged** (each category weighted equally so large
-categories can't dominate, the headline number) and **flat aggregate**. Any tool that emits SARIF
-2.1.0 can be scored; the scorer is a single standard-library Python file with no dependencies.
+Scores are reported in two forms. The **category-averaged** headline score weights each category
+equally so large categories cannot dominate; the **flat aggregate** score weights every case
+equally. Any tool that emits compatible SARIF 2.1.0 can be scored; the scorer is a single
+standard-library Python file with no dependencies.
 
 ## How the labels are verified
 
-Before a language is published, every emitted file passes a gate suite: it must compile (or parse),
-each `vulnerable` case must carry a real source-to-sink taint flow, each `safe` twin must actually
-neutralize it for that sink, and the recorded sink line must be the line the vulnerability lives on.
-What ships here is the testcode plus the CSV answer key, nothing more. The per-file proof metadata
-and the perfect-score oracle SARIF we use to self-verify are deliberately **not** published, so the
-answer key can't be reconstructed from a shipped file.
+Before a language is published, every emitted finding case passes a gate suite: it must compile
+(or parse), each `vulnerable` case must carry a real source-to-sink taint flow, each `safe` twin
+must actually neutralize it for that sink, and the recorded sink line must match the scored sink
+operation.
+
+Published bundles contain test code, required support artifacts, CSV answer keys, the scorer,
+manifests, checksums, and documentation. Internal per-case proof metadata and the perfect-score
+oracle SARIF used for self-verification are deliberately **not** published. The CSV is the sole
+published source of labels; test files contain no proof markers or label metadata from which those
+labels can be inferred.
 
 ## Bundles and integrity
 
@@ -202,15 +220,35 @@ Release 2026.07.22 contains 33 logical language-size bundles: 11 languages × 3 
 bundles exceeded 95 MiB and were split into two parts, producing 39 final ZIP files. The final ZIP
 set occupies 1,587,819,973 bytes (1,514.3 MiB).
 
-Each logical bundle—or the complete pair when split—is self-contained: the `testcode/` per
-framework, the `expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
-`benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums), and a README.
+Each logical bundle is self-contained; when a bundle is distributed as two ZIP files, the complete
+pair constitutes the bundle. It contains a `testcode/` directory for each framework, the
+`expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
+`benchproctor-manifest.json` (version, per-framework counts, and SHA-256 checksums), and a README.
 `SHASUMS256.txt` and per-file checksum sidecars let you verify every download.
+
+## Corrections and ground-truth disputes
+
+At this scale, ground-truth defects are possible and must be handled transparently.
+
+A ground-truth challenge should identify the affected case, its published label, and the semantic
+basis for disputing that label. Confirmed defects are traced to and corrected in the generator or
+template wherever possible, and every affected family is regenerated.
+
+Published release artifacts are immutable. Corrections ship in a new version whose changelog
+identifies:
+
+- the affected cases and generator or template families;
+- the cause and correction;
+- the number and direction of label changes;
+- any resulting changes to BenchProctor-published scanner scores.
+
+Released answer keys are never silently replaced.
 
 ## Releases
 
-Corpora are versioned and released periodically. The scorer in `scripts/score_sarif.py` is
-standard-library Python only: clone, point it at a corpus and your SARIF, and read your number.
+Corpora are versioned and released periodically. The scorer in `scripts/score_sarif.py` uses only
+the Python standard library: clone the repository, point the scorer at a corpus and your SARIF, and
+read the resulting metrics.
 
 ## License
 
