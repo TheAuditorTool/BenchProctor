@@ -147,18 +147,18 @@ classes such as out-of-bounds read/write, use-after-free, and integer overflow.
 
 | Category | Covered / Mapped | |
 |---|---|---|
-| A01 Broken Access Control | 37 / 40 | 92% |
+| A01 Broken Access Control | 36 / 40 | 90% |
 | A02 Security Misconfiguration | 11 / 16 | 69% |
 | A03 Software Supply Chain | 0 / 6 | composition analysis, not code-pattern SAST |
-| A04 Cryptographic Failures | 30 / 32 | 94% |
-| A05 Injection | 31 / 37 | 83% |
-| A06 Insecure Design | 27 / 39 | 69% |
+| A04 Cryptographic Failures | 31 / 32 | 97% |
+| A05 Injection | 30 / 37 | 81% |
+| A06 Insecure Design | 26 / 39 | 67% |
 | A07 Authentication Failures | 34 / 36 | 94% |
-| A08 Software & Data Integrity | 8 / 14 | 57% |
-| A09 Logging & Alerting Failures | 5 / 5 | 100% |
-| A10 Exceptional Conditions | 22 / 24 | 92% |
+| A08 Software & Data Integrity | 11 / 14 | 79% |
+| A09 Logging & Alerting Failures | 3 / 5 | 60% |
+| A10 Exceptional Conditions | 23 / 24 | 96% |
 
-Against this web-risk taxonomy, 213 of 249 mapped CWEs are covered (85.5%). This taxonomy view is
+Against this web-risk taxonomy, 205 of 249 mapped CWEs are covered (82.3%). This taxonomy view is
 separate from the 231 distinct CWE IDs represented by cases in the release. The remainder is
 config-level, supply-chain, or runtime-only, not expressible as a static code pattern.
 
