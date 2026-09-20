@@ -87,9 +87,9 @@ Cross-file chains and polyglot scenarios remain separate future axes tracked on 
 
 | Size | Framework suites | Categories per suite | Sampling per category | Vulnerable | Safe | Total cases |
 |---|---:|---:|---:|---:|---:|---:|
-| `quicktest` | 21 | 34–62 | 50 vulnerable + 50 safe | 59,100 | 59,100 | 118,200 |
-| `normal` | 21 | 124–218 | up to 100 vulnerable + 100 safe | 420,333 | 420,333 | 840,666 |
-| `enterprise` | 21 | 124–218 | up to 250 vulnerable + 250 safe | 989,776 | 989,776 | 1,979,552 |
+| `quicktest` | 21 | 34-62 | 50 vulnerable + 50 safe | 59,100 | 59,100 | 118,200 |
+| `normal` | 21 | 124-218 | up to 100 vulnerable + 100 safe | 420,333 | 420,333 | 840,666 |
+| `enterprise` | 21 | 124-218 | up to 250 vulnerable + 250 safe | 989,776 | 989,776 | 1,979,552 |
 | **Total** | **63** |  |  | **1,469,209** | **1,469,209** | **2,938,418** |
 
 Every size keeps the vulnerable/safe split exactly balanced. Under Youden's J, a flag-everything
@@ -151,7 +151,7 @@ All 11 languages ship as standalone finding cases, each cleared through the same
 | Bash | standalone | 1 | 172 | 116,590 |
 | **Total** |  | **21** | **242 in union** | **2,938,418** |
 
-Quicktest selects 34–62 prevalent categories per framework target. Normal and enterprise use each
+Quicktest selects 34-62 prevalent categories per framework target. Normal and enterprise use each
 language's full applicable set, ranging from 124 to 218 categories. C and C++ include memory-safety
 classes such as out-of-bounds read/write, use-after-free, and integer overflow.
 
@@ -203,10 +203,24 @@ standard-library Python file with no dependencies.
 
 ## How the labels are verified
 
-Before a language is published, every emitted finding case passes a gate suite: it must compile
-(or parse), each `vulnerable` case must carry a real source-to-sink taint flow, each `safe` twin
-must actually neutralize it for that sink, and the recorded sink line must match the scored sink
-operation.
+At this scale, "millions of generated files" is a warning sign, not a selling point: auto-generated
+code that nothing checked is slop, and a slop benchmark measures nothing. So no file becomes part of
+a release until its own toolchain accepts it.
+
+Every emitted file is put through the real, native toolchain for its language before it can ship,
+compiled, type-checked, or syntax-checked depending on the language: the Go compiler, `cargo` and
+`rustc` for Rust, `javac` and Maven on Java 21, `node` and `tsc` in strict mode for JavaScript and
+TypeScript, `php -l`, `ruby -c`, `gcc` and `g++`, and `bash -n`. Not a sample. Every file. On top of
+that, a suite of deterministic gates runs with no AI and no LLM-as-judge: each `vulnerable` case must
+carry a real source-to-sink taint flow, each `safe` twin must actually neutralize it for that sink,
+the recorded sink line must match the scored operation, and dozens of further structural and idiom
+checks must hold. Application-shape releases add a runtime gate: representative projects are built and
+run under Docker before they ship.
+
+That is the bar every one of the 2,938,418 cases in the current release cleared, and it is the bar
+the expanding standalone surface and the arriving application shape will clear before they publish.
+When you cite a score from this corpus you are trusting its ground truth, and ground truth that never
+compiled would be worth nothing.
 
 Published bundles contain test code, required support artifacts, CSV answer keys, the scorer,
 manifests, checksums, and documentation. Internal per-case proof metadata and the perfect-score
