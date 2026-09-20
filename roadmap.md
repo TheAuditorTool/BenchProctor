@@ -1,26 +1,36 @@
 # Roadmap
 
 BenchProctor publishes only what passes our full gate suite. We won't ship labels we can't defend.
-Standalone single-file corpora came first; the next axis is depth: findings that cross files,
-languages, and processes.
+Standalone single-file corpora came first. The next release adds depth on two fronts at once: a far
+larger, fully unlocked framework surface for standalone, and a new application shape whose findings
+cross files, languages, and processes.
 
-## Shipping now: standalone, all 11 languages
+## Shipping now
 
-Every language below ships in `quicktest`, `normal`, and `enterprise` sizes, each cleared through
-the same gate suite (compile/parse, real source-to-sink taint on every vulnerable case, a genuinely
-effective sanitizer on every safe twin, and a verified sink line).
+### Standalone, all 11 languages plus Solidity
 
-- **Java**: Spring, Jakarta EE
-- **Python**: Flask, Django, FastAPI
-- **Go**: Gin, net/http
-- **Rust**: Actix-web, Axum
-- **TypeScript**: NestJS, Express
-- **JavaScript**: Express, Koa
-- **PHP**: Laravel, Symfony
-- **Ruby**: Rails, Sinatra
-- **C++**: cpp-httplib, standalone
-- **C**: standalone
+Single-file finding cases in `quicktest`, `normal`, and `enterprise` sizes, each cleared through the
+same gate suite (compile or parse, real source-to-sink taint on every vulnerable case, a genuinely
+effective sanitizer on every safe twin, and a verified sink line). The framework surface is now the
+full frozen catalogue: 64 code-language lanes plus 21 infrastructure substrates, drawing on 118
+pinnable third-party libraries.
+
+- **Python**: Flask, Django, FastAPI, DRF, aiohttp, GraphQL, argparse, Typer, Click, Celery, serverless
+- **JavaScript**: Express, Koa, Fastify, GraphQL, serverless
+- **TypeScript**: NestJS, Express, Fastify, Hono, Next.js, Angular, React, Vue, Svelte, SvelteKit, GraphQL, serverless
+- **Go**: net/http, Gin, Echo, Fiber, Chi, Gorilla, GraphQL, Cobra, serverless, standalone
+- **Java**: Spring, Jakarta EE, Quarkus, GraphQL, picocli, serverless
+- **Ruby**: Rails, Sinatra, GraphQL
+- **PHP**: Laravel, Symfony, Symfony Console, GraphQL
+- **Rust**: Actix-web, Axum, Rocket, GraphQL, clap, standalone
+- **C**: standalone, host, kernel
+- **C++**: standalone, cpp-httplib
 - **Bash**: standalone
+- **Solidity**: contract
+
+Earlier releases locked JavaScript to Koa and TypeScript to Express. Both now draw from the full
+modern Node surface above. Every web language also ships a GraphQL resolver lane, and most gain
+command-line and serverless or worker lanes.
 
 Sizes:
 
@@ -29,39 +39,39 @@ Sizes:
 - `normal`: all supported categories, up to 100 + 100 per category. The headline scoreable corpus.
 - `enterprise`: all supported categories, up to 250 + 250 per category, deepest sampling.
 
-## In active development
+### Application projects
 
-These shapes already generate and pass the full internal gate suite across all 11 languages; what
-remains before a public release is coverage breadth and final packaging. Status reflects where each
-stands today, not a target date.
+Small, realistic, buildable polyglot projects: 2-3 application-tier languages plus 1-2 cloud or
+infrastructure targets, several planted CWEs per project, and, where the archetype allows, a compound
+chain that escalates across services with a defensive gate on an upstream link so the safe variant
+closes the chain. Each project builds under its native toolchains as a unit and passes a Docker
+runtime gate before release. The shape is scored as a triple, flow judgment, CWE identification, and
+chain reconstruction, reported side by side and never averaged. See the scoring section of
+[README.md](README.md).
 
-- **Cross-file CWE chains**: a single weakness threaded across modules and functions so smaller
-  findings compound into a larger compromise, with a defensive gate placed on an upstream link so
-  the safe twin closes the chain before it reaches the sink. *Building green across all 11
-  languages; a small set of language/topology combinations narrow out by design where a language
-  cannot express a given upstream defense. Finalizing coverage before release.*
+This shape subsumes the earlier separate axes of cross-file CWE chains and polyglot microservice
+scenarios: both are now properties of an application rather than standalone deliverables.
 
-- **Polyglot microservice scenarios**: taint that crosses language and process boundaries: one
-  service reads untrusted input and hands it to another over HTTP, a message queue, a subprocess,
-  or an environment variable, where the sink lives in a different language. Two-hop and three-hop
-  topologies. *Building green across the language matrix; hardening the cross-boundary contracts
-  before release.*
+## Ahead
 
-- **Adversarial / SAST-evasion cases**: hand-authored files that use homoglyphs, right-to-left
-  overrides, null bytes, and encoding tricks to hide an otherwise real vulnerability from a naive
-  scanner. *Generating and passing basic checks; still ironing out the quirks and expanding the
-  technique set.*
+Status reflects where each area stands today, not a target date. Nothing publishes until it clears
+its own gate.
 
-## Later
+- **Adversarial / SAST-evasion cases**: files that use homoglyphs, right-to-left overrides, null
+  bytes, encoding tricks, and other concealment techniques to hide an otherwise real vulnerability
+  from a naive scanner. Generating and passing basic checks; still expanding the technique set and
+  finishing their own QC.
 
-- Infrastructure-as-code and config targets already modeled in the platform (Terraform/HCL,
-  CloudFormation, Kubernetes manifests, Dockerfiles, GitHub Actions, GitLab CI, CDK, Pulumi),
-  brought up to the same gate bar and released.
-- An all-hard difficulty mode for the enterprise tier.
+- **Standalone infrastructure-as-code config-state coverage**: the substrates already ship as
+  deploy-time artifacts inside applications. Bringing the config-state weakness classes (public
+  exposure, missing encryption, permissive IAM, unpinned dependencies, missing security headers,
+  disabled audit logging) up to the same standalone gate bar broadens single-file IaC coverage.
+
+- **An all-hard difficulty mode** for the enterprise tier.
 
 ## How releases work
 
-Corpora are versioned and released periodically. Each release rotates a fixed seed: the emitted code
-changes, while every scoring-relevant invariant (CWE identity, difficulty mix, 50/50 balance,
-language and framework coverage) stays constant. Last release's score stays comparable, and a model
-trained on last release's files learns nothing about this one's.
+Corpora are versioned by date (`YYYY.MM.DD`) and released periodically. Each release rotates a fixed
+seed: the emitted code changes, while every scoring-relevant invariant (CWE identity, difficulty mix,
+50/50 balance, language and framework coverage) stays constant. Last release's score stays
+comparable, and a model trained on last release's files learns nothing about this one's.
