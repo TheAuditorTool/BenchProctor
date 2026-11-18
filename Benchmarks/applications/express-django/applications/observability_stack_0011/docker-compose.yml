@@ -1,0 +1,43 @@
+services:
+  log-shipper:
+    build: ./services/log-shipper
+    environment:
+      - SERVICE_NAME=log-shipper
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      broker:
+        condition: service_healthy
+      metrics-ingest:
+        condition: service_healthy
+  metrics-ingest:
+    build: ./services/metrics-ingest
+    environment:
+      - SERVICE_NAME=metrics-ingest
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      broker:
+        condition: service_healthy
+  broker:
+    image: rabbitmq:3.13-management
+    command: ["sh", "-c", "(until rabbitmqadmin declare queue name=app-events durable=true >/dev/null 2>&1; do sleep 2; done; rabbitmqadmin publish routing_key=app-events payload=msg-001 >/dev/null && touch /tmp/seeded) & exec docker-entrypoint.sh rabbitmq-server"]
+    ports:
+      - "5672"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/seeded && rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+const net = require("net");
+
+async function collectBundle(req, res) {
+  const summary = req.cookies.session_token || "";
+  const _input = String(summary);
+  let cohort;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': cohort = _input.normalize('NFC'); break;
+    default: cohort = _input; break;
+  }
+  let _host = "";
+  try { _host = new URL(String(cohort)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const gauge = cohort;
+  net.connect(80, new URL(String(gauge)).hostname);
+  res.json({ done: true });
+}
+
+module.exports = { collectBundle };

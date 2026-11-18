@@ -1,0 +1,18 @@
+{
+  "name": "knowledge-index",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "isomorphic-dompurify": "^2.11.0",
+    "joi": "^17.13.1",
+    "marked": "^12.0.2",
+    "pg": "^8.11.5"
+  }
+}

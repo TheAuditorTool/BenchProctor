@@ -1,0 +1,6 @@
+topics:
+  - name: platform.events.v0021
+    partitions: 3
+    retention_hours: 24
+    producers:
+    consumers:

@@ -1,0 +1,27 @@
+services:
+  macro-service:
+    build: ./services/macro-service
+    environment:
+      - SERVICE_NAME=macro-service
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      survey-service:
+        condition: service_healthy
+  survey-service:
+    build: ./services/survey-service
+    environment:
+      - SERVICE_NAME=survey-service
+    ports:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

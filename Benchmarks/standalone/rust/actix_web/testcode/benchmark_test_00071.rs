@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+use actix_web::{HttpResponse, web};
+
+#[actix_web::post("/benchmark_test_00071")]
+pub async fn benchmark_test_00071(body: web::Bytes) -> HttpResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = raw_body.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", data));
+}

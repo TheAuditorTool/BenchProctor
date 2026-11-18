@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "laravel",
+    "symfony"
+  ],
+  "language": "php",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "laravel": {
+      "categories": 18,
+      "csv_sha256": "9d344cd5626517dba5ad1b686db1c6300bbe14983844aa2ec32e3bfed18cefc3",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 108,
+      "safe": 54,
+      "total": 108,
+      "vulnerable": 54
+    },
+    "symfony": {
+      "categories": 18,
+      "csv_sha256": "50b8a9c9ab5cc8bb7703ef8c874a3f1cbe3304ef1ad96f689e85983a489c1e93",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 108,
+      "safe": 54,
+      "total": 108,
+      "vulnerable": 54
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.16"
+}

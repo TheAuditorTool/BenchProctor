@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "rails",
+    "sinatra"
+  ],
+  "language": "ruby",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "rails": {
+      "categories": 17,
+      "csv_sha256": "9f64e5fe2f277c0a3d941aaaaa20489eb8147466f5f0aecd54fdba10467f2ed9",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 680,
+      "safe": 340,
+      "total": 680,
+      "vulnerable": 340
+    },
+    "sinatra": {
+      "categories": 17,
+      "csv_sha256": "d3add9823fb7c84bc56b1aa2494ec157b3bb45ea9394caa39354619b1d08d67d",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 680,
+      "safe": 340,
+      "total": 680,
+      "vulnerable": 340
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

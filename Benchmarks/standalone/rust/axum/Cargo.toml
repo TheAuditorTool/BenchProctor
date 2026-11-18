@@ -1,0 +1,47 @@
+[package]
+name = "app-services"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes-gcm = "0.10"
+ammonia = "4"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-iam = "1"
+aws-sdk-s3 = "1"
+aws-sdk-sqs = "1"
+aws-sdk-sts = "1"
+axum = { version = "0.7", features = ["query", "multipart"] }
+base64 = "0.22"
+cbc = { version = "0.1", features = ["alloc"] }
+cookie = "0.18"
+csv = "1"
+des = "0.8"
+diesel = { version = "2.3", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+hex = "0.4"
+hmac = "0.12"
+html-escape = "0.2"
+lapin = "2.3"
+ldap3 = { version = "0.11", default-features = false, features = ["sync"] }
+md-5 = "0.10"
+mongodb = { version = "2" }
+pulldown-cmark = "0.10"
+rand = { version = "0.8", features = ["small_rng"] }
+redis = "0.27"
+regex = "1"
+reqwest = { version = "0.12", features = ["json"] }
+rocket = { version = "0.5", features = ["json"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde_json = "1"
+sha2 = "0.10"
+shell-escape = "0.1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres"] }
+sxd-document = "0.3"
+sxd-xpath = "0.4"
+tokio = { version = "1", features = ["full"] }
+url = "2"
+urlencoding = "2"
+validator = { version = "0.18", features = ["derive"] }
+
+[lib]
+path = "lib.rs"

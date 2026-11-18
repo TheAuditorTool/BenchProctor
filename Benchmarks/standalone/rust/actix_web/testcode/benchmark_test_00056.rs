@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+use actix_web::HttpResponse;
+use url::Url;
+
+#[actix_web::post("/benchmark_test_00056")]
+pub async fn benchmark_test_00056() -> HttpResponse {
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    let data = comment_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
+    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
+    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
+    let target_url = data.clone();
+    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+}

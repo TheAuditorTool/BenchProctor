@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+#define _XOPEN_SOURCE 700
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <time.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+
+void benchmark_test_00221(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    unsigned char _iv[8];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
+}

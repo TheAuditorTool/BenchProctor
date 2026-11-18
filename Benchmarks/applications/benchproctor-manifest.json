@@ -1,0 +1,134 @@
+{
+  "benchmark": "benchproctor-apps",
+  "frameworks": [
+    "express-django",
+    "express_ts-flask",
+    "express_ts-httplib",
+    "fastapi-spring",
+    "jakarta-nestjs",
+    "nestjs-spring"
+  ],
+  "language": "applications",
+  "scorer": {
+    "file": "score_apps.py",
+    "sha256": "be421b062b9cc8961a136f7eb4383ac033473d39d9959f5e6ac8170979a58edd"
+  },
+  "suites": {
+    "express-django": {
+      "apps": 64,
+      "chains_complete": 32,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "edf5ce77414cb93df9beb39d24b0ac4c9a11a1597b2667a16d26095696dcffe1",
+      "csv_sha256": "5e464d07660dcf78b3fea61660d1d1f0e992272c5ff676553cd364fafc281dc5",
+      "edges": 64,
+      "entry_rows": 54,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 923,
+      "flows_by_kind": {
+        "benign": 640,
+        "planted": 219,
+        "primary": 64
+      },
+      "published_files": 1942,
+      "safe": 665,
+      "vulnerable": 258
+    },
+    "express_ts-flask": {
+      "apps": 64,
+      "chains_complete": 32,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "d6dfee8dbf4fa8f32dff6014d99274bca8bf4574d6e78218b8b9d82a863e6068",
+      "csv_sha256": "672ae689759608a3d14662556efc404868e305f7d3cb99ce026c11ad0551308d",
+      "edges": 64,
+      "entry_rows": 55,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 920,
+      "flows_by_kind": {
+        "benign": 640,
+        "planted": 216,
+        "primary": 64
+      },
+      "published_files": 1977,
+      "safe": 665,
+      "vulnerable": 255
+    },
+    "express_ts-httplib": {
+      "apps": 48,
+      "chains_complete": 24,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "0d2b6a90c1ab27d2d4a42e9c0914f3a43516238fd22a0192ca20a12d4033ace8",
+      "csv_sha256": "ef43a35cc37fdfe78996fbd26142c398b9024481428857d56431e0edad4b611e",
+      "edges": 48,
+      "entry_rows": 38,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 694,
+      "flows_by_kind": {
+        "benign": 480,
+        "planted": 166,
+        "primary": 48
+      },
+      "published_files": 1517,
+      "safe": 500,
+      "vulnerable": 194
+    },
+    "fastapi-spring": {
+      "apps": 64,
+      "chains_complete": 32,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "7dde30fd0a955302b3fa0838fa4e295de5ab07523fed7dd686a731cf0beeb689",
+      "csv_sha256": "ca6e95857c45ab2e13122ee28de188d08d43bdacf1384cba973b2fc9b93b7cc1",
+      "edges": 64,
+      "entry_rows": 55,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 921,
+      "flows_by_kind": {
+        "benign": 640,
+        "planted": 217,
+        "primary": 64
+      },
+      "published_files": 1824,
+      "safe": 666,
+      "vulnerable": 255
+    },
+    "jakarta-nestjs": {
+      "apps": 64,
+      "chains_complete": 32,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "5945a295becbb33b7c9e1748d198080e62b91e17a8caf81ab3c902d4aaae9d3f",
+      "csv_sha256": "4257c30c55ad2587ffb997b158994718e9649edbab9e7986cca46346ecd7ca7a",
+      "edges": 64,
+      "entry_rows": 49,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 921,
+      "flows_by_kind": {
+        "benign": 640,
+        "planted": 217,
+        "primary": 64
+      },
+      "published_files": 1982,
+      "safe": 665,
+      "vulnerable": 256
+    },
+    "nestjs-spring": {
+      "apps": 64,
+      "chains_complete": 32,
+      "chains_csv": "expectedresults-chains-2026.11.19.csv",
+      "chains_sha256": "81c1860e131baba0c88dbbec10ea5d5dbc68a525719624165eda00828d3b6e6e",
+      "csv_sha256": "7cc1552119d7e38856de5c43c9435342a81ba930015fd0687cb27913a312157e",
+      "edges": 64,
+      "entry_rows": 51,
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "flows": 920,
+      "flows_by_kind": {
+        "benign": 640,
+        "planted": 216,
+        "primary": 64
+      },
+      "published_files": 2082,
+      "safe": 665,
+      "vulnerable": 255
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

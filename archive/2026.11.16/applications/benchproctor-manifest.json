@@ -1,0 +1,94 @@
+{
+  "benchmark": "benchproctor-apps",
+  "frameworks": [
+    "express-django",
+    "express_ts-flask",
+    "express_ts-httplib",
+    "nestjs-spring"
+  ],
+  "language": "applications",
+  "scorer": {
+    "file": "score_apps.py",
+    "sha256": "be421b062b9cc8961a136f7eb4383ac033473d39d9959f5e6ac8170979a58edd"
+  },
+  "suites": {
+    "express-django": {
+      "apps": 16,
+      "chains_complete": 8,
+      "chains_csv": "expectedresults-chains-2026.11.16.csv",
+      "chains_sha256": "9c820a2c4b3d70ea68b640e951207b6a05b4c6854fc609fd5e733565ab489cb9",
+      "csv_sha256": "703f387ed71e9f3bedfaa22d202f49eaa4d873b8ca27ca585ac2081297771891",
+      "edges": 16,
+      "entry_rows": 13,
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "flows": 229,
+      "flows_by_kind": {
+        "benign": 160,
+        "planted": 53,
+        "primary": 16
+      },
+      "published_files": 480,
+      "safe": 167,
+      "vulnerable": 62
+    },
+    "express_ts-flask": {
+      "apps": 16,
+      "chains_complete": 8,
+      "chains_csv": "expectedresults-chains-2026.11.16.csv",
+      "chains_sha256": "34a57dbd4b4085ba402ab3eaf7d34587713849268b95dc812443e7e287debeb2",
+      "csv_sha256": "af237a4d79becb81a21024f604a9ca717926f42496e1b058ebdf10282826a546",
+      "edges": 16,
+      "entry_rows": 14,
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "flows": 229,
+      "flows_by_kind": {
+        "benign": 160,
+        "planted": 53,
+        "primary": 16
+      },
+      "published_files": 494,
+      "safe": 167,
+      "vulnerable": 62
+    },
+    "express_ts-httplib": {
+      "apps": 12,
+      "chains_complete": 6,
+      "chains_csv": "expectedresults-chains-2026.11.16.csv",
+      "chains_sha256": "112cbc8cffb153dc36ebe9239b27ad4135bc2bc58a00d2800c5b8e0877ae7d16",
+      "csv_sha256": "25c761bace3fbe6dfe5d75650c248d6e5b01ecf7d7291e2184eb5a103efb8a6f",
+      "edges": 12,
+      "entry_rows": 7,
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "flows": 173,
+      "flows_by_kind": {
+        "benign": 120,
+        "planted": 41,
+        "primary": 12
+      },
+      "published_files": 377,
+      "safe": 125,
+      "vulnerable": 48
+    },
+    "nestjs-spring": {
+      "apps": 16,
+      "chains_complete": 8,
+      "chains_csv": "expectedresults-chains-2026.11.16.csv",
+      "chains_sha256": "da37902eb0f673ed9cddaa7183fabf5b281e551d143f13a0f2927a3f480fe34c",
+      "csv_sha256": "cd16e5eb4a58b36e19d5e4d7d1d5587d9fec86a6d0fea25248bc30b300db1132",
+      "edges": 16,
+      "entry_rows": 14,
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "flows": 229,
+      "flows_by_kind": {
+        "benign": 160,
+        "planted": 53,
+        "primary": 16
+      },
+      "published_files": 502,
+      "safe": 167,
+      "vulnerable": 62
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.16"
+}

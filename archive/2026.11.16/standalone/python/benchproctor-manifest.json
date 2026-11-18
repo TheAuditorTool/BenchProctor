@@ -1,0 +1,44 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "django",
+    "fastapi",
+    "flask"
+  ],
+  "language": "python",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "django": {
+      "categories": 18,
+      "csv_sha256": "6dcc6dba3a55548f4f57cfcc1f35a2126a05bf2d138b28ace0cbe81aff3b7bf2",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 110,
+      "safe": 54,
+      "total": 108,
+      "vulnerable": 54
+    },
+    "fastapi": {
+      "categories": 18,
+      "csv_sha256": "8515d215e404a5e3d4899e80b7457bc2770f84dc0ec190c54fed3921ad0c4ab2",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 109,
+      "safe": 54,
+      "total": 108,
+      "vulnerable": 54
+    },
+    "flask": {
+      "categories": 18,
+      "csv_sha256": "1e69e3840768fc61ddf2207b8ca49596df4aaa9e783cd1e8c17f4bb862aeb004",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 109,
+      "safe": 54,
+      "total": 108,
+      "vulnerable": 54
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.16"
+}

@@ -7,15 +7,53 @@ replaced: a correction ships as a new release, and a withdrawal is recorded here
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [2026.11.19] - 2026-11-19
+
+A rotation of the curated release with deeper sampling and two more application graphs, published
+as plain files instead of zips. Every folder under `Benchmarks/` carries this version.
+
+### Changed
+
+- **Published as plain files.** The cases and answer keys are regular files under `Benchmarks/`,
+  readable here without downloading or unpacking anything, with one `SHASUMS256.txt` over every
+  file. Release 2026.11.16 moved to [`archive/2026.11.16/`](archive/2026.11.16/), unpacked, with
+  its own `SHASUMS256.txt`; its original zips remain in this repository's history.
+- **20 vulnerable + 20 safe cases per framework and class pair**, up from 3: 14,280 standalone
+  cases over the same 357 pairs (11 languages, 21 framework targets, 22 weakness classes). One case
+  now moves a framework's headline score by well under one point.
+- **368 applications over 6 service graphs**, up from 60 over 4, at 4 applications per class and
+  side on each graph: 5,299 labeled flows, 1,473 vulnerable and 3,826 safe. Two graphs are new, and
+  they are the first that do not start in JavaScript or TypeScript: FastAPI to Spring (Python to
+  Java) and Jakarta EE to NestJS (Java to TypeScript).
+
+### Added
+
+- Each standalone folder's README and `benchproctor-manifest.json` list the third-party libraries
+  its C and C++ cases include, with their Fedora and Debian packages.
 
 ### Fixed
 
-- The C cases' build prerequisites are now documented (issue #1). 22 of the 96 C cases in
-  2026.11.16 call SQLite, libcurl or OpenSSL, and nothing said so; the README's new
-  [C prerequisites](README.md#c-prerequisites) section gives the packages. The bundles are
-  unchanged. From the next release, each bundle's README and manifest list the libraries its
-  files include.
+- The C cases' build prerequisites are documented (issue #1). In 2026.11.16, 22 of the 96 C cases
+  called SQLite, libcurl or OpenSSL and nothing said so; the README's
+  [C and C++ prerequisites](README.md#c-and-c-prerequisites) section gives the packages. In
+  2026.11.19, 142 of the 640 C cases and 17 of the 1,520 C++ cases need a library.
+
+Per-language totals:
+
+| Language | Framework targets | Cases |
+|---|---|---:|
+| Java | 2 | 1,440 |
+| Python | 3 | 2,160 |
+| Go | 2 | 1,200 |
+| Rust | 2 | 1,200 |
+| TypeScript | 2 | 1,440 |
+| JavaScript | 2 | 1,440 |
+| PHP | 2 | 1,440 |
+| Ruby | 2 | 1,360 |
+| C++ | 2 | 1,520 |
+| C | 1 | 640 |
+| Bash | 1 | 440 |
+| **Total** | **21** | **14,280** |
 
 ## [2026.11.16] - 2026-11-16
 

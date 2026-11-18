@@ -1,0 +1,28 @@
+services:
+  order-api:
+    build: ./services/order-api
+    environment:
+      - SERVICE_NAME=order-api
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      cart-service:
+        condition: service_healthy
+  cart-service:
+    build: ./services/cart-service
+    environment:
+      - SERVICE_NAME=cart-service
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "express",
+    "koa"
+  ],
+  "language": "javascript",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "express": {
+      "categories": 18,
+      "csv_sha256": "ae34a503be469caeec442ee9606427c6ab5fbde6cf8773163b209dfc79420b4c",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 723,
+      "safe": 360,
+      "total": 720,
+      "vulnerable": 360
+    },
+    "koa": {
+      "categories": 18,
+      "csv_sha256": "ca9b438ac60893d413b3400a4663c3ba68964841e5ef5840426ec20f72bccc7e",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 723,
+      "safe": 360,
+      "total": 720,
+      "vulnerable": 360
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

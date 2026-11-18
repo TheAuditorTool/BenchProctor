@@ -1,0 +1,28 @@
+services:
+  revision-store:
+    build: ./services/revision-store
+    environment:
+      - SERVICE_NAME=revision-store
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      preview-renderer:
+        condition: service_healthy
+  preview-renderer:
+    build: ./services/preview-renderer
+    environment:
+      - SERVICE_NAME=preview-renderer
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

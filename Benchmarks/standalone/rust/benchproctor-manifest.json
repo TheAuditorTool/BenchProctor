@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "actix_web",
+    "axum"
+  ],
+  "language": "rust",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "actix_web": {
+      "categories": 15,
+      "csv_sha256": "71fab46ca66519df3adf4c73b595023039cbf389962de2b5605b445b05de08c6",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 600,
+      "safe": 300,
+      "total": 600,
+      "vulnerable": 300
+    },
+    "axum": {
+      "categories": 15,
+      "csv_sha256": "982dbd1ebc48698368a30eaf983d723dfdb7aa7e5e1de935c490022c98f5e8a7",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 600,
+      "safe": 300,
+      "total": 600,
+      "vulnerable": 300
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

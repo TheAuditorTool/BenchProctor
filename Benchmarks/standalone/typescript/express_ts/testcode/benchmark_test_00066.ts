@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Request, Response } from "express";
+
+export const BenchmarkTest00066 = async (req: Request, res: Response): Promise<void> => {
+  const userInput = ((req.body.variables?.input) as string) || "";
+  const _input = String(userInput);
+  let data;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': data = _input.normalize('NFC'); break;
+    default: data = _input; break;
+  }
+  res.redirect(data);
+}

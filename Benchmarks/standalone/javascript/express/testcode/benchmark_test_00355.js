@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+const nodeSerialize = require("node-serialize");
+
+async function BenchmarkTest00355(req, res) {
+  const userInput = req.headers.authorization || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  nodeSerialize.unserialize(data);
+  res.json({ done: true });
+}
+
+module.exports = { BenchmarkTest00355 };

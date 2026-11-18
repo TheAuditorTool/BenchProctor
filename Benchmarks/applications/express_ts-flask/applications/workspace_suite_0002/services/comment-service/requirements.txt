@@ -1,0 +1,5 @@
+Markdown==3.6
+bleach==6.1.0
+flask==3.0.3
+pyyaml==6.0.1
+redis==5.0.4

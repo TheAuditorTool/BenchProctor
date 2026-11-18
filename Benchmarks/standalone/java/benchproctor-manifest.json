@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "jakarta",
+    "spring"
+  ],
+  "language": "java",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "jakarta": {
+      "categories": 18,
+      "csv_sha256": "2839bfcff5eb2588379213671fc63a2bbde795630b84083b8c6b8c0e2b9a0415",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 721,
+      "safe": 360,
+      "total": 720,
+      "vulnerable": 360
+    },
+    "spring": {
+      "categories": 18,
+      "csv_sha256": "d50ad871f2bc296a71e256fbccbeb3061b5a42a8d574e1f534baafd245ce5946",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 721,
+      "safe": 360,
+      "total": 720,
+      "vulnerable": 360
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+from flask import Flask, jsonify
+from app_runtime import db
+import os
+import redis
+
+
+redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
+
+app = Flask(__name__)
+
+
+@app.after_request
+def _apply_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@app.errorhandler(Exception)
+def _handle_unexpected(exc):
+    return jsonify({"error": "internal"}), 500
+
+
+@app.route("/BenchmarkTest00278", methods=["POST"])
+def BenchmarkTest00278():
+    redis_value = redis_client.get('user_data')
+    data = str(redis_value).replace('\x00', '')
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _coerced
+    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    return jsonify({"result": "success"})

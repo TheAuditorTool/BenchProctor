@@ -1,0 +1,12 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+
+benchmark_test_00311() {
+  user_input="$HTTP_HOST"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  echo -n "$data" | md5sum
+}
+
+benchmark_test_00311 "$@"

@@ -1,2 +1,5 @@
 # Force LF everywhere - WSL (Ubuntu) and Windows must agree on line endings.
 * text=auto eol=lf
+# Release files are stored byte for byte: SHASUMS256.txt lists their exact bytes.
+Benchmarks/** -text
+archive/** -text

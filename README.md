@@ -8,14 +8,17 @@ in benchmark code and how often it flags safe code.
 
 > ## Release status
 >
-> **Release 2026.11.16 is the current release.** It is a curated release:
+> **Release 2026.11.19 is the current release.** It is a curated release:
 >
-> - **2,142 standalone cases** in 11 languages across 21 framework targets, exactly 1,071
->   vulnerable and 1,071 safe;
-> - **60 multi-service applications** in five languages, holding 860 labeled flows.
+> - **14,280 standalone cases** in 11 languages across 21 framework targets, exactly 7,140
+>   vulnerable and 7,140 safe;
+> - **368 multi-service applications** in five languages, holding 5,299 labeled flows.
 >
-> Releases resume in this curated form. Each release is a small, fresh draw: easy and medium
-> difficulty only, on a fixed list of frameworks and weakness classes. The larger corpus it is
+> It is published as plain files in `Benchmarks/`, so every case and answer key can be read here
+> without unpacking anything. Earlier releases are kept under [`archive/`](archive/).
+>
+> Releases are curated. Each release is a fresh draw: easy and medium difficulty only, on a fixed
+> list of frameworks and weakness classes. The larger corpus it is
 > drawn from is not published. See [What this release does not contain](#what-this-release-does-not-contain).
 >
 > **Release 2026.07.22 is withdrawn.** An audit found label and realism defects in families it
@@ -30,15 +33,14 @@ Youden's J.
 ## Quick start
 
 ```bash
-# 1. extract one language bundle
-unzip Benchmarks/standalone/benchproctor-java-2026.11.16.zip -d benchproctor-java
+# 1. clone this repository; the current release is in Benchmarks/
 
 # 2. scan one framework's testcode and export SARIF 2.1.0
-your-tool scan ./benchproctor-java/spring/testcode --format sarif -o results.sarif
+your-tool scan Benchmarks/standalone/java/spring/testcode --format sarif -o results.sarif
 
 # 3. score against its answer key (standard-library Python, zero dependencies)
-python ./benchproctor-java/score_sarif.py results.sarif \
-  ./benchproctor-java/spring/expectedresults-2026.11.16.csv
+python Benchmarks/standalone/java/score_sarif.py results.sarif \
+  Benchmarks/standalone/java/spring/expectedresults-2026.11.19.csv
 
 # 4. read category-averaged and flat-aggregate TPR, FPR, and Youden's J
 ```
@@ -47,7 +49,7 @@ The scorer recovers each finding's CWE from the SARIF `ruleId`, the result or ru
 `tags` (for example `external/cwe/cwe-089`), or CWE `taxa`. This supports many common SARIF
 encodings without configuration. If your tool emits no CWE, add `--match-mode filename` (any
 finding on a vulnerable file counts; this rewards over-flagging, so prefer the default). The same
-`score_sarif.py` ships inside every standalone bundle. The applications have their own scorer; see
+`score_sarif.py` ships in every standalone language folder. The applications have their own scorer; see
 [Applications](#applications).
 
 ## Why another benchmark
@@ -70,14 +72,14 @@ languages, and adds multi-service applications whose flows cross a process bound
 
 | | |
 |---|---|
-| **Release** | `2026.11.16` |
-| **Standalone cases** | 2,142: 1,071 vulnerable and 1,071 safe |
+| **Release** | `2026.11.19` |
+| **Standalone cases** | 14,280: 7,140 vulnerable and 7,140 safe |
 | **Languages** | 11: Java, Python, Go, Rust, TypeScript, JavaScript, PHP, Ruby, Bash, C, C++ |
 | **Framework targets** | 21 (see the table below) |
 | **Weakness classes** | 22, mapped to 22 distinct CWE IDs |
-| **Sampling** | 3 vulnerable + 3 safe cases for every framework and class pair: 357 pairs |
-| **Applications** | 60 two-service applications over 4 service graphs, in TypeScript, JavaScript, Python, Java and C++ |
-| **Application flows** | 860 labeled flows: 234 vulnerable and 626 safe |
+| **Sampling** | 20 vulnerable + 20 safe cases for every framework and class pair: 357 pairs |
+| **Applications** | 368 two-service applications over 6 service graphs, in TypeScript, JavaScript, Python, Java and C++ |
+| **Application flows** | 5,299 labeled flows: 1,473 vulnerable and 3,826 safe |
 | **Difficulty** | easy and medium |
 
 Every framework and class pair is balanced exactly. Under Youden's J, a flag-everything tool
@@ -111,7 +113,7 @@ Read a score on this release as a floor check on broadly known classes, not as a
   or label-bearing identifiers. File IDs are shuffled, so filenames do not encode a case's class
   or label. The CSV answer keys are the only published source of labels.
 - **Seed rotation.** Each release is drawn with its own seed. A new release keeps the same
-  languages, frameworks, classes, sampling and difficulty, and emits different combinations and
+  languages, frameworks, classes and difficulty, and emits different combinations and
   identifiers. This limits the usefulness of exact-file and filename memorization and is designed
   to support cross-release score comparability. Structural generalization across releases remains
   possible and is expected.
@@ -120,32 +122,35 @@ Read a score on this release as a floor check on broadly known classes, not as a
 
 | Language | Framework targets | Targets | Classes per target | Cases |
 |---|---|---:|---:|---:|
-| Java | Spring, Jakarta EE | 2 | 18 | 216 |
-| Python | Flask, Django, FastAPI | 3 | 18 | 324 |
-| Go | Gin, net/http | 2 | 15 | 180 |
-| Rust | Actix-web, Axum | 2 | 15 | 180 |
-| TypeScript | NestJS, Express | 2 | 18 | 216 |
-| JavaScript | Express, Koa | 2 | 18 | 216 |
-| PHP | Laravel, Symfony | 2 | 18 | 216 |
-| Ruby | Rails, Sinatra | 2 | 17 | 204 |
-| C++ | cpp-httplib, standalone | 2 | 19 | 228 |
-| C | standalone | 1 | 16 | 96 |
-| Bash | standalone | 1 | 11 | 66 |
-| **Total** |  | **21** | **22 in union** | **2,142** |
+| Java | Spring, Jakarta EE | 2 | 18 | 1,440 |
+| Python | Flask, Django, FastAPI | 3 | 18 | 2,160 |
+| Go | Gin, net/http | 2 | 15 | 1,200 |
+| Rust | Actix-web, Axum | 2 | 15 | 1,200 |
+| TypeScript | NestJS, Express | 2 | 18 | 1,440 |
+| JavaScript | Express, Koa | 2 | 18 | 1,440 |
+| PHP | Laravel, Symfony | 2 | 18 | 1,440 |
+| Ruby | Rails, Sinatra | 2 | 17 | 1,360 |
+| C++ | cpp-httplib, standalone | 2 | 19 | 1,520 |
+| C | standalone | 1 | 16 | 640 |
+| Bash | standalone | 1 | 11 | 440 |
+| **Total** |  | **21** | **22 in union** | **14,280** |
 
 A framework target carries the classes that occur in its language. C and C++ include memory-safety
 classes; the managed languages do not.
 
-### C prerequisites
+### C and C++ prerequisites
 
-"Standalone" means one file per case, not free of dependencies. The C standard library has no SQL,
-HTTP or cryptography API, so 22 of the 96 C cases call SQLite, libcurl or OpenSSL. A tool that
-compiles the cases, or resolves their `#include` lines, needs those libraries' development headers:
+"Standalone" means one file per case, not free of dependencies. The C and C++ standard libraries
+have no SQL, HTTP, cryptography or message-queue API, so some cases call a library: 142 of the 640
+C cases call SQLite, libcurl or OpenSSL, and 17 of the 1,520 C++ cases call the hiredis or
+RabbitMQ C client. A tool that compiles the cases, or resolves their `#include` lines, needs those
+libraries' development headers:
 
-- Fedora / RHEL: `dnf install openssl-devel sqlite-devel libcurl-devel`
-- Debian / Ubuntu: `apt install libssl-dev libsqlite3-dev libcurl4-openssl-dev`
+- Fedora / RHEL: `dnf install openssl-devel sqlite-devel libcurl-devel hiredis-devel librabbitmq-devel`
+- Debian / Ubuntu: `apt install libssl-dev libsqlite3-dev libcurl4-openssl-dev libhiredis-dev librabbitmq-dev`
 
-No label depends on a header version. The C++ cases include only standard and POSIX headers.
+Each standalone language folder's README and `benchproctor-manifest.json` list exactly which
+libraries its cases include. No label depends on a header version.
 
 ## Weakness classes
 
@@ -173,11 +178,13 @@ surrounds them. Each application also carries a `docker-compose.yml`.
 
 | Service graph | Applications | Flows | Vulnerable | Safe |
 |---|---:|---:|---:|---:|
-| Express (TypeScript) to Flask | 16 | 229 | 62 | 167 |
-| NestJS to Spring | 16 | 229 | 62 | 167 |
-| Express (JavaScript) to Django | 16 | 229 | 62 | 167 |
-| Express (TypeScript) to cpp-httplib | 12 | 173 | 48 | 125 |
-| **Total** | **60** | **860** | **234** | **626** |
+| Express (TypeScript) to Flask | 64 | 920 | 255 | 665 |
+| NestJS to Spring | 64 | 920 | 255 | 665 |
+| Express (JavaScript) to Django | 64 | 923 | 258 | 665 |
+| Express (TypeScript) to cpp-httplib | 48 | 694 | 194 | 500 |
+| FastAPI to Spring | 64 | 921 | 255 | 666 |
+| Jakarta EE to NestJS | 64 | 921 | 256 | 665 |
+| **Total** | **368** | **5,299** | **1,473** | **3,826** |
 
 Applications are built around six classes (SQL injection, cross-site scripting, OS command
 injection, server-side request forgery, path traversal, deserialization) and two two-stage chains
@@ -187,11 +194,10 @@ application and no unvalidated-URL chain. In half of the applications the chain 
 other half a control on the path holds.
 
 ```bash
-unzip Benchmarks/applications/benchproctor-applications-2026.11.16.zip -d benchproctor-apps
-your-tool scan ./benchproctor-apps/nestjs-spring/applications --format sarif -o results.sarif
-python ./benchproctor-apps/score_apps.py \
-  --flows  ./benchproctor-apps/nestjs-spring/expectedresults-2026.11.16.csv \
-  --chains ./benchproctor-apps/nestjs-spring/expectedresults-chains-2026.11.16.csv \
+your-tool scan Benchmarks/applications/nestjs-spring/applications --format sarif -o results.sarif
+python Benchmarks/applications/score_apps.py \
+  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.19.csv \
+  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.19.csv \
   --tool-sarif results.sarif
 ```
 
@@ -222,8 +228,8 @@ After a tool runs, scoring computes a confusion matrix and one subtraction:
 
 Scores are reported in two forms. The **category-averaged** headline score weights each class
 equally so large classes cannot dominate; the **flat aggregate** score weights every case equally.
-With three cases per side, a single framework and class pair moves in steps of a third, so read
-scores per language or per class across frameworks, not per pair. Any tool that emits compatible
+With twenty cases per side, one case moves a single framework and class pair by five points and a
+framework's headline score by well under one point, so per-class scores carry real signal. Any tool that emits compatible
 SARIF 2.1.0 can be scored; both scorers are single standard-library Python files with no
 dependencies.
 
@@ -242,8 +248,8 @@ language. Nothing was sampled:
   applications.
 - **C++ applications:** every C++ service built with its own `Makefile`.
 - **JavaScript, PHP, Ruby, C, C++, Bash:** every file syntax-checked with `node --check`, `php -l`,
-  `ruby -c`, `gcc`, `g++` and `bash -n`. The C files were checked with the SQLite, libcurl and
-  OpenSSL development headers installed (see [C prerequisites](#c-prerequisites)).
+  `ruby -c`, `gcc`, `g++` and `bash -n`. The C and C++ files were checked with their libraries'
+  development headers installed (see [C and C++ prerequisites](#c-and-c-prerequisites)).
 
 On top of that, a suite of deterministic gates runs with no AI and no LLM-as-judge: each
 `vulnerable` case must carry a real source-to-sink flow, each `safe` twin must neutralize it for
@@ -251,8 +257,8 @@ that sink, the recorded sink line must match the scored operation, and dozens of
 and idiom checks must hold. For the applications, further gates check that each service graph
 matches the services on disk and that every vulnerable flow's scored line holds a statement.
 
-Finally, every bundle was unpacked and scored the way you would score it, with the scorer shipped
-inside it and the answer keys shipped beside the code, against a perfect answer: every standalone
+Finally, every bundle was scored the way you would score it, with the scorer shipped in it and the
+answer keys shipped beside the code, against a perfect answer: every standalone
 framework scores +100%, and on every application graph every flow is judged right, every CWE is
 named and every service-graph edge is recovered.
 
@@ -266,17 +272,23 @@ oracle SARIF used for self-verification are deliberately **not** published. The 
 published source of labels; test files contain no proof markers or label metadata from which those
 labels can be inferred.
 
-## Bundles and integrity
+## Layout and integrity
 
-Release 2026.11.16 contains 12 ZIP files: one per language under `Benchmarks/standalone/`
-and one for the applications under `Benchmarks/applications/`. Together they occupy 3.1 MiB (3,272,724 bytes).
+Release 2026.11.19 is published as plain files under `Benchmarks/`: one folder per language under
+`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 25,721
+files in all (45.6 MiB). `Benchmarks/SHASUMS256.txt` lists the SHA-256 of every file; from
+`Benchmarks/`, `sha256sum -c SHASUMS256.txt` checks them all.
 
-Each standalone bundle holds a `testcode/` directory for each framework, the
+Each standalone language folder holds a `testcode/` directory for each framework, the
 `expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
-`benchproctor-manifest.json` (version, per-framework counts, and SHA-256 checksums), and a README.
-The applications bundle holds one directory per service graph with its `applications/`, its two
-answer-key CSVs, and `score_apps.py`. `SHASUMS256.txt` and per-file checksum sidecars let you verify
-every download. The archives use forward-slash paths and extract with any standard tool.
+`benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums of the answer key
+and the scorer, and the libraries the C and C++ cases include), and a README. The applications
+folder holds one directory per service graph with its `applications/`, its two answer-key CSVs,
+and `score_apps.py`.
+
+Earlier releases are kept whole under [`archive/`](archive/), one folder per release, each with
+its own `SHASUMS256.txt`. Release 2026.11.16 was published as one zip per bundle; it is kept there
+unpacked, and its original zips remain in this repository's history.
 
 ## Corrections and ground-truth disputes
 
@@ -316,8 +328,8 @@ with scores on any later release.
 
 ## Releases
 
-Release 2026.11.16 is the current release. The scorers in `scripts/` use only the Python standard
-library: clone the repository, point a scorer at a corpus and your SARIF, and read the resulting
+Release 2026.11.19 is the current release, in `Benchmarks/`; earlier releases are under
+[`archive/`](archive/). The scorers in `scripts/` use only the Python standard library: clone the repository, point a scorer at a corpus and your SARIF, and read the resulting
 metrics. The release history is in [changelog.md](changelog.md), and a step-by-step guide is in
 [usage.md](usage.md).
 

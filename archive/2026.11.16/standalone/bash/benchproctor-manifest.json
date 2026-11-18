@@ -1,0 +1,24 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "standalone"
+  ],
+  "language": "bash",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "standalone": {
+      "categories": 11,
+      "csv_sha256": "488d5ffb60996400aa6a75d435c0f6538e8061e3d233172e956c68c1ad6985e9",
+      "expectedresults_csv": "expectedresults-2026.11.16.csv",
+      "published_files": 66,
+      "safe": 33,
+      "total": 66,
+      "vulnerable": 33
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.16"
+}

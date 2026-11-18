@@ -1,0 +1,6 @@
+channels:
+  - name: platform:inbound:0010
+    payload: json
+keys:
+  - pattern: platform:record:{id}
+    ttl_seconds: 300

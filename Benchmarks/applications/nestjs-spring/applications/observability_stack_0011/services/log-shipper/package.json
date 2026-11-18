@@ -1,0 +1,27 @@
+{
+  "name": "log-shipper",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.ts",
+  "scripts": {
+    "start": "ts-node main.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.8",
+    "@nestjs/core": "^10.3.8",
+    "amqplib": "^0.10.4",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "pg": "^8.11.5",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/pg": "^8.11.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Controller, Post, Query } from "@nestjs/common";
+import { Response } from "express";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { DataSource } from "typeorm";
+
+@Catch()
+class FailureFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const res: Response = host.switchToHttp().getResponse();
+    const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const body = exception instanceof HttpException ? exception.getResponse() : { error: "internal" };
+    res.status(status).json(body);
+  }
+}
+
+@Controller("benchmark")
+@UseFilters(FailureFilter)
+export class BenchmarkController {
+  @Post("BenchmarkTest00106")
+  async BenchmarkTest00106(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const data = userInput != null ? userInput : '';
+    const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
+    await _dataSource.initialize();
+    await _dataSource.query("SELECT * FROM users WHERE id = '" + data + "'");
+    return { created: true };
+  }
+}

@@ -1,0 +1,7 @@
+Markdown==3.6
+bleach==6.1.0
+django==5.0.6
+jsonschema==4.22.0
+pyyaml==6.0.1
+redis==5.0.4
+uvicorn==0.30.1

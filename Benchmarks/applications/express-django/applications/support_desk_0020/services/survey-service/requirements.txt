@@ -1,0 +1,4 @@
+bleach==6.1.0
+django==5.0.6
+requests==2.32.3
+uvicorn==0.30.1

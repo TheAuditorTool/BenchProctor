@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+from urllib.parse import urlparse
+import socket
+from flask import Blueprint, request, jsonify
+import re
+
+
+bp = Blueprint("validate_record", __name__)
+
+
+@bp.route("/validate_record", methods=["POST"])
+def validate_record():
+    phrase = request.get_data(as_text=True)
+    persona = f'{phrase!s}'
+    parsed = urlparse(persona)
+    resolved = socket.gethostbyname(parsed.hostname or persona)
+    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
+        return jsonify({'error': 'private range blocked'}), 403
+    transcript = persona
+    s = socket.create_connection((str(transcript), 80))
+    s.close()
+    return jsonify({"result": "success"})

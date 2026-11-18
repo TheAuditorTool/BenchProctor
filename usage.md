@@ -1,67 +1,63 @@
 # Using BenchProctor
 
-The operational guide: how to pick the bundle you want, run a scanner against it, and read the
+The operational guide: how to pick the cases you want, run a scanner against them, and read the
 score. For what the release is and why it is built the way it is, see [README.md](README.md); for
 the release history, see [changelog.md](changelog.md).
 
-The current release is `2026.11.16`: standalone cases, one file per case, in all 11 languages, and
-60 multi-service applications.
+The current release is `2026.11.19`: 14,280 standalone cases, one file per case, in all 11
+languages, and 368 multi-service applications. It is published as plain files in `Benchmarks/`;
+nothing needs unpacking. Earlier releases are under [`archive/`](archive/).
 
-## 1. Pick your bundle
+## 1. Pick your cases
 
-A standalone bundle is one language. It holds every framework for that language, so you choose the
-framework inside the bundle.
+A standalone language folder holds every framework for that language, so you choose the framework
+inside it.
 
 ```
-Benchmarks/standalone/benchproctor-<language>-2026.11.16.zip
-Benchmarks/applications/benchproctor-applications-2026.11.16.zip
+Benchmarks/standalone/<language>/
+Benchmarks/applications/
 ```
 
-- "I want Java" -> `Benchmarks/standalone/benchproctor-java-2026.11.16.zip`, then the `spring/` or
-  `jakarta/` framework subtree inside it.
-- "I want Python, FastAPI" -> `Benchmarks/standalone/benchproctor-python-2026.11.16.zip`, then the
-  `fastapi/` subtree.
-- "I want the multi-service applications" ->
-  `Benchmarks/applications/benchproctor-applications-2026.11.16.zip`, then one service-graph
-  directory inside it.
+- "I want Java" -> `Benchmarks/standalone/java/`, then its `spring/` or `jakarta/` framework folder.
+- "I want Python, FastAPI" -> `Benchmarks/standalone/python/fastapi/`.
+- "I want the multi-service applications" -> `Benchmarks/applications/`, then one service-graph
+  folder in it.
 
 The framework names for each language are listed in the README's
 [Languages & frameworks](README.md#languages--frameworks) table.
 
-## 2. What is inside a standalone bundle
+## 2. What is inside a standalone language folder
 
 Labels live only in the CSV answer keys. The test files themselves carry no comments, CWE tags, or
 label-bearing names, so you cannot infer a label from a file.
 
 ```
-benchproctor-<language>/
+Benchmarks/standalone/<language>/
   score_sarif.py                     the scorer (standard-library Python, no dependencies)
-  benchproctor-manifest.json         version, per-framework counts, SHA-256 checksums
-  README.md                          bundle-local notes
+  benchproctor-manifest.json         version, per-framework counts, checksums, C/C++ libraries
+  README.md                          folder-local notes
   <framework>/
     testcode/                        the cases you scan
-    expectedresults-2026.11.16.csv   the answer key for this framework
+    expectedresults-2026.11.19.csv   the answer key for this framework
 ```
 
 Some frameworks also carry the build files their toolchain needs next to `testcode/`, for example
 `pom.xml` for Java. They hold no labels.
 
-Compiling the C cases needs the development headers of SQLite, libcurl and OpenSSL, because the C
-standard library has no SQL, HTTP or cryptography API. See
-[C prerequisites](README.md#c-prerequisites) for the install commands.
+Compiling some C and C++ cases needs a library's development headers (SQLite, libcurl and OpenSSL
+for C; hiredis and the RabbitMQ C client for C++), because neither standard library has an SQL,
+HTTP, cryptography or message-queue API. See
+[C and C++ prerequisites](README.md#c-and-c-prerequisites) for the install commands.
 
 ## 3. Run and score a standalone framework
 
 ```bash
-# extract
-unzip Benchmarks/standalone/benchproctor-java-2026.11.16.zip -d benchproctor-java
-
 # scan one framework's testcode and export SARIF 2.1.0
-your-tool scan ./benchproctor-java/spring/testcode --format sarif -o results.sarif
+your-tool scan Benchmarks/standalone/java/spring/testcode --format sarif -o results.sarif
 
 # score against that framework's answer key
-python ./benchproctor-java/score_sarif.py results.sarif \
-  ./benchproctor-java/spring/expectedresults-2026.11.16.csv
+python Benchmarks/standalone/java/score_sarif.py results.sarif \
+  Benchmarks/standalone/java/spring/expectedresults-2026.11.19.csv
 ```
 
 The scorer matches a finding to a case by file and recovers the finding's CWE from the SARIF
@@ -82,30 +78,29 @@ cannot dominate; **flat aggregate** weights every case equally. A perfect tool s
 A flag-everything or flag-nothing tool scores `0%`, because its TPR and FPR are equal. A tool that
 flags safe code and misses real bugs scores below zero.
 
-Each framework holds 3 vulnerable and 3 safe cases per class. One class in one framework therefore
-moves in steps of a third. Read scores per language, or per class across frameworks.
+Each framework holds 20 vulnerable and 20 safe cases per class, so one case moves one class in one
+framework by five points, and the framework's headline score by well under one point.
 
-## 4. The applications bundle
+## 4. The applications
 
 ```
-benchproctor-applications/
+Benchmarks/applications/
   score_apps.py                             the scorer (standard-library Python, no dependencies)
   benchproctor-manifest.json                version, counts, SHA-256 checksums
-  README.md                                 bundle-local notes
+  README.md                                 folder-local notes
   <service-graph>/
     applications/<application>/             one project: docker-compose.yml and services/<service>/
-    expectedresults-2026.11.16.csv          one row per labeled flow, with its file and line
-    expectedresults-chains-2026.11.16.csv   the service graph and whether the chain completes
+    expectedresults-2026.11.19.csv          one row per labeled flow, with its file and line
+    expectedresults-chains-2026.11.19.csv   the service graph and whether the chain completes
 ```
 
 Scan a service graph's `applications/` directory as one tree, then score it:
 
 ```bash
-unzip Benchmarks/applications/benchproctor-applications-2026.11.16.zip -d benchproctor-apps
-your-tool scan ./benchproctor-apps/nestjs-spring/applications --format sarif -o results.sarif
-python ./benchproctor-apps/score_apps.py \
-  --flows  ./benchproctor-apps/nestjs-spring/expectedresults-2026.11.16.csv \
-  --chains ./benchproctor-apps/nestjs-spring/expectedresults-chains-2026.11.16.csv \
+your-tool scan Benchmarks/applications/nestjs-spring/applications --format sarif -o results.sarif
+python Benchmarks/applications/score_apps.py \
+  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.19.csv \
+  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.19.csv \
   --tool-sarif results.sarif
 ```
 
@@ -120,15 +115,16 @@ The scorer reports a triple and never averages it into one number:
 
 A finding matches a flow by file and line, with a tolerance of two lines.
 
-## 5. Verify your download
+## 5. Verify the files
 
-Every published file is checksummed. From the `Benchmarks/` directory:
+Every published file is listed with its SHA-256. From the `Benchmarks/` directory:
 
 ```bash
 sha256sum -c SHASUMS256.txt
 ```
 
-Per-file checksum sidecars accompany the bundles for spot verification.
+Each folder under `archive/` carries its own `SHASUMS256.txt`, checked the same way from that
+folder.
 
 ## FAQ
 
@@ -137,9 +133,14 @@ So a tool cannot game the score by flagging everything. Under Youden's J, a flag
 a 100% true-positive rate and a 100% false-positive rate, which nets to zero. The applications are
 not 50 / 50: most of the code in a real project is safe, and so it is there.
 
-**Why is the release so small?**
-It is a curated release. Three cases per side for each framework and class is enough to score a
-language or a class, and each release is a fresh draw, so a tool cannot be tuned to the files.
+**Why is the release curated rather than the whole corpus?**
+Twenty cases per side for each framework and class is enough to score a language or a class
+closely, and each release is a fresh draw, so a tool cannot be tuned to the files.
+
+**Where are the earlier releases?**
+Under [`archive/`](archive/), one folder per release, kept whole and unchanged. Release 2026.11.16
+was published as zips and is kept there unpacked; its original zips are in this repository's
+history.
 
 **Does it test whether my tool understands a broken safeguard?**
 No. In this release a vulnerable case has no safeguard and a safe case has one that works. See the

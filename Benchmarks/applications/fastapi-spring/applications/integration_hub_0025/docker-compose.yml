@@ -1,0 +1,27 @@
+services:
+  mapping-store:
+    build: ./services/mapping-store
+    environment:
+      - SERVICE_NAME=mapping-store
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      connector-api:
+        condition: service_healthy
+  connector-api:
+    build: ./services/connector-api
+    environment:
+      - SERVICE_NAME=connector-api
+    ports:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

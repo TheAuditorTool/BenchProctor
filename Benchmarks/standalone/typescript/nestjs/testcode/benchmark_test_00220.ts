@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+
+@Catch()
+class FailureFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const res: Response = host.switchToHttp().getResponse();
+    const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const body = exception instanceof HttpException ? exception.getResponse() : { error: "internal" };
+    res.status(status).json(body);
+  }
+}
+
+@Controller("benchmark")
+@UseFilters(FailureFilter)
+export class BenchmarkController {
+  @Post("BenchmarkTest00220")
+  async BenchmarkTest00220(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
+    const userInput = xff || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+    if (!row) { throw new NotFoundException({error:"not found"}); }
+    const value = (row as any).name;
+    return { created: true };
+  }
+}

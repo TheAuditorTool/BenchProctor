@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
+
+#[actix_web::post("/benchmark_test_00192")]
+pub async fn benchmark_test_00192(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
+            }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
+        }
+        _mv
+    };
+    let _bounded = multipart_value.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
+    let processed = _bounded.to_string();
+    let requested: i64 = processed.parse().unwrap_or(0);
+    let count = requested.clamp(0, 4096) as usize;
+    let _buf: Vec<u8> = vec![0u8; count];
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+}

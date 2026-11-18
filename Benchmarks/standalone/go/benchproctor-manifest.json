@@ -1,0 +1,34 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "gin",
+    "net_http"
+  ],
+  "language": "go",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "gin": {
+      "categories": 15,
+      "csv_sha256": "c1c7ed5383cca7c320f2f75cf326f32571b29a5795a2ded6e5e87beaba15ed55",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 602,
+      "safe": 300,
+      "total": 600,
+      "vulnerable": 300
+    },
+    "net_http": {
+      "categories": 15,
+      "csv_sha256": "ab5722c774cc73a6246bb7a77811fb155466cf71063163787e364b5653d1c1ef",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "published_files": 602,
+      "safe": 300,
+      "total": 600,
+      "vulnerable": 300
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}
