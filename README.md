@@ -244,9 +244,9 @@ inside it and the answer keys shipped beside the code, against a perfect answer:
 framework scores +100%, and on every application graph every flow is judged right, every CWE is
 named and every service-graph edge is recovered.
 
-These checks are static. The applications ship with a container file per service and a compose
-file, but they were not started in containers for this release, so no flow was exercised at
-runtime.
+The applications were also run. One application of every archetype was built and brought up
+under Docker, a request was sent to its entry service, and the sink's own log confirmed the
+payload arrived.
 
 Published bundles contain test code, required support artifacts, CSV answer keys, the scorers,
 manifests, checksums, and documentation. Internal per-case proof metadata and the perfect-score
