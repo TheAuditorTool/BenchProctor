@@ -46,6 +46,10 @@ benchproctor-<language>/
 Some frameworks also carry the build files their toolchain needs next to `testcode/`, for example
 `pom.xml` for Java. They hold no labels.
 
+Compiling the C cases needs the development headers of SQLite, libcurl and OpenSSL, because the C
+standard library has no SQL, HTTP or cryptography API. See
+[C prerequisites](README.md#c-prerequisites) for the install commands.
+
 ## 3. Run and score a standalone framework
 
 ```bash

@@ -136,6 +136,17 @@ Read a score on this release as a floor check on broadly known classes, not as a
 A framework target carries the classes that occur in its language. C and C++ include memory-safety
 classes; the managed languages do not.
 
+### C prerequisites
+
+"Standalone" means one file per case, not free of dependencies. The C standard library has no SQL,
+HTTP or cryptography API, so 22 of the 96 C cases call SQLite, libcurl or OpenSSL. A tool that
+compiles the cases, or resolves their `#include` lines, needs those libraries' development headers:
+
+- Fedora / RHEL: `dnf install openssl-devel sqlite-devel libcurl-devel`
+- Debian / Ubuntu: `apt install libssl-dev libsqlite3-dev libcurl4-openssl-dev`
+
+No label depends on a header version. The C++ cases include only standard and POSIX headers.
+
 ## Weakness classes
 
 | Class | CWE | Class | CWE |
@@ -231,7 +242,8 @@ language. Nothing was sampled:
   applications.
 - **C++ applications:** every C++ service built with its own `Makefile`.
 - **JavaScript, PHP, Ruby, C, C++, Bash:** every file syntax-checked with `node --check`, `php -l`,
-  `ruby -c`, `gcc`, `g++` and `bash -n`.
+  `ruby -c`, `gcc`, `g++` and `bash -n`. The C files were checked with the SQLite, libcurl and
+  OpenSSL development headers installed (see [C prerequisites](#c-prerequisites)).
 
 On top of that, a suite of deterministic gates runs with no AI and no LLM-as-judge: each
 `vulnerable` case must carry a real source-to-sink flow, each `safe` twin must neutralize it for
@@ -259,7 +271,7 @@ labels can be inferred.
 Release 2026.11.16 contains 12 ZIP files: one per language under `Benchmarks/standalone/`
 and one for the applications under `Benchmarks/applications/`. Together they occupy 3.1 MiB (3,272,724 bytes).
 
-Each standalone bundle is self-contained. It holds a `testcode/` directory for each framework, the
+Each standalone bundle holds a `testcode/` directory for each framework, the
 `expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
 `benchproctor-manifest.json` (version, per-framework counts, and SHA-256 checksums), and a README.
 The applications bundle holds one directory per service graph with its `applications/`, its two

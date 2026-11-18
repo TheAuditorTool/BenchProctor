@@ -7,6 +7,16 @@ replaced: a correction ships as a new release, and a withdrawal is recorded here
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+
+- The C cases' build prerequisites are now documented (issue #1). 22 of the 96 C cases in
+  2026.11.16 call SQLite, libcurl or OpenSSL, and nothing said so; the README's new
+  [C prerequisites](README.md#c-prerequisites) section gives the packages. The bundles are
+  unchanged. From the next release, each bundle's README and manifest list the libraries its
+  files include.
+
 ## [2026.11.16] - 2026-11-16
 
 Releases resume as a curated release: a small, fresh draw, easy and medium difficulty only, on a
