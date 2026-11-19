@@ -13,13 +13,14 @@ static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captur
 void benchmark_test_00254(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

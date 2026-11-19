@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -23,15 +24,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
-void benchmark_test_00178(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00178(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_dst = new char[32];
+    std::snprintf(_dst, 32, "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

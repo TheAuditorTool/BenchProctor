@@ -6,25 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00601(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, data);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) free(_p);
+    free(_p);
 }

@@ -6,18 +6,27 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#include <sys/socket.h>
+#include <netdb.h>
 
 void benchmark_test_00580(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    remove(_path);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    const char *safe = user_input;
+    if (strcmp(user_input, "api.internal.svc") != 0 && strcmp(user_input, "cdn.internal.svc") != 0) safe = "api.internal.svc";
+    struct addrinfo _hints;
+    struct addrinfo *_ai = NULL;
+    memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(safe, "80", &_hints, &_ai) == 0 && _ai) {
+        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
+        freeaddrinfo(_ai);
+    }
 }

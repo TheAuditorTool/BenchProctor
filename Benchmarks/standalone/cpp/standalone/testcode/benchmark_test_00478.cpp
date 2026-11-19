@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 
 void benchmark_test_00478(int, char **)
 {
-    std::string user_input;
-    std::getline(std::cin, user_input);
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    const char *user_input_env = std::getenv("HTTP_ORIGIN");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    long _req = std::strtol(data.c_str(), nullptr, 10);
+    if (_req < 0 || _req > 65535) return;
+    long _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
 }

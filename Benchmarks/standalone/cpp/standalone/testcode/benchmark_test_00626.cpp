@@ -2,23 +2,20 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
+#include <climits>
 
-void benchmark_test_00626(int argc, char **argv)
+void benchmark_test_00626(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
-    std::string _picked = "report.pdf";
-    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
-    std::string safe = std::string("/var/app/data/") + _picked;
-    if (FILE *_f = std::fopen(safe.c_str(), "w")) std::fclose(_f);
+    if (!user_input.empty()) data = user_input;
+    std::string _joined = std::string("/var/app/data/") + data;
+    char _resolved[PATH_MAX];
+    if (!realpath(_joined.c_str(), _resolved)) return;
+    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) return;
+    std::string safe = _resolved;
+    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
 }

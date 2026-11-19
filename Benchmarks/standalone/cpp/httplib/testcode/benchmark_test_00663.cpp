@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +26,26 @@ struct Client {
 };
 }
 
-void benchmark_test_00663(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00663(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::string _out(_p);
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
+    size_t _n = data.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, data.c_str(), _n + 1);
+    std::cout << _p << std::endl;
     delete[] _p;
-    std::cout << _out << std::endl;
+    std::memset(_p, 0, _n + 1);
     res.set_content("ok", "text/plain");
 }

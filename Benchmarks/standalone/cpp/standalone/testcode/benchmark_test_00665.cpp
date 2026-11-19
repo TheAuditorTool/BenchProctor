@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00665(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    std::string _ckval = data;
-    std::printf("Set-Cookie: session=%s; Secure; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::string _out(_p);
+    delete[] _p;
+    std::cout << _out << std::endl;
 }

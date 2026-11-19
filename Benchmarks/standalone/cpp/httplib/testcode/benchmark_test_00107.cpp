@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,29 +23,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00107(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    std::string safe = std::regex_match(data, std::regex("^(admin|user|guest|service)$")) ? data : std::string("admin");
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + safe + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    std::string user_input = req.get_header_value("Origin");
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    const int _rec_size = 64;
+    int _count = std::atoi(data.c_str());
+    int _bytes = _count * _rec_size;
+    char *_recs = new (std::nothrow) char[(size_t)_bytes];
+    delete[] _recs;
     res.set_content("ok", "text/plain");
 }

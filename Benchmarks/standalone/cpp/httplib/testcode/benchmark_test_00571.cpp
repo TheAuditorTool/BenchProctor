@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,14 +26,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00571(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00571(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    const char *user_input_env = std::getenv("UPLOAD_NAME");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
+    std::string _picked = "report.pdf";
+    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
+    std::string safe = std::string("/var/app/data/") + _picked;
+    if (FILE *_f = std::fopen(safe.c_str(), "w")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

@@ -1,43 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <regex>
-#include <hiredis/hiredis.h>
 
-typedef void CURL;
-extern "C" CURL *curl_easy_init(void);
-extern "C" int curl_easy_setopt(CURL *, int, ...);
-extern "C" int curl_easy_perform(CURL *);
-extern "C" void curl_easy_cleanup(CURL *);
-enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
-struct Payload { std::string value; };
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00427(int, char **)
 {
-    std::string user_input;
-    redisContext *_redis = redisConnect("cache", 6379);
-    if (_redis != nullptr && _redis->err == 0) {
-        redisReply *_reply = static_cast<redisReply *>(redisCommand(_redis, "GET %s", "user_data"));
-        if (_reply != nullptr && _reply->type == REDIS_REPLY_STRING) user_input.assign(_reply->str, _reply->len);
-        if (_reply != nullptr) freeReplyObject(_reply);
-    }
-    if (_redis != nullptr) redisFree(_redis);
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!std::regex_match(_authority, _hw)) return;
-    std::string safe = data;
-    std::string _hurl = safe;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    const char *user_input_env = std::getenv("PATH_INFO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = cpp_own(user_input);
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
 }

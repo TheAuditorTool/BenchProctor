@@ -22,13 +22,12 @@ extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXP
 void benchmark_test_00363(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
     char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
     if (_doc) xmlFreeDoc(_doc);
 }

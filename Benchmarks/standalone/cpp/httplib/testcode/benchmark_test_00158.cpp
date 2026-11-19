@@ -23,25 +23,26 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
-void benchmark_test_00158(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00158(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + data + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    sqlite3_stmt *_st = nullptr;
+    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_st, nullptr);
+    sqlite3_bind_text(_st, 1, data.c_str(), -1, nullptr);
+    sqlite3_step(_st);
+    sqlite3_finalize(_st);
     res.set_content("ok", "text/plain");
 }

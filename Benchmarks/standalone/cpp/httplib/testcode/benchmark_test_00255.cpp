@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 
@@ -26,16 +25,16 @@ struct Client {
 };
 }
 
-void benchmark_test_00255(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00255(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input = req.get_header_value("X-Custom-Header");
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
     char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
     delete[] _dst;
     res.set_content("ok", "text/plain");
 }

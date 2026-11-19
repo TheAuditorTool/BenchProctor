@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,25 +23,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
+extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00619(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00619(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    unsigned char _digest[16];
+    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

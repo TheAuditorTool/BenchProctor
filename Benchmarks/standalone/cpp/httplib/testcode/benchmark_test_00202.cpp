@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,20 +22,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00202(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.body;
+    std::string data = cpp_own(user_input);
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    std::cout << _mode << std::endl;
     res.set_content("ok", "text/plain");
 }

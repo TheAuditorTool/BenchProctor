@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,14 +23,19 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00720(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
+    std::string user_input = req.get_header_value("Cookie");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
+    std::cout << _p << std::endl;
+    delete[] _p;
+    _p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

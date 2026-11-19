@@ -4,18 +4,6 @@
 #include <cstdlib>
 #include <unistd.h>
 
-typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
-extern "C" const EVP_CIPHER *EVP_des_ecb(void);
-extern "C" const EVP_CIPHER *EVP_rc4(void);
-extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
-extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
-extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
-extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
-
 void benchmark_test_00236(int, char **)
 {
     std::string user_input;
@@ -27,12 +15,13 @@ void benchmark_test_00236(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
-    unsigned char _cout[512]; int _coutl = 0;
-    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
-    EVP_CIPHER_CTX_free(_ctx);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    std::cout << _mode << std::endl;
 }

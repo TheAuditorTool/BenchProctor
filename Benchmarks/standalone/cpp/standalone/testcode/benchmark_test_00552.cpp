@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
 
 void benchmark_test_00552(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_ORIGIN");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    std::string user_input;
+    std::getline(std::cin, user_input);
+    std::string data = !user_input.empty() ? user_input : std::string();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::string _out(_p);
+    delete[] _p;
+    std::cout << _out << std::endl;
 }

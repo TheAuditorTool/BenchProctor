@@ -6,23 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#include <regex.h>
 
 void benchmark_test_00287(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
+    regex_t _re;
+    const char *safe = user_input;
+    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, user_input, 0, NULL, 0) != 0) safe = "config";
+        regfree(&_re);
     }
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", safe);
+    FILE *_f = fopen(_path, "r");
+    if (_f) fclose(_f);
 }

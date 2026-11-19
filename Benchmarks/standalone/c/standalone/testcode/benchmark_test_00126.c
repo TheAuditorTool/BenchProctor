@@ -7,24 +7,27 @@
 #include <stdint.h>
 #include <time.h>
 
+#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
+
 void benchmark_test_00126(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
+    const char *user_input = user_input_buf;
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
     char *_p = malloc(strlen(data) + 1);
     if (_p == NULL) return;
     strcpy(_p, data);
-    free(_p);
-    _p = NULL;
-    if (_p) printf("%s\n", _p);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    FREE_AND_NULL(_p);
+    _cleanup_ptr = NULL;
+    if (_cleanup_ptr) free(_cleanup_ptr);
 }

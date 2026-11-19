@@ -6,8 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <openssl/sha.h>
 
 void benchmark_test_00246(int argc, char **argv)
 {
@@ -20,10 +19,8 @@ void benchmark_test_00246(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _dst[16];
-    if (strlen(data) < sizeof(_dst)) strcpy(_dst, data);
-    else _dst[0] = '\0';
-    printf("%s\n", _dst);
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

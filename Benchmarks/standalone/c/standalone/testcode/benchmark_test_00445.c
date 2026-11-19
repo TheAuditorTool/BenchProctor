@@ -7,15 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+
 void benchmark_test_00445(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) { free(_p); return; }
+    free(_p);
 }

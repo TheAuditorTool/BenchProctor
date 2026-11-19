@@ -2,17 +2,29 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
-#include <fcntl.h>
+
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00350(int, char **)
 {
-    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ckey[32] = {0};
+    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
+    unsigned char _cout[512]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
+    EVP_CIPHER_CTX_free(_ctx);
 }

@@ -6,29 +6,26 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+#include <regex.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00522(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    regex_t _re;
+    const char *safe = data;
+    if (regcomp(&_re, "^[a-zA-Z0-9#._-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
+        regfree(&_re);
     }
-    const char *user_input = user_input_buf;
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,10 +26,9 @@ struct Client {
 
 void benchmark_test_00731(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string user_input = req.body;
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    std::system(data.c_str());
-    res.set_content("ok", "text/plain");
+    res.set_redirect(data, 302);
 }

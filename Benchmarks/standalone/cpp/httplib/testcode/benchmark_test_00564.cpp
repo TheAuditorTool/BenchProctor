@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -35,10 +36,10 @@ enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_
 
 void benchmark_test_00564(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
     std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
     xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
     xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);

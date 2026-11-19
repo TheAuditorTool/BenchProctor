@@ -12,8 +12,7 @@ void benchmark_test_00434(int argc, char **argv)
     const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    FILE *_f = fopen(_path, "r");
-    if (_f) fclose(_f);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_found = strchr(data, '=');
+    printf("%c\n", *_found);
 }

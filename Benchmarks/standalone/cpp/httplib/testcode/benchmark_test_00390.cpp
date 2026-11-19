@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <ctime>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -29,9 +28,9 @@ void benchmark_test_00390(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.get_param_value("id");
     std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    if (!user_input.empty()) data = user_input;
+    char _dst[32];
+    std::sprintf(_dst, "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

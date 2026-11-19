@@ -7,23 +7,14 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00153(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    const char *data = c_passthrough(user_input);
-    const char *safe = data;
-    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) safe = "/bin/echo";
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", safe);
-    system(_cmd);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    sprintf(_dst, "user=%s", data);
+    puts(_dst);
+    free(_dst);
 }

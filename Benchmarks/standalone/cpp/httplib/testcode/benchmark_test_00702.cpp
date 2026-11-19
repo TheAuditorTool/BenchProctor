@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,25 +24,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct pg_conn; typedef struct pg_conn PGconn;
-struct pg_result; typedef struct pg_result PGresult;
-extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
-extern "C" int PQstatus(const PGconn *);
-extern "C" void PQfinish(PGconn *);
-extern "C" PGresult *PQexec(PGconn *, const char *);
-extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
-extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00702(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
-    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
-    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
-    PQclear(_pgr);
-    PQfinish(_pgc);
+    std::string user_input = req.get_header_value("User-Agent");
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

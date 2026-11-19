@@ -6,25 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
+#include <openssl/sha.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00411(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^[a-zA-Z0-9 %._-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
-        regfree(&_re);
-    }
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", safe);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    const char *data = c_passthrough(user_input);
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00406(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::string _out(_p);
-    delete[] _p;
-    std::cout << _out << std::endl;
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    execl("/bin/sh", "sh", "-c", data.c_str(), (char *)nullptr);
 }

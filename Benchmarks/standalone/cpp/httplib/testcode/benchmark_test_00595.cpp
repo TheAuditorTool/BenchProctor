@@ -23,16 +23,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00595(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00595(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = cpp_own(user_input);
+    int _req = std::atoi(data.c_str());
+    int _alloc = _req + 1;
     char *_buf = new (std::nothrow) char[(size_t)_alloc];
     if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
     res.set_content("ok", "text/plain");

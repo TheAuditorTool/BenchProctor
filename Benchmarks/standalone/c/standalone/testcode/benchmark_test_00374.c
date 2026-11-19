@@ -6,18 +6,15 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00374(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    const char *data = c_passthrough(user_input);
+    char *_found = strchr(data, '=');
+    if (_found != NULL) printf("%c\n", *_found);
 }

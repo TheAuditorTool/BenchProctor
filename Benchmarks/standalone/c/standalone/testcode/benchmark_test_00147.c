@@ -7,9 +7,6 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
-
 void benchmark_test_00147(int argc, char **argv)
 {
     (void)argc; (void)argv;
@@ -21,8 +18,12 @@ void benchmark_test_00147(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    free(_p);
+    char _first = _p[0];
+    printf("%c\n", _first);
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <unistd.h>
-#include <regex>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,18 +25,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00277(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00277(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
-    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
-    std::string::size_type _fe = _doc.find('"', _fs);
-    std::string data = _doc.substr(_fs, _fe - _fs);
-    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
-    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    char _dst[16];
+    std::strcpy(_dst, data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

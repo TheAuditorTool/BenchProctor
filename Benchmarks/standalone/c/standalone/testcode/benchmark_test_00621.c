@@ -11,12 +11,12 @@ static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return 
 
 void benchmark_test_00621(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     const char *(*_fn)(const char *) = c_passthrough;
     const char *data = _fn(user_input);
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    long _req = strtol(data, NULL, 10);
+    if (_req < 0 || _req > 2147483646L) return;
+    long _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

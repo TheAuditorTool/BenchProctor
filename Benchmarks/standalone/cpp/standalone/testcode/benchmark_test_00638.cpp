@@ -1,16 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00638(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::string _out(_p);
+    delete[] _p;
+    std::cout << _out << std::endl;
 }

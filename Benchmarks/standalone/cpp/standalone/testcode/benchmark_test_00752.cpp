@@ -15,8 +15,6 @@ void benchmark_test_00752(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>") << std::endl;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    execl("/bin/sh", "sh", "-c", data.c_str(), (char *)nullptr);
 }

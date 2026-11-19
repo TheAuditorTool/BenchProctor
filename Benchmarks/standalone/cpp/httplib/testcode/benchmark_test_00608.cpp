@@ -3,8 +3,9 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
-#include <filesystem>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,12 +27,35 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00608(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("UPLOAD_NAME");
+    const char *user_input_env = std::getenv("USER_COMMENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string safe = std::string("/var/app/data/") + std::filesystem::path(user_input).filename().string();
-    if (FILE *_f = std::fopen(safe.c_str(), "w")) std::fclose(_f);
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    const char *_kv = std::getenv("APP_ENC_KEY");
+    unsigned char _ckey[32] = {0};
+    if (_kv) std::strncpy(reinterpret_cast<char *>(_ckey), _kv, sizeof(_ckey) - 1);
+    unsigned char _civ[16] = {0};
+    int _ivfd = open("/dev/urandom", O_RDONLY);
+    if (_ivfd >= 0) { if (read(_ivfd, _civ, sizeof(_civ)) < 0) _civ[0] = 0; close(_ivfd); }
+    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), nullptr, _ckey, _civ);
+    unsigned char _cout[512]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
+    EVP_CIPHER_CTX_free(_ctx);
     res.set_content("ok", "text/plain");
 }

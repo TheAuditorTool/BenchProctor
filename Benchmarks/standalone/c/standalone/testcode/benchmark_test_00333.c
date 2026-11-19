@@ -6,15 +6,14 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00333(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    int _req = atoi(user_input);
+    int _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

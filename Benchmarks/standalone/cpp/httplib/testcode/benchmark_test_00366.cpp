@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,16 +22,27 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00366(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
-    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    std::string _cmd = std::string("ls ") + safe;
-    std::system(_cmd.c_str());
+    std::string user_input = req.body;
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    sqlite3_stmt *_st = nullptr;
+    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_st, nullptr);
+    sqlite3_bind_text(_st, 1, data.c_str(), -1, nullptr);
+    sqlite3_step(_st);
+    sqlite3_finalize(_st);
     res.set_content("ok", "text/plain");
 }

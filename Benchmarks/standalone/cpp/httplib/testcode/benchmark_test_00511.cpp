@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -29,8 +28,11 @@ void benchmark_test_00511(const httplib::Request &, httplib::Response &res)
 {
     const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    const int _unit_cents = 1999;
+    int _qty = std::atoi(data.c_str());
+    int _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

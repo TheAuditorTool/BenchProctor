@@ -6,26 +6,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+#include <regex.h>
 
 void benchmark_test_00549(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    regex_t _re;
+    const char *safe = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
+        regfree(&_re);
     }
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    _p = NULL;
-    if (_p) printf("%s\n", _p);
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

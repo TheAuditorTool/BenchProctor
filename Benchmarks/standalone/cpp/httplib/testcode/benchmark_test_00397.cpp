@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,16 +23,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00397(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00397(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_param_value("id");
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
 }

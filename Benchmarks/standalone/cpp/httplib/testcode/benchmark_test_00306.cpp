@@ -25,10 +25,17 @@ struct Client {
 
 void benchmark_test_00306(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string user_input = req.get_param_value("field");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
     std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
     res.set_content("ok", "text/plain");
 }

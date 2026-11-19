@@ -3,25 +3,29 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
+#include <regex>
 
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+struct pg_conn; typedef struct pg_conn PGconn;
+struct pg_result; typedef struct pg_result PGresult;
+extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
+extern "C" int PQstatus(const PGconn *);
+extern "C" void PQfinish(PGconn *);
+extern "C" PGresult *PQexec(PGconn *, const char *);
+extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
+extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00352(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    std::string _ckval = data;
-    std::printf("Set-Cookie: session=%s; Secure; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
+    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
+    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
+    PQclear(_pgr);
+    PQfinish(_pgc);
 }

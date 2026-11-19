@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,10 +27,19 @@ struct Client {
 
 void benchmark_test_00677(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    std::string user_input = req.get_header_value("Cookie");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -6,16 +6,34 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00614(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", data);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    unsigned char _iv[8];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
 }

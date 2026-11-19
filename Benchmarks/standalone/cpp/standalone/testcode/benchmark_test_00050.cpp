@@ -1,16 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00050(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
 }

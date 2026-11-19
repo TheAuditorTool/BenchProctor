@@ -11,10 +11,13 @@ static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return 
 
 void benchmark_test_00211(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
     const char *(*_fn)(const char *) = c_passthrough;
     const char *data = _fn(user_input);
-    char _dst[16];
-    strcpy(_dst, data);
-    printf("%s\n", _dst);
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "r");
+    if (_f) fclose(_f);
 }

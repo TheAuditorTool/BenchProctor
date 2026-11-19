@@ -23,14 +23,13 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00160(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data = cpp_own(user_input);
-    char _dst[16];
-    std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_header_value("Authorization");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
     res.set_content("ok", "text/plain");
 }

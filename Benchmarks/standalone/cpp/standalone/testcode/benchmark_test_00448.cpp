@@ -2,33 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
-#include <regex>
 
 void benchmark_test_00448(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!_authority.empty() && !std::regex_match(_authority, _hw)) return;
-    std::string safe = data;
-    std::cout << "Location: " << safe << std::endl;
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = !user_input.empty() ? user_input : std::string();
+    const size_t _rec_size = 64;
+    long _count = std::strtol(data.c_str(), nullptr, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = new (std::nothrow) char[_bytes];
+    delete[] _recs;
 }

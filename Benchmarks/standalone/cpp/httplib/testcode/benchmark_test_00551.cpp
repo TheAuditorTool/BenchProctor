@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,17 +22,25 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct pg_conn; typedef struct pg_conn PGconn;
+struct pg_result; typedef struct pg_result PGresult;
+extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
+extern "C" int PQstatus(const PGconn *);
+extern "C" void PQfinish(PGconn *);
+extern "C" PGresult *PQexec(PGconn *, const char *);
+extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
+extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00551(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input = req.get_header_value("Authorization");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
+    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
+    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
+    PQclear(_pgr);
+    PQfinish(_pgc);
     res.set_content("ok", "text/plain");
 }

@@ -6,23 +6,29 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
 
 void benchmark_test_00550(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    FILE *_f = fopen(_path, "w");
-    if (_f) fclose(_f);
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    sqlite3_stmt *_stmt = NULL;
+    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_stmt, NULL);
+    sqlite3_bind_text(_stmt, 1, data, -1, NULL);
+    sqlite3_step(_stmt);
+    sqlite3_finalize(_stmt);
 }

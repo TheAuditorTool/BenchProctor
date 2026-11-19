@@ -7,30 +7,18 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
 struct c_ctx { const char *captured; };
 static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00336(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
-    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
-    char _expr[512];
-    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", data);
-    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
-    (void)_xo;
-    if (_doc) xmlFreeDoc(_doc);
+    int _req = atoi(data);
+    int _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

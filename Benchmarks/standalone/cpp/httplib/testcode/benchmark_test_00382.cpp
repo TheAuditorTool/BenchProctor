@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,12 +27,13 @@ struct Client {
 
 void benchmark_test_00382(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Origin");
+    std::string user_input = req.body;
     std::string data = user_input;
     for (char &_c : data) if (_c == '\n') _c = ' ';
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
     res.set_content("ok", "text/plain");
 }

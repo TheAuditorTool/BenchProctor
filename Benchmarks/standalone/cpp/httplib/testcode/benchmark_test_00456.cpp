@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,21 +23,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00456(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00456(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.get_param_value("id");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    int _x = 0;
+    if (!data.empty()) _x = (int)data[0];
+    std::cout << (_x + (int)data.size()) << std::endl;
     res.set_content("ok", "text/plain");
 }

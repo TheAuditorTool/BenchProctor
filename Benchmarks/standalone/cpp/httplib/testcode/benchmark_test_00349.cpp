@@ -2,8 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstring>
-#include <unistd.h>
+#include <cstdlib>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,29 +26,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00349(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00349(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
+    std::string _cmd = std::string("ls ") + safe;
+    std::system(_cmd.c_str());
     res.set_content("ok", "text/plain");
 }

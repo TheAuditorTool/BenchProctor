@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,9 +27,11 @@ struct Client {
 
 void benchmark_test_00415(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(user_input.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.body;
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

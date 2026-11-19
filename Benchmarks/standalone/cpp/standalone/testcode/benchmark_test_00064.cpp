@@ -3,18 +3,26 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
-#include <fcntl.h>
 
 void benchmark_test_00064(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
 }

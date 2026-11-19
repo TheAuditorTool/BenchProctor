@@ -7,22 +7,32 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
 
 void benchmark_test_00632(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
+    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
+    char _expr[512];
+    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", data);
+    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
+    (void)_xo;
+    if (_doc) xmlFreeDoc(_doc);
 }

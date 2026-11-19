@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,14 +26,9 @@ struct Client {
 
 void benchmark_test_00005(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
-    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    std::string _cmd = std::string("ls ") + safe;
-    std::system(_cmd.c_str());
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.path_params.at("id");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    res.set_content(std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>", "text/html");
 }

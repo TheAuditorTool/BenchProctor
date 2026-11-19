@@ -9,10 +9,15 @@
 
 void benchmark_test_00346(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    long _req = strtol(user_input, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _dst[16];
+    size_t _n = strlen(data);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
 }

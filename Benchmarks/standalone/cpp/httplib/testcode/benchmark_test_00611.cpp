@@ -26,12 +26,13 @@ struct Client {
 
 void benchmark_test_00611(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
+    std::string user_input = req.get_header_value("User-Agent");
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    if (!user_input.empty()) data = user_input;
+    long _req = std::strtol(data.c_str(), nullptr, 10);
+    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
     res.set_content("ok", "text/plain");
 }

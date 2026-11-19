@@ -1,17 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-
-struct Payload { std::string value; };
+#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00494(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_HOST");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::string _ckval = data;
-    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
 }

@@ -3,12 +3,12 @@
 #include <string>
 #include <cstdlib>
 
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+
 void benchmark_test_00190(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    std::cout << "Location: " << data << std::endl;
+    std::string data = cpp_own(user_input);
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>") << std::endl;
 }

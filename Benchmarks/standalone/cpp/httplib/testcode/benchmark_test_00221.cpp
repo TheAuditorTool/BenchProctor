@@ -35,11 +35,16 @@ enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_
 
 void benchmark_test_00221(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
+    std::string user_input = req.get_header_value("Referer");
     std::string data;
     try { data = user_input; } catch (...) { data.clear(); }
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
-    if (_xd) xmlFreeDoc(_xd);
+    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
+    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
+    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
+    std::string _xexpr = std::string("/users/user[@name='") + data + "']";
+    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
+    if (_xobj) xmlXPathFreeObject(_xobj);
+    xmlXPathFreeContext(_xctx);
+    xmlFreeDoc(_xdoc);
     res.set_content("ok", "text/plain");
 }

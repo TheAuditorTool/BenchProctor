@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <ctime>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00242(int, char **)
@@ -16,7 +17,9 @@ void benchmark_test_00242(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << user_input << ": " << _token << std::endl;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
 }

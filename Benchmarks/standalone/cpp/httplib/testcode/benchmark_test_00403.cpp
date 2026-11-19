@@ -22,15 +22,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00403(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
+    std::string user_input = req.body;
     std::string data;
     if (!user_input.empty()) data = user_input;
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
     std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

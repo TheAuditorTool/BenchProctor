@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <fcntl.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,16 +25,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00340(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    std::string user_input = req.get_header_value("Cookie");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    const char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::memcpy(_out, _buf, _span);
+    std::cout << std::string(_out, _span).size() << std::endl;
     res.set_content("ok", "text/plain");
 }

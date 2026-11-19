@@ -6,18 +6,15 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
+#include <openssl/sha.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00258(int argc, char **argv)
 {
     const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", data, _rnd[0]);
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

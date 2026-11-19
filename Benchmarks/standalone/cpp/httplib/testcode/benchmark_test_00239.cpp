@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,23 +24,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
 
-void benchmark_test_00239(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00239(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
-    if (_xd) xmlFreeDoc(_xd);
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
     res.set_content("ok", "text/plain");
 }

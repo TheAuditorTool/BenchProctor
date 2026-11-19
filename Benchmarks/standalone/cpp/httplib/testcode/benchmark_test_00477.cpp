@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,23 +22,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00477(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00477(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    std::string user_input = req.get_param_value("id");
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    unsigned char _digest[16];
+    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

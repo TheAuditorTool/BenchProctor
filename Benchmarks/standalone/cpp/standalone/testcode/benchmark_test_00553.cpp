@@ -1,17 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
+
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
+struct Payload { std::string value; };
 
 void benchmark_test_00553(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ckey[32] = {0};
+    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
+    unsigned char _cout[512]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
+    EVP_CIPHER_CTX_free(_ctx);
 }

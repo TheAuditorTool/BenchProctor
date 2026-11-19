@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
-#include <fcntl.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,16 +24,34 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
 
-void benchmark_test_00641(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00641(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    std::string user_input = req.get_header_value("Cookie");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _filter = std::string("(uid=") + safe + ")";
+    LDAPMessage *_lres = nullptr;
+    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
+    if (_lres) ldap_msgfree(_lres);
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

@@ -12,16 +12,17 @@ void benchmark_test_00104(int argc, char **argv)
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
     char _dst[16];
-    strcpy(_dst, data);
+    size_t _n = strlen(user_input);
+    memcpy(_dst, user_input, _n + 1);
     printf("%s\n", _dst);
 }

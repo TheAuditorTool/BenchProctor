@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,17 +23,19 @@ struct Client {
 };
 }
 
-void benchmark_test_00616(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00616(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_header_value("Cookie");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    std::string safe;
+    for (char _c : data) {
+        if (_c == '&') safe += "&amp;";
+        else if (_c == '<') safe += "&lt;";
+        else if (_c == '>') safe += "&gt;";
+        else if (_c == '"') safe += "&quot;";
+        else if (_c == '\'') safe += "&#39;";
+        else safe.push_back(_c);
+    }
+    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
 }

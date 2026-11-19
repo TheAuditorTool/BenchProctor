@@ -6,17 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
 
 void benchmark_test_00510(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", data);
-    const char *safe = basename(_bn_copy);
-    remove(safe);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char _first = _p[0];
+    free(_p);
+    printf("%c\n", _first);
 }

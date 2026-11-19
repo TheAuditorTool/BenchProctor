@@ -23,12 +23,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00447(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>", "text/html");
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    long _req = std::strtol(data.c_str(), nullptr, 10);
+    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    res.set_content("ok", "text/plain");
 }

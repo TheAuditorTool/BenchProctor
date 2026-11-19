@@ -6,24 +6,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+#include <sys/socket.h>
+#include <netdb.h>
 
 void benchmark_test_00206(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
-    if (_doc) xmlFreeDoc(_doc);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    struct addrinfo _hints;
+    struct addrinfo *_ai = NULL;
+    memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
+        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
+        freeaddrinfo(_ai);
+    }
 }

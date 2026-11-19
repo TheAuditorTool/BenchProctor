@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
+#include <regex>
 
 void benchmark_test_00081(int, char **)
 {
-    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string safe = std::regex_match(user_input, std::regex("^(config|data|index|schema)$")) ? user_input : std::string("config");
+    std::string _path = std::string("/var/app/data/") + safe;
+    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
 }

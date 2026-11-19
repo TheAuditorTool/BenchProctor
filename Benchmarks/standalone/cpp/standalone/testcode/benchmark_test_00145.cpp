@@ -1,24 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-
-struct pg_conn; typedef struct pg_conn PGconn;
-struct pg_result; typedef struct pg_result PGresult;
-extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
-extern "C" int PQstatus(const PGconn *);
-extern "C" void PQfinish(PGconn *);
-extern "C" PGresult *PQexec(PGconn *, const char *);
-extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
-extern "C" void PQclear(PGresult *);
+#include <unistd.h>
 
 void benchmark_test_00145(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    const char *user_input_env = std::getenv("APP_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
-    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + user_input + "'";
-    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
-    PQclear(_pgr);
-    PQfinish(_pgc);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
+    FILE *_p = popen(_cmd.c_str(), "r");
+    if (_p) pclose(_p);
 }

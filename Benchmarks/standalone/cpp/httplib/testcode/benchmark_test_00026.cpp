@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +22,22 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00026(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
-    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    std::string _cmd = std::string("ls ") + safe;
-    std::system(_cmd.c_str());
+    std::string user_input = req.body;
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

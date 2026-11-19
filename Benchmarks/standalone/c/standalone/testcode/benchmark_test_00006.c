@@ -6,23 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
-#include <regex.h>
+
+struct c_payload { const char *value; };
 
 void benchmark_test_00006(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^[a-zA-Z0-9#._-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
-        regfree(&_re);
-    }
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    const size_t _rec_size = 64;
+    long _count = strtol(data, NULL, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = malloc(_bytes);
+    if (_recs) free(_recs);
 }

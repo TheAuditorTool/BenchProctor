@@ -2,13 +2,24 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
-void benchmark_test_00575(int argc, char **argv)
+void benchmark_test_00575(int, char **)
 {
-    std::string user_input = (argc > 2) ? std::string(argv[2]) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
+    delete[] _p;
 }

@@ -6,20 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_payload { const char *value; };
+#include <regex.h>
 
 void benchmark_test_00611(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, data); printf("%s\n", _dst); free(_dst); }
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    regex_t _re;
+    const char *safe = user_input;
+    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, user_input, 0, NULL, 0) != 0) safe = "config";
+        regfree(&_re);
+    }
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", safe);
+    FILE *_f = fopen(_path, "r");
+    if (_f) fclose(_f);
 }

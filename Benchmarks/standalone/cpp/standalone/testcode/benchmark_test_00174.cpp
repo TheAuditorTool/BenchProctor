@@ -2,16 +2,14 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstring>
+#include <cstdlib>
 
-void benchmark_test_00174(int argc, char **argv)
+void benchmark_test_00174(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    std::string _ckval = data;
+    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
 }

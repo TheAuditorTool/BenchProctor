@@ -2,15 +2,27 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
-#include <regex>
+
+struct Payload { std::string value; };
 
 void benchmark_test_00746(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    execl("/bin/sh", "sh", "-c", safe.c_str(), (char *)nullptr);
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) return;
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

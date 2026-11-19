@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
-
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
-struct Payload { std::string value; };
 
 void benchmark_test_00065(int, char **)
 {
     std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
         }
+        std::fclose(_fp);
     }
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    std::cout << _mode << std::endl;
 }

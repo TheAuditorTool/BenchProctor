@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,11 +24,20 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00069(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00069(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    res.set_redirect(data, 302);
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
+    std::cout << _p << std::endl;
+    delete[] _p;
+    res.set_content("ok", "text/plain");
 }

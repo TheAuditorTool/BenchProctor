@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00510(int, char **)
@@ -15,16 +16,12 @@ void benchmark_test_00510(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
     const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    char _out[256];
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_out)) _span = sizeof(_out);
+    std::memcpy(_out, _buf, _span);
+    std::cout << std::string(_out, _span).size() << std::endl;
 }

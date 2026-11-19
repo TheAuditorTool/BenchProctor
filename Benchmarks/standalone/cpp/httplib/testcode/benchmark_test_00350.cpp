@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,15 +22,22 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00350(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00350(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.get_param_value("id");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    unsigned char _digest[16];
+    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

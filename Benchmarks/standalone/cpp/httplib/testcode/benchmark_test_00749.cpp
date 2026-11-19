@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,21 +25,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00749(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00749(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!_authority.empty() && !std::regex_match(_authority, _hw)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    res.set_redirect(safe, 302);
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    size_t _n = data.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, data.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    std::memset(_p, 0, _n + 1);
+    delete[] _p;
+    res.set_content("ok", "text/plain");
 }

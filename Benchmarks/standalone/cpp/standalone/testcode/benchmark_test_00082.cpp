@@ -4,13 +4,16 @@
 #include <cstdlib>
 #include <regex>
 
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00082(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_REFERER");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
     std::string _authority = data;
     std::string::size_type _scheme = _authority.find("://");
     if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);

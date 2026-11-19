@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
+
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00489(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string _ckval = data;
+    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
 }

@@ -6,20 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
 
 void benchmark_test_00394(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    const char *user_input = user_input_buf;
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "r");
+    if (_f) fclose(_f);
 }

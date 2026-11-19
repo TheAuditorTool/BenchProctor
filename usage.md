@@ -4,8 +4,9 @@ The operational guide: how to pick the cases you want, run a scanner against the
 score. For what the release is and why it is built the way it is, see [README.md](README.md); for
 the release history, see [changelog.md](changelog.md).
 
-The current release is `2026.11.19`: 14,280 standalone cases, one file per case, in all 11
-languages, and 368 multi-service applications. It is published as plain files in `Benchmarks/`;
+The current release is `2026.11.19`, with C and C++ at `2026.11.19.1`: 15,372 standalone cases,
+one file per case, in all 11 languages, and 368 multi-service applications. The C and C++ answer
+keys are named `expectedresults-2026.11.19.1.csv`. It is published as plain files in `Benchmarks/`;
 nothing needs unpacking. Earlier releases are under [`archive/`](archive/).
 
 ## 1. Pick your cases
@@ -67,6 +68,11 @@ The scorer matches a finding to a case by file and recovers the finding's CWE fr
 `ruleId`, the result or rule `properties` or `tags` (for example `external/cwe/cwe-089`), or CWE
 `taxa`. If your tool emits no CWE at all, add `--match-mode filename`: any finding on a vulnerable
 file then counts. That mode rewards over-flagging, so prefer the default when your tool emits CWEs.
+
+If your tool does not attempt some classes, declare its scope: `--skip-categories ldapi,sqli`
+leaves those classes out, and `--categories null_deref,use_after_free` scores only those. The
+summary names every class left out. The scorer in `scripts/` and the copies in the C and C++
+folders have these options; the other language folders get them in the next release.
 
 ### Reading the output
 

@@ -7,24 +7,22 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00173(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
-    if (_doc) xmlFreeDoc(_doc);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    free(_p);
+    _p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    free(_p);
 }

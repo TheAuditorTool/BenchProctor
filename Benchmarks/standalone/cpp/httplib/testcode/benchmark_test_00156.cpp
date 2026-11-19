@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,11 +24,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00156(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>", "text/html");
+    std::string user_input = req.get_param_value("id");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    std::string _path = std::string("/var/app/data/") + data;
+    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    res.set_content("ok", "text/plain");
 }

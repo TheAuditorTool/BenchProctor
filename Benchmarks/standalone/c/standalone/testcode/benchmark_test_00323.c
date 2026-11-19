@@ -7,16 +7,26 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00323(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = c_passthrough(user_input);
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    size_t _n = strlen(data);
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    printf("%d\n", _mode);
 }

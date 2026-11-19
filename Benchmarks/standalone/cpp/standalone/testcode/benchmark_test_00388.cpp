@@ -10,15 +10,17 @@ extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char *
 extern "C" int ldap_msgfree(LDAPMessage *);
 extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
 enum { LDAP_SCOPE_SUBTREE = 2 };
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00388(int, char **)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("HTTP_ORIGIN");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    static const std::regex _schema("^[a-zA-Z0-9 _.#%\\-]+$");
+    if (!std::regex_match(data, _schema)) return;
+    std::string safe = data;
     LDAP *_ld = nullptr;
     const char *_ldap_url = std::getenv("LDAP_URL");
     ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");

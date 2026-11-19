@@ -10,12 +10,19 @@
 void benchmark_test_00144(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char *_found = strchr(data, '=');
+    if (_found != NULL) printf("%c\n", *_found);
 }

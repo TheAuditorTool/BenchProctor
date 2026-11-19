@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
-
 void benchmark_test_00097(int argc, char **argv)
 {
     (void)argc; (void)argv;
@@ -20,12 +18,12 @@ void benchmark_test_00097(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    printf("%s\n", _p);
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

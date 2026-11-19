@@ -7,15 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_payload { const char *value; };
+
 void benchmark_test_00019(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

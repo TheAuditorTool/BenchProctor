@@ -7,24 +7,16 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
-
 void benchmark_test_00020(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
-    if (_doc) xmlFreeDoc(_doc);
+    size_t _n = strlen(data);
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    printf("%d\n", _mode);
 }

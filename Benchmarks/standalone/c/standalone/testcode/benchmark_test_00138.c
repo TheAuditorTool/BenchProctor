@@ -6,20 +6,17 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
-
-struct c_payload { const char *value; };
 
 void benchmark_test_00138(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", data, _rnd[0]);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    _p = malloc(strlen(user_input) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, user_input);
+    printf("%s\n", _p);
+    free(_p);
 }

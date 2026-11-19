@@ -6,15 +6,31 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
+
+struct c_payload { const char *value; };
 
 void benchmark_test_00270(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *safe = user_input;
-    if (strncmp(user_input, "https://api.internal.svc/", 25) != 0 && strncmp(user_input, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, safe);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_parts[2];
+    _parts[0] = malloc(strlen(data) + 1);
+    if (_parts[0] == NULL) return;
+    strcpy(_parts[0], data);
+    _parts[1] = _parts[0];
+    printf("%s\n", _parts[0]);
+    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
 }

@@ -6,24 +6,17 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <curl/curl.h>
 
 void benchmark_test_00389(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    const char *data = c_passthrough(user_input);
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", data, _rnd[0]);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    const char *safe = data;
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, safe);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00620(int, char **)
 {
     std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
         }
-        std::fclose(_fp);
     }
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char _dst[16];
-    std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    const char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::memcpy(_out, _buf, _span);
+    std::cout << std::string(_out, _span).size() << std::endl;
 }

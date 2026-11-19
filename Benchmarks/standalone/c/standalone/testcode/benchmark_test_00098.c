@@ -6,26 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+#include <sqlite3.h>
 
 void benchmark_test_00098(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
-    if (_doc) xmlFreeDoc(_doc);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", data);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

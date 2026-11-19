@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <fcntl.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00367(int argc, char **argv)
 {
@@ -18,14 +22,10 @@ void benchmark_test_00367(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    printf("token for %s: %02x\n", data, _rnd[0]);
 }

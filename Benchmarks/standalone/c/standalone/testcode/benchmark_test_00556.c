@@ -7,17 +7,15 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00556(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = c_passthrough(user_input);
+    const long _unit_cents = 1999;
+    long _qty = strtol(data, NULL, 10);
+    if (_qty < 0 || _qty > 100000) return;
+    long _total = _qty * _unit_cents;
+    printf("total=%ld\n", _total);
 }

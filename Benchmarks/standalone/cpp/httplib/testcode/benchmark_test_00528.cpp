@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,16 +22,11 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00528(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00528(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.body;
+    std::string data = cpp_own(user_input);
+    res.set_redirect(data, 302);
 }

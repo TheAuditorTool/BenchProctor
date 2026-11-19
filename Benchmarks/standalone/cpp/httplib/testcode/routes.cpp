@@ -762,6 +762,302 @@ void benchmark_test_00757(const httplib::Request &, httplib::Response &);
 void benchmark_test_00758(const httplib::Request &, httplib::Response &);
 void benchmark_test_00759(const httplib::Request &, httplib::Response &);
 void benchmark_test_00760(const httplib::Request &, httplib::Response &);
+void benchmark_test_00761(const httplib::Request &, httplib::Response &);
+void benchmark_test_00762(const httplib::Request &, httplib::Response &);
+void benchmark_test_00763(const httplib::Request &, httplib::Response &);
+void benchmark_test_00764(const httplib::Request &, httplib::Response &);
+void benchmark_test_00765(const httplib::Request &, httplib::Response &);
+void benchmark_test_00766(const httplib::Request &, httplib::Response &);
+void benchmark_test_00767(const httplib::Request &, httplib::Response &);
+void benchmark_test_00768(const httplib::Request &, httplib::Response &);
+void benchmark_test_00769(const httplib::Request &, httplib::Response &);
+void benchmark_test_00770(const httplib::Request &, httplib::Response &);
+void benchmark_test_00771(const httplib::Request &, httplib::Response &);
+void benchmark_test_00772(const httplib::Request &, httplib::Response &);
+void benchmark_test_00773(const httplib::Request &, httplib::Response &);
+void benchmark_test_00774(const httplib::Request &, httplib::Response &);
+void benchmark_test_00775(const httplib::Request &, httplib::Response &);
+void benchmark_test_00776(const httplib::Request &, httplib::Response &);
+void benchmark_test_00777(const httplib::Request &, httplib::Response &);
+void benchmark_test_00778(const httplib::Request &, httplib::Response &);
+void benchmark_test_00779(const httplib::Request &, httplib::Response &);
+void benchmark_test_00780(const httplib::Request &, httplib::Response &);
+void benchmark_test_00781(const httplib::Request &, httplib::Response &);
+void benchmark_test_00782(const httplib::Request &, httplib::Response &);
+void benchmark_test_00783(const httplib::Request &, httplib::Response &);
+void benchmark_test_00784(const httplib::Request &, httplib::Response &);
+void benchmark_test_00785(const httplib::Request &, httplib::Response &);
+void benchmark_test_00786(const httplib::Request &, httplib::Response &);
+void benchmark_test_00787(const httplib::Request &, httplib::Response &);
+void benchmark_test_00788(const httplib::Request &, httplib::Response &);
+void benchmark_test_00789(const httplib::Request &, httplib::Response &);
+void benchmark_test_00790(const httplib::Request &, httplib::Response &);
+void benchmark_test_00791(const httplib::Request &, httplib::Response &);
+void benchmark_test_00792(const httplib::Request &, httplib::Response &);
+void benchmark_test_00793(const httplib::Request &, httplib::Response &);
+void benchmark_test_00794(const httplib::Request &, httplib::Response &);
+void benchmark_test_00795(const httplib::Request &, httplib::Response &);
+void benchmark_test_00796(const httplib::Request &, httplib::Response &);
+void benchmark_test_00797(const httplib::Request &, httplib::Response &);
+void benchmark_test_00798(const httplib::Request &, httplib::Response &);
+void benchmark_test_00799(const httplib::Request &, httplib::Response &);
+void benchmark_test_00800(const httplib::Request &, httplib::Response &);
+void benchmark_test_00801(const httplib::Request &, httplib::Response &);
+void benchmark_test_00802(const httplib::Request &, httplib::Response &);
+void benchmark_test_00803(const httplib::Request &, httplib::Response &);
+void benchmark_test_00804(const httplib::Request &, httplib::Response &);
+void benchmark_test_00805(const httplib::Request &, httplib::Response &);
+void benchmark_test_00806(const httplib::Request &, httplib::Response &);
+void benchmark_test_00807(const httplib::Request &, httplib::Response &);
+void benchmark_test_00808(const httplib::Request &, httplib::Response &);
+void benchmark_test_00809(const httplib::Request &, httplib::Response &);
+void benchmark_test_00810(const httplib::Request &, httplib::Response &);
+void benchmark_test_00811(const httplib::Request &, httplib::Response &);
+void benchmark_test_00812(const httplib::Request &, httplib::Response &);
+void benchmark_test_00813(const httplib::Request &, httplib::Response &);
+void benchmark_test_00814(const httplib::Request &, httplib::Response &);
+void benchmark_test_00815(const httplib::Request &, httplib::Response &);
+void benchmark_test_00816(const httplib::Request &, httplib::Response &);
+void benchmark_test_00817(const httplib::Request &, httplib::Response &);
+void benchmark_test_00818(const httplib::Request &, httplib::Response &);
+void benchmark_test_00819(const httplib::Request &, httplib::Response &);
+void benchmark_test_00820(const httplib::Request &, httplib::Response &);
+void benchmark_test_00821(const httplib::Request &, httplib::Response &);
+void benchmark_test_00822(const httplib::Request &, httplib::Response &);
+void benchmark_test_00823(const httplib::Request &, httplib::Response &);
+void benchmark_test_00824(const httplib::Request &, httplib::Response &);
+void benchmark_test_00825(const httplib::Request &, httplib::Response &);
+void benchmark_test_00826(const httplib::Request &, httplib::Response &);
+void benchmark_test_00827(const httplib::Request &, httplib::Response &);
+void benchmark_test_00828(const httplib::Request &, httplib::Response &);
+void benchmark_test_00829(const httplib::Request &, httplib::Response &);
+void benchmark_test_00830(const httplib::Request &, httplib::Response &);
+void benchmark_test_00831(const httplib::Request &, httplib::Response &);
+void benchmark_test_00832(const httplib::Request &, httplib::Response &);
+void benchmark_test_00833(const httplib::Request &, httplib::Response &);
+void benchmark_test_00834(const httplib::Request &, httplib::Response &);
+void benchmark_test_00835(const httplib::Request &, httplib::Response &);
+void benchmark_test_00836(const httplib::Request &, httplib::Response &);
+void benchmark_test_00837(const httplib::Request &, httplib::Response &);
+void benchmark_test_00838(const httplib::Request &, httplib::Response &);
+void benchmark_test_00839(const httplib::Request &, httplib::Response &);
+void benchmark_test_00840(const httplib::Request &, httplib::Response &);
+void benchmark_test_00841(const httplib::Request &, httplib::Response &);
+void benchmark_test_00842(const httplib::Request &, httplib::Response &);
+void benchmark_test_00843(const httplib::Request &, httplib::Response &);
+void benchmark_test_00844(const httplib::Request &, httplib::Response &);
+void benchmark_test_00845(const httplib::Request &, httplib::Response &);
+void benchmark_test_00846(const httplib::Request &, httplib::Response &);
+void benchmark_test_00847(const httplib::Request &, httplib::Response &);
+void benchmark_test_00848(const httplib::Request &, httplib::Response &);
+void benchmark_test_00849(const httplib::Request &, httplib::Response &);
+void benchmark_test_00850(const httplib::Request &, httplib::Response &);
+void benchmark_test_00851(const httplib::Request &, httplib::Response &);
+void benchmark_test_00852(const httplib::Request &, httplib::Response &);
+void benchmark_test_00853(const httplib::Request &, httplib::Response &);
+void benchmark_test_00854(const httplib::Request &, httplib::Response &);
+void benchmark_test_00855(const httplib::Request &, httplib::Response &);
+void benchmark_test_00856(const httplib::Request &, httplib::Response &);
+void benchmark_test_00857(const httplib::Request &, httplib::Response &);
+void benchmark_test_00858(const httplib::Request &, httplib::Response &);
+void benchmark_test_00859(const httplib::Request &, httplib::Response &);
+void benchmark_test_00860(const httplib::Request &, httplib::Response &);
+void benchmark_test_00861(const httplib::Request &, httplib::Response &);
+void benchmark_test_00862(const httplib::Request &, httplib::Response &);
+void benchmark_test_00863(const httplib::Request &, httplib::Response &);
+void benchmark_test_00864(const httplib::Request &, httplib::Response &);
+void benchmark_test_00865(const httplib::Request &, httplib::Response &);
+void benchmark_test_00866(const httplib::Request &, httplib::Response &);
+void benchmark_test_00867(const httplib::Request &, httplib::Response &);
+void benchmark_test_00868(const httplib::Request &, httplib::Response &);
+void benchmark_test_00869(const httplib::Request &, httplib::Response &);
+void benchmark_test_00870(const httplib::Request &, httplib::Response &);
+void benchmark_test_00871(const httplib::Request &, httplib::Response &);
+void benchmark_test_00872(const httplib::Request &, httplib::Response &);
+void benchmark_test_00873(const httplib::Request &, httplib::Response &);
+void benchmark_test_00874(const httplib::Request &, httplib::Response &);
+void benchmark_test_00875(const httplib::Request &, httplib::Response &);
+void benchmark_test_00876(const httplib::Request &, httplib::Response &);
+void benchmark_test_00877(const httplib::Request &, httplib::Response &);
+void benchmark_test_00878(const httplib::Request &, httplib::Response &);
+void benchmark_test_00879(const httplib::Request &, httplib::Response &);
+void benchmark_test_00880(const httplib::Request &, httplib::Response &);
+void benchmark_test_00881(const httplib::Request &, httplib::Response &);
+void benchmark_test_00882(const httplib::Request &, httplib::Response &);
+void benchmark_test_00883(const httplib::Request &, httplib::Response &);
+void benchmark_test_00884(const httplib::Request &, httplib::Response &);
+void benchmark_test_00885(const httplib::Request &, httplib::Response &);
+void benchmark_test_00886(const httplib::Request &, httplib::Response &);
+void benchmark_test_00887(const httplib::Request &, httplib::Response &);
+void benchmark_test_00888(const httplib::Request &, httplib::Response &);
+void benchmark_test_00889(const httplib::Request &, httplib::Response &);
+void benchmark_test_00890(const httplib::Request &, httplib::Response &);
+void benchmark_test_00891(const httplib::Request &, httplib::Response &);
+void benchmark_test_00892(const httplib::Request &, httplib::Response &);
+void benchmark_test_00893(const httplib::Request &, httplib::Response &);
+void benchmark_test_00894(const httplib::Request &, httplib::Response &);
+void benchmark_test_00895(const httplib::Request &, httplib::Response &);
+void benchmark_test_00896(const httplib::Request &, httplib::Response &);
+void benchmark_test_00897(const httplib::Request &, httplib::Response &);
+void benchmark_test_00898(const httplib::Request &, httplib::Response &);
+void benchmark_test_00899(const httplib::Request &, httplib::Response &);
+void benchmark_test_00900(const httplib::Request &, httplib::Response &);
+void benchmark_test_00901(const httplib::Request &, httplib::Response &);
+void benchmark_test_00902(const httplib::Request &, httplib::Response &);
+void benchmark_test_00903(const httplib::Request &, httplib::Response &);
+void benchmark_test_00904(const httplib::Request &, httplib::Response &);
+void benchmark_test_00905(const httplib::Request &, httplib::Response &);
+void benchmark_test_00906(const httplib::Request &, httplib::Response &);
+void benchmark_test_00907(const httplib::Request &, httplib::Response &);
+void benchmark_test_00908(const httplib::Request &, httplib::Response &);
+void benchmark_test_00909(const httplib::Request &, httplib::Response &);
+void benchmark_test_00910(const httplib::Request &, httplib::Response &);
+void benchmark_test_00911(const httplib::Request &, httplib::Response &);
+void benchmark_test_00912(const httplib::Request &, httplib::Response &);
+void benchmark_test_00913(const httplib::Request &, httplib::Response &);
+void benchmark_test_00914(const httplib::Request &, httplib::Response &);
+void benchmark_test_00915(const httplib::Request &, httplib::Response &);
+void benchmark_test_00916(const httplib::Request &, httplib::Response &);
+void benchmark_test_00917(const httplib::Request &, httplib::Response &);
+void benchmark_test_00918(const httplib::Request &, httplib::Response &);
+void benchmark_test_00919(const httplib::Request &, httplib::Response &);
+void benchmark_test_00920(const httplib::Request &, httplib::Response &);
+void benchmark_test_00921(const httplib::Request &, httplib::Response &);
+void benchmark_test_00922(const httplib::Request &, httplib::Response &);
+void benchmark_test_00923(const httplib::Request &, httplib::Response &);
+void benchmark_test_00924(const httplib::Request &, httplib::Response &);
+void benchmark_test_00925(const httplib::Request &, httplib::Response &);
+void benchmark_test_00926(const httplib::Request &, httplib::Response &);
+void benchmark_test_00927(const httplib::Request &, httplib::Response &);
+void benchmark_test_00928(const httplib::Request &, httplib::Response &);
+void benchmark_test_00929(const httplib::Request &, httplib::Response &);
+void benchmark_test_00930(const httplib::Request &, httplib::Response &);
+void benchmark_test_00931(const httplib::Request &, httplib::Response &);
+void benchmark_test_00932(const httplib::Request &, httplib::Response &);
+void benchmark_test_00933(const httplib::Request &, httplib::Response &);
+void benchmark_test_00934(const httplib::Request &, httplib::Response &);
+void benchmark_test_00935(const httplib::Request &, httplib::Response &);
+void benchmark_test_00936(const httplib::Request &, httplib::Response &);
+void benchmark_test_00937(const httplib::Request &, httplib::Response &);
+void benchmark_test_00938(const httplib::Request &, httplib::Response &);
+void benchmark_test_00939(const httplib::Request &, httplib::Response &);
+void benchmark_test_00940(const httplib::Request &, httplib::Response &);
+void benchmark_test_00941(const httplib::Request &, httplib::Response &);
+void benchmark_test_00942(const httplib::Request &, httplib::Response &);
+void benchmark_test_00943(const httplib::Request &, httplib::Response &);
+void benchmark_test_00944(const httplib::Request &, httplib::Response &);
+void benchmark_test_00945(const httplib::Request &, httplib::Response &);
+void benchmark_test_00946(const httplib::Request &, httplib::Response &);
+void benchmark_test_00947(const httplib::Request &, httplib::Response &);
+void benchmark_test_00948(const httplib::Request &, httplib::Response &);
+void benchmark_test_00949(const httplib::Request &, httplib::Response &);
+void benchmark_test_00950(const httplib::Request &, httplib::Response &);
+void benchmark_test_00951(const httplib::Request &, httplib::Response &);
+void benchmark_test_00952(const httplib::Request &, httplib::Response &);
+void benchmark_test_00953(const httplib::Request &, httplib::Response &);
+void benchmark_test_00954(const httplib::Request &, httplib::Response &);
+void benchmark_test_00955(const httplib::Request &, httplib::Response &);
+void benchmark_test_00956(const httplib::Request &, httplib::Response &);
+void benchmark_test_00957(const httplib::Request &, httplib::Response &);
+void benchmark_test_00958(const httplib::Request &, httplib::Response &);
+void benchmark_test_00959(const httplib::Request &, httplib::Response &);
+void benchmark_test_00960(const httplib::Request &, httplib::Response &);
+void benchmark_test_00961(const httplib::Request &, httplib::Response &);
+void benchmark_test_00962(const httplib::Request &, httplib::Response &);
+void benchmark_test_00963(const httplib::Request &, httplib::Response &);
+void benchmark_test_00964(const httplib::Request &, httplib::Response &);
+void benchmark_test_00965(const httplib::Request &, httplib::Response &);
+void benchmark_test_00966(const httplib::Request &, httplib::Response &);
+void benchmark_test_00967(const httplib::Request &, httplib::Response &);
+void benchmark_test_00968(const httplib::Request &, httplib::Response &);
+void benchmark_test_00969(const httplib::Request &, httplib::Response &);
+void benchmark_test_00970(const httplib::Request &, httplib::Response &);
+void benchmark_test_00971(const httplib::Request &, httplib::Response &);
+void benchmark_test_00972(const httplib::Request &, httplib::Response &);
+void benchmark_test_00973(const httplib::Request &, httplib::Response &);
+void benchmark_test_00974(const httplib::Request &, httplib::Response &);
+void benchmark_test_00975(const httplib::Request &, httplib::Response &);
+void benchmark_test_00976(const httplib::Request &, httplib::Response &);
+void benchmark_test_00977(const httplib::Request &, httplib::Response &);
+void benchmark_test_00978(const httplib::Request &, httplib::Response &);
+void benchmark_test_00979(const httplib::Request &, httplib::Response &);
+void benchmark_test_00980(const httplib::Request &, httplib::Response &);
+void benchmark_test_00981(const httplib::Request &, httplib::Response &);
+void benchmark_test_00982(const httplib::Request &, httplib::Response &);
+void benchmark_test_00983(const httplib::Request &, httplib::Response &);
+void benchmark_test_00984(const httplib::Request &, httplib::Response &);
+void benchmark_test_00985(const httplib::Request &, httplib::Response &);
+void benchmark_test_00986(const httplib::Request &, httplib::Response &);
+void benchmark_test_00987(const httplib::Request &, httplib::Response &);
+void benchmark_test_00988(const httplib::Request &, httplib::Response &);
+void benchmark_test_00989(const httplib::Request &, httplib::Response &);
+void benchmark_test_00990(const httplib::Request &, httplib::Response &);
+void benchmark_test_00991(const httplib::Request &, httplib::Response &);
+void benchmark_test_00992(const httplib::Request &, httplib::Response &);
+void benchmark_test_00993(const httplib::Request &, httplib::Response &);
+void benchmark_test_00994(const httplib::Request &, httplib::Response &);
+void benchmark_test_00995(const httplib::Request &, httplib::Response &);
+void benchmark_test_00996(const httplib::Request &, httplib::Response &);
+void benchmark_test_00997(const httplib::Request &, httplib::Response &);
+void benchmark_test_00998(const httplib::Request &, httplib::Response &);
+void benchmark_test_00999(const httplib::Request &, httplib::Response &);
+void benchmark_test_01000(const httplib::Request &, httplib::Response &);
+void benchmark_test_01001(const httplib::Request &, httplib::Response &);
+void benchmark_test_01002(const httplib::Request &, httplib::Response &);
+void benchmark_test_01003(const httplib::Request &, httplib::Response &);
+void benchmark_test_01004(const httplib::Request &, httplib::Response &);
+void benchmark_test_01005(const httplib::Request &, httplib::Response &);
+void benchmark_test_01006(const httplib::Request &, httplib::Response &);
+void benchmark_test_01007(const httplib::Request &, httplib::Response &);
+void benchmark_test_01008(const httplib::Request &, httplib::Response &);
+void benchmark_test_01009(const httplib::Request &, httplib::Response &);
+void benchmark_test_01010(const httplib::Request &, httplib::Response &);
+void benchmark_test_01011(const httplib::Request &, httplib::Response &);
+void benchmark_test_01012(const httplib::Request &, httplib::Response &);
+void benchmark_test_01013(const httplib::Request &, httplib::Response &);
+void benchmark_test_01014(const httplib::Request &, httplib::Response &);
+void benchmark_test_01015(const httplib::Request &, httplib::Response &);
+void benchmark_test_01016(const httplib::Request &, httplib::Response &);
+void benchmark_test_01017(const httplib::Request &, httplib::Response &);
+void benchmark_test_01018(const httplib::Request &, httplib::Response &);
+void benchmark_test_01019(const httplib::Request &, httplib::Response &);
+void benchmark_test_01020(const httplib::Request &, httplib::Response &);
+void benchmark_test_01021(const httplib::Request &, httplib::Response &);
+void benchmark_test_01022(const httplib::Request &, httplib::Response &);
+void benchmark_test_01023(const httplib::Request &, httplib::Response &);
+void benchmark_test_01024(const httplib::Request &, httplib::Response &);
+void benchmark_test_01025(const httplib::Request &, httplib::Response &);
+void benchmark_test_01026(const httplib::Request &, httplib::Response &);
+void benchmark_test_01027(const httplib::Request &, httplib::Response &);
+void benchmark_test_01028(const httplib::Request &, httplib::Response &);
+void benchmark_test_01029(const httplib::Request &, httplib::Response &);
+void benchmark_test_01030(const httplib::Request &, httplib::Response &);
+void benchmark_test_01031(const httplib::Request &, httplib::Response &);
+void benchmark_test_01032(const httplib::Request &, httplib::Response &);
+void benchmark_test_01033(const httplib::Request &, httplib::Response &);
+void benchmark_test_01034(const httplib::Request &, httplib::Response &);
+void benchmark_test_01035(const httplib::Request &, httplib::Response &);
+void benchmark_test_01036(const httplib::Request &, httplib::Response &);
+void benchmark_test_01037(const httplib::Request &, httplib::Response &);
+void benchmark_test_01038(const httplib::Request &, httplib::Response &);
+void benchmark_test_01039(const httplib::Request &, httplib::Response &);
+void benchmark_test_01040(const httplib::Request &, httplib::Response &);
+void benchmark_test_01041(const httplib::Request &, httplib::Response &);
+void benchmark_test_01042(const httplib::Request &, httplib::Response &);
+void benchmark_test_01043(const httplib::Request &, httplib::Response &);
+void benchmark_test_01044(const httplib::Request &, httplib::Response &);
+void benchmark_test_01045(const httplib::Request &, httplib::Response &);
+void benchmark_test_01046(const httplib::Request &, httplib::Response &);
+void benchmark_test_01047(const httplib::Request &, httplib::Response &);
+void benchmark_test_01048(const httplib::Request &, httplib::Response &);
+void benchmark_test_01049(const httplib::Request &, httplib::Response &);
+void benchmark_test_01050(const httplib::Request &, httplib::Response &);
+void benchmark_test_01051(const httplib::Request &, httplib::Response &);
+void benchmark_test_01052(const httplib::Request &, httplib::Response &);
+void benchmark_test_01053(const httplib::Request &, httplib::Response &);
+void benchmark_test_01054(const httplib::Request &, httplib::Response &);
+void benchmark_test_01055(const httplib::Request &, httplib::Response &);
+void benchmark_test_01056(const httplib::Request &, httplib::Response &);
 
 struct RouteEntry { const char *path; HttplibHandler handler; };
 
@@ -1526,4 +1822,300 @@ static const RouteEntry kRoutes[] = {
     {"/benchmark_test_00758", &benchmark_test_00758},
     {"/benchmark_test_00759", &benchmark_test_00759},
     {"/benchmark_test_00760", &benchmark_test_00760},
+    {"/benchmark_test_00761", &benchmark_test_00761},
+    {"/benchmark_test_00762", &benchmark_test_00762},
+    {"/benchmark_test_00763", &benchmark_test_00763},
+    {"/benchmark_test_00764", &benchmark_test_00764},
+    {"/benchmark_test_00765", &benchmark_test_00765},
+    {"/benchmark_test_00766", &benchmark_test_00766},
+    {"/benchmark_test_00767", &benchmark_test_00767},
+    {"/benchmark_test_00768", &benchmark_test_00768},
+    {"/benchmark_test_00769", &benchmark_test_00769},
+    {"/benchmark_test_00770", &benchmark_test_00770},
+    {"/benchmark_test_00771", &benchmark_test_00771},
+    {"/benchmark_test_00772", &benchmark_test_00772},
+    {"/benchmark_test_00773", &benchmark_test_00773},
+    {"/benchmark_test_00774", &benchmark_test_00774},
+    {"/benchmark_test_00775", &benchmark_test_00775},
+    {"/benchmark_test_00776", &benchmark_test_00776},
+    {"/benchmark_test_00777", &benchmark_test_00777},
+    {"/benchmark_test_00778", &benchmark_test_00778},
+    {"/benchmark_test_00779", &benchmark_test_00779},
+    {"/benchmark_test_00780", &benchmark_test_00780},
+    {"/benchmark_test_00781", &benchmark_test_00781},
+    {"/benchmark_test_00782", &benchmark_test_00782},
+    {"/benchmark_test_00783", &benchmark_test_00783},
+    {"/benchmark_test_00784", &benchmark_test_00784},
+    {"/benchmark_test_00785", &benchmark_test_00785},
+    {"/benchmark_test_00786", &benchmark_test_00786},
+    {"/benchmark_test_00787", &benchmark_test_00787},
+    {"/benchmark_test_00788", &benchmark_test_00788},
+    {"/benchmark_test_00789", &benchmark_test_00789},
+    {"/benchmark_test_00790", &benchmark_test_00790},
+    {"/benchmark_test_00791", &benchmark_test_00791},
+    {"/benchmark_test_00792", &benchmark_test_00792},
+    {"/benchmark_test_00793", &benchmark_test_00793},
+    {"/benchmark_test_00794", &benchmark_test_00794},
+    {"/benchmark_test_00795", &benchmark_test_00795},
+    {"/benchmark_test_00796", &benchmark_test_00796},
+    {"/benchmark_test_00797", &benchmark_test_00797},
+    {"/benchmark_test_00798", &benchmark_test_00798},
+    {"/benchmark_test_00799", &benchmark_test_00799},
+    {"/benchmark_test_00800", &benchmark_test_00800},
+    {"/benchmark_test_00801", &benchmark_test_00801},
+    {"/benchmark_test_00802", &benchmark_test_00802},
+    {"/benchmark_test_00803", &benchmark_test_00803},
+    {"/benchmark_test_00804", &benchmark_test_00804},
+    {"/benchmark_test_00805", &benchmark_test_00805},
+    {"/benchmark_test_00806", &benchmark_test_00806},
+    {"/benchmark_test_00807", &benchmark_test_00807},
+    {"/benchmark_test_00808", &benchmark_test_00808},
+    {"/benchmark_test_00809", &benchmark_test_00809},
+    {"/benchmark_test_00810", &benchmark_test_00810},
+    {"/benchmark_test_00811", &benchmark_test_00811},
+    {"/benchmark_test_00812", &benchmark_test_00812},
+    {"/benchmark_test_00813", &benchmark_test_00813},
+    {"/benchmark_test_00814", &benchmark_test_00814},
+    {"/benchmark_test_00815", &benchmark_test_00815},
+    {"/benchmark_test_00816", &benchmark_test_00816},
+    {"/benchmark_test_00817", &benchmark_test_00817},
+    {"/benchmark_test_00818", &benchmark_test_00818},
+    {"/benchmark_test_00819", &benchmark_test_00819},
+    {"/benchmark_test_00820", &benchmark_test_00820},
+    {"/benchmark_test_00821", &benchmark_test_00821},
+    {"/benchmark_test_00822", &benchmark_test_00822},
+    {"/benchmark_test_00823", &benchmark_test_00823},
+    {"/benchmark_test_00824", &benchmark_test_00824},
+    {"/benchmark_test_00825", &benchmark_test_00825},
+    {"/benchmark_test_00826", &benchmark_test_00826},
+    {"/benchmark_test_00827", &benchmark_test_00827},
+    {"/benchmark_test_00828", &benchmark_test_00828},
+    {"/benchmark_test_00829", &benchmark_test_00829},
+    {"/benchmark_test_00830", &benchmark_test_00830},
+    {"/benchmark_test_00831", &benchmark_test_00831},
+    {"/benchmark_test_00832", &benchmark_test_00832},
+    {"/benchmark_test_00833", &benchmark_test_00833},
+    {"/benchmark_test_00834", &benchmark_test_00834},
+    {"/benchmark_test_00835", &benchmark_test_00835},
+    {"/benchmark_test_00836", &benchmark_test_00836},
+    {"/benchmark_test_00837", &benchmark_test_00837},
+    {"/benchmark_test_00838", &benchmark_test_00838},
+    {"/benchmark_test_00839", &benchmark_test_00839},
+    {"/benchmark_test_00840", &benchmark_test_00840},
+    {"/benchmark_test_00841", &benchmark_test_00841},
+    {"/benchmark_test_00842", &benchmark_test_00842},
+    {"/benchmark_test_00843", &benchmark_test_00843},
+    {"/benchmark_test_00844", &benchmark_test_00844},
+    {"/benchmark_test_00845", &benchmark_test_00845},
+    {"/benchmark_test_00846", &benchmark_test_00846},
+    {"/benchmark_test_00847", &benchmark_test_00847},
+    {"/benchmark_test_00848", &benchmark_test_00848},
+    {"/benchmark_test_00849", &benchmark_test_00849},
+    {"/benchmark_test_00850", &benchmark_test_00850},
+    {"/benchmark_test_00851", &benchmark_test_00851},
+    {"/benchmark_test_00852", &benchmark_test_00852},
+    {"/benchmark_test_00853", &benchmark_test_00853},
+    {"/benchmark_test_00854", &benchmark_test_00854},
+    {"/benchmark_test_00855", &benchmark_test_00855},
+    {"/benchmark_test_00856", &benchmark_test_00856},
+    {"/benchmark_test_00857", &benchmark_test_00857},
+    {"/benchmark_test_00858", &benchmark_test_00858},
+    {"/benchmark_test_00859", &benchmark_test_00859},
+    {"/benchmark_test_00860", &benchmark_test_00860},
+    {"/benchmark_test_00861", &benchmark_test_00861},
+    {"/benchmark_test_00862", &benchmark_test_00862},
+    {"/benchmark_test_00863", &benchmark_test_00863},
+    {"/benchmark_test_00864", &benchmark_test_00864},
+    {"/benchmark_test_00865", &benchmark_test_00865},
+    {"/benchmark_test_00866", &benchmark_test_00866},
+    {"/benchmark_test_00867", &benchmark_test_00867},
+    {"/benchmark_test_00868", &benchmark_test_00868},
+    {"/benchmark_test_00869", &benchmark_test_00869},
+    {"/benchmark_test_00870", &benchmark_test_00870},
+    {"/benchmark_test_00871", &benchmark_test_00871},
+    {"/benchmark_test_00872", &benchmark_test_00872},
+    {"/benchmark_test_00873", &benchmark_test_00873},
+    {"/benchmark_test_00874", &benchmark_test_00874},
+    {"/benchmark_test_00875", &benchmark_test_00875},
+    {"/benchmark_test_00876", &benchmark_test_00876},
+    {"/benchmark_test_00877", &benchmark_test_00877},
+    {"/benchmark_test_00878", &benchmark_test_00878},
+    {"/benchmark_test_00879", &benchmark_test_00879},
+    {"/benchmark_test_00880", &benchmark_test_00880},
+    {"/benchmark_test_00881", &benchmark_test_00881},
+    {"/benchmark_test_00882", &benchmark_test_00882},
+    {"/benchmark_test_00883", &benchmark_test_00883},
+    {"/benchmark_test_00884", &benchmark_test_00884},
+    {"/benchmark_test_00885", &benchmark_test_00885},
+    {"/benchmark_test_00886", &benchmark_test_00886},
+    {"/benchmark_test_00887", &benchmark_test_00887},
+    {"/benchmark_test_00888", &benchmark_test_00888},
+    {"/benchmark_test_00889", &benchmark_test_00889},
+    {"/benchmark_test_00890", &benchmark_test_00890},
+    {"/benchmark_test_00891", &benchmark_test_00891},
+    {"/benchmark_test_00892", &benchmark_test_00892},
+    {"/benchmark_test_00893", &benchmark_test_00893},
+    {"/benchmark_test_00894", &benchmark_test_00894},
+    {"/benchmark_test_00895", &benchmark_test_00895},
+    {"/benchmark_test_00896", &benchmark_test_00896},
+    {"/benchmark_test_00897", &benchmark_test_00897},
+    {"/benchmark_test_00898", &benchmark_test_00898},
+    {"/benchmark_test_00899", &benchmark_test_00899},
+    {"/benchmark_test_00900", &benchmark_test_00900},
+    {"/benchmark_test_00901", &benchmark_test_00901},
+    {"/benchmark_test_00902", &benchmark_test_00902},
+    {"/benchmark_test_00903", &benchmark_test_00903},
+    {"/benchmark_test_00904", &benchmark_test_00904},
+    {"/benchmark_test_00905", &benchmark_test_00905},
+    {"/benchmark_test_00906", &benchmark_test_00906},
+    {"/benchmark_test_00907", &benchmark_test_00907},
+    {"/benchmark_test_00908", &benchmark_test_00908},
+    {"/benchmark_test_00909", &benchmark_test_00909},
+    {"/benchmark_test_00910", &benchmark_test_00910},
+    {"/benchmark_test_00911", &benchmark_test_00911},
+    {"/benchmark_test_00912", &benchmark_test_00912},
+    {"/benchmark_test_00913", &benchmark_test_00913},
+    {"/benchmark_test_00914", &benchmark_test_00914},
+    {"/benchmark_test_00915", &benchmark_test_00915},
+    {"/benchmark_test_00916", &benchmark_test_00916},
+    {"/benchmark_test_00917", &benchmark_test_00917},
+    {"/benchmark_test_00918", &benchmark_test_00918},
+    {"/benchmark_test_00919", &benchmark_test_00919},
+    {"/benchmark_test_00920", &benchmark_test_00920},
+    {"/benchmark_test_00921", &benchmark_test_00921},
+    {"/benchmark_test_00922", &benchmark_test_00922},
+    {"/benchmark_test_00923", &benchmark_test_00923},
+    {"/benchmark_test_00924", &benchmark_test_00924},
+    {"/benchmark_test_00925", &benchmark_test_00925},
+    {"/benchmark_test_00926", &benchmark_test_00926},
+    {"/benchmark_test_00927", &benchmark_test_00927},
+    {"/benchmark_test_00928", &benchmark_test_00928},
+    {"/benchmark_test_00929", &benchmark_test_00929},
+    {"/benchmark_test_00930", &benchmark_test_00930},
+    {"/benchmark_test_00931", &benchmark_test_00931},
+    {"/benchmark_test_00932", &benchmark_test_00932},
+    {"/benchmark_test_00933", &benchmark_test_00933},
+    {"/benchmark_test_00934", &benchmark_test_00934},
+    {"/benchmark_test_00935", &benchmark_test_00935},
+    {"/benchmark_test_00936", &benchmark_test_00936},
+    {"/benchmark_test_00937", &benchmark_test_00937},
+    {"/benchmark_test_00938", &benchmark_test_00938},
+    {"/benchmark_test_00939", &benchmark_test_00939},
+    {"/benchmark_test_00940", &benchmark_test_00940},
+    {"/benchmark_test_00941", &benchmark_test_00941},
+    {"/benchmark_test_00942", &benchmark_test_00942},
+    {"/benchmark_test_00943", &benchmark_test_00943},
+    {"/benchmark_test_00944", &benchmark_test_00944},
+    {"/benchmark_test_00945", &benchmark_test_00945},
+    {"/benchmark_test_00946", &benchmark_test_00946},
+    {"/benchmark_test_00947", &benchmark_test_00947},
+    {"/benchmark_test_00948", &benchmark_test_00948},
+    {"/benchmark_test_00949", &benchmark_test_00949},
+    {"/benchmark_test_00950", &benchmark_test_00950},
+    {"/benchmark_test_00951", &benchmark_test_00951},
+    {"/benchmark_test_00952", &benchmark_test_00952},
+    {"/benchmark_test_00953", &benchmark_test_00953},
+    {"/benchmark_test_00954", &benchmark_test_00954},
+    {"/benchmark_test_00955", &benchmark_test_00955},
+    {"/benchmark_test_00956", &benchmark_test_00956},
+    {"/benchmark_test_00957", &benchmark_test_00957},
+    {"/benchmark_test_00958", &benchmark_test_00958},
+    {"/benchmark_test_00959", &benchmark_test_00959},
+    {"/benchmark_test_00960", &benchmark_test_00960},
+    {"/benchmark_test_00961", &benchmark_test_00961},
+    {"/benchmark_test_00962", &benchmark_test_00962},
+    {"/benchmark_test_00963", &benchmark_test_00963},
+    {"/benchmark_test_00964", &benchmark_test_00964},
+    {"/benchmark_test_00965", &benchmark_test_00965},
+    {"/benchmark_test_00966", &benchmark_test_00966},
+    {"/benchmark_test_00967", &benchmark_test_00967},
+    {"/benchmark_test_00968", &benchmark_test_00968},
+    {"/benchmark_test_00969", &benchmark_test_00969},
+    {"/benchmark_test_00970", &benchmark_test_00970},
+    {"/benchmark_test_00971", &benchmark_test_00971},
+    {"/benchmark_test_00972", &benchmark_test_00972},
+    {"/benchmark_test_00973", &benchmark_test_00973},
+    {"/benchmark_test_00974", &benchmark_test_00974},
+    {"/benchmark_test_00975", &benchmark_test_00975},
+    {"/benchmark_test_00976", &benchmark_test_00976},
+    {"/benchmark_test_00977", &benchmark_test_00977},
+    {"/benchmark_test_00978", &benchmark_test_00978},
+    {"/benchmark_test_00979", &benchmark_test_00979},
+    {"/benchmark_test_00980", &benchmark_test_00980},
+    {"/benchmark_test_00981", &benchmark_test_00981},
+    {"/benchmark_test_00982", &benchmark_test_00982},
+    {"/benchmark_test_00983", &benchmark_test_00983},
+    {"/benchmark_test_00984", &benchmark_test_00984},
+    {"/benchmark_test_00985", &benchmark_test_00985},
+    {"/benchmark_test_00986", &benchmark_test_00986},
+    {"/benchmark_test_00987", &benchmark_test_00987},
+    {"/benchmark_test_00988", &benchmark_test_00988},
+    {"/benchmark_test_00989", &benchmark_test_00989},
+    {"/benchmark_test_00990", &benchmark_test_00990},
+    {"/benchmark_test_00991", &benchmark_test_00991},
+    {"/benchmark_test_00992", &benchmark_test_00992},
+    {"/benchmark_test_00993", &benchmark_test_00993},
+    {"/benchmark_test_00994", &benchmark_test_00994},
+    {"/benchmark_test_00995", &benchmark_test_00995},
+    {"/benchmark_test_00996", &benchmark_test_00996},
+    {"/benchmark_test_00997", &benchmark_test_00997},
+    {"/benchmark_test_00998", &benchmark_test_00998},
+    {"/benchmark_test_00999", &benchmark_test_00999},
+    {"/benchmark_test_01000", &benchmark_test_01000},
+    {"/benchmark_test_01001", &benchmark_test_01001},
+    {"/benchmark_test_01002", &benchmark_test_01002},
+    {"/benchmark_test_01003", &benchmark_test_01003},
+    {"/benchmark_test_01004", &benchmark_test_01004},
+    {"/benchmark_test_01005", &benchmark_test_01005},
+    {"/benchmark_test_01006", &benchmark_test_01006},
+    {"/benchmark_test_01007", &benchmark_test_01007},
+    {"/benchmark_test_01008", &benchmark_test_01008},
+    {"/benchmark_test_01009", &benchmark_test_01009},
+    {"/benchmark_test_01010", &benchmark_test_01010},
+    {"/benchmark_test_01011", &benchmark_test_01011},
+    {"/benchmark_test_01012", &benchmark_test_01012},
+    {"/benchmark_test_01013", &benchmark_test_01013},
+    {"/benchmark_test_01014", &benchmark_test_01014},
+    {"/benchmark_test_01015", &benchmark_test_01015},
+    {"/benchmark_test_01016", &benchmark_test_01016},
+    {"/benchmark_test_01017", &benchmark_test_01017},
+    {"/benchmark_test_01018", &benchmark_test_01018},
+    {"/benchmark_test_01019", &benchmark_test_01019},
+    {"/benchmark_test_01020", &benchmark_test_01020},
+    {"/benchmark_test_01021", &benchmark_test_01021},
+    {"/benchmark_test_01022", &benchmark_test_01022},
+    {"/benchmark_test_01023", &benchmark_test_01023},
+    {"/benchmark_test_01024", &benchmark_test_01024},
+    {"/benchmark_test_01025", &benchmark_test_01025},
+    {"/benchmark_test_01026", &benchmark_test_01026},
+    {"/benchmark_test_01027", &benchmark_test_01027},
+    {"/benchmark_test_01028", &benchmark_test_01028},
+    {"/benchmark_test_01029", &benchmark_test_01029},
+    {"/benchmark_test_01030", &benchmark_test_01030},
+    {"/benchmark_test_01031", &benchmark_test_01031},
+    {"/benchmark_test_01032", &benchmark_test_01032},
+    {"/benchmark_test_01033", &benchmark_test_01033},
+    {"/benchmark_test_01034", &benchmark_test_01034},
+    {"/benchmark_test_01035", &benchmark_test_01035},
+    {"/benchmark_test_01036", &benchmark_test_01036},
+    {"/benchmark_test_01037", &benchmark_test_01037},
+    {"/benchmark_test_01038", &benchmark_test_01038},
+    {"/benchmark_test_01039", &benchmark_test_01039},
+    {"/benchmark_test_01040", &benchmark_test_01040},
+    {"/benchmark_test_01041", &benchmark_test_01041},
+    {"/benchmark_test_01042", &benchmark_test_01042},
+    {"/benchmark_test_01043", &benchmark_test_01043},
+    {"/benchmark_test_01044", &benchmark_test_01044},
+    {"/benchmark_test_01045", &benchmark_test_01045},
+    {"/benchmark_test_01046", &benchmark_test_01046},
+    {"/benchmark_test_01047", &benchmark_test_01047},
+    {"/benchmark_test_01048", &benchmark_test_01048},
+    {"/benchmark_test_01049", &benchmark_test_01049},
+    {"/benchmark_test_01050", &benchmark_test_01050},
+    {"/benchmark_test_01051", &benchmark_test_01051},
+    {"/benchmark_test_01052", &benchmark_test_01052},
+    {"/benchmark_test_01053", &benchmark_test_01053},
+    {"/benchmark_test_01054", &benchmark_test_01054},
+    {"/benchmark_test_01055", &benchmark_test_01055},
+    {"/benchmark_test_01056", &benchmark_test_01056},
 };

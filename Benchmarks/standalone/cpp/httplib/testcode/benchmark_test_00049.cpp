@@ -25,15 +25,10 @@ struct Client {
 
 void benchmark_test_00049(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
+    std::string user_input = req.get_param_value("multipart_field");
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    res.set_redirect(data, 302);
+    try { data = user_input; } catch (...) { data.clear(); }
+    std::string _ckval = data;
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
+    res.set_content("ok", "text/plain");
 }

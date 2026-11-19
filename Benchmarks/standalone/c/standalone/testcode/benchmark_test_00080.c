@@ -10,8 +10,23 @@
 void benchmark_test_00080(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
     char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, user_input, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    if (_dst == NULL) return;
+    size_t _n = strlen(data);
+    memcpy(_dst, data, _n + 1);
+    printf("%s\n", _dst);
+    free(_dst);
 }

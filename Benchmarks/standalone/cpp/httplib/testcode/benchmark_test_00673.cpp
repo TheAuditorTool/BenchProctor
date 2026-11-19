@@ -25,9 +25,8 @@ struct Client {
 
 void benchmark_test_00673(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_header_value("Referer");
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    res.set_redirect(data, 302);
 }

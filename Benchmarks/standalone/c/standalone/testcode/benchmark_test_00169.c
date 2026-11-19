@@ -9,9 +9,16 @@
 
 void benchmark_test_00169(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
     char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, user_input); printf("%s\n", _dst); free(_dst); }
+    if (_dst == NULL) return;
+    size_t _n = strlen(data);
+    if (_n > 15) _n = 15;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
+    free(_dst);
 }

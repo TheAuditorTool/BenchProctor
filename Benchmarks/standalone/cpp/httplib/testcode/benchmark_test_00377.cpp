@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,13 +24,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00377(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00377(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    const char *user_input_env = std::getenv("PROFILE_BIO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string _path = std::string("/var/app/data/") + data;
+    std::remove(_path.c_str());
     res.set_content("ok", "text/plain");
 }

@@ -11,11 +11,10 @@ void benchmark_test_00543(int argc, char **argv)
 {
     const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    struct { int id; int flags; } _rec = { 0, 0 };
+    _rec.id = atoi(data);
+    printf("%d %d\n", _rec.id, _rec.flags);
 }

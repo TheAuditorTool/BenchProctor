@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,16 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
-void benchmark_test_00449(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00449(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char _dst[16];
-    std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_header_value("Origin");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

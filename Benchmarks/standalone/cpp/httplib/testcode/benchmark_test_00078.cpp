@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,16 +24,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00078(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.get_header_value("User-Agent");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

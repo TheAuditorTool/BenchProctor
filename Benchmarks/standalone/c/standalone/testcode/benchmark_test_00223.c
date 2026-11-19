@@ -10,20 +10,19 @@
 void benchmark_test_00223(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
     }
-    const char *user_input = user_input_buf;
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    char _dst[16];
+    size_t _n = strlen(data);
+    memcpy(_dst, data, _n + 1);
+    printf("%s\n", _dst);
 }

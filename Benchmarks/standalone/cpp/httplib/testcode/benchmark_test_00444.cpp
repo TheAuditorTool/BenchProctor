@@ -23,16 +23,27 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00444(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input = req.get_param_value("field");
+    std::string data;
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
+    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

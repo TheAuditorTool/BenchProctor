@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #include <unordered_map>
 
@@ -25,22 +24,19 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00400(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00400(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    char *_p = new char[user_input.size() + 1];
-    std::strcpy(_p, user_input.c_str());
-    std::string _out(_p);
-    delete[] _p;
-    std::cout << _out << std::endl;
+    std::string user_input = req.get_header_value("User-Agent");
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
     res.set_content("ok", "text/plain");
 }

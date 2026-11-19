@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <unistd.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,15 +25,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00565(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Forwarded-For");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.get_header_value("User-Agent");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
+    std::string _path = std::string("/var/app/data/") + safe;
+    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

@@ -7,31 +7,27 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00023(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
     const char *user_input = user_input_buf;
-    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
-    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
-    char _expr[512];
-    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", user_input);
-    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
-    (void)_xo;
-    if (_doc) xmlFreeDoc(_doc);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

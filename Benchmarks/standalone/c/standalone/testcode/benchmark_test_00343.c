@@ -6,13 +6,15 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
 
 void benchmark_test_00343(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
     char data[512];
     switch (user_input[0]) {
         case '\0':
@@ -22,13 +24,8 @@ void benchmark_test_00343(int argc, char **argv)
             snprintf(data, sizeof(data), "%s", user_input);
             break;
     }
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
-    }
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", safe);
-    remove(_path);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
 }

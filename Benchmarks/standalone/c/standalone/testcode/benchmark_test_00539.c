@@ -9,7 +9,20 @@
 
 void benchmark_test_00539(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, user_input); printf("%s\n", _dst); free(_dst); }
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", user_input);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

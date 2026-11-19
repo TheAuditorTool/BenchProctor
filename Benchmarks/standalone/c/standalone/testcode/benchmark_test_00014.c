@@ -6,25 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 
 void benchmark_test_00014(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    unsigned char _iv[12];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char _dst[16];
+    strcpy(_dst, data);
+    printf("%s\n", _dst);
 }

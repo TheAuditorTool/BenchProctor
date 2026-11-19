@@ -2,15 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
-
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00271(int, char **)
 {
@@ -24,9 +17,16 @@ void benchmark_test_00271(int, char **)
         }
     }
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char _dst[16];
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
 }

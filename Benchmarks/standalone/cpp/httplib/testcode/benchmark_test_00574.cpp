@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 
@@ -25,12 +26,12 @@ struct Client {
 }
 static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00574(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00574(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data = cpp_own(user_input);
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
     res.set_content("ok", "text/plain");
 }

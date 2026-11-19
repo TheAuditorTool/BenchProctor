@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00719(int, char **)
 {
@@ -17,10 +18,7 @@ void benchmark_test_00719(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    std::string data = cpp_own(user_input);
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

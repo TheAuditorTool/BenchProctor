@@ -6,18 +6,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
 void benchmark_test_00570(int argc, char **argv)
 {
@@ -35,11 +25,12 @@ void benchmark_test_00570(int argc, char **argv)
     size_t _w = 0;
     while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
     data[_w] = '\0';
-    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
-    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
-    char _expr[512];
-    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", data);
-    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
-    (void)_xo;
-    if (_doc) xmlFreeDoc(_doc);
+    unsigned char _iv[8];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
 }

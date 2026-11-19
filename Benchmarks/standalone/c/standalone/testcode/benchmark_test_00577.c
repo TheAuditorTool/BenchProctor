@@ -7,16 +7,18 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00577(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    if (strchr(_p, ';') != NULL) return;
+    printf("%s\n", _p);
+    free(_p);
 }

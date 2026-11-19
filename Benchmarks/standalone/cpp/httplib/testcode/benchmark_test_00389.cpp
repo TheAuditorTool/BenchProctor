@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <spawn.h>
-#include <sys/wait.h>
+#include <cstdlib>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +24,35 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
 
 void benchmark_test_00389(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data = cpp_own(user_input);
-    const char *_sp_argv[] = { "/bin/echo", data.c_str(), nullptr };
-    char *const _sp_env[] = { nullptr };
-    pid_t _pid;
-    if (posix_spawn(&_pid, "/bin/echo", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
+    std::string user_input = req.body;
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    static const std::regex _schema("^[a-zA-Z0-9 _.#%\\-]+$");
+    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    std::string safe = data;
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _filter = std::string("(uid=") + safe + ")";
+    LDAPMessage *_lres = nullptr;
+    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
+    if (_lres) ldap_msgfree(_lres);
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

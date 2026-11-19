@@ -2,16 +2,14 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
+
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00077(int, char **)
 {
-    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(user_input.c_str()), user_input.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
 }

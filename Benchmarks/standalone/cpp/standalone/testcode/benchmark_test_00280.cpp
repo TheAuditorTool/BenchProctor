@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
+#include <cstdlib>
 
-void benchmark_test_00280(int argc, char **argv)
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+
+void benchmark_test_00280(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    int _x = 0;
+    if (!data.empty()) _x = (int)data[0];
+    std::cout << (_x + (int)data.size()) << std::endl;
 }

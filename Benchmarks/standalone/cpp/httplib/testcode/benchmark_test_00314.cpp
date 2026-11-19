@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,19 +26,10 @@ struct Client {
 
 void benchmark_test_00314(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!_authority.empty() && !std::regex_match(_authority, _hw)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    res.set_redirect(safe, 302);
+    std::string user_input = req.get_header_value("Authorization");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    std::string safe = (data == "/bin/echo" || data == "/bin/cat") ? data : std::string("/bin/echo");
+    std::system(safe.c_str());
+    res.set_content("ok", "text/plain");
 }

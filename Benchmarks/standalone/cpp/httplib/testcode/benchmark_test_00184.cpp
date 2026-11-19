@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,19 +27,13 @@ struct Client {
 
 void benchmark_test_00184(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
+    const char *user_input_env = std::getenv("USER_COMMENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

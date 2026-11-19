@@ -7,19 +7,21 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00433(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    const char *user_input = user_input_buf;
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    char *_found = strchr(data, '=');
+    printf("%c\n", *_found);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,11 +27,11 @@ static std::string cpp_own(const std::string &s) { std::string::size_type _b = s
 
 void benchmark_test_00266(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
+    std::string user_input = req.get_param_value("filename");
     std::string data = cpp_own(user_input);
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    const int _unit_cents = 1999;
+    int _qty = std::atoi(data.c_str());
+    int _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

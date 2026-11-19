@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,20 +23,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00755(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.path_params.at("id");
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
+    std::string data = cpp_own(user_input);
+    size_t _n = data.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, data.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    std::memset(_p, 0, _n + 1);
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

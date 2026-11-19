@@ -6,23 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 
 void benchmark_test_00300(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    unsigned char _iv[12];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
+    system(_cmd);
 }

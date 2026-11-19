@@ -14,6 +14,7 @@ extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXP
 extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
 extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
 enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00500(int, char **)
 {
@@ -26,9 +27,7 @@ void benchmark_test_00500(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string data = cpp_own(user_input);
     std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
     xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
     xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);

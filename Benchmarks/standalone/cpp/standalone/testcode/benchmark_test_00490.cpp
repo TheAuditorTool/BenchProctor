@@ -1,23 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
 
 void benchmark_test_00490(int, char **)
 {
-    const char *user_input_env = std::getenv("PROFILE_BIO");
+    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _filter = std::string("(uid=") + data + ")";
+    LDAPMessage *_lres = nullptr;
+    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
+    if (_lres) ldap_msgfree(_lres);
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
 }

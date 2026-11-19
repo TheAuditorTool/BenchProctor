@@ -38,10 +38,11 @@ void benchmark_test_00139(const httplib::Request &, httplib::Response &res)
         std::fclose(_fp);
     }
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    char _dst[16];
-    std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    char *_dst = new char[16];
+    std::strncpy(_dst, data.c_str(), 15);
+    _dst[15] = '\0';
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

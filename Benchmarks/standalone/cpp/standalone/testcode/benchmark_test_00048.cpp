@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 
-void benchmark_test_00048(int argc, char **argv)
+void benchmark_test_00048(int, char **)
 {
-    std::string user_input = (argc > 2) ? std::string(argv[2]) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    struct { int id; int flags; } _rec;
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
 }

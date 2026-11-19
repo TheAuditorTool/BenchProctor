@@ -7,21 +7,21 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
+
 void benchmark_test_00319(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
-    }
-    const char *user_input = user_input_buf;
-    char _dst[16];
-    strcpy(_dst, user_input);
-    printf("%s\n", _dst);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    FREE_AND_NULL(_p);
+    _cleanup_ptr = NULL;
+    if (_cleanup_ptr) free(_cleanup_ptr);
 }

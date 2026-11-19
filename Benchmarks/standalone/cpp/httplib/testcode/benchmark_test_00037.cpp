@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -24,12 +25,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00037(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00037(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string _raw = user_input;
     auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
     std::string data = _closure();
-    std::system(data.c_str());
+    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
+    std::string _picked = "report.pdf";
+    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
+    std::string safe = std::string("/var/app/data/") + _picked;
+    std::remove(safe.c_str());
     res.set_content("ok", "text/plain");
 }

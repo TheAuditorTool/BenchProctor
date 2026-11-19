@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,29 +25,24 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
-struct Payload { std::string value; };
 
-void benchmark_test_00500(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00500(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    static const std::regex _schema("^[a-zA-Z0-9 _.#%\\-]+$");
-    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + safe + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    char *_dst = new char[16];
+    size_t _n = user_input.size();
+    if (_n > 15) _n = 15;
+    std::memcpy(_dst, user_input.c_str(), _n);
+    _dst[_n] = '\0';
+    std::cout << _dst << std::endl;
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

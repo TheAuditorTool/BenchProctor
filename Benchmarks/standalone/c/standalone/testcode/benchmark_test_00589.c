@@ -6,22 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00589(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", safe);
-    system(_cmd);
+    const char *user_input = user_input_buf;
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char *_found = strchr(data, '=');
+    printf("%c\n", *_found);
 }

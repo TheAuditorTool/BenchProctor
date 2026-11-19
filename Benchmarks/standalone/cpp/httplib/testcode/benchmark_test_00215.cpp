@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <fcntl.h>
+#include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,12 +27,12 @@ struct Client {
 
 void benchmark_test_00215(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char _dst[16];
+    std::strcpy(_dst, data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

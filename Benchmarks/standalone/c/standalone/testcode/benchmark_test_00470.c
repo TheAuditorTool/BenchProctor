@@ -6,26 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00470(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", data);
-    const char *safe = basename(_bn_copy);
-    FILE *_f = fopen(safe, "w");
-    if (_f) fclose(_f);
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = c_passthrough(user_input);
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    snprintf(_dst, 32, "user=%s", data);
+    puts(_dst);
+    free(_dst);
 }

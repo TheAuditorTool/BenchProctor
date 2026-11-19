@@ -6,13 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
 
 void benchmark_test_00623(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
-    system(_cmd);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", data);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

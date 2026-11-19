@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 #include <unordered_map>
@@ -26,11 +25,12 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00328(const httplib::Request &, httplib::Response &res)
 {
     std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
         char _b[256];
         if (std::fgets(_b, sizeof(_b), _fp)) {
             _b[std::strcspn(_b, "\n")] = 0;
@@ -38,10 +38,12 @@ void benchmark_test_00328(const httplib::Request &, httplib::Response &res)
         }
         std::fclose(_fp);
     }
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    char _first = _p[0];
+    std::cout << _first << std::endl;
     res.set_content("ok", "text/plain");
 }

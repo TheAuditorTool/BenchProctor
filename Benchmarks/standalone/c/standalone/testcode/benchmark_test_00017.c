@@ -6,16 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <fcntl.h>
 
 void benchmark_test_00017(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, data); printf("%s\n", _dst); free(_dst); }
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    printf("token for %s: %02x\n", data, _rnd[0]);
 }

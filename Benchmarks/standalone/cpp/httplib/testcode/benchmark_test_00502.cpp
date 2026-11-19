@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,9 +27,17 @@ struct Client {
 
 void benchmark_test_00502(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << user_input << ": " << _token << std::endl;
+    std::string user_input = req.get_header_value("Cookie");
+    std::string data;
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
+    char _dst[16];
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

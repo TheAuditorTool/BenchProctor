@@ -6,38 +6,26 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+#include <sys/socket.h>
+#include <netdb.h>
 
 void benchmark_test_00586(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    struct addrinfo _hints;
+    struct addrinfo *_ai = NULL;
+    memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
+        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
+        freeaddrinfo(_ai);
     }
-    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
-    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
-    char _expr[512];
-    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", safe);
-    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
-    (void)_xo;
-    if (_doc) xmlFreeDoc(_doc);
 }

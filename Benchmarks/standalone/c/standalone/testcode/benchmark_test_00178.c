@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00178(int argc, char **argv)
 {
     (void)argc; (void)argv;
@@ -20,8 +18,14 @@ void benchmark_test_00178(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, data); printf("%s\n", _dst); free(_dst); }
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    free(_p);
+    free(_cleanup_ptr);
 }

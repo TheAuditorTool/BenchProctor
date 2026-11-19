@@ -1,28 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#include <regex>
 
 void benchmark_test_00698(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_REFERER");
+    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
-    }
+    std::string data = !user_input.empty() ? user_input : std::string();
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
 }

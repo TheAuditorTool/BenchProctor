@@ -8,11 +8,17 @@ in benchmark code and how often it flags safe code.
 
 > ## Release status
 >
-> **Release 2026.11.19 is the current release.** It is a curated release:
+> **The current release is 2026.11.19, with C and C++ at 2026.11.19.1.** It is a curated release:
 >
-> - **14,280 standalone cases** in 11 languages across 21 framework targets, exactly 7,140
->   vulnerable and 7,140 safe;
+> - **15,372 standalone cases** in 11 languages across 21 framework targets, exactly 7,686
+>   vulnerable and 7,686 safe;
 > - **368 multi-service applications** in five languages, holding 5,299 labeled flows.
+>
+> 2026.11.19.1 is a deeper C and C++ draw: 1,140 C and 2,112 C++ cases, three more memory-safety
+> classes (double free, memory leak, uninitialized variable), and three distinct sink forms for
+> every C and C++ memory-safety and integer-overflow class. The other nine languages and the
+> applications are unchanged from 2026.11.19. Each folder's `benchproctor-manifest.json` names the
+> release it belongs to.
 >
 > It is published as plain files in `Benchmarks/`, so every case and answer key can be read here
 > without unpacking anything. Earlier releases are kept under [`archive/`](archive/).
@@ -72,12 +78,12 @@ languages, and adds multi-service applications whose flows cross a process bound
 
 | | |
 |---|---|
-| **Release** | `2026.11.19` |
-| **Standalone cases** | 14,280: 7,140 vulnerable and 7,140 safe |
+| **Release** | `2026.11.19`; C and C++ `2026.11.19.1` |
+| **Standalone cases** | 15,372: 7,686 vulnerable and 7,686 safe |
 | **Languages** | 11: Java, Python, Go, Rust, TypeScript, JavaScript, PHP, Ruby, Bash, C, C++ |
 | **Framework targets** | 21 (see the table below) |
-| **Weakness classes** | 22, mapped to 22 distinct CWE IDs |
-| **Sampling** | 20 vulnerable + 20 safe cases for every framework and class pair: 357 pairs |
+| **Weakness classes** | 25, mapped to 25 distinct CWE IDs |
+| **Sampling** | 20 vulnerable + 20 safe cases for every framework and class pair (30 + 30 in C, 24 + 24 in C++): 366 pairs |
 | **Applications** | 368 two-service applications over 6 service graphs, in TypeScript, JavaScript, Python, Java and C++ |
 | **Application flows** | 5,299 labeled flows: 1,473 vulnerable and 3,826 safe |
 | **Difficulty** | easy and medium |
@@ -130,10 +136,10 @@ Read a score on this release as a floor check on broadly known classes, not as a
 | JavaScript | Express, Koa | 2 | 18 | 1,440 |
 | PHP | Laravel, Symfony | 2 | 18 | 1,440 |
 | Ruby | Rails, Sinatra | 2 | 17 | 1,360 |
-| C++ | cpp-httplib, standalone | 2 | 19 | 1,520 |
-| C | standalone | 1 | 16 | 640 |
+| C++ | cpp-httplib, standalone | 2 | 22 | 2,112 |
+| C | standalone | 1 | 19 | 1,140 |
 | Bash | standalone | 1 | 11 | 440 |
-| **Total** |  | **21** | **22 in union** | **14,280** |
+| **Total** |  | **21** | **25 in union** | **15,372** |
 
 A framework target carries the classes that occur in its language. C and C++ include memory-safety
 classes; the managed languages do not.
@@ -141,8 +147,8 @@ classes; the managed languages do not.
 ### C and C++ prerequisites
 
 "Standalone" means one file per case, not free of dependencies. The C and C++ standard libraries
-have no SQL, HTTP, cryptography or message-queue API, so some cases call a library: 142 of the 640
-C cases call SQLite, libcurl or OpenSSL, and 17 of the 1,520 C++ cases call the hiredis or
+have no SQL, HTTP, cryptography or message-queue API, so some cases call a library: 212 of the 1,140
+C cases call SQLite, libcurl or OpenSSL, and 28 of the 2,112 C++ cases call the hiredis or
 RabbitMQ C client. A tool that compiles the cases, or resolves their `#include` lines, needs those
 libraries' development headers:
 
@@ -167,6 +173,8 @@ libraries its cases include. No label depends on a header version.
 | Weak random | CWE-330 | Heap-based buffer overflow | CWE-122 |
 | Cookie without the secure attribute | CWE-614 | Buffer over-read | CWE-126 |
 | Trust boundary violation | CWE-501 | Use after free | CWE-416 |
+| Double free (C, C++) | CWE-415 | Memory leak (C, C++) | CWE-401 |
+| Use of uninitialized variable (C, C++) | CWE-457 | | |
 
 ## Applications
 
@@ -233,6 +241,12 @@ framework's headline score by well under one point, so per-class scores carry re
 SARIF 2.1.0 can be scored; both scorers are single standard-library Python files with no
 dependencies.
 
+A tool that does not attempt some classes can declare its scope. `--skip-categories ldapi,sqli`
+leaves those classes out of the score, and `--categories null_deref,use_after_free` scores only
+the listed ones; the summary names every class left out, so a scoped score is never mistaken for
+a full one. These options are in `scripts/score_sarif.py` and the copies bundled in the C and C++ folders,
+and in every other language folder from the next release on.
+
 ## How the labels are verified
 
 Before release, every source file in this release was put through the native toolchain for its
@@ -274,9 +288,9 @@ labels can be inferred.
 
 ## Layout and integrity
 
-Release 2026.11.19 is published as plain files under `Benchmarks/`: one folder per language under
-`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 25,732
-files in all (45.6 MiB). `Benchmarks/SHASUMS256.txt` lists the SHA-256 of every file; from
+The current release is published as plain files under `Benchmarks/`: one folder per language under
+`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 26,824
+files in all (47.1 MiB). The C and C++ folders are release 2026.11.19.1, the others 2026.11.19. `Benchmarks/SHASUMS256.txt` lists the SHA-256 of every file; from
 `Benchmarks/`, `sha256sum -c SHASUMS256.txt` checks them all.
 
 Each standalone language folder holds a `testcode/` directory for each framework, the

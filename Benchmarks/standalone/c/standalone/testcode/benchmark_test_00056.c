@@ -7,17 +7,23 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_payload { const char *value; };
+
 void benchmark_test_00056(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    _p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    free(_p);
 }

@@ -22,21 +22,22 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef void CURL;
+extern "C" CURL *curl_easy_init(void);
+extern "C" int curl_easy_setopt(CURL *, int, ...);
+extern "C" int curl_easy_perform(CURL *);
+extern "C" void curl_easy_cleanup(CURL *);
+enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00258(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    std::string user_input = req.get_param_value("filename");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _hurl = data;
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
+    res.set_content("ok", "text/plain");
 }

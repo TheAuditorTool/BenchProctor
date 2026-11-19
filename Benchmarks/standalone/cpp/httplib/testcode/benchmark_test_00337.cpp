@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -33,10 +32,8 @@ enum { LDAP_SCOPE_SUBTREE = 2 };
 
 void benchmark_test_00337(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
+    std::string user_input = req.get_header_value("Host");
+    std::string data = !user_input.empty() ? user_input : std::string();
     LDAP *_ld = nullptr;
     const char *_ldap_url = std::getenv("LDAP_URL");
     ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");

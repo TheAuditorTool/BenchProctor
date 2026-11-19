@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -32,17 +30,12 @@ extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*
 extern "C" int sqlite3_step(sqlite3_stmt *);
 extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
-void benchmark_test_00704(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00704(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("PROFILE_BIO");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::string user_input = req.get_param_value("id");
     sqlite3 *_db = nullptr;
     sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
+    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + user_input + "'";
     sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

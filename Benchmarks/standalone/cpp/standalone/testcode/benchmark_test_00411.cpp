@@ -3,20 +3,18 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <regex>
-
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+#include <cstring>
 
 void benchmark_test_00411(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    delete[] _p;
 }

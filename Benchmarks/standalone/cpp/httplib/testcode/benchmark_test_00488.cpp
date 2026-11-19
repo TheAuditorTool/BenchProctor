@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,28 +25,26 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
-extern "C" const EVP_CIPHER *EVP_des_ecb(void);
-extern "C" const EVP_CIPHER *EVP_rc4(void);
-extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
-extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
-extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
-extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00488(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00488(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data = cpp_own(user_input);
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
-    unsigned char _cout[512]; int _coutl = 0;
-    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
-    EVP_CIPHER_CTX_free(_ctx);
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    char *_parts[2];
+    _parts[0] = new char[data.size() + 1];
+    std::strcpy(_parts[0], data.c_str());
+    _parts[1] = _parts[0];
+    std::cout << _parts[0] << std::endl;
+    for (int _k = 0; _k < 2; _k++) delete[] _parts[_k];
     res.set_content("ok", "text/plain");
 }

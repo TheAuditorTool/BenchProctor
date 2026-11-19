@@ -2,13 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
-void benchmark_test_00187(int argc, char **argv)
+void benchmark_test_00187(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

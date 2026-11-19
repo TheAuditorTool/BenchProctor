@@ -6,46 +6,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
 
 void benchmark_test_00083(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
+    FILE *_src_fp = fopen("/tmp/data", "r");
     if (_src_fp != NULL) {
         if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
     char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
-    }
-    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
-    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
-    char _expr[512];
-    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", safe);
-    xmlXPathObjectPtr _xo = xmlXPathEvalExpression((const unsigned char *)_expr, _xpc);
-    (void)_xo;
-    if (_doc) xmlFreeDoc(_doc);
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_out)) _span = sizeof(_out);
+    memcpy(_out, _buf, _span);
+    printf("%.*s\n", (int)_span, _out);
 }

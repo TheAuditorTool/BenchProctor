@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,15 +27,19 @@ struct Client {
 };
 }
 
-void benchmark_test_00074(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00074(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    std::string user_input = req.body;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
     res.set_content("ok", "text/plain");
 }

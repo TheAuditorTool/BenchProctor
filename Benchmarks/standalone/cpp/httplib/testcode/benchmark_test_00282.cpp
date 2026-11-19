@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,28 +22,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00282(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00282(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string safe = std::regex_match(data, std::regex("^(admin|user|guest|service)$")) ? data : std::string("admin");
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + safe + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    std::string user_input = req.get_header_value("Referer");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

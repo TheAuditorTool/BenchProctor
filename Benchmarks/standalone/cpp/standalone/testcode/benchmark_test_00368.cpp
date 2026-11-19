@@ -2,10 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 #include <unistd.h>
-
-struct Payload { std::string value; };
+#include <fcntl.h>
 
 void benchmark_test_00368(int, char **)
 {
@@ -18,9 +16,9 @@ void benchmark_test_00368(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
 }

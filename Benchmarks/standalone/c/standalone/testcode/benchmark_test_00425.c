@@ -6,32 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <regex.h>
 
 void benchmark_test_00425(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    regex_t _re;
+    const char *safe = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
+        regfree(&_re);
     }
-    const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
-    }
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", safe);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

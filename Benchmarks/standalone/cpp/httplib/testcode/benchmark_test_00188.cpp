@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <unistd.h>
-#include <regex>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -32,8 +30,8 @@ void benchmark_test_00188(const httplib::Request &req, httplib::Response &res)
     std::string data;
     std::string::size_type _w = 0;
     while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
     res.set_content("ok", "text/plain");
 }

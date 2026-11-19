@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,13 +24,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00194(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00194(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const size_t _rec_size = 64;
+    long _count = std::strtol(data.c_str(), nullptr, 10);
+    if (_count <= 0 || _count > 65536) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = new (std::nothrow) char[_bytes];
+    delete[] _recs;
     res.set_content("ok", "text/plain");
 }

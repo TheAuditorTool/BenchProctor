@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <unistd.h>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,16 +22,20 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef void CURL;
+extern "C" CURL *curl_easy_init(void);
+extern "C" int curl_easy_setopt(CURL *, int, ...);
+extern "C" int curl_easy_perform(CURL *);
+extern "C" void curl_easy_cleanup(CURL *);
+enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00517(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    std::string user_input = req.body;
+    std::string _hurl = user_input;
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
     res.set_content("ok", "text/plain");
 }

@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <regex>
+#if __has_include(<rabbitmq-c/amqp.h>)
+#include <rabbitmq-c/amqp.h>
+#include <rabbitmq-c/tcp_socket.h>
+#else
+#include <amqp.h>
+#include <amqp_tcp_socket.h>
+#endif
 #include <unordered_map>
 
 namespace httplib {
@@ -23,25 +30,36 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00445(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
-    if (_xd) xmlFreeDoc(_xd);
+    std::string user_input;
+    amqp_connection_state_t _amqp = amqp_new_connection();
+    amqp_socket_t *_amqp_sock = amqp_tcp_socket_new(_amqp);
+    if (_amqp_sock != nullptr && amqp_socket_open(_amqp_sock, "broker", 5672) == AMQP_STATUS_OK && amqp_login(_amqp, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, "guest", "guest").reply_type == AMQP_RESPONSE_NORMAL && amqp_channel_open(_amqp, 1) != nullptr) {
+        amqp_rpc_reply_t _amqp_get = amqp_basic_get(_amqp, 1, amqp_cstring_bytes("app-events"), 1);
+        amqp_message_t _amqp_msg;
+        if (_amqp_get.reply_type == AMQP_RESPONSE_NORMAL && _amqp_get.reply.id == AMQP_BASIC_GET_OK_METHOD && amqp_read_message(_amqp, 1, &_amqp_msg, 0).reply_type == AMQP_RESPONSE_NORMAL) {
+            user_input.assign(static_cast<const char *>(_amqp_msg.body.bytes), _amqp_msg.body.len);
+            amqp_destroy_message(&_amqp_msg);
+        }
+    }
+    amqp_destroy_connection(_amqp);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
+    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

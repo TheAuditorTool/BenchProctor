@@ -6,28 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00335(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    const char *safe = data;
-    if (strcmp(data, "api.internal.svc") != 0 && strcmp(data, "cdn.internal.svc") != 0) safe = "api.internal.svc";
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(safe, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
-    }
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    int _vals[8] = { 0 };
+    int _idx = atoi(data) & 7;
+    printf("v=%d\n", _vals[_idx]);
 }

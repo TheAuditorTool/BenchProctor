@@ -6,23 +6,27 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
 
 void benchmark_test_00230(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    regex_t _re;
-    const char *safe = user_input;
-    if (regcomp(&_re, "^[a-zA-Z0-9 %._-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, user_input, 0, NULL, 0) != 0) safe = "config";
-        regfree(&_re);
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
     }
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", safe);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    const char *user_input = user_input_buf;
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    sprintf(_dst, "user=%s", data);
+    puts(_dst);
+    free(_dst);
 }

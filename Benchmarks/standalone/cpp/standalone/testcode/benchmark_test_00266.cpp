@@ -2,16 +2,13 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 
 void benchmark_test_00266(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>") << std::endl;
 }

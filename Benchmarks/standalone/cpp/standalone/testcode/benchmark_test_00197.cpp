@@ -3,13 +3,16 @@
 #include <string>
 #include <cstdlib>
 
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+struct Payload { std::string value; };
+
 void benchmark_test_00197(int, char **)
 {
-    std::string user_input;
-    std::getline(std::cin, user_input);
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
 }

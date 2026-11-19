@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <cstdio>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,15 +25,12 @@ struct Client {
 };
 }
 
-void benchmark_test_00116(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00116(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input = req.get_header_value("Referer");
     std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    if (!user_input.empty()) data = user_input;
+    std::string _path = std::string("/var/app/data/") + data;
+    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

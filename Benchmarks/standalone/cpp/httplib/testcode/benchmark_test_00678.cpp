@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,13 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00678(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    char *_dst = new char[16];
-    std::strncpy(_dst, user_input.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    std::string user_input = req.get_header_value("Cookie");
+    std::string data = cpp_own(user_input);
+    const char *_sp_argv[] = { "/usr/bin/grep", data.c_str(), nullptr };
+    char *const _sp_env[] = { nullptr };
+    pid_t _pid;
+    if (posix_spawn(&_pid, "/usr/bin/grep", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
     res.set_content("ok", "text/plain");
 }

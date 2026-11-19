@@ -10,14 +10,13 @@
 void benchmark_test_00325(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", data);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    size_t _n = strlen(data);
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    printf("%d\n", _mode);
 }

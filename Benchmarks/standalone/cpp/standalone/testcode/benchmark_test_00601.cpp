@@ -1,19 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
 
 void benchmark_test_00601(int, char **)
 {
@@ -26,10 +16,17 @@ void benchmark_test_00601(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
-    if (_xd) xmlFreeDoc(_xd);
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string safe;
+    for (char _c : data) {
+        if (_c == '&') safe += "&amp;";
+        else if (_c == '<') safe += "&lt;";
+        else if (_c == '>') safe += "&gt;";
+        else if (_c == '"') safe += "&quot;";
+        else if (_c == '\'') safe += "&#39;";
+        else safe.push_back(_c);
+    }
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
 }

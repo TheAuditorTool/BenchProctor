@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,11 +25,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00186(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00186(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("API_RESPONSE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    res.set_redirect(data, 302);
+    std::string user_input = req.get_param_value("id");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const char *_sp_argv[] = { "/usr/bin/grep", data.c_str(), nullptr };
+    char *const _sp_env[] = { nullptr };
+    pid_t _pid;
+    if (posix_spawn(&_pid, "/usr/bin/grep", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
+    res.set_content("ok", "text/plain");
 }

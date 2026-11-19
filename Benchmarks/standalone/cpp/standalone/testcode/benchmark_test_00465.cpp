@@ -2,20 +2,23 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
+
+typedef void CURL;
+extern "C" CURL *curl_easy_init(void);
+extern "C" int curl_easy_setopt(CURL *, int, ...);
+extern "C" int curl_easy_perform(CURL *);
+extern "C" void curl_easy_cleanup(CURL *);
+enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00465(int, char **)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _hurl = data;
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

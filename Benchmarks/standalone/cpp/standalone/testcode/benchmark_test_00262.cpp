@@ -2,15 +2,35 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
+struct Payload { std::string value; };
 
 void benchmark_test_00262(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _filter = std::string("(uid=") + data + ")";
+    LDAPMessage *_lres = nullptr;
+    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
+    if (_lres) ldap_msgfree(_lres);
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
 }

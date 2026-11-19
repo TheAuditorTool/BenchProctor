@@ -23,28 +23,30 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
+struct Payload { std::string value; };
 
 void benchmark_test_00538(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
-    if (_xd) xmlFreeDoc(_xd);
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ckey[32] = {0};
+    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
+    unsigned char _cout[512]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
+    EVP_CIPHER_CTX_free(_ctx);
     res.set_content("ok", "text/plain");
 }

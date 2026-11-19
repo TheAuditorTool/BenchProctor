@@ -7,20 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00599(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    char *_parts[2];
+    _parts[0] = malloc(strlen(data) + 1);
+    if (_parts[0] == NULL) return;
+    strcpy(_parts[0], data);
+    _parts[1] = NULL;
+    printf("%s\n", _parts[0]);
+    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
 }

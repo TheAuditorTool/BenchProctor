@@ -7,14 +7,22 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+
 void benchmark_test_00059(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    long _req = strtol(data, NULL, 10);
+    if (_req < 0 || _req > 2147483646L) return;
+    long _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

@@ -6,17 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 void benchmark_test_00369(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", data);
-    const char *safe = basename(_bn_copy);
-    remove(safe);
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    struct addrinfo _hints;
+    struct addrinfo *_ai = NULL;
+    memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
+        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
+        freeaddrinfo(_ai);
+    }
 }

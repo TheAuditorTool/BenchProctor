@@ -6,18 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
 
 void benchmark_test_00119(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    const char *safe = data;
-    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, safe);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    const int _unit_cents = 1999;
+    int _qty = atoi(data);
+    int _total = _qty * _unit_cents;
+    printf("total=%d\n", _total);
 }

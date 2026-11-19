@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,13 +30,23 @@ struct Client {
 
 void benchmark_test_00007(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
+    std::string user_input = req.get_param_value("id");
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
-    std::string _picked = "report.pdf";
-    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
-    std::string safe = std::string("/var/app/data/") + _picked;
-    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
     res.set_content("ok", "text/plain");
 }

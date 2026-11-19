@@ -4,15 +4,19 @@
 #include <cstdlib>
 #include <cstring>
 
-struct Payload { std::string value; };
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00464(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    delete[] _p;
 }

@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <ctime>
+#include <cstring>
 
 void benchmark_test_00340(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input;
+    std::getline(std::cin, user_input);
     std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    delete[] _p;
 }

@@ -2,21 +2,11 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
 
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
-
-void benchmark_test_00060(int, char **)
+void benchmark_test_00060(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
-    std::string _picked = "report.pdf";
-    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
-    std::string safe = std::string("/var/app/data/") + _picked;
-    std::remove(safe.c_str());
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    char _dst[32];
+    std::sprintf(_dst, "user=%s", user_input.c_str());
+    std::cout << _dst << std::endl;
 }

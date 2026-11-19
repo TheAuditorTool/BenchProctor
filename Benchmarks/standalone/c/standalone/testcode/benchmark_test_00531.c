@@ -9,10 +9,17 @@
 
 void benchmark_test_00531(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    char _dst[16];
-    if (strlen(data) < sizeof(_dst)) strcpy(_dst, data);
-    else _dst[0] = '\0';
-    printf("%s\n", _dst);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_parts[2];
+    _parts[0] = malloc(strlen(data) + 1);
+    if (_parts[0] == NULL) return;
+    strcpy(_parts[0], data);
+    _parts[1] = NULL;
+    printf("%s\n", _parts[0]);
+    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
 }

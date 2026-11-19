@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <curl/curl.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00114(int argc, char **argv)
 {
@@ -21,13 +25,12 @@ void benchmark_test_00114(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    const char *safe = data;
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, safe);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

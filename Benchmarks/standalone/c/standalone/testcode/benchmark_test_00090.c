@@ -7,15 +7,7 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct ldap LDAP;
-typedef struct ldapmsg LDAPMessage;
-#define LDAP_SCOPE_SUBTREE 2
-#define LDAP_OPT_PROTOCOL_VERSION 0x0011
-#define LDAP_VERSION3 3
-extern int ldap_initialize(LDAP **_ldp, const char *_uri);
-extern int ldap_set_option(LDAP *_ld, int _option, const void *_invalue);
-extern int ldap_simple_bind_s(LDAP *_ld, const char *_who, const char *_passwd);
-extern int ldap_search_ext_s(LDAP *_ld, const char *_base, int _scope, const char *_filter, char **_attrs, int _attrsonly, void *_sc, void *_cc, void *_tmo, int _slim, LDAPMessage **_res);
+struct c_payload { const char *value; };
 
 void benchmark_test_00090(int argc, char **argv)
 {
@@ -31,14 +23,13 @@ void benchmark_test_00090(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    LDAP *_ld = NULL;
-    const char *_ldap_url = getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url != NULL ? _ldap_url : "ldap://directory:1389");
-    int _ldap_version = LDAP_VERSION3;
-    ldap_set_option(_ld, LDAP_OPT_PROTOCOL_VERSION, &_ldap_version);
-    ldap_simple_bind_s(_ld, NULL, NULL);
-    char _filter[512];
-    snprintf(_filter, sizeof(_filter), "(uid=%s)", user_input);
-    LDAPMessage *_res = NULL;
-    ldap_search_ext_s(_ld, "ou=people,dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter, NULL, 0, NULL, NULL, NULL, 0, &_res);
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    size_t _n = strlen(data);
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    printf("%d\n", _mode);
 }

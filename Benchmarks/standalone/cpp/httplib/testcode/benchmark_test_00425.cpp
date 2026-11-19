@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <unistd.h>
+#include <climits>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,11 +25,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00425(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::system(data.c_str());
+    std::string user_input = req.get_header_value("Cookie");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    std::string _joined = std::string("/var/app/data/") + data;
+    char _resolved[PATH_MAX];
+    if (!realpath(_joined.c_str(), _resolved)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    std::string safe = _resolved;
+    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

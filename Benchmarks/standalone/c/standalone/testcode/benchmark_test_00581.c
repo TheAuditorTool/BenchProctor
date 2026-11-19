@@ -6,25 +6,28 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
-#include <regex.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00581(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
-    }
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    unsigned char _iv[12];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
 }

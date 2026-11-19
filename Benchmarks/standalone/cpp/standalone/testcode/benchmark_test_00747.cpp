@@ -3,25 +3,29 @@
 #include <string>
 #include <cstdlib>
 
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00747(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + data + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ckey[32] = {0};
+    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
+    unsigned char _cout[512]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
+    EVP_CIPHER_CTX_free(_ctx);
 }

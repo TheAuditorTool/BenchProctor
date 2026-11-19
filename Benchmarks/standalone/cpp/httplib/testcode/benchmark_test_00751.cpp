@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,11 +24,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00751(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00751(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    const long _unit_cents = 1999;
+    long _qty = std::strtol(data.c_str(), nullptr, 10);
+    if (_qty < 0 || _qty > 100000) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

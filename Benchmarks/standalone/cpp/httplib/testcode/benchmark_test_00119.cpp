@@ -25,6 +25,10 @@ struct Client {
 
 void benchmark_test_00119(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    res.set_redirect(user_input, 302);
+    std::string user_input = req.get_param_value("filename");
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    std::string _ckval = data;
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
+    res.set_content("ok", "text/plain");
 }

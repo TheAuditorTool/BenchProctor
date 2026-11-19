@@ -16,14 +16,11 @@ void benchmark_test_00321(int argc, char **argv)
     user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
     const char *user_input = user_input_buf;
     char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    unsigned int _sum = 0;
+    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
+    printf("%u\n", _sum);
 }

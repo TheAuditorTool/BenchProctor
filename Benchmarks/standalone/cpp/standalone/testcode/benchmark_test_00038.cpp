@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
 
 void benchmark_test_00038(int, char **)
 {
@@ -11,8 +12,6 @@ void benchmark_test_00038(int, char **)
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    const char *_argv[] = { "/bin/echo", data.c_str(), nullptr };
+    execv("/bin/echo", const_cast<char *const *>(_argv));
 }

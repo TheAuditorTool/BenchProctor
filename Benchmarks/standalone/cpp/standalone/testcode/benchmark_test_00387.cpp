@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <unistd.h>
-#include <fcntl.h>
+#include <cstring>
 
-void benchmark_test_00387(int, char **)
+void benchmark_test_00387(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    char *_dst = new char[16];
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
+    delete[] _dst;
 }

@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
 
 void benchmark_test_00603(int argc, char **argv)
 {
@@ -16,12 +15,7 @@ void benchmark_test_00603(int argc, char **argv)
     if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
     user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
     const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, data);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", user_input, _token);
 }

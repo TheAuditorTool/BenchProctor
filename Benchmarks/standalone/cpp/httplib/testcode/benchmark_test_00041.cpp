@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,10 +29,16 @@ struct Client {
 
 void benchmark_test_00041(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.get_header_value("Referer");
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(user_input.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
     res.set_content("ok", "text/plain");
 }

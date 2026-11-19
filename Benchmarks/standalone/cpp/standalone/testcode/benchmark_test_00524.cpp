@@ -3,25 +3,16 @@
 #include <string>
 #include <cstdlib>
 #include <unistd.h>
+#include <fcntl.h>
 
 void benchmark_test_00524(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    const char *user_input_env = std::getenv("HTTP_ORIGIN");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
 }

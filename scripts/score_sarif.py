@@ -2,7 +2,8 @@
 """Score a SAST tool's SARIF output against the BenchProctor SAST Benchmark.
 
 Usage:
-    python score_sarif.py <tool_output.sarif> [expectedresults.csv]
+    python score_sarif.py <tool_output.sarif> <expectedresults.csv>
+        [--categories a,b,...] [--skip-categories x,y,...]
 
 Accepts any SARIF 2.1.0 file. A test case is considered "detected" if the
 tool produced at least one finding whose location URI contains the test
@@ -19,6 +20,10 @@ Two scoring methods are computed:
 
   Flat Aggregate (for comparison):
     Sum all TP/FP/FN/TN across all tests, compute global TPR and FPR.
+
+A tool can declare its scope: --categories scores only the listed categories,
+and --skip-categories leaves the listed ones out. The report prints the scope
+it was scored under, so a scoped score is never mistaken for a full one.
 
 Zero external dependencies -- stdlib only.
 """
@@ -55,11 +60,11 @@ def extract_test_name_from_uri(uri):
     """Extract test case key from a SARIF URI.
 
     Handles:
-      testcode/benchmark_test_00001.go  (Go — lowercase with underscores)
-      testcode/BenchmarkTest00001.py    (Python/Java — CamelCase)
+      testcode/benchmark_test_00001.go  (Go: lowercase with underscores)
+      testcode/BenchmarkTest00001.py    (Python/Java: CamelCase)
       /abs/path/testcode/benchmark_test_00001.go
       path\\to\\BenchmarkTest00001.py    (Windows path, CamelCase)
-      scenarios/scenario_0142/variant_a/app.py  (Chains — directory-based)
+      scenarios/scenario_0142/variant_a/app.py  (Chains: directory-based)
     """
     # Chains: directory-based (scenario_NNNN/)
     m = re.search(r"scenario_(\d{4,})/", uri)
@@ -176,7 +181,7 @@ def load_sarif_detections_filename(sarif_path):
 
     for run in sarif.get("runs", []):
         for result in run.get("results", []):
-            # Mode 1: URI-based matching (Go — one file per test case)
+            # Mode 1: URI-based matching (Go: one file per test case)
             locations = result.get("locations", [])
             for loc in locations:
                 phys = loc.get("physicalLocation", {})
@@ -187,7 +192,7 @@ def load_sarif_detections_filename(sarif_path):
                     if name:
                         detected.add(name)
 
-            # Mode 2: Key-based matching (Bash/Rust — annotation-resolved)
+            # Mode 2: Key-based matching (Bash/Rust: annotation-resolved)
             props = result.get("properties", {})
             tc_key = props.get("testCaseKey")
             if tc_key:
@@ -455,7 +460,29 @@ def print_category_averaged_scoring(per_cat):
     return avg_tpr, avg_fpr, avg_score
 
 
-def print_summary(expected, detected, flat_score, avg_score):
+def _category_list(value):
+    return [c.strip() for c in value.split(",") if c.strip()]
+
+
+def apply_scope(expected, include, skip):
+    """Keep only the categories a tool declares in scope. Returns the scoped
+    answer key and the sorted list of categories left out."""
+    known = sorted({e["category"] for e in expected.values()})
+    unknown = sorted((set(include) | set(skip)) - set(known))
+    if unknown:
+        print("Error: not a category in this answer key: %s" % ", ".join(unknown), file=sys.stderr)
+        print("  Categories here: %s" % ", ".join(known), file=sys.stderr)
+        sys.exit(1)
+    keep = set(include) if include else set(known)
+    keep -= set(skip)
+    if not keep:
+        print("Error: the declared scope leaves no category to score", file=sys.stderr)
+        sys.exit(1)
+    scoped = {name: e for name, e in expected.items() if e["category"] in keep}
+    return scoped, sorted(set(known) - keep)
+
+
+def print_summary(expected, detected, flat_score, avg_score, out_of_scope=()):
     """Print detection summary."""
     total_tests = len(expected)
     total_detected = len(detected & set(expected.keys()))
@@ -473,13 +500,18 @@ def print_summary(expected, detected, flat_score, avg_score):
         total_vuln * 100 // total_tests,
         total_safe * 100 // total_tests))
     print("  Tests with findings:    %d" % total_detected)
+    if out_of_scope:
+        print("  Declared out of scope:  %s" % ", ".join(out_of_scope))
+        print("  Scope:                  %d categories scored, %d left out by the tool" % (
+            len({e["category"] for e in expected.values()}), len(out_of_scope)))
     print()
     print("  Flat Score:             %+.1f%%" % (flat_score * 100))
     print("  Category-Averaged:      %+.1f%% (macro-averaged)" % (avg_score * 100))
     print()
     print("  Score interpretation:")
     print("    +100%  Perfect (catches everything, zero false alarms)")
-    print("       0%  Random guessing (no better than a coin flip)")
+    print("       0%  No measured discrimination (TPR equals FPR; flag-everything")
+    print("           and flag-nothing both land here)")
     print("    -100%  Perfectly wrong (flags safe, misses vulnerable)")
     print()
 
@@ -490,17 +522,25 @@ def main():
     annotations_dirs = []
     positional = []
     match_mode = "cwe"
+    include, skip = [], []
 
     i = 0
     while i < len(args):
-        if args[i] == "--annotations-dir" and i + 1 < len(args):
+        if args[i] == "--categories" and i + 1 < len(args):
+            include.extend(_category_list(args[i + 1]))
+            i += 2
+        elif args[i] == "--skip-categories" and i + 1 < len(args):
+            skip.extend(_category_list(args[i + 1]))
+            i += 2
+        elif args[i] == "--annotations-dir" and i + 1 < len(args):
             annotations_dirs.append(args[i + 1])
             i += 2
         elif args[i] == "--match-mode" and i + 1 < len(args):
             match_mode = args[i + 1]
             i += 2
         elif args[i].startswith("--"):
-            i += 1
+            print("Error: unknown option %s" % args[i], file=sys.stderr)
+            sys.exit(1)
         else:
             positional.append(args[i])
             i += 1
@@ -518,10 +558,13 @@ def main():
         print("  --match-mode MODE      cwe (default): a finding must carry the test's CWE")
         print("                         filename: any finding on the file counts (no CWE check)")
         print("  --annotations-dir DIR  Extra annotation source dir (Rust/Bash/PHP/Ruby corpora)")
+        print("  --categories A,B       Score only these categories (the tool's declared scope)")
+        print("  --skip-categories X,Y  Leave these categories out (declared out of scope)")
         print()
         print("Examples:")
-        print("  python score_sarif.py results.sarif Benchmarks/normal/java/spring/expectedresults-2026.2.csv")
-        print("  python score_sarif.py results.sarif Benchmarks/normal/python/flask/expectedresults-2026.2.csv")
+        print("  python score_sarif.py results.sarif Benchmarks/standalone/java/spring/expectedresults-<version>.csv")
+        print("  python score_sarif.py results.sarif Benchmarks/standalone/c/standalone/expectedresults-<version>.csv \\")
+        print("      --categories null_deref,use_after_free,buffer_overflow")
         sys.exit(1)
 
     sarif_path = positional[0]
@@ -530,7 +573,7 @@ def main():
         csv_path = positional[1]
     else:
         print("Error: expected-results CSV path is required, e.g.", file=sys.stderr)
-        print("  Benchmarks/normal/java/spring/expectedresults-2026.2.csv", file=sys.stderr)
+        print("  Benchmarks/standalone/java/spring/expectedresults-<version>.csv", file=sys.stderr)
         sys.exit(1)
 
     if not os.path.isfile(sarif_path):
@@ -541,7 +584,7 @@ def main():
         print("Error: Expected results CSV not found: %s" % csv_path, file=sys.stderr)
         sys.exit(1)
 
-    expected = load_expected_results(csv_path)
+    expected, out_of_scope = apply_scope(load_expected_results(csv_path), include, skip)
 
     # Determine matching mode
     use_annotations = annotations_dirs or detect_annotation_mode(expected)
@@ -594,7 +637,7 @@ def main():
 
     avg_tpr, avg_fpr, avg_score = print_category_averaged_scoring(per_cat)
     flat_tpr, flat_fpr, flat_score = print_flat_scoring(per_cat)
-    print_summary(expected, detected, flat_score, avg_score)
+    print_summary(expected, detected, flat_score, avg_score, out_of_scope)
 
 
 if __name__ == "__main__":

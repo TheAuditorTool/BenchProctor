@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,23 +24,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef void CURL;
-extern "C" CURL *curl_easy_init(void);
-extern "C" int curl_easy_setopt(CURL *, int, ...);
-extern "C" int curl_easy_perform(CURL *);
-extern "C" void curl_easy_cleanup(CURL *);
-enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00614(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _hurl = data;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    std::string user_input = req.body;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_out)) _span = sizeof(_out);
+    std::memcpy(_out, _buf, _span);
+    std::cout << std::string(_out, _span).size() << std::endl;
     res.set_content("ok", "text/plain");
 }

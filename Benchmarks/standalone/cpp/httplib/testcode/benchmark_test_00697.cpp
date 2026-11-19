@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdio>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,9 +28,13 @@ struct Client {
 
 void benchmark_test_00697(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    res.set_content("ok", "text/plain");
 }

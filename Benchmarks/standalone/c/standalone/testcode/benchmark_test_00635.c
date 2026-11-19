@@ -6,14 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
 
 void benchmark_test_00635(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
     const char *data = (strlen(user_input) > 0) ? user_input : "";
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char _first = _p[0];
+    free(_p);
+    printf("%c\n", _first);
 }

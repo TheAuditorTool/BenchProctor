@@ -3,15 +3,15 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
+#include <cstring>
 
 void benchmark_test_00080(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

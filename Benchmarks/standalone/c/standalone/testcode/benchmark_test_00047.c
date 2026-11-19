@@ -6,22 +6,40 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
+#include <regex.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+typedef struct ldap LDAP;
+typedef struct ldapmsg LDAPMessage;
+#define LDAP_SCOPE_SUBTREE 2
+#define LDAP_OPT_PROTOCOL_VERSION 0x0011
+#define LDAP_VERSION3 3
+extern int ldap_initialize(LDAP **_ldp, const char *_uri);
+extern int ldap_set_option(LDAP *_ld, int _option, const void *_invalue);
+extern int ldap_simple_bind_s(LDAP *_ld, const char *_who, const char *_passwd);
+extern int ldap_search_ext_s(LDAP *_ld, const char *_base, int _scope, const char *_filter, char **_attrs, int _attrsonly, void *_sc, void *_cc, void *_tmo, int _slim, LDAPMessage **_res);
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00047(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    regex_t _re;
     const char *safe = data;
-    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, safe);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    if (regcomp(&_re, "^[a-zA-Z0-9 #%._-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
+        regfree(&_re);
+    }
+    LDAP *_ld = NULL;
+    const char *_ldap_url = getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url != NULL ? _ldap_url : "ldap://directory:1389");
+    int _ldap_version = LDAP_VERSION3;
+    ldap_set_option(_ld, LDAP_OPT_PROTOCOL_VERSION, &_ldap_version);
+    ldap_simple_bind_s(_ld, NULL, NULL);
+    char _filter[512];
+    snprintf(_filter, sizeof(_filter), "(uid=%s)", safe);
+    LDAPMessage *_res = NULL;
+    ldap_search_ext_s(_ld, "ou=people,dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter, NULL, 0, NULL, NULL, NULL, 0, &_res);
 }

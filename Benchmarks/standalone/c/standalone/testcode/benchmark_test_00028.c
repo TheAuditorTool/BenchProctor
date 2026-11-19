@@ -10,19 +10,14 @@
 void benchmark_test_00028(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
     const char *data = "";
     if (strlen(user_input) > 0) data = user_input;
-    long _req = strtol(data, NULL, 10);
-    if (_req < 0 || _req > 2147483646L) return;
-    long _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    const size_t _rec_size = 64;
+    long _count = strtol(data, NULL, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = malloc(_bytes);
+    if (_recs) free(_recs);
 }

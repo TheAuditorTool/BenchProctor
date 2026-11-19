@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00216(int, char **)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string _ckval = user_input;
+    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
 }

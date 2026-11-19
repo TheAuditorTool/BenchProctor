@@ -6,22 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00180(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    const char *data = c_passthrough(user_input);
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", data);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
+#include <ctime>
 
 void benchmark_test_00714(int, char **)
 {
-    std::string user_input;
-    std::getline(std::cin, user_input);
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = !user_input.empty() ? user_input : std::string();
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
 }

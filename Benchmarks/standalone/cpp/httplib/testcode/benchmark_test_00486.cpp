@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <filesystem>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,14 +23,19 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00486(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Origin");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    std::string safe = std::string("/var/app/data/") + std::filesystem::path(data).filename().string();
-    std::remove(safe.c_str());
+    std::string user_input = req.get_param_value("field");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
+    std::cout << _p << std::endl;
+    _p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

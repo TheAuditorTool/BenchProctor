@@ -7,17 +7,15 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
-
 void benchmark_test_00610(int argc, char **argv)
 {
     const char *user_input = (argc > 1) ? argv[1] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    printf("%s\n", _p);
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

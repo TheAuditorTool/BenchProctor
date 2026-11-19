@@ -12,10 +12,19 @@ static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return 
 void benchmark_test_00511(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
     const char *data = c_passthrough(user_input);
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) free(_p);
+    free(_p);
 }

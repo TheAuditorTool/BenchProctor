@@ -6,10 +6,19 @@
 
 void benchmark_test_00356(int, char **)
 {
-    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    _p = nullptr;
 }

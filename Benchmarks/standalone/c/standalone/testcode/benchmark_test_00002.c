@@ -6,25 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
-#include <regex.h>
+#include <curl/curl.h>
 
 void benchmark_test_00002(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
     const char *data = "";
     if (strlen(user_input) > 0) data = user_input;
-    regex_t _re;
     const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
-    }
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, safe);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,14 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00708(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00708(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(user_input.c_str()), user_input.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.get_param_value("field");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char _dst[16];
+    std::strcpy(_dst, data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

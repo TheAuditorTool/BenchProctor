@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstring>
 #include <unistd.h>
 #include <unordered_map>
 
@@ -25,10 +26,24 @@ struct Client {
 };
 }
 
-void benchmark_test_00301(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00301(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string _path = std::string("/var/app/data/") + user_input;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    char _first = _p[0];
+    std::cout << _first << std::endl;
     res.set_content("ok", "text/plain");
 }

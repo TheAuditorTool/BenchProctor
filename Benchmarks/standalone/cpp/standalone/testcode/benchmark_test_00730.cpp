@@ -2,19 +2,17 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
+#include <regex>
 
 void benchmark_test_00730(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::cout << "Location: " << data << std::endl;
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
+    if (!std::regex_match(data, _schema)) return;
+    std::string safe = data;
+    std::string _cmd = std::string("ls ") + safe;
+    std::system(_cmd.c_str());
 }

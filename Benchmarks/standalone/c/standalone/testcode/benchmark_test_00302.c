@@ -6,26 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <openssl/md5.h>
 
 void benchmark_test_00302(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
     }
-    const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", data);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    unsigned char _digest[16];
+    MD5((const unsigned char *)data, strlen(data), _digest);
 }

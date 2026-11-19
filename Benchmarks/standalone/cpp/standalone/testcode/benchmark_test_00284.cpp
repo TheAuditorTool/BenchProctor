@@ -16,11 +16,9 @@ void benchmark_test_00284(int, char **)
         }
     }
     std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) return;
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
 }

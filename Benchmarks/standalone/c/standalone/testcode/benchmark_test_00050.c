@@ -6,17 +6,20 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
+#include <curl/curl.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00050(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", data);
-    const char *safe = basename(_bn_copy);
-    remove(safe);
+    const char *data = c_passthrough(user_input);
+    const char *safe = data;
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, safe);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

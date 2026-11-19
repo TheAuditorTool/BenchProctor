@@ -2,27 +2,22 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <regex>
+#include <cstring>
 
-struct pg_conn; typedef struct pg_conn PGconn;
-struct pg_result; typedef struct pg_result PGresult;
-extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
-extern "C" int PQstatus(const PGconn *);
-extern "C" void PQfinish(PGconn *);
-extern "C" PGresult *PQexec(PGconn *, const char *);
-extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
-extern "C" void PQclear(PGresult *);
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00697(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
-    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
-    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
-    PQclear(_pgr);
-    PQfinish(_pgc);
+    std::string user_input;
+    std::getline(std::cin, user_input);
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    const char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::memcpy(_out, _buf, _span);
+    std::cout << std::string(_out, _span).size() << std::endl;
 }

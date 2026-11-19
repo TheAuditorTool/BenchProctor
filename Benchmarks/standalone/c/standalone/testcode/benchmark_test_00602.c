@@ -6,24 +6,15 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/sha.h>
 
 void benchmark_test_00602(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char _dst[16];
-    strcpy(_dst, data);
-    printf("%s\n", _dst);
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

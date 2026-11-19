@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,16 +26,23 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
-void benchmark_test_00383(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00383(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    struct { int id; int flags; } _rec;
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
     res.set_content("ok", "text/plain");
 }

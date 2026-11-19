@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,16 +23,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00640(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.path_params.at("id");
+    std::string data = cpp_own(user_input);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    std::cout << _p << std::endl;
     res.set_content("ok", "text/plain");
 }

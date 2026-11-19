@@ -6,14 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <fcntl.h>
 
 void benchmark_test_00392(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char *_p = malloc(strlen(user_input) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, user_input);
-    free(_p);
-    _p = NULL;
-    if (_p) printf("%s\n", _p);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    printf("token for %s: %02x\n", data, _rnd[0]);
 }

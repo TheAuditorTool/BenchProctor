@@ -2,17 +2,22 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-
-struct Payload { std::string value; };
+#include <regex>
 
 void benchmark_test_00610(int, char **)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string _authority = user_input;
+    std::string::size_type _scheme = _authority.find("://");
+    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
+    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
+    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
+    std::string::size_type _userinfo = _authority.rfind('@');
+    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
+    _authority = _authority.substr(0, _authority.find(':'));
+    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
+    if (!_authority.empty() && !std::regex_match(_authority, _hw)) return;
+    std::string safe = user_input;
+    std::cout << "Location: " << safe << std::endl;
 }

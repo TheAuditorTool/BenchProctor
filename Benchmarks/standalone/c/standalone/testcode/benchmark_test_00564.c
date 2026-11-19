@@ -6,20 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00564(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, data);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

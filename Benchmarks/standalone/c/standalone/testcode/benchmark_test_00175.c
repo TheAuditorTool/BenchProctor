@@ -6,7 +6,11 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/md5.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00175(int argc, char **argv)
 {
@@ -22,9 +26,14 @@ void benchmark_test_00175(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    unsigned char _digest[16];
-    MD5((const unsigned char *)data, strlen(data), _digest);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    unsigned char _iv[12];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
 }

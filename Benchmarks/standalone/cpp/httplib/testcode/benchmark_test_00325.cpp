@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,32 +23,25 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
-struct Payload { std::string value; };
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
 
 void benchmark_test_00325(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    static const std::regex _re("^[a-zA-Z0-9 _.%~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
-    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
-    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
-    std::string _xexpr = std::string("/users/user[@name='") + safe + "']";
-    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
-    if (_xobj) xmlXPathFreeObject(_xobj);
-    xmlXPathFreeContext(_xctx);
-    xmlFreeDoc(_xdoc);
+    std::string user_input = req.get_param_value("filename");
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _filter = std::string("(uid=") + data + ")";
+    LDAPMessage *_lres = nullptr;
+    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
+    if (_lres) ldap_msgfree(_lres);
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

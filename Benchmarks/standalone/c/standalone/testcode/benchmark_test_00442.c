@@ -6,14 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
 
 void benchmark_test_00442(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", data);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

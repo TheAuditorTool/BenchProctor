@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstring>
 #include <unordered_map>
 
@@ -23,17 +24,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00388(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.get_header_value("Cookie");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
-    std::string _out(_p);
     delete[] _p;
-    std::cout << _out << std::endl;
+    std::cout << _p << std::endl;
     res.set_content("ok", "text/plain");
 }

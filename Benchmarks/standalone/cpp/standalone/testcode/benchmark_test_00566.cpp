@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <cstring>
+#include <regex>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <hiredis/hiredis.h>
 
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
+typedef void CURL;
+extern "C" CURL *curl_easy_init(void);
+extern "C" int curl_easy_setopt(CURL *, int, ...);
+extern "C" int curl_easy_perform(CURL *);
+extern "C" void curl_easy_cleanup(CURL *);
+enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00566(int, char **)
 {
@@ -21,11 +27,36 @@ void benchmark_test_00566(int, char **)
         if (_reply != nullptr) freeReplyObject(_reply);
     }
     if (_redis != nullptr) redisFree(_redis);
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string _authority = data;
+    std::string::size_type _scheme = _authority.find("://");
+    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
+    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
+    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
+    std::string::size_type _userinfo = _authority.rfind('@');
+    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
+    _authority = _authority.substr(0, _authority.find(':'));
+    char _resolved[INET6_ADDRSTRLEN] = {0};
+    struct addrinfo _rhints;
+    std::memset(&_rhints, 0, sizeof(_rhints));
+    _rhints.ai_family = AF_UNSPEC;
+    _rhints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_rres = nullptr;
+    if (getaddrinfo(_authority.c_str(), nullptr, &_rhints, &_rres) == 0 && _rres) {
+        if (_rres->ai_family == AF_INET)
+            inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(_rres->ai_addr)->sin_addr, _resolved, sizeof(_resolved));
+        else
+            inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(_rres->ai_addr)->sin6_addr, _resolved, sizeof(_resolved));
+        freeaddrinfo(_rres);
+    }
+    static const std::regex _pr("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)");
+    if (std::regex_search(std::string(_resolved), _pr)) return;
+    std::string safe = data;
+    std::string _hurl = safe;
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

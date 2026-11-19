@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
 
-void benchmark_test_00206(int, char **)
+struct Payload { std::string value; };
+
+void benchmark_test_00206(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    _p = nullptr;
 }

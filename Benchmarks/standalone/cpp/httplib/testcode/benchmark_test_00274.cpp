@@ -27,10 +27,15 @@ struct Client {
 void benchmark_test_00274(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.get_header_value("Cookie");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
     std::cout << _p << std::endl;
+    delete[] _p;
+    _p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

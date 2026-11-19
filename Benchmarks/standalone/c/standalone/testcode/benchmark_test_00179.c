@@ -19,11 +19,12 @@ void benchmark_test_00179(int argc, char **argv)
     }
     const char *user_input = user_input_buf;
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
     char *_p = malloc(strlen(data) + 1);
     if (_p == NULL) return;
     strcpy(_p, data);
     free(_p);
-    _p = NULL;
-    if (_p) printf("%s\n", _p);
+    printf("%s\n", _p);
 }

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,10 +27,12 @@ struct Client {
 
 void benchmark_test_00475(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    std::string user_input = req.get_header_value("Host");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
+    res.set_content("ok", "text/plain");
 }

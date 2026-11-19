@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,13 +25,20 @@ struct Client {
 };
 }
 
-void benchmark_test_00393(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00393(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
-    res.set_content("ok", "text/plain");
+    const char *user_input_env = std::getenv("API_RESPONSE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _authority = user_input;
+    std::string::size_type _scheme = _authority.find("://");
+    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
+    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
+    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
+    std::string::size_type _userinfo = _authority.rfind('@');
+    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
+    _authority = _authority.substr(0, _authority.find(':'));
+    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
+    if (!_authority.empty() && !std::regex_match(_authority, _hw)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    std::string safe = user_input;
+    res.set_redirect(safe, 302);
 }

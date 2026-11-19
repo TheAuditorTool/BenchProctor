@@ -9,11 +9,20 @@
 
 void benchmark_test_00064(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    const char *safe = data;
-    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) safe = "/bin/echo";
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", safe);
-    system(_cmd);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char _dst[16];
+    if (strlen(data) < sizeof(_dst)) strcpy(_dst, data);
+    else _dst[0] = '\0';
+    printf("%s\n", _dst);
 }

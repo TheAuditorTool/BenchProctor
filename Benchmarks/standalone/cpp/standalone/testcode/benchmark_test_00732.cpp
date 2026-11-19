@@ -8,10 +8,12 @@ static std::string cpp_own(const std::string &s) { std::string::size_type _b = s
 
 void benchmark_test_00732(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data = cpp_own(user_input);
-    char _dst[16];
-    std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) return;
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

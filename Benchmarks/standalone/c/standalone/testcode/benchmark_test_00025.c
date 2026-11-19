@@ -7,17 +7,24 @@
 #include <stdint.h>
 #include <time.h>
 
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00025(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
+    if (_doc) xmlFreeDoc(_doc);
 }

@@ -7,6 +7,63 @@ replaced: a correction ships as a new release, and a withdrawal is recorded here
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2026.11.19.1] - 2026-11-19 (C and C++)
+
+A deeper C and C++ draw, published the same day as 2026.11.19. Only `Benchmarks/standalone/c` and
+`Benchmarks/standalone/cpp` change; the other nine languages and the applications stay at
+2026.11.19. The 2026.11.19 C and C++ folders moved to
+[`archive/2026.11.19/`](archive/2026.11.19/) with their own `SHASUMS256.txt`.
+
+### Changed
+
+- **Each C and C++ memory-safety and integer-overflow class draws from three sink forms.** In
+  2026.11.19 every case of a class used one sink statement. In `use_after_free`, for example,
+  every vulnerable case printed the freed pointer with `printf`, so a tool that does not model
+  `printf` scored zero on the whole class. The labels were right; the class tested one shape. Now:
+  - stack and heap buffer overflow: `strcpy`, `memcpy` of the input's length and terminator,
+    `sprintf` into a fixed buffer;
+  - buffer over-read: a read loop, `memcpy` out of the buffer, `fwrite` (C) or `cout.write` (C++)
+    of an input-sized span;
+  - use after free: the freed pointer printed, dereferenced, or wiped with `memset`;
+  - integer overflow: `atoi(x) + 1` into an allocation, a count times a record size into an
+    allocation, a quantity times a unit price.
+- **Deeper sampling:** 30 vulnerable + 30 safe cases per class in C (1,140 cases, up from 640)
+  and 24 + 24 per class and framework in C++ (2,112, up from 1,520).
+- The bundled `score_sarif.py` in the C and C++ folders takes `--categories` and
+  `--skip-categories` (see the scorer update below).
+
+### Added
+
+- **Three C and C++ classes:** double free (CWE-415), memory leak (CWE-401) and use of an
+  uninitialized variable (CWE-457), each with three sink forms: a pointer freed through an alias,
+  on an error branch and again on the normal path, or twice by a cleanup loop; a block never
+  freed, skipped by an early return, or lost when its only pointer is overwritten; an array slot
+  or branch-only scalar, a struct field never set, or a branch chain without a final `else`.
+
+Per-language totals (only C and C++ changed):
+
+| Language | Framework targets | Classes per target | Cases |
+|---|---|---:|---:|
+| C++ | cpp-httplib, standalone | 22 | 2,112 |
+| C | standalone | 19 | 1,140 |
+| **All 11 languages** | **21** | **25 in union** | **15,372** |
+
+## [Scorer update] - 2026-11-19
+
+### Changed
+
+- **`scripts/score_sarif.py` scores a declared scope.** `--categories` scores only the listed
+  classes and `--skip-categories` leaves the listed ones out, so a tool that does not attempt a
+  class (an analyzer that does no LDAP checking, say) is not averaged over it. The summary names
+  the classes left out. A class name not in the answer key, or an unknown option, is now refused
+  instead of silently ignored.
+- The summary described a 0% score as "random guessing (no better than a coin flip)". It now
+  reads "no measured discrimination", as this README always has: flagging every case and
+  flagging none both score 0%, and so does a class a tool does not attempt.
+- The copies bundled in release 2026.11.19's language folders are part of that release and are
+  unchanged; the C and C++ folders of 2026.11.19.1 carry the new scorer, and the other language
+  folders pick it up in their next release.
+
 ## [2026.11.19] - 2026-11-19
 
 A rotation of the curated release with deeper sampling and two more application graphs, published

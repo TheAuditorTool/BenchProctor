@@ -2,12 +2,19 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00549(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
     std::string data;
     for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
         if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
@@ -15,6 +22,7 @@ void benchmark_test_00549(int, char **)
             _i += 2;
         } else { data.push_back(user_input[_i]); }
     }
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string safe = (data == "/bin/echo" || data == "/bin/cat") ? data : std::string("/bin/echo");
+    const char *_argv[] = { safe.c_str(), nullptr };
+    execv(safe.c_str(), const_cast<char *const *>(_argv));
 }

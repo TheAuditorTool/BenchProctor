@@ -6,19 +6,20 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
 void benchmark_test_00629(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    unsigned char _iv[12];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CIPHER_CTX_free(_ctx);
 }

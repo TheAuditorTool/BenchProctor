@@ -2,25 +2,25 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
-#include <unistd.h>
 
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
 
 void benchmark_test_00203(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data = cpp_own(user_input);
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _xdoc = data;
+    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    if (_xd) xmlFreeDoc(_xd);
 }

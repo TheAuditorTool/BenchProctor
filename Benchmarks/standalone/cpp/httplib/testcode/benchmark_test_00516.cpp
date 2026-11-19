@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
-#include <regex>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,16 +24,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00516(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    std::string user_input = req.get_param_value("field");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    size_t _n = data.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, data.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    std::memset(_p, 0, _n + 1);
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

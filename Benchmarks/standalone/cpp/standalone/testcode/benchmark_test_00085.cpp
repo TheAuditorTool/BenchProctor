@@ -2,34 +2,30 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
 
-typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
-extern "C" int ldap_initialize(LDAP **, const char *);
-extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
-extern "C" int ldap_msgfree(LDAPMessage *);
-extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
-enum { LDAP_SCOPE_SUBTREE = 2 };
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
 
 void benchmark_test_00085(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    LDAP *_ld = nullptr;
-    const char *_ldap_url = std::getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + data + ")";
-    LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
-    ldap_unbind_ext_s(_ld, nullptr, nullptr);
+    const char *user_input_env = std::getenv("MULTIPART_FIELD");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
+    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
+    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
+    std::string _xexpr = std::string("/users/user[@name='") + data + "']";
+    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
+    if (_xobj) xmlXPathFreeObject(_xobj);
+    xmlXPathFreeContext(_xctx);
+    xmlFreeDoc(_xdoc);
 }

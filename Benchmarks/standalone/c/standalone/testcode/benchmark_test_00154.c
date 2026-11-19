@@ -6,22 +6,11 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
 
 void benchmark_test_00154(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", user_input);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", user_input, _token);
 }

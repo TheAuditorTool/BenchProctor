@@ -31,9 +31,9 @@ enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST 
 
 void benchmark_test_00270(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Origin");
-    std::string data;
-    if (!user_input.empty()) data = user_input;
+    std::string user_input = req.body;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
     std::string _hurl = data;
     CURL *_curl = curl_easy_init();
     curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());

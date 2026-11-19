@@ -22,25 +22,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct pg_conn; typedef struct pg_conn PGconn;
-struct pg_result; typedef struct pg_result PGresult;
-extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
-extern "C" int PQstatus(const PGconn *);
-extern "C" void PQfinish(PGconn *);
-extern "C" PGresult *PQexec(PGconn *, const char *);
-extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
-extern "C" void PQclear(PGresult *);
+extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00657(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
+    std::string user_input = req.get_param_value("multipart_field");
     std::string data;
     data.reserve(user_input.size());
     for (char _c : user_input) data.push_back(_c);
-    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
-    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
-    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
-    PQclear(_pgr);
-    PQfinish(_pgc);
+    unsigned char _digest[16];
+    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

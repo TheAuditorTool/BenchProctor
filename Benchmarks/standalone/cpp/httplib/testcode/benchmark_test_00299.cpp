@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,12 +23,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00299(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(user_input.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.get_header_value("X-Forwarded-For");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -2,25 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
-
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+#include <cstring>
 
 void benchmark_test_00273(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    if (!user_input.empty()) data = user_input;
+    char _dst[16];
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
 }

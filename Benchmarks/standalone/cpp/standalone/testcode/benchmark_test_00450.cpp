@@ -1,35 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
+#include <cstdio>
+#include <unistd.h>
 
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00450(int, char **)
 {
-    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
-    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
-    std::string::size_type _fe = _doc.find('"', _fs);
-    std::string data = _doc.substr(_fs, _fe - _fs);
-    std::string safe = std::regex_match(data, std::regex("^(admin|operator|viewer|auditor)$")) ? data : std::string("admin");
-    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
-    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
-    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
-    std::string _xexpr = std::string("/users/user[@name='") + safe + "']";
-    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
-    if (_xobj) xmlXPathFreeObject(_xobj);
-    xmlXPathFreeContext(_xctx);
-    xmlFreeDoc(_xdoc);
+    std::string user_input;
+    std::getline(std::cin, user_input);
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string _path = std::string("/var/app/data/") + data;
+    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
 }

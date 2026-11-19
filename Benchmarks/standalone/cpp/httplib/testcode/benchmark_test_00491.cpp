@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <regex>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,25 +24,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00491(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
     res.set_content("ok", "text/plain");
 }

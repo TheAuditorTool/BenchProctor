@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 
@@ -24,19 +23,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00699(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    char _dst[16];
+    std::string user_input = req.body;
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    char *_dst = new char[16];
     std::strcpy(_dst, data.c_str());
-    std::cout << _dst << std::endl;
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

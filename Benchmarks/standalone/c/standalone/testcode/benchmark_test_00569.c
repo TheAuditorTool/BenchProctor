@@ -11,14 +11,12 @@ static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return 
 
 void benchmark_test_00569(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
+    const char *user_input = (argc > 1) ? argv[1] : "";
     const char *(*_fn)(const char *) = c_passthrough;
     const char *data = _fn(user_input);
-    char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    const char *safe = data;
+    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) safe = "/bin/echo";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "ls %s", safe);
+    system(_cmd);
 }

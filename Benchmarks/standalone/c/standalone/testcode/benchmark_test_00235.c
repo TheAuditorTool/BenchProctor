@@ -6,14 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/md5.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00235(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = c_passthrough(user_input);
-    unsigned char _digest[16];
-    MD5((const unsigned char *)data, strlen(data), _digest);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
+    system(_cmd);
 }

@@ -2,24 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
-
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+#include <regex>
 
 void benchmark_test_00466(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    static const std::regex _re("^[a-zA-Z0-9 _.%\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _cmd = std::string("ls ") + safe;
+    std::system(_cmd.c_str());
 }

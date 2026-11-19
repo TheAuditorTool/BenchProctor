@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 #include <unordered_map>
@@ -30,7 +29,7 @@ struct Client {
 void benchmark_test_00470(const httplib::Request &, httplib::Response &res)
 {
     std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
         char _b[256];
         if (std::fgets(_b, sizeof(_b), _fp)) {
             _b[std::strcspn(_b, "\n")] = 0;
@@ -39,10 +38,18 @@ void benchmark_test_00470(const httplib::Request &, httplib::Response &res)
         std::fclose(_fp);
     }
     std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

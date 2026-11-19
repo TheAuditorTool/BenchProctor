@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <regex>
 
 void benchmark_test_00115(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(user_input, _re) ? user_input : std::string("default");
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string _ckval = data;
+    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
 }

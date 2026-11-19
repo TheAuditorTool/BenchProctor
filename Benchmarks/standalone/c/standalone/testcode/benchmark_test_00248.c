@@ -6,18 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 
 void benchmark_test_00248(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    unsigned char _iv[8];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)user_input, (int)strlen(user_input));
-    EVP_CIPHER_CTX_free(_ctx);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    free(_p);
+    char _first = _p[0];
+    printf("%c\n", _first);
 }

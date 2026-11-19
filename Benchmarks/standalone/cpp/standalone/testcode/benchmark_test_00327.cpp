@@ -3,11 +3,17 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00327(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_HOST");
+    const char *user_input_env = std::getenv("PATH_INFO");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _path = std::string("/var/app/data/") + user_input;
-    std::remove(_path.c_str());
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    std::cout << _p << std::endl;
 }

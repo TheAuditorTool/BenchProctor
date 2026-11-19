@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +25,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00700(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00700(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
-    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
-    std::string::size_type _fe = _doc.find('"', _fs);
-    std::string data = _doc.substr(_fs, _fe - _fs);
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

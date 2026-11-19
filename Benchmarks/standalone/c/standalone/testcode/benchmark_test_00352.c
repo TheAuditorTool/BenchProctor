@@ -9,14 +9,10 @@
 
 void benchmark_test_00352(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", data);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <climits>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,14 +26,19 @@ struct Client {
 
 void benchmark_test_00261(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
+    std::string user_input = req.get_param_value("id");
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    std::string _joined = std::string("/var/app/data/") + data;
-    char _resolved[PATH_MAX];
-    if (!realpath(_joined.c_str(), _resolved)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = _resolved;
-    std::remove(safe.c_str());
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char _dst[16];
+    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
+    else _dst[0] = '\0';
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

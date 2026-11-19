@@ -9,13 +9,14 @@
 
 void benchmark_test_00453(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", data);
-    FILE *_p = popen(_cmd, "r");
-    if (_p) pclose(_p);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

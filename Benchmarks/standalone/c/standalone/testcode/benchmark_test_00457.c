@@ -6,24 +6,20 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
 
 void benchmark_test_00457(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
     }
-    const char *user_input = user_input_buf;
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", user_input, _rnd[0]);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

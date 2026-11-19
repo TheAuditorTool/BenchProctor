@@ -2,25 +2,29 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <regex>
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00710(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("MULTIPART_FIELD");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::string safe = std::regex_match(data, std::regex("^(asc|desc|name|created)$")) ? data : std::string("asc");
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
-    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
 }

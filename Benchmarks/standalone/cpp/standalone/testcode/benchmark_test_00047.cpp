@@ -2,24 +2,25 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-
-typedef void CURL;
-extern "C" CURL *curl_easy_init(void);
-extern "C" int curl_easy_setopt(CURL *, int, ...);
-extern "C" int curl_easy_perform(CURL *);
-extern "C" void curl_easy_cleanup(CURL *);
-enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
-struct Payload { std::string value; };
+#include <regex>
 
 void benchmark_test_00047(int, char **)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("HTTP_ORIGIN");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::string _hurl = data;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string _authority = data;
+    std::string::size_type _scheme = _authority.find("://");
+    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
+    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
+    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
+    std::string::size_type _userinfo = _authority.rfind('@');
+    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
+    _authority = _authority.substr(0, _authority.find(':'));
+    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
+    if (!_authority.empty() && !std::regex_match(_authority, _hw)) return;
+    std::string safe = data;
+    std::cout << "Location: " << safe << std::endl;
 }

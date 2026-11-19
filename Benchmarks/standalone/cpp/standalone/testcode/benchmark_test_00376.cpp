@@ -1,16 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 
-void benchmark_test_00376(int argc, char **argv)
+void benchmark_test_00376(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    const char *user_input_env = std::getenv("PATH_INFO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
+    std::string safe;
+    for (char _c : data) {
+        if (_c == '&') safe += "&amp;";
+        else if (_c == '<') safe += "&lt;";
+        else if (_c == '>') safe += "&gt;";
+        else if (_c == '"') safe += "&quot;";
+        else if (_c == '\'') safe += "&#39;";
+        else safe.push_back(_c);
+    }
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
 }

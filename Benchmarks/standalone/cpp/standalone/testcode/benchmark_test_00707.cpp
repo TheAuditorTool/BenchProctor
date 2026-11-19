@@ -3,23 +3,25 @@
 #include <string>
 #include <cstdlib>
 
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct Payload { std::string value; };
 
 void benchmark_test_00707(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_REFERER");
+    const char *user_input_env = std::getenv("MULTIPART_FIELD");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    sqlite3_stmt *_st = nullptr;
-    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_st, nullptr);
-    sqlite3_bind_text(_st, 1, user_input.c_str(), -1, nullptr);
-    sqlite3_step(_st);
-    sqlite3_finalize(_st);
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    std::string _xdoc = data;
+    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
+    if (_xd) xmlFreeDoc(_xd);
 }

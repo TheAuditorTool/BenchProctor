@@ -2,8 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -28,18 +26,8 @@ struct Client {
 
 void benchmark_test_00625(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    std::string user_input = req.get_header_value("Host");
+    std::string _path = std::string("/var/app/data/") + user_input;
+    std::remove(_path.c_str());
     res.set_content("ok", "text/plain");
 }

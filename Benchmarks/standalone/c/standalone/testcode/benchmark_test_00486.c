@@ -7,18 +7,13 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
-
 void benchmark_test_00486(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char _dst[16];
-    if (strlen(data) < sizeof(_dst)) strcpy(_dst, data);
-    else _dst[0] = '\0';
-    printf("%s\n", _dst);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    long _req = strtol(data, NULL, 10);
+    if (_req < 0 || _req > 2147483646L) return;
+    long _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

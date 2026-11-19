@@ -6,18 +6,18 @@
   "language": "c",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "standalone": {
-      "categories": 16,
-      "csv_sha256": "54cbcc90ec038b92e02cddee523159e6bf21d0922590c8af29ab109bfd6b6a5e",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "categories": 19,
+      "csv_sha256": "17f0062489397fb430d3e04830172ffafd57bc6d10c0990dd3e42cbef40a4c5e",
+      "expectedresults_csv": "expectedresults-2026.11.19.1.csv",
       "prerequisites": [
         {
           "debian": "libssl-dev",
           "fedora": "openssl-devel",
-          "files": 80,
+          "files": 120,
           "headers": [
             "openssl/evp.h",
             "openssl/md5.h",
@@ -29,7 +29,7 @@
         {
           "debian": "libsqlite3-dev",
           "fedora": "sqlite-devel",
-          "files": 40,
+          "files": 60,
           "headers": [
             "sqlite3.h"
           ],
@@ -38,19 +38,19 @@
         {
           "debian": "libcurl4-openssl-dev",
           "fedora": "libcurl-devel",
-          "files": 22,
+          "files": 32,
           "headers": [
             "curl/curl.h"
           ],
           "library": "libcurl"
         }
       ],
-      "published_files": 640,
-      "safe": 320,
-      "total": 640,
-      "vulnerable": 320
+      "published_files": 1140,
+      "safe": 570,
+      "total": 1140,
+      "vulnerable": 570
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.19.1"
 }

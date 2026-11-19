@@ -6,18 +6,28 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00342(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", data, _rnd[0]);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    free(_p);
+    _p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    free(_p);
 }

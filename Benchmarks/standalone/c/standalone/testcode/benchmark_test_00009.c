@@ -6,20 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00009(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", data);
-    const char *safe = basename(_bn_copy);
-    FILE *_f = fopen(safe, "w");
-    if (_f) fclose(_f);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    snprintf(_dst, 32, "user=%s", data);
+    puts(_dst);
+    free(_dst);
 }

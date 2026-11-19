@@ -3,13 +3,15 @@
 #include <string>
 #include <cstdlib>
 
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+
 void benchmark_test_00195(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("USER_COMMENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    try { data = user_input; } catch (...) { data.clear(); }
+    unsigned char _digest[32];
+    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
 }

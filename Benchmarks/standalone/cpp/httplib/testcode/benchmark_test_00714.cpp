@@ -40,10 +40,8 @@ extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00714(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string user_input = req.get_header_value("Authorization");
+    std::string data = !user_input.empty() ? user_input : std::string();
     EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
     const char *_kv = std::getenv("APP_ENC_KEY");
     unsigned char _ckey[32] = {0};

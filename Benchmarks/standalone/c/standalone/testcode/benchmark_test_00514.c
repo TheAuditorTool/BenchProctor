@@ -6,18 +6,26 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#include <sqlite3.h>
+#include <regex.h>
 
 void benchmark_test_00514(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    printf("%s\n", _p);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    regex_t _re;
+    const char *safe = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
+        regfree(&_re);
+    }
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

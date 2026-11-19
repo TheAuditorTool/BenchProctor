@@ -7,14 +7,23 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
 
 void benchmark_test_00479(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", data);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    FREE_AND_NULL(_p);
+    _cleanup_ptr = NULL;
+    if (_cleanup_ptr) free(_cleanup_ptr);
 }

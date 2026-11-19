@@ -6,30 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 
 static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00240(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    unsigned char _iv[8];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = c_passthrough(user_input);
+    char *_dst = malloc(16);
+    if (_dst == NULL) return;
+    size_t _n = strlen(data);
+    if (_n > 15) _n = 15;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
+    free(_dst);
 }

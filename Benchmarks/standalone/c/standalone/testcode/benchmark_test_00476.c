@@ -6,26 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#include <openssl/md5.h>
 
 void benchmark_test_00476(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    const char *safe = data;
-    if (strcmp(data, "api.internal.svc") != 0 && strcmp(data, "cdn.internal.svc") != 0) safe = "api.internal.svc";
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(safe, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
-    }
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    unsigned char _digest[16];
+    MD5((const unsigned char *)data, strlen(data), _digest);
 }

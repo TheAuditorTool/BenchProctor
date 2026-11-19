@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,12 +27,14 @@ struct Client {
 
 void benchmark_test_00471(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    std::string user_input = req.get_param_value("id");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

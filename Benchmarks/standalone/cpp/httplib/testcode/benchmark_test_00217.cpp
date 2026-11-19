@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,9 +24,16 @@ struct Client {
 };
 }
 
-void benchmark_test_00217(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00217(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = !user_input.empty() ? user_input : std::string();
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>", "text/html");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    int _req = std::atoi(data.c_str());
+    int _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    res.set_content("ok", "text/plain");
 }

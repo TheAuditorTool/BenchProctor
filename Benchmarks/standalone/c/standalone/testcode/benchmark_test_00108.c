@@ -6,21 +6,26 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+#include <openssl/sha.h>
 
 void benchmark_test_00108(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
     const char *user_input = user_input_buf;
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    remove(_path);
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

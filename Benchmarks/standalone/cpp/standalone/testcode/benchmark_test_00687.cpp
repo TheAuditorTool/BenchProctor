@@ -3,20 +3,30 @@
 #include <string>
 #include <cstdlib>
 
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct Payload { std::string value; };
+
 void benchmark_test_00687(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_REFERER");
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) return;
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
+    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
+    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
+    std::string _xexpr = std::string("/users/user[@name='") + data + "']";
+    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
+    if (_xobj) xmlXPathFreeObject(_xobj);
+    xmlXPathFreeContext(_xctx);
+    xmlFreeDoc(_xdoc);
 }

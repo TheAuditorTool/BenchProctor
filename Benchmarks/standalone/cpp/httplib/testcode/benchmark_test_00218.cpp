@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,23 +23,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+struct Payload { std::string value; };
 
-void benchmark_test_00218(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00218(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string data = cpp_own(user_input);
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

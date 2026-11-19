@@ -2,9 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,23 +23,21 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
-void benchmark_test_00593(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00593(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string safe;
+    for (char _c : data) {
+        if (_c == '&') safe += "&amp;";
+        else if (_c == '<') safe += "&lt;";
+        else if (_c == '>') safe += "&gt;";
+        else if (_c == '"') safe += "&quot;";
+        else if (_c == '\'') safe += "&#39;";
+        else safe.push_back(_c);
     }
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
-    res.set_content("ok", "text/plain");
+    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
 }

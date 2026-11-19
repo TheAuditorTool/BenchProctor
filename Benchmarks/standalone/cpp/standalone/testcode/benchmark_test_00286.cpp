@@ -2,23 +2,13 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <ctime>
 
 void benchmark_test_00286(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) return;
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << user_input << ": " << _token << std::endl;
 }

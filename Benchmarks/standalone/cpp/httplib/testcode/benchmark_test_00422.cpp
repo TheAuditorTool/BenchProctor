@@ -2,8 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <spawn.h>
-#include <sys/wait.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -28,17 +26,12 @@ struct Client {
 
 void benchmark_test_00422(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
+    std::string user_input = req.get_header_value("Cookie");
     std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    const char *_sp_argv[] = { "/usr/bin/grep", data.c_str(), nullptr };
-    char *const _sp_env[] = { nullptr };
-    pid_t _pid;
-    if (posix_spawn(&_pid, "/usr/bin/grep", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    std::cout << _buf[_i] << std::endl;
     res.set_content("ok", "text/plain");
 }

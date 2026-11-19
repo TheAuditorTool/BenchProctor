@@ -2,14 +2,23 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
+#include <unistd.h>
 
 void benchmark_test_00175(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
 }

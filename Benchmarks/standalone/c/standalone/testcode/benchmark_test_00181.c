@@ -6,13 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
 
 void benchmark_test_00181(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    const int _unit_cents = 1999;
+    int _qty = atoi(data);
+    int _total = _qty * _unit_cents;
+    printf("total=%d\n", _total);
 }

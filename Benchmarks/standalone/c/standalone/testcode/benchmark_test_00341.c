@@ -12,9 +12,19 @@ void benchmark_test_00341(int argc, char **argv)
     (void)argc; (void)argv;
     const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) free(_p);
+    free(_p);
 }

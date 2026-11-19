@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <unistd.h>
-#include <regex>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,17 +23,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00298(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    std::string user_input = req.get_header_value("Referer");
+    std::string data;
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
+    std::string safe = (data == "/bin/echo" || data == "/bin/cat") ? data : std::string("/bin/echo");
+    std::system(safe.c_str());
     res.set_content("ok", "text/plain");
 }

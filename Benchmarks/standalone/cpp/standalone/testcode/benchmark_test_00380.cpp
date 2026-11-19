@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00380(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("APP_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
+    std::cout << _p << std::endl;
+    _p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

@@ -7,16 +7,18 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00095(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    int _req = atoi(user_input);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = c_passthrough(user_input);
+    char *_dst = malloc(16);
+    if (_dst == NULL) return;
+    size_t _n = strlen(data);
+    memcpy(_dst, data, _n + 1);
+    printf("%s\n", _dst);
+    free(_dst);
 }

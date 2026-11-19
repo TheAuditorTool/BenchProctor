@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -41,18 +37,17 @@ extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00315(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
+    std::string user_input = req.path_params.at("id");
+    std::string data;
+    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
+        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
+            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
+            _i += 2;
+        } else { data.push_back(user_input[_i]); }
+    }
     EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    const char *_kv = std::getenv("APP_ENC_KEY");
     unsigned char _ckey[32] = {0};
-    if (_kv) std::strncpy(reinterpret_cast<char *>(_ckey), _kv, sizeof(_ckey) - 1);
-    unsigned char _civ[16] = {0};
-    int _ivfd = open("/dev/urandom", O_RDONLY);
-    if (_ivfd >= 0) { if (read(_ivfd, _civ, sizeof(_civ)) < 0) _civ[0] = 0; close(_ivfd); }
-    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), nullptr, _ckey, _civ);
+    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
     unsigned char _cout[512]; int _coutl = 0;
     EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
     EVP_CIPHER_CTX_free(_ctx);

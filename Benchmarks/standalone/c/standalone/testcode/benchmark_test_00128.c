@@ -6,15 +6,13 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <fcntl.h>
 
 void benchmark_test_00128(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
     char data[512];
     switch (user_input[0]) {
         case '\0':
@@ -24,9 +22,8 @@ void benchmark_test_00128(int argc, char **argv)
             snprintf(data, sizeof(data), "%s", user_input);
             break;
     }
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    printf("%s\n", _p);
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
+    printf("token for %s: %02x\n", data, _rnd[0]);
 }

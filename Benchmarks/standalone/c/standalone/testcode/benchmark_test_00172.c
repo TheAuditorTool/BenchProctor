@@ -6,8 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
+
+typedef struct ldap LDAP;
+typedef struct ldapmsg LDAPMessage;
+#define LDAP_SCOPE_SUBTREE 2
+#define LDAP_OPT_PROTOCOL_VERSION 0x0011
+#define LDAP_VERSION3 3
+extern int ldap_initialize(LDAP **_ldp, const char *_uri);
+extern int ldap_set_option(LDAP *_ld, int _option, const void *_invalue);
+extern int ldap_simple_bind_s(LDAP *_ld, const char *_who, const char *_passwd);
+extern int ldap_search_ext_s(LDAP *_ld, const char *_base, int _scope, const char *_filter, char **_attrs, int _attrsonly, void *_sc, void *_cc, void *_tmo, int _slim, LDAPMessage **_res);
 
 void benchmark_test_00172(int argc, char **argv)
 {
@@ -20,12 +28,14 @@ void benchmark_test_00172(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    unsigned char _iv[12];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)user_input, (int)strlen(user_input));
-    EVP_CIPHER_CTX_free(_ctx);
+    LDAP *_ld = NULL;
+    const char *_ldap_url = getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url != NULL ? _ldap_url : "ldap://directory:1389");
+    int _ldap_version = LDAP_VERSION3;
+    ldap_set_option(_ld, LDAP_OPT_PROTOCOL_VERSION, &_ldap_version);
+    ldap_simple_bind_s(_ld, NULL, NULL);
+    char _filter[512];
+    snprintf(_filter, sizeof(_filter), "(uid=%s)", user_input);
+    LDAPMessage *_res = NULL;
+    ldap_search_ext_s(_ld, "ou=people,dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter, NULL, 0, NULL, NULL, NULL, 0, &_res);
 }

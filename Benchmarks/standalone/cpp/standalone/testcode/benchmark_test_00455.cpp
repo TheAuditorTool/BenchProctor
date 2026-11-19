@@ -4,22 +4,23 @@
 #include <cstdlib>
 #include <regex>
 
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
+
 void benchmark_test_00455(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("HTTP_REFERER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!_authority.empty() && !std::regex_match(_authority, _hw)) return;
-    std::string safe = data;
-    std::cout << "Location: " << safe << std::endl;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    static const std::regex _re("^[a-zA-Z0-9_.#\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + safe + "'";
+    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
 }

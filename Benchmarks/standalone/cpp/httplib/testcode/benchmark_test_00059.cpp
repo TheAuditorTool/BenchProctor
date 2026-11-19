@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
-#include <regex>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -28,45 +23,28 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef void CURL;
-extern "C" CURL *curl_easy_init(void);
-extern "C" int curl_easy_setopt(CURL *, int, ...);
-extern "C" int curl_easy_perform(CURL *);
-extern "C" void curl_easy_cleanup(CURL *);
-enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00059(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00059(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    char _resolved[INET6_ADDRSTRLEN] = {0};
-    struct addrinfo _rhints;
-    std::memset(&_rhints, 0, sizeof(_rhints));
-    _rhints.ai_family = AF_UNSPEC;
-    _rhints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_rres = nullptr;
-    if (getaddrinfo(_authority.c_str(), nullptr, &_rhints, &_rres) == 0 && _rres) {
-        if (_rres->ai_family == AF_INET)
-            inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(_rres->ai_addr)->sin_addr, _resolved, sizeof(_resolved));
-        else
-            inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(_rres->ai_addr)->sin6_addr, _resolved, sizeof(_resolved));
-        freeaddrinfo(_rres);
-    }
-    static const std::regex _pr("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)");
-    if (std::regex_search(std::string(_resolved), _pr)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    std::string _hurl = safe;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string _xdoc = data;
+    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
+    if (_xd) xmlFreeDoc(_xd);
     res.set_content("ok", "text/plain");
 }

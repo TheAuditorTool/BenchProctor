@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <regex>
 
-void benchmark_test_00201(int, char **)
+void benchmark_test_00201(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string safe = std::regex_match(data, std::regex("^(plain|markdown|html|text)$")) ? data : std::string("plain");
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    std::cout << _mode << std::endl;
 }

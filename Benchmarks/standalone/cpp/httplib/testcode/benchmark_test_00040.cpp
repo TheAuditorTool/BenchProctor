@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,19 +25,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00040(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00040(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    delete[] _p;
+    res.set_content("ok", "text/plain");
 }

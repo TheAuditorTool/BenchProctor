@@ -21,8 +21,13 @@ void benchmark_test_00590(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    free(_p);
+    free(_cleanup_ptr);
 }

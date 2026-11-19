@@ -7,7 +7,7 @@
 
 void benchmark_test_00178(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_HOST");
+    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());

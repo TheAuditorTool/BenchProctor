@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <ctime>
 #include <unistd.h>
 
 void benchmark_test_00459(int, char **)
@@ -15,5 +16,7 @@ void benchmark_test_00459(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::cout << "Location: " << user_input << std::endl;
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << user_input << ": " << _token << std::endl;
 }

@@ -7,18 +7,15 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_payload { const char *value; };
+
 void benchmark_test_00500(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    FILE *_f = fopen(_path, "w");
-    if (_f) fclose(_f);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

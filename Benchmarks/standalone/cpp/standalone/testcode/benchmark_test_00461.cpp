@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
 
@@ -14,8 +15,6 @@ extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXP
 extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
 extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
 enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00461(int, char **)
 {
@@ -28,9 +27,9 @@ void benchmark_test_00461(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
     std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
     xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
     xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);

@@ -7,20 +7,24 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00069(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
+    FILE *_src_fp = fopen("/tmp/data", "r");
     if (_src_fp != NULL) {
         if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char *_p = malloc(strlen(user_input) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, user_input);
-    free(_p);
-    printf("%s\n", _p);
+    const char *data = c_passthrough(user_input);
+    char _dst[16];
+    size_t _n = strlen(data);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
 }

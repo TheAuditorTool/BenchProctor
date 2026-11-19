@@ -1,16 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
 
 void benchmark_test_00476(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
     std::string data;
     std::string::size_type _w = 0;
     while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _ckval = data;
-    std::printf("Set-Cookie: session=%s; Secure; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
+    int _x = 0;
+    if (!data.empty()) _x = (int)data[0];
+    std::cout << (_x + (int)data.size()) << std::endl;
 }

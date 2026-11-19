@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
-void benchmark_test_00672(int, char **)
+void benchmark_test_00672(int argc, char **argv)
 {
-    std::string user_input;
-    std::getline(std::cin, user_input);
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    std::string user_input = (argc > 2) ? std::string(argv[2]) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    struct { int id; int flags; } _rec;
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
 }

@@ -25,7 +25,6 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00446(const httplib::Request &, httplib::Response &res)
 {
@@ -38,10 +37,16 @@ void benchmark_test_00446(const httplib::Request &, httplib::Response &res)
         }
         std::fclose(_fp);
     }
-    std::string data = cpp_own(user_input);
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
+    std::cout << _p << std::endl;
+    delete[] _p;
+    _p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

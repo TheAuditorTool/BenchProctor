@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -26,13 +27,14 @@ struct Client {
 
 void benchmark_test_00623(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input = req.path_params.at("id");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    const long _unit_cents = 1999;
+    long _qty = std::strtol(data.c_str(), nullptr, 10);
+    if (_qty < 0 || _qty > 100000) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

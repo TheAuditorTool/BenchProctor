@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00242(int argc, char **argv)
 {
     (void)argc; (void)argv;
@@ -20,8 +18,15 @@ void benchmark_test_00242(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    const char *data = c_passthrough(user_input);
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    char *_found = strchr(data, '=');
+    printf("%c\n", *_found);
 }

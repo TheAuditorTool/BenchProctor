@@ -2,18 +2,17 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <unistd.h>
+#include <regex>
 
 void benchmark_test_00744(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    std::string user_input;
+    std::getline(std::cin, user_input);
+    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
+    if (!std::regex_match(user_input, _schema)) return;
+    std::string safe = user_input;
+    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
+    FILE *_p = popen(_cmd.c_str(), "r");
+    if (_p) pclose(_p);
 }

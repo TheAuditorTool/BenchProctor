@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,12 +25,9 @@ struct Client {
 
 void benchmark_test_00508(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input = req.get_header_value("User-Agent");
+    int _x;
+    if (!user_input.empty()) _x = (int)user_input[0];
+    std::cout << (_x + (int)user_input.size()) << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -2,6 +2,10 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,14 +27,23 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
-void benchmark_test_00711(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00711(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    long _req = std::strtol(user_input.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    const char *user_input_env = std::getenv("API_RESPONSE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
     res.set_content("ok", "text/plain");
 }

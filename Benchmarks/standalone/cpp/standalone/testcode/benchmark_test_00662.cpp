@@ -1,16 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00662(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_ORIGIN");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    char *_p = new char[16];
+    std::strcpy(_p, "pending");
+    std::cout << _p << std::endl;
+    _p = new char[user_input.size() + 1];
+    std::strcpy(_p, user_input.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

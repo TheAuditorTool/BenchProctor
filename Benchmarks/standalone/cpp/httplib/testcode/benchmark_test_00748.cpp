@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -30,19 +26,16 @@ struct Client {
 
 void benchmark_test_00748(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
-    }
+    std::string user_input = req.get_param_value("field");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    char *_dst = new char[16];
+    size_t _n = data.size();
+    if (_n > 15) _n = 15;
+    std::memcpy(_dst, data.c_str(), _n);
+    _dst[_n] = '\0';
+    std::cout << _dst << std::endl;
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

@@ -6,16 +6,15 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <libgen.h>
 
 void benchmark_test_00105(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    char _bn_copy[512];
-    snprintf(_bn_copy, sizeof(_bn_copy), "%s", user_input);
-    const char *safe = basename(_bn_copy);
-    FILE *_f = fopen(safe, "w");
-    if (_f) fclose(_f);
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

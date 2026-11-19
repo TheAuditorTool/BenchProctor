@@ -4,16 +4,12 @@
 #include <cstdlib>
 #include <unistd.h>
 
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef void CURL;
+extern "C" CURL *curl_easy_init(void);
+extern "C" int curl_easy_setopt(CURL *, int, ...);
+extern "C" int curl_easy_perform(CURL *);
+extern "C" void curl_easy_cleanup(CURL *);
+enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
 
 void benchmark_test_00711(int, char **)
 {
@@ -26,9 +22,9 @@ void benchmark_test_00711(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
-    if (_xd) xmlFreeDoc(_xd);
+    std::string _hurl = user_input;
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

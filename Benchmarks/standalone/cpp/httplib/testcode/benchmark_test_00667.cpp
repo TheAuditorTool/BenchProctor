@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,10 +26,12 @@ struct Client {
 
 void benchmark_test_00667(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    std::system(safe.c_str());
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
     res.set_content("ok", "text/plain");
 }

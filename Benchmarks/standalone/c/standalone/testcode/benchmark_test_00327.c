@@ -11,12 +11,12 @@ static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return 
 
 void benchmark_test_00327(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", data);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = c_passthrough(user_input);
+    char _dst[16];
+    size_t _n = strlen(data);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
 }

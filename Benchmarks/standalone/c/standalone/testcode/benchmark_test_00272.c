@@ -7,18 +7,17 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00272(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    memcpy(_out, _buf, _span);
+    printf("%.*s\n", (int)_span, _out);
 }

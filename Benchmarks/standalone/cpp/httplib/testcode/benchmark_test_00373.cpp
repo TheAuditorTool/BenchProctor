@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,16 +27,10 @@ struct Client {
 void benchmark_test_00373(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
+    const long _unit_cents = 1999;
+    long _qty = std::strtol(user_input.c_str(), nullptr, 10);
+    if (_qty < 0 || _qty > 100000) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

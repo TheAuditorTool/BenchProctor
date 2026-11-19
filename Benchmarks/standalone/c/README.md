@@ -1,9 +1,9 @@
-# BenchProctor 2026.11.19 -- c (curated tier)
+# BenchProctor 2026.11.19.1 -- c (curated tier)
 
 SAST benchmark bundle. Frameworks: standalone.
 
 `<framework>/testcode/` holds labeled vulnerable/safe test cases; each
-`<framework>/expectedresults-2026.11.19.csv` is the ground truth (test name, category, vulnerable,
+`<framework>/expectedresults-2026.11.19.1.csv` is the ground truth (test name, category, vulnerable,
 CWE). The bundled `score_sarif.py` (stdlib only, no install) scores a tool's
 SARIF output against that CSV.
 
@@ -15,9 +15,9 @@ HTTP or cryptography API. A tool that compiles the cases, or resolves their
 
 | Library | Fedora / RHEL | Debian / Ubuntu | Files |
 |---|---|---|---|
-| OpenSSL | `openssl-devel` | `libssl-dev` | 80 |
-| SQLite 3 | `sqlite-devel` | `libsqlite3-dev` | 40 |
-| libcurl | `libcurl-devel` | `libcurl4-openssl-dev` | 22 |
+| OpenSSL | `openssl-devel` | `libssl-dev` | 120 |
+| SQLite 3 | `sqlite-devel` | `libsqlite3-dev` | 60 |
+| libcurl | `libcurl-devel` | `libcurl4-openssl-dev` | 32 |
 
     dnf install openssl-devel sqlite-devel libcurl-devel
     apt install libssl-dev libsqlite3-dev libcurl4-openssl-dev
@@ -30,10 +30,12 @@ HTTP or cryptography API. A tool that compiles the cases, or resolves their
    SARIF 2.1.0.
 2. Score it against that framework's ground truth:
 
-       python score_sarif.py your_results.sarif standalone/expectedresults-2026.11.19.csv
+       python score_sarif.py your_results.sarif standalone/expectedresults-2026.11.19.1.csv
 
 The scorer prints category-averaged and flat TPR/FPR and a Youden-style score
-(TPR - FPR); +100% is perfect, 0% is a coin flip.
+(TPR - FPR); +100% is perfect, and 0% means no measured discrimination (flagging
+every case and flagging none both score 0%). `--categories` or `--skip-categories`
+scores only the categories a tool declares in scope.
 
 ## Contents and integrity
 

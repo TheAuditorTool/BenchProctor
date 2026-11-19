@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstring>
 #include <unordered_map>
 
@@ -23,16 +24,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00462(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_param_value("filename");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    const char *_found = std::strchr(data.c_str(), '=');
+    std::cout << *_found << std::endl;
     res.set_content("ok", "text/plain");
 }

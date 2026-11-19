@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,14 +23,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
-void benchmark_test_00001(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00001(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    std::string user_input = req.get_header_value("User-Agent");
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,12 +27,15 @@ struct Client {
 
 void benchmark_test_00375(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
+    std::string user_input = req.path_params.at("id");
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    char _dst[16];
+    size_t _n = data.size();
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    std::memcpy(_dst, data.c_str(), _n);
+    _dst[_n] = '\0';
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

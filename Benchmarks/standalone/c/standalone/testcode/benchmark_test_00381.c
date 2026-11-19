@@ -6,20 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/md5.h>
 
 void benchmark_test_00381(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
     char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    unsigned char _digest[16];
-    MD5((const unsigned char *)data, strlen(data), _digest);
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) { free(_p); return; }
+    free(_p);
 }

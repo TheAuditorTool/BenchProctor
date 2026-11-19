@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -38,13 +42,18 @@ struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::st
 
 void benchmark_test_00429(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("filename");
+    std::string user_input = req.get_param_value("multipart_field");
     HeldValue _held(user_input);
     const ValueSource &_vs = _held;
     std::string data = _vs.get();
     EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    const char *_kv = std::getenv("APP_ENC_KEY");
     unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
+    if (_kv) std::strncpy(reinterpret_cast<char *>(_ckey), _kv, sizeof(_ckey) - 1);
+    unsigned char _civ[16] = {0};
+    int _ivfd = open("/dev/urandom", O_RDONLY);
+    if (_ivfd >= 0) { if (read(_ivfd, _civ, sizeof(_civ)) < 0) _civ[0] = 0; close(_ivfd); }
+    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), nullptr, _ckey, _civ);
     unsigned char _cout[512]; int _coutl = 0;
     EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
     EVP_CIPHER_CTX_free(_ctx);

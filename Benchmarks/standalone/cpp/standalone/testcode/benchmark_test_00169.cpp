@@ -3,13 +3,12 @@
 #include <string>
 #include <cstdlib>
 
-struct Payload { std::string value; };
-
 void benchmark_test_00169(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
+    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::cout << "Location: " << data << std::endl;
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>") << std::endl;
 }

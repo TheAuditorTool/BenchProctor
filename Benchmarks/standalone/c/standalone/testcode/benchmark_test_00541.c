@@ -7,18 +7,26 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00541(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
     const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    const size_t _rec_size = 64;
+    long _count = strtol(data, NULL, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = malloc(_bytes);
+    if (_recs) free(_recs);
 }

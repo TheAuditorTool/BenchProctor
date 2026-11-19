@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,13 +23,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00023(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(user_input.c_str()), user_input.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input = req.path_params.at("id");
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    char _dst[32];
+    std::sprintf(_dst, "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

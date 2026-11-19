@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <hiredis/hiredis.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,14 +23,30 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
-void benchmark_test_00757(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00757(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
+    std::string user_input;
+    redisContext *_redis = redisConnect("cache", 6379);
+    if (_redis != nullptr && _redis->err == 0) {
+        redisReply *_reply = static_cast<redisReply *>(redisCommand(_redis, "GET %s", "user_data"));
+        if (_reply != nullptr && _reply->type == REDIS_REPLY_STRING) user_input.assign(_reply->str, _reply->len);
+        if (_reply != nullptr) freeReplyObject(_reply);
+    }
+    if (_redis != nullptr) redisFree(_redis);
     std::string _raw = user_input;
     auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
     std::string data = _closure();
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    std::string _sqlq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
+    sqlite3_exec(_db, _sqlq.c_str(), nullptr, nullptr, nullptr);
     res.set_content("ok", "text/plain");
 }

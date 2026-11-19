@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00031(int argc, char **argv)
+void benchmark_test_00031(int, char **)
 {
-    std::string user_input = (argc > 2) ? std::string(argv[2]) : std::string();
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::string _out(_p);
-    delete[] _p;
-    std::cout << _out << std::endl;
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = cpp_own(user_input);
+    struct { int id; int flags; } _rec = { 0, 0 };
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
 }

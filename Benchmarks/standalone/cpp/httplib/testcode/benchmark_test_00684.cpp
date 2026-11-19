@@ -24,14 +24,19 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00684(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    std::string user_input = req.body;
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
+    std::string _picked = "report.pdf";
+    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
+    std::string safe = std::string("/var/app/data/") + _picked;
+    if (FILE *_f = std::fopen(safe.c_str(), "w")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,22 +22,24 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct pg_conn; typedef struct pg_conn PGconn;
+struct pg_result; typedef struct pg_result PGresult;
+extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
+extern "C" int PQstatus(const PGconn *);
+extern "C" void PQfinish(PGconn *);
+extern "C" PGresult *PQexec(PGconn *, const char *);
+extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
+extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00670(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
+    std::string user_input = req.get_header_value("Cookie");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
+    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
+    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
+    PQclear(_pgr);
+    PQfinish(_pgc);
     res.set_content("ok", "text/plain");
 }

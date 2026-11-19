@@ -6,15 +6,12 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/md5.h>
 
 void benchmark_test_00438(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    unsigned char _digest[16];
-    MD5((const unsigned char *)data, strlen(data), _digest);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(user_input, NULL, 10);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

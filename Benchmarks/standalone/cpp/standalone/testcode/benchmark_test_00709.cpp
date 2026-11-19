@@ -2,16 +2,15 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
 
 void benchmark_test_00709(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    struct { int id; int flags; } _rec;
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
 }

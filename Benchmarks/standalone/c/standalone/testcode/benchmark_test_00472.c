@@ -6,25 +6,16 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <sqlite3.h>
 
 void benchmark_test_00472(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
-    }
-    const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", user_input);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

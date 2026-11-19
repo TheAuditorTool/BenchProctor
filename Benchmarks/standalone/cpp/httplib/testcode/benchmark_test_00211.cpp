@@ -24,15 +24,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00211(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00211(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::string _ckval = data;
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
     res.set_content("ok", "text/plain");
 }

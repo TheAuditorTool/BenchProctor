@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <regex>
+
+struct sqlite3; struct sqlite3_stmt;
+extern "C" int sqlite3_open(const char *, sqlite3 **);
+extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
+extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
+extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
+extern "C" int sqlite3_step(sqlite3_stmt *);
+extern "C" int sqlite3_finalize(sqlite3_stmt *);
 
 void benchmark_test_00470(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
+    const char *user_input_env = std::getenv("API_RESPONSE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    std::string data = !user_input.empty() ? user_input : std::string();
+    sqlite3 *_db = nullptr;
+    sqlite3_open("app.db", &_db);
+    sqlite3_stmt *_st = nullptr;
+    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_st, nullptr);
+    sqlite3_bind_text(_st, 1, data.c_str(), -1, nullptr);
+    sqlite3_step(_st);
+    sqlite3_finalize(_st);
 }

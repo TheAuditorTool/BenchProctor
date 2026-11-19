@@ -1,29 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstring>
 
-typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
-extern "C" const EVP_CIPHER *EVP_des_ecb(void);
-extern "C" const EVP_CIPHER *EVP_rc4(void);
-extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
-extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
-extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
-extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
-
-void benchmark_test_00683(int, char **)
+void benchmark_test_00683(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
-    unsigned char _cout[512]; int _coutl = 0;
-    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
-    EVP_CIPHER_CTX_free(_ctx);
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
+    delete[] _p;
 }

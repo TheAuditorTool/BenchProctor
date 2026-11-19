@@ -2,15 +2,20 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
+#include <cstdlib>
+#include <climits>
 
 void benchmark_test_00637(int, char **)
 {
-    std::string user_input;
-    std::getline(std::cin, user_input);
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    const char *user_input_env = std::getenv("HTTP_ORIGIN");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string _joined = std::string("/var/app/data/") + data;
+    char _resolved[PATH_MAX];
+    if (!realpath(_joined.c_str(), _resolved)) return;
+    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) return;
+    std::string safe = _resolved;
+    std::remove(safe.c_str());
 }

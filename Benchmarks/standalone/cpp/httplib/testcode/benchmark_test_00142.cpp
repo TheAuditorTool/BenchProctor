@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,10 +26,20 @@ struct Client {
 };
 }
 
-void benchmark_test_00142(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00142(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string safe = std::regex_match(data, std::regex("^(plain|markdown|html|text)$")) ? data : std::string("plain");
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    char *_p = new char[user_input.size() + 1];
+    std::strcpy(_p, user_input.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
+    res.set_content("ok", "text/plain");
 }

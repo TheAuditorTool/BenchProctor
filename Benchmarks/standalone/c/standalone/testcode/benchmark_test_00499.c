@@ -7,16 +7,24 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
-
 void benchmark_test_00499(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    free(_p);
+    _p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    free(_p);
 }

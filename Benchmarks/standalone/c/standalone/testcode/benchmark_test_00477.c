@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
 void benchmark_test_00477(int argc, char **argv)
 {
@@ -23,16 +21,16 @@ void benchmark_test_00477(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
     }
+    int _vals[8];
+    int _idx = atoi(data) & 7;
+    printf("v=%d\n", _vals[_idx]);
 }

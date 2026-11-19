@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -31,8 +32,11 @@ void benchmark_test_00006(const httplib::Request &, httplib::Response &res)
     std::string data;
     std::string::size_type _w = 0;
     while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    char _dst[16];
+    size_t _n = data.size();
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    std::memcpy(_dst, data.c_str(), _n);
+    _dst[_n] = '\0';
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

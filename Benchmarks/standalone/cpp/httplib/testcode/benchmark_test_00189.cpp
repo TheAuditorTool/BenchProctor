@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,11 +26,8 @@ struct Client {
 void benchmark_test_00189(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.get_param_value("id");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    int _x = 0;
+    if (!user_input.empty()) _x = (int)user_input[0];
+    std::cout << (_x + (int)user_input.size()) << std::endl;
     res.set_content("ok", "text/plain");
 }

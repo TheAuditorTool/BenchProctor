@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <regex>
+#include <cstring>
+
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00677(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_REFERER");
+    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

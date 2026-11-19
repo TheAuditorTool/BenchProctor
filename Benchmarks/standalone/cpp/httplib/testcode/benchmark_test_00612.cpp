@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,13 +23,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00612(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
+    std::string user_input = req.get_header_value("Authorization");
+    std::string data = cpp_own(user_input);
+    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
+    std::string _picked = "report.pdf";
+    for (const char *_a : _allowed) if (data == _a) { _picked = _a; break; }
+    std::string safe = std::string("/var/app/data/") + _picked;
+    std::remove(safe.c_str());
     res.set_content("ok", "text/plain");
 }

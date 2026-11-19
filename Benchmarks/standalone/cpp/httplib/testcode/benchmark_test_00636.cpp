@@ -27,10 +27,9 @@ struct Client {
 
 void benchmark_test_00636(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
     unsigned char _rnd[16];
     int _fd = open("/dev/urandom", O_RDONLY);
     if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }

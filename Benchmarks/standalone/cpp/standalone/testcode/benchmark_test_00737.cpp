@@ -3,13 +3,13 @@
 #include <string>
 #include <cstdlib>
 
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
-
 void benchmark_test_00737(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(user_input.c_str()), user_input.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    struct { int id; int flags; } _rec = { 0, 0 };
+    _rec.id = std::atoi(data.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
 }

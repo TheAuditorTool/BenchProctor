@@ -3,7 +3,6 @@
 #include <string>
 #include <cstdio>
 #include <unistd.h>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,14 +24,14 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00329(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data = cpp_own(user_input);
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
     FILE *_p = popen(_cmd.c_str(), "r");
     if (_p) pclose(_p);
     res.set_content("ok", "text/plain");

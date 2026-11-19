@@ -9,19 +9,11 @@
 
 void benchmark_test_00386(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char *_dst = malloc(16);
-    if (_dst) { strcpy(_dst, data); printf("%s\n", _dst); free(_dst); }
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    snprintf(_dst, 32, "user=%s", data);
+    puts(_dst);
+    free(_dst);
 }

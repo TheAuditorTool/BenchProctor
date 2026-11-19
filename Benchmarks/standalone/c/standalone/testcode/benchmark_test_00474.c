@@ -13,10 +13,8 @@ void benchmark_test_00474(int argc, char **argv)
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
     char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    snprintf(data, sizeof(data), "%s", user_input);
+    srand((unsigned)time(NULL));
+    int _token = rand();
+    printf("token for %s: %d\n", data, _token);
 }

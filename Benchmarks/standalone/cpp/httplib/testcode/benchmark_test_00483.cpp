@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <fcntl.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,12 +24,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00483(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00483(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Authorization");
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << user_input << ": " << (int)_rnd[0] << std::endl;
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    int _x = 0;
+    if (!data.empty()) _x = (int)data[0];
+    std::cout << (_x + (int)data.size()) << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -2,21 +2,12 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-
-typedef void CURL;
-extern "C" CURL *curl_easy_init(void);
-extern "C" int curl_easy_setopt(CURL *, int, ...);
-extern "C" int curl_easy_perform(CURL *);
-extern "C" void curl_easy_cleanup(CURL *);
-enum { CURLOPT_URL = 10002, CURLOPT_SSL_VERIFYPEER = 64, CURLOPT_SSL_VERIFYHOST = 81, CURLOPT_SSL_VERIFYSTATUS = 232, CURLOPT_POSTFIELDS = 10015, CURLOPT_CUSTOMREQUEST = 10036, CURLOPT_WRITEFUNCTION = 20011, CURLOPT_WRITEDATA = 10001 };
+#include <unistd.h>
 
 void benchmark_test_00469(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_AUTHORIZATION");
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _hurl = user_input;
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, _hurl.c_str());
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    const char *_argv[] = { "/bin/echo", user_input.c_str(), nullptr };
+    execv("/bin/echo", const_cast<char *const *>(_argv));
 }

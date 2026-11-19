@@ -9,11 +9,20 @@
 
 void benchmark_test_00027(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char *_dst = malloc(16);
-    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
+    if (strchr(_p, ';') != NULL) { free(_p); return; }
+    free(_p);
 }

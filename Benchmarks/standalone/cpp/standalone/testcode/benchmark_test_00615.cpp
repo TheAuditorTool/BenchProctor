@@ -2,17 +2,19 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
-#include <regex>
+#include <cstdlib>
+#include <cstring>
 
-void benchmark_test_00615(int argc, char **argv)
+void benchmark_test_00615(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
-    if (!std::regex_match(data, _schema)) return;
-    std::string safe = data;
-    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
 }

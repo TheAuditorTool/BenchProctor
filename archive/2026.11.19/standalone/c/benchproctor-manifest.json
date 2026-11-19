@@ -1,0 +1,56 @@
+{
+  "benchmark": "benchproctor",
+  "frameworks": [
+    "standalone"
+  ],
+  "language": "c",
+  "scorer": {
+    "file": "score_sarif.py",
+    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+  },
+  "suites": {
+    "standalone": {
+      "categories": 16,
+      "csv_sha256": "54cbcc90ec038b92e02cddee523159e6bf21d0922590c8af29ab109bfd6b6a5e",
+      "expectedresults_csv": "expectedresults-2026.11.19.csv",
+      "prerequisites": [
+        {
+          "debian": "libssl-dev",
+          "fedora": "openssl-devel",
+          "files": 80,
+          "headers": [
+            "openssl/evp.h",
+            "openssl/md5.h",
+            "openssl/rand.h",
+            "openssl/sha.h"
+          ],
+          "library": "OpenSSL"
+        },
+        {
+          "debian": "libsqlite3-dev",
+          "fedora": "sqlite-devel",
+          "files": 40,
+          "headers": [
+            "sqlite3.h"
+          ],
+          "library": "SQLite 3"
+        },
+        {
+          "debian": "libcurl4-openssl-dev",
+          "fedora": "libcurl-devel",
+          "files": 22,
+          "headers": [
+            "curl/curl.h"
+          ],
+          "library": "libcurl"
+        }
+      ],
+      "published_files": 640,
+      "safe": 320,
+      "total": 640,
+      "vulnerable": 320
+    }
+  },
+  "tier": "curated",
+  "version": "2026.11.19"
+}

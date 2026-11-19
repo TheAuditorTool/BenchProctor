@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
 #include <regex>
 #include <unordered_map>
 
@@ -24,13 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00412(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    std::string data = cpp_own(user_input);
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    std::system(safe.c_str());
+    std::string user_input = req.get_param_value("multipart_field");
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
+    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _path = std::string("/var/app/data/") + safe;
+    std::remove(_path.c_str());
     res.set_content("ok", "text/plain");
 }

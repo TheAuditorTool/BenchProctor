@@ -6,24 +6,24 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <curl/curl.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00406(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
     const char *user_input = user_input_buf;
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    const char *data = c_passthrough(user_input);
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, data);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

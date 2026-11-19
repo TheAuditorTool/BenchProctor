@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <unistd.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,13 +23,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00079(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00079(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = cpp_own(user_input);
-    std::string _path = std::string("/var/app/data/") + data;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    std::cout << _buf[_i] << std::endl;
     res.set_content("ok", "text/plain");
 }

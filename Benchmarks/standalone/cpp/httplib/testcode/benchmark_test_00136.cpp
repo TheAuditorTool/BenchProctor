@@ -27,12 +27,12 @@ struct Client {
 void benchmark_test_00136(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
-    std::string _out(_p);
-    delete[] _p;
-    std::cout << _out << std::endl;
+    std::cout << _p << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -9,11 +9,17 @@
 
 void benchmark_test_00443(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
-    system(_cmd);
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

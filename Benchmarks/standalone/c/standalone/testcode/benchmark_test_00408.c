@@ -7,15 +7,17 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00408(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = c_passthrough(user_input);
+    const char *safe = data;
+    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) safe = "/bin/echo";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "%s", safe);
+    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
 }

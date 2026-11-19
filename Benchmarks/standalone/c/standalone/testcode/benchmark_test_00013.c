@@ -9,10 +9,15 @@
 
 void benchmark_test_00013(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    int _req = atoi(data);
-    int _alloc = _req + 1;
-    char *_buf = malloc((size_t)_alloc);
-    if (_buf) free(_buf);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    char *_dst = malloc(32);
+    if (_dst == NULL) return;
+    sprintf(_dst, "user=%s", user_input);
+    puts(_dst);
+    free(_dst);
 }

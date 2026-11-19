@@ -6,23 +6,28 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <regex.h>
 
 void benchmark_test_00608(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
     const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    unsigned int _sum = 0;
-    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
-    printf("%u\n", _sum);
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    regex_t _re;
+    const char *safe = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
+        regfree(&_re);
+    }
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "%s", safe);
+    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
 }

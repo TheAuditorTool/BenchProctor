@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,14 +28,19 @@ struct Client {
 
 void benchmark_test_00443(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    char *_p = new char[user_input.size() + 1];
+    std::strcpy(_p, user_input.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
     res.set_content("ok", "text/plain");
 }

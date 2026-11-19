@@ -22,30 +22,23 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
-extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
-extern "C" void xmlFreeDoc(xmlDocPtr);
-extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
-extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
-extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
-extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
-enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+struct pg_conn; typedef struct pg_conn PGconn;
+struct pg_result; typedef struct pg_result PGresult;
+extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
+extern "C" int PQstatus(const PGconn *);
+extern "C" void PQfinish(PGconn *);
+extern "C" PGresult *PQexec(PGconn *, const char *);
+extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
+extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00597(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
-    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
-    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
-    std::string _xexpr = std::string("/users/user[@name='") + data + "']";
-    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
-    if (_xobj) xmlXPathFreeObject(_xobj);
-    xmlXPathFreeContext(_xctx);
-    xmlFreeDoc(_xdoc);
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string data = !user_input.empty() ? user_input : std::string();
+    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
+    const char *_pgvals[1] = { data.c_str() };
+    PGresult *_pgr = PQexecParams(_pgc, "SELECT * FROM users WHERE name = $1", 1, nullptr, _pgvals, nullptr, nullptr, 0);
+    PQclear(_pgr);
+    PQfinish(_pgc);
     res.set_content("ok", "text/plain");
 }

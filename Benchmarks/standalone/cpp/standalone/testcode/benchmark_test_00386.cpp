@@ -2,15 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
 
-void benchmark_test_00386(int, char **)
+void benchmark_test_00386(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
     std::string data = user_input;
     for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_dst = new char[16];
-    std::strcpy(_dst, data.c_str());
-    delete[] _dst;
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
 }

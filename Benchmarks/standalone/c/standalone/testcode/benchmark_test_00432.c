@@ -9,11 +9,9 @@
 
 void benchmark_test_00432(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const int _unit_cents = 1999;
+    int _qty = atoi(user_input);
+    int _total = _qty * _unit_cents;
+    printf("total=%d\n", _total);
 }

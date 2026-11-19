@@ -10,12 +10,20 @@
 void benchmark_test_00079(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
-    system(_cmd);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    struct { int id; int flags; } _rec;
+    _rec.id = atoi(data);
+    printf("%d %d\n", _rec.id, _rec.flags);
 }

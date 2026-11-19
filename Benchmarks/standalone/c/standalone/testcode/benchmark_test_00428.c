@@ -6,20 +6,13 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <openssl/sha.h>
 
 void benchmark_test_00428(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    _p = NULL;
-    if (_p) printf("%s\n", _p);
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)user_input, strlen(user_input), _digest);
 }

@@ -2,15 +2,15 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
+#include <ctime>
 
 void benchmark_test_00726(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char *_p = new char[user_input.size() + 1];
-    std::strcpy(_p, user_input.c_str());
-    std::string _out(_p);
-    delete[] _p;
-    std::cout << _out << std::endl;
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
 }

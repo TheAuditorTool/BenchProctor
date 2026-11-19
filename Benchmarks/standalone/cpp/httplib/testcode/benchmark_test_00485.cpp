@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <unistd.h>
 #include <regex>
 #include <unordered_map>
 
@@ -26,8 +28,13 @@ struct Client {
 
 void benchmark_test_00485(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Forwarded-For");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string safe = std::regex_match(data, std::regex("^(plain|markdown|html|text)$")) ? data : std::string("plain");
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
+    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
+    FILE *_p = popen(_cmd.c_str(), "r");
+    if (_p) pclose(_p);
+    res.set_content("ok", "text/plain");
 }

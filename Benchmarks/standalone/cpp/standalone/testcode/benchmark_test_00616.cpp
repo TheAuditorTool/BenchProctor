@@ -2,17 +2,15 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
-
-struct Payload { std::string value; };
 
 void benchmark_test_00616(int, char **)
 {
-    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    const int _unit_cents = 1999;
+    int _qty = std::atoi(data.c_str());
+    int _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
 }

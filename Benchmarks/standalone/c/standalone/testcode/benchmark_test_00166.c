@@ -7,15 +7,22 @@
 #include <stdint.h>
 #include <time.h>
 
+#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
+
 void benchmark_test_00166(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
     char *_p = malloc(strlen(data) + 1);
     if (_p == NULL) return;
     strcpy(_p, data);
-    free(_p);
+    char *_cleanup_ptr = _p;
     printf("%s\n", _p);
+    FREE_AND_NULL(_p);
+    _cleanup_ptr = NULL;
+    if (_cleanup_ptr) free(_cleanup_ptr);
 }
