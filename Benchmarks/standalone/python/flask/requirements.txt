@@ -1,0 +1,17 @@
+Markdown==3.6
+bleach==6.1.0
+cryptography==42.0.7
+defusedxml==0.7.1
+flask==3.0.3
+grpcio==1.63.0
+jsonschema==4.22.0
+lxml==5.2.2
+marshmallow==3.21.3
+pika==1.3.2
+pycryptodome==3.20.0
+pydantic==2.7.1
+python-ldap==3.4.4
+pyyaml==6.0.1
+redis==5.0.4
+requests==2.32.3
+sqlalchemy==2.0.30

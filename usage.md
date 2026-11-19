@@ -41,8 +41,11 @@ Benchmarks/standalone/<language>/
     expectedresults-2026.11.19.csv   the answer key for this framework
 ```
 
-Some frameworks also carry the build files their toolchain needs next to `testcode/`, for example
-`pom.xml` for Java. They hold no labels.
+Every framework folder except C, C++ and Bash also carries its language's dependency manifest next
+to `testcode/`, listing the packages its cases import: `pom.xml`, `go.mod`, `Cargo.toml`,
+`requirements.txt`, `package.json`, `composer.json` or `Gemfile`. Install from it when your tool
+resolves types or you want to run a case. Some frameworks carry other build files their toolchain
+needs, such as `tsconfig.json`. None of them hold labels.
 
 Compiling some C and C++ cases needs a library's development headers (SQLite, libcurl and OpenSSL
 for C; hiredis and the RabbitMQ C client for C++), because neither standard library has an SQL,

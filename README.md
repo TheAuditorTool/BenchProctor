@@ -275,16 +275,20 @@ labels can be inferred.
 ## Layout and integrity
 
 Release 2026.11.19 is published as plain files under `Benchmarks/`: one folder per language under
-`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 25,721
+`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 25,732
 files in all (45.6 MiB). `Benchmarks/SHASUMS256.txt` lists the SHA-256 of every file; from
 `Benchmarks/`, `sha256sum -c SHASUMS256.txt` checks them all.
 
 Each standalone language folder holds a `testcode/` directory for each framework, the
 `expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
 `benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums of the answer key
-and the scorer, and the libraries the C and C++ cases include), and a README. The applications
-folder holds one directory per service graph with its `applications/`, its two answer-key CSVs,
-and `score_apps.py`.
+and the scorer, and the libraries the C and C++ cases include), and a README. Each framework folder
+also carries its language's dependency manifest, derived from what its cases import: `pom.xml`
+(Java), `go.mod` (Go), `Cargo.toml` (Rust), `requirements.txt` (Python), `package.json`
+(JavaScript, TypeScript), `composer.json` (PHP) or a `Gemfile` (Ruby), so a tool that resolves
+types can install exactly the packages the cases use. The applications folder holds one directory
+per service graph with its `applications/`, its two answer-key CSVs, and `score_apps.py`; every
+service carries its own Dockerfile and dependency manifest.
 
 Earlier releases are kept whole under [`archive/`](archive/), one folder per release, each with
 its own `SHASUMS256.txt`. Release 2026.11.16 was published as one zip per bundle; it is kept there

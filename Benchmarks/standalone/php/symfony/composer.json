@@ -1,0 +1,14 @@
+{
+  "name": "benchproctor/symfony",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "doctrine/dbal": "^4.0",
+    "doctrine/orm": "^3.0",
+    "erusev/parsedown": "^1.7",
+    "ezyang/htmlpurifier": "^4.17",
+    "symfony/framework-bundle": "^7.0",
+    "symfony/validator": "^7.0",
+    "symfony/yaml": "^7.0"
+  }
+}

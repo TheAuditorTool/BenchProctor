@@ -1,0 +1,29 @@
+{
+  "name": "benchproctor-javascript-koa",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@koa/router": "^12.0.1",
+    "@prisma/client": "^5.14.0",
+    "@xmldom/xmldom": "^0.8.10",
+    "amqplib": "^0.10.4",
+    "better-sqlite3": "^11.1.2",
+    "drizzle-orm": "^0.30.10",
+    "isomorphic-dompurify": "^2.11.0",
+    "joi": "^17.13.1",
+    "knex": "^3.1.0",
+    "koa": "^2.15.3",
+    "koa-bodyparser": "^4.4.1",
+    "ldapjs": "^3.0.7",
+    "libxmljs": "^1.0.11",
+    "marked": "^12.0.2",
+    "node-serialize": "^0.0.4",
+    "pg": "^8.11.5",
+    "pg-hstore": "^2.3.4",
+    "redis": "^4.6.13",
+    "sequelize": "^6.37.3",
+    "typeorm": "^0.3.20",
+    "xpath": "^0.0.34",
+    "zod": "^3.23.8"
+  }
+}

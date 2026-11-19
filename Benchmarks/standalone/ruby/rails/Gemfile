@@ -1,0 +1,11 @@
+source "https://rubygems.org"
+
+gem "activemodel", "~> 7.1"
+gem "bunny", "~> 2.22"
+gem "net-ldap", "~> 0.19"
+gem "nokogiri", "~> 1.16"
+gem "rails", "~> 7.1"
+gem "redcarpet", "~> 3.6"
+gem "redis", "~> 5.2"
+gem "sanitize", "~> 6.1"
+gem "sqlite3", "~> 2.0"

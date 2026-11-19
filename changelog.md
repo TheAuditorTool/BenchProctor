@@ -28,6 +28,10 @@ as plain files instead of zips. Every folder under `Benchmarks/` carries this ve
 
 ### Added
 
+- **Dependency manifests for every standalone framework.** Each Python, JavaScript, TypeScript, PHP
+  and Ruby framework folder carries `requirements.txt`, `package.json`, `composer.json` or a
+  `Gemfile`, derived from what its cases import, as Java, Go and Rust already did with `pom.xml`,
+  `go.mod` and `Cargo.toml`. A tool that resolves types can install exactly what the cases use.
 - Each standalone folder's README and `benchproctor-manifest.json` list the third-party libraries
   its C and C++ cases include, with their Fedora and Debian packages.
 

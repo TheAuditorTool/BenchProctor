@@ -1,0 +1,11 @@
+{
+  "name": "benchproctor/laravel",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "erusev/parsedown": "^1.7",
+    "ezyang/htmlpurifier": "^4.17",
+    "laravel/framework": "^12.61.1",
+    "symfony/yaml": "^7.0"
+  }
+}
