@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
+import * as nodeUtil from "util";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,12 +20,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00042")
-  async BenchmarkTest00042(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const data = String(userInput).split(/[ \t]+/).join(" ");
-    const requested = parseInt(data, 10);
-    const wrapped = (requested + 1) | 0;
-    const buf = Buffer.alloc(wrapped);
-    return { allocated: buf.length };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00042(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = nodeUtil.format("%s", userInput);
+    const token = crypto.randomInt(2 ** 47).toString(36) + crypto.randomInt(2 ** 47).toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

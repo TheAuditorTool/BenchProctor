@@ -11,15 +11,9 @@ class BenchmarkTest00172Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00172
-    user_input = request.user_agent.to_s
-    data = sprintf("%s", user_input)
-    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
-    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
-      render json: { error: "forbidden" }, status: 403
-      return
-    end
-    checked_path = resolved
-    File.delete(checked_path)
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    data = user_input ? user_input : ''
+    cookies[:session] = { value: data, httponly: true, same_site: :strict }
     render json: { status: "ok" }
   end
 end

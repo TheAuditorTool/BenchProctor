@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 
 
 app = Flask(__name__)
@@ -17,11 +17,11 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00231", methods=["POST"])
-def BenchmarkTest00231():
-    auth_header = request.headers.get('Authorization', '')
+@app.route("/BenchmarkTest00231/<path_param>", methods=["POST"])
+def BenchmarkTest00231(path_param):
+    path_value = path_param
     def normalize(value):
         return value.strip()
-    data = normalize(auth_header)
+    data = normalize(path_value)
     os.system('echo ' + str(data))
     return jsonify({"result": "success"})

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from app_runtime import db
+import subprocess
+from fastapi import Form
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -20,9 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00199")
-async def BenchmarkTest00199(request: Request):
-    forwarded_ip = request.headers.get('x-forwarded-for', '')
-    data = '%s' % str(forwarded_ip)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+async def BenchmarkTest00199(request: Request, field: str = Form('')):
+    field_value = field
+    data = '{}'.format(field_value)
+    subprocess.run(['echo', data], shell=False)
+    return {"updated": True}

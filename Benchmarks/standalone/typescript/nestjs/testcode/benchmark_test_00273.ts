@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe, BadRequestException } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import { IsString } from "class-validator";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,15 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00273")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00273(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const data = String(userInput).replace(/\u0000/g, "");
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+  async BenchmarkTest00273(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    fs.unlinkSync("/var/app/data/" + data);
+    return { created: true };
   }
 }

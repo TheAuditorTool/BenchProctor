@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
 import os
+import jsonschema
 
 
 def BenchmarkTest00113(request):
-    user_id = request.GET.get('id', '')
-    data = str(user_id).replace('\x00', '')
-    os.system('echo ' + str(data))
+    raw_body = request.body.decode('utf-8')
+    data = raw_body if raw_body else 'default'
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.%\\-]+$"})
+    except jsonschema.ValidationError:
+        return JsonResponse({'error': 'invalid input'}, status=400)
+    processed = data
+    os.system('echo ' + str(processed))
     return JsonResponse({"saved": True})

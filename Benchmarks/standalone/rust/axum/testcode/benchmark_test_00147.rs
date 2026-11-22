@@ -1,15 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00147(body: Bytes) -> impl IntoResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = String::from_utf8_lossy(xml_value.as_bytes()).to_string();
-    use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
-    let iv: [u8; 8] = rand::random();
-    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec_mut::<Pkcs7>(data.as_bytes())).unwrap_or_default();
-    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+pub async fn benchmark_test_00147() -> impl IntoResponse {
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    let _prefix: String = comment_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
+    let data = match _prefix.as_str() {
+        "h" => comment_value.to_lowercase(),
+        "f" => comment_value.to_uppercase(),
+        _ => comment_value.trim().to_string(),
+    };
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    use hmac::Mac;
+    let data_key = hex::decode(std::env::var("DATA_ENCRYPTION_KEY").unwrap_or_default()).unwrap_or_default();
+    let mac_key = hex::decode(std::env::var("DATA_MAC_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 16] = rand::random();
+    if let Ok(_aes) = cbc::Encryptor::<aes::Aes256>::new_from_slices(&data_key, &iv) {
+        let _sealed = _aes.encrypt_padded_vec::<Pkcs7>(data.as_bytes());
+        let mut _ciphertext = iv.to_vec();
+        _ciphertext.extend_from_slice(&_sealed);
+        if let Ok(mut _mac) = <hmac::Hmac<sha2::Sha256> as hmac::KeyInit>::new_from_slice(&mac_key) {
+            _mac.update(&_ciphertext);
+            _ciphertext.extend_from_slice(&_mac.finalize().into_bytes());
+            tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+        }
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

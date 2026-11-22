@@ -2,27 +2,21 @@
 package testcode
 
 import (
-	"fmt"
-	"io"
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
-	"os/exec"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00180(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
+	uaValue := c.GetHeader("User-Agent")
+	tokenLen, _ := strconv.Atoi(uaValue)
+	if tokenLen < 16 || tokenLen > 64 {
+		tokenLen = 32
 	}
-	rawBody := string(rawBytes)
-	data := fmt.Sprintf("%s", rawBody)
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Data(200, "text/plain", output)
+	buf := make([]byte, tokenLen)
+	rand.Read(buf)
+	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
 }

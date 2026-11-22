@@ -9,18 +9,15 @@
 
 void benchmark_test_00111(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
     char _dst[16];
-    if (strlen(data) < sizeof(_dst)) strcpy(_dst, data);
-    else _dst[0] = '\0';
+    size_t _n = strlen(data);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
     printf("%s\n", _dst);
 }

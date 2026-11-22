@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.xpath.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -34,13 +33,24 @@ public class BenchmarkTest00173 {
     @GET
     @Path("/BenchmarkTest00173")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00173(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        java.util.function.Supplier<String> valueSupplier = () -> authHeader.strip();
-        String data = valueSupplier.get();
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+    public Response BenchmarkTest00173(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String prefix = cookieValue.length() > 0 ? cookieValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = cookieValue.toLowerCase(); break;
+            case "f": data = cookieValue.toUpperCase(); break;
+            default: data = cookieValue.strip(); break;
+        }
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
+        String targetUrl = data;
+        org.apache.hc.client5.http.classic.methods.HttpGet fetchRequest = new org.apache.hc.client5.http.classic.methods.HttpGet(targetUrl);
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient fetchClient = org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            int fetchStatus = fetchClient.execute(fetchRequest, fetchResponse -> fetchResponse.getCode());
+            response.setHeader("X-Fetch-Status", String.valueOf(fetchStatus));
+        }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

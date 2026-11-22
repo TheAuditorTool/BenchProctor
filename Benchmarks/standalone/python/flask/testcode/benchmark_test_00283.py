@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
 import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from flask import Flask, session
+from dataclasses import dataclass
+from flask import request, jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,8 +27,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00283", methods=["POST"])
 def BenchmarkTest00283():
-    xml_value = request.get_data(as_text=True)
-    data = '{}'.format(xml_value)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    user_id = request.args.get('id', '')
+    form = FormData(payload=user_id)
+    data = form.payload
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    session['data'] = str(processed)
+    return jsonify({"result": "success"})

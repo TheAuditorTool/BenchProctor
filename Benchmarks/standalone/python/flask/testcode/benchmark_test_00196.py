@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
-from flask import Flask, request, jsonify
+from http.cookies import SimpleCookie
+from flask import Flask, make_response
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,7 +22,15 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00196", methods=["POST"])
 def BenchmarkTest00196():
-    referer_value = request.headers.get('Referer', '')
-    data = (lambda v: v.strip())(referer_value)
-    os.unlink('/var/app/data/' + str(data))
-    return jsonify({"result": "success"})
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    pending = list(str(forwarded_ip).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers.add('Set-Cookie', cookie['session'].OutputString())
+    return resp

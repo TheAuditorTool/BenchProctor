@@ -7,14 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_payload { const char *value; };
+
 void benchmark_test_00155(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    char *_found = strchr(user_input, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    free(_p);
+    _p = NULL;
+    if (_p) printf("%s\n", _p);
 }

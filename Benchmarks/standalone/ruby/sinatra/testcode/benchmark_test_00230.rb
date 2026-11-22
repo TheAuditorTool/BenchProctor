@@ -18,9 +18,10 @@ class BenchmarkTest00230 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00230" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    data = format("%<value>s", value: user_input)
-    token = rand(1000000)
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    data = "%s" % user_input
+    cookie_value = Rack::Utils.escape(data.to_s)
+    headers["Set-Cookie"] = "session=" + cookie_value + "; Path=/; Secure; HttpOnly; SameSite=Strict"
     content_type :json
     JSON.generate({ status: "ok" })
   end

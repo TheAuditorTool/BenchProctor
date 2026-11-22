@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
@@ -19,14 +19,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00236")
-  async BenchmarkTest00236(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
+  async BenchmarkTest00236(): Promise<unknown> {
+    const userInput = (await shared.mq.receive("app-events"));
+    const data = String(userInput).replace(/\u0000/g, "");
+    await db.query("SELECT * FROM users WHERE id = $1", [data]);
     return { created: true };
   }
 }

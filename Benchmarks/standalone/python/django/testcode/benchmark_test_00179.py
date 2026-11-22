@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.shortcuts import redirect
+from django.http import JsonResponse
+import requests
+import base64
+import pickle
 
 
 def BenchmarkTest00179(request):
-    user_id = request.GET.get('id', '')
-    if user_id:
-        data = user_id
-    else:
-        data = ''
-    return redirect(str(data))
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    pickle.loads(base64.b64decode(data))
+    return JsonResponse({"saved": True})

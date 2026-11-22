@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
 
 class BenchmarkTest00107 < Sinatra::Base
   before do
@@ -19,10 +18,10 @@ class BenchmarkTest00107 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00107" do
-    user_input = ENV["APP_INPUT"] || ""
-    data = "#{user_input}"
-    token = SecureRandom.hex(32)
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = format("%<value>s", value: user_input)
+    content = File.read("/var/app/data/" + data)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

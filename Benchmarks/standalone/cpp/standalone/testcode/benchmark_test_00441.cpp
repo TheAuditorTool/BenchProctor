@@ -3,16 +3,25 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+#include <unistd.h>
 
 void benchmark_test_00441(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    const char *user_input_env = std::getenv("QUERY_STRING");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
-    char *_dst = new char[32];
-    std::snprintf(_dst, 32, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string arg;
+    for (char _c : data) {
+        if (_c == '&') arg += "&amp;";
+        else if (_c == '<') arg += "&lt;";
+        else if (_c == '>') arg += "&gt;";
+        else if (_c == '"') arg += "&quot;";
+        else if (_c == '\'') arg += "&#39;";
+        else arg.push_back(_c);
+    }
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>";
+    std::fputs("Content-Type: text/html\r\n\r\n", stdout);
+    std::fwrite(_html.data(), 1, _html.size(), stdout);
 }

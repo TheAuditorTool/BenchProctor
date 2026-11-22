@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const fs = require("fs");
 
 const BenchmarkTest00152 = async (ctx) => {
-  const userInput = (ctx.request.files && ctx.request.files.file && ctx.request.files.file.name) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const { DataSource } = require("typeorm");
-  const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
-  await _dataSource.initialize();
-  await _dataSource.query("SELECT * FROM users WHERE id = '" + data + "'");
-  ctx.body = { ack: true };
+  const userInput = ctx.request.headers.referer || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const fileContent = fs.readFileSync("/var/app/data/" + data, "utf8");
+  ctx.body = fileContent;
 }
 
 module.exports = { BenchmarkTest00152 };

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
+from starlette.responses import StreamingResponse
 from app_runtime import db
 from fastapi.responses import JSONResponse
 
@@ -22,10 +22,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00082")
 async def BenchmarkTest00082(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
     parts = []
-    for token in str(comment_value).split(','):
+    for token in str(db_value).split(','):
         parts.append(token.strip())
     data = ','.join(parts)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+    return StreamingResponse(iter(['<div>' + str(data) + '</div>']), media_type='text/html')

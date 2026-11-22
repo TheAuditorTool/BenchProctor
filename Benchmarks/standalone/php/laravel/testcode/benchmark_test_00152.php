@@ -2,18 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 class BenchmarkTest00152Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        if (!preg_match('#^[a-zA-Z0-9 _.%\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        shell_exec('bash -c "grep -r ' . $processed . ' /var/app/logs"');
+        $userInput = getenv('APP_INPUT') ?: '';
+        $data = str_replace("\0", '', $userInput);
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        $pipes = [];
+        $snippet = proc_open([PHP_BINARY, '-r', (string)$parsedBool], [1 => ['pipe', 'w']], $pipes);
+        $result = stream_get_contents($pipes[1]);
+        proc_close($snippet);
         return response()->json(['ok' => 1]);
     }
 }

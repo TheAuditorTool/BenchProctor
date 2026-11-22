@@ -1,16 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ldap
-import re
-import os
+import secrets
+from app_runtime import db
 
 
 def BenchmarkTest00177(request):
     multipart_value = request.POST.get('multipart_field', '')
-    data = (lambda v: v.strip())(multipart_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return JsonResponse({'error': 'forbidden'}, status=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return JsonResponse({"saved": True})
+    if multipart_value:
+        data = multipart_value
+    else:
+        data = ''
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JsonResponse({'token': str(token)}, status=200)

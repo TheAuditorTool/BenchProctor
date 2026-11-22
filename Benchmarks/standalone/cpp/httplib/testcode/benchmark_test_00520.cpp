@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstring>
-#include <unistd.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,22 +25,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00520(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00520(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    size_t _n = user_input.size();
-    char *_p = new char[_n + 1];
-    std::memcpy(_p, user_input.c_str(), _n + 1);
-    std::cout << _p << std::endl;
-    std::memset(_p, 0, _n + 1);
-    delete[] _p;
+    std::string user_input = req.get_header_value("User-Agent");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    std::cout << _buf[_i] << std::endl;
     res.set_content("ok", "text/plain");
 }

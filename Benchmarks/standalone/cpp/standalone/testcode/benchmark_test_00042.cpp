@@ -5,9 +5,6 @@
 #include <cstring>
 #include <unistd.h>
 
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
-
 void benchmark_test_00042(int, char **)
 {
     std::string user_input;
@@ -19,10 +16,12 @@ void benchmark_test_00042(int, char **)
         }
         std::fclose(_fp);
     }
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    char _dst[32];
-    std::snprintf(_dst, sizeof(_dst), "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) return;
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

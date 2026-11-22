@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from app_runtime import db
+from flask import Flask, request, jsonify
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 app = Flask(__name__)
@@ -17,11 +20,10 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00268/<path_param>", methods=["POST"])
-def BenchmarkTest00268(path_param):
-    path_value = path_param
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+@app.route("/BenchmarkTest00268", methods=["POST"])
+def BenchmarkTest00268():
+    origin_value = request.headers.get('Origin', '')
+    data = (lambda v: v.strip())(origin_value)
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return jsonify({'length': len(ciphertext)}), 200

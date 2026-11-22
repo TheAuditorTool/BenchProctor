@@ -20,16 +20,19 @@ public class BenchmarkTest00075 {
     }
 
     @GetMapping("/BenchmarkTest00075")
-    public void BenchmarkTest00075(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        java.util.Map.Entry<String,String> pair = java.util.Map.entry(cookieValue, "query");
-        String data = pair.getKey();
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public void BenchmarkTest00075(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data;
+        try { data = String.valueOf(Integer.parseInt(uaValue)); }
+        catch (NumberFormatException e) { data = uaValue; }
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher blockMode = new org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher(org.bouncycastle.crypto.engines.AESEngine.newInstance());
+        blockMode.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[blockMode.getOutputSize(plain.length)];
+        int sealedLen = blockMode.processBytes(plain, 0, plain.length, sealed, 0);
+        sealedLen += blockMode.doFinal(sealed, sealedLen);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(java.util.Arrays.copyOf(sealed, sealedLen)));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
+import numpy as np
 from flask import Flask, request, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,10 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00068", methods=["POST"])
 def BenchmarkTest00068():
-    user_id = request.args.get('id', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(user_id)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    multipart_value = request.form.get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    quantity = int(str(data))
+    total_cents = np.int32(quantity) * np.int32(1999)
+    return jsonify({'total_cents': int(total_cents)}), 200

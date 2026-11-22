@@ -18,14 +18,10 @@ class BenchmarkTest00023 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00023" do
-    user_input = request.cookies["session_token"].to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    Marshal.load(data)
+    user_input = ENV["APP_INPUT"] || ""
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    redirect data
     content_type :json
     JSON.generate({ status: "ok" })
   end

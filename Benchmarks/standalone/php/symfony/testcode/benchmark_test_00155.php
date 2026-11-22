@@ -2,18 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00155', methods: ['POST'])]
 class BenchmarkTest00155Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->request->get('multipart_field', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        $request->getSession()->set('data', (string) $data);
+        $userInput = getenv('APP_INPUT') ?: '';
+        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
+        catch (\JsonException $e) { $data = $userInput; }
+        $_coerced = (float)$data;
+        $processed = $_coerced;
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $processed . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
         return new JsonResponse(["committed" => true]);
     }
 }

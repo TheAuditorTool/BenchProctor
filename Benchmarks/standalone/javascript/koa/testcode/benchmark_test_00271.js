@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
+const jsYaml = require("js-yaml");
 
 const BenchmarkTest00271 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const fileContent = fs.readFileSync("/var/app/data/" + data, "utf8");
-  ctx.body = fileContent;
+  const userInput = (ctx.request.body && ctx.request.body.field) || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  const jsYamlJsTypes = require("js-yaml-js-types");
+  const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) });
+  ctx.body = { title: String(reportSpec?.title ?? "") }; return;
 }
 
 module.exports = { BenchmarkTest00271 };

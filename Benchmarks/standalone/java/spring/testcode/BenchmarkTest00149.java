@@ -19,16 +19,36 @@ public class BenchmarkTest00149 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00149")
-    public void BenchmarkTest00149(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : fieldValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.%\\-]+$") String value) {}
-        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
-        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { response.sendError(400, "schema invalid"); return; }
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GetMapping("/BenchmarkTest00149")
+    public void BenchmarkTest00149(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        String data = userName.isEmpty() ? "default" : userName;
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        int quantity = boundedVal;
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { response.sendError(422, "order exceeds credit limit"); return; }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

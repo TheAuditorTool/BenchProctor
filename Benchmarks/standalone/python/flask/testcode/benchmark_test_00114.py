@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from flask import Flask, jsonify
-import os
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -18,10 +16,15 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00114/<path_param>", methods=["POST"])
-def BenchmarkTest00114(path_param):
-    path_value = path_param
-    data = ' '.join(str(path_value).split())
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return jsonify({"result": "success"})
+@app.route("/BenchmarkTest00114", methods=["POST"])
+def BenchmarkTest00114():
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data, _sep, _rest = str(forwarded_ip).partition('\x00')
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return jsonify({'allocated': allocated}), 200

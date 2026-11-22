@@ -21,12 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00053/{id}")
-async def BenchmarkTest00053(request: Request, id: str):
-    path_value = id
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    request.session['data'] = str(processed)
+@app.post("/BenchmarkTest00053")
+async def BenchmarkTest00053(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    request.session.update({'data': str(auth_header)})
     return {"updated": True}

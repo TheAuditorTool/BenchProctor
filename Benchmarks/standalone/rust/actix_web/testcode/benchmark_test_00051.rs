@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
+use base64::Engine;
+use base64::engine::general_purpose;
 
 #[actix_web::post("/benchmark_test_00051")]
 pub async fn benchmark_test_00051(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    struct FormData { payload: String }
-    let data = FormData { payload: referer_value.clone() }.payload;
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&cookie_value).unwrap_or_default()).to_string();
+    reqwest::get(&data).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

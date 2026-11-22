@@ -20,18 +20,16 @@ public class BenchmarkTest00086 {
     }
 
     @GetMapping("/BenchmarkTest00086")
-    public void BenchmarkTest00086(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        String data = String.format("%s", hostValue);
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    public void BenchmarkTest00086(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        java.util.Properties container = new java.util.Properties();
+        container.setProperty("value", userId);
+        String data = container.getProperty("value", "");
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
+        String targetUrl = data;
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.setHeader("Location", targetUrl);
     }
 }

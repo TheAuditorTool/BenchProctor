@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as crypto from "crypto";
+import * as shared from "./shared";
+const { db } = shared;
+import * as vm from "node:vm";
 
 export const BenchmarkTest00205 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body as string) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  vm.runInNewContext(String(data), { Math });
   res.json({ accepted: true });
 }

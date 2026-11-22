@@ -10,14 +10,8 @@
 void benchmark_test_00192(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
     char data[512];
     switch (user_input[0]) {
         case '\0':
@@ -27,9 +21,8 @@ void benchmark_test_00192(int argc, char **argv)
             snprintf(data, sizeof(data), "%s", user_input);
             break;
     }
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    fwrite(_buf, 1, _span, stdout);
-    putchar('\n');
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
 }

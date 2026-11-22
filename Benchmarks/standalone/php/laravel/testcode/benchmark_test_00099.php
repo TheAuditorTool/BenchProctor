@@ -8,12 +8,9 @@ class BenchmarkTest00099Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = vsprintf('%1$s', [$userInput]);
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return response()->json(['allocated' => $allocated], 200);
+        $userInput = $request->input('multipart_field', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $data, 'data_updated_at' => time()]);
+        return response()->json(['ok' => 1]);
     }
 }

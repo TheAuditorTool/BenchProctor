@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as libxmljs from "libxmljs";
+import { Controller, Post, Res } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { stringifySetCookie } from "cookie";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,11 +20,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00148")
-  async BenchmarkTest00148(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false } as libxmljs.XMLParseOptions);
+  async BenchmarkTest00148(@Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const [data] = String(userInput).split(',');
+    res.append(
+      "Set-Cookie",
+      stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict" }),
+    );
     return { created: true };
   }
 }

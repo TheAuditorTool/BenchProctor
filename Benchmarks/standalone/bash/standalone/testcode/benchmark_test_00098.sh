@@ -2,15 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00098() {
-  user_input="$(jq -r '.value // empty' 2>/dev/null)"
-  _prefix="${user_input:0:1}"
-  case "$_prefix" in
-    h|H) data=$(printf '%s' "${user_input}" | tr '[:upper:]' '[:lower:]');;
-    f|F) data=$(printf '%s' "${user_input}" | tr '[:lower:]' '[:upper:]');;
-    *) data="${user_input}";;
-  esac
-  coerced_float=$(printf "%.6f" "$data" 2>/dev/null) || { echo "invalid float" >&2; exit 1; }
-  xmllint --xpath "//user[name='$coerced_float']" /var/data/users.xml
+  user_input="$(sed -n 's/.*filename="\([^"]*\)".*/\1/p' | head -1)"
+  data=""
+  while IFS= read -r line || [ -n "$line" ]; do data+="$line"$'\n'; done <<< "$user_input"
+  data="${data%$'\n'}"
+  checked_path=$(realpath -m "/var/app/data/$data")
+  if [[ ! "$checked_path" == /var/app/data/* ]]; then echo "forbidden"; exit 1; fi
+  cat "$checked_path"
 }
 
 benchmark_test_00098 "$@"

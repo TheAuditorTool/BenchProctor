@@ -2,34 +2,24 @@
 package testcode
 
 import (
-	"context"
-	"io"
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 func BenchmarkTest00224(w http.ResponseWriter, r *http.Request) {
-	var msgValue string
-	_sqsOut, _sqsErr := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String("https://sqs.us-east-1.amazonaws.com/123456789012/app-events"),
-		MaxNumberOfMessages: 1,
-	})
-	if _sqsErr == nil && len(_sqsOut.Messages) > 0 {
-		msgValue = aws.ToString(_sqsOut.Messages[0].Body)
-	}
-	data := msgValue
-	if _, after, ok := strings.Cut(msgValue, ","); ok {
-		data = after
-	}
-	resp, err := http.Get(data)
+	multipartValue := r.FormValue("multipart_field")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", multipartValue)
+	data := relayBuilder.String()
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

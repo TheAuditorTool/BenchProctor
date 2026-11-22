@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, BadRequestException } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,15 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00217")
-  async BenchmarkTest00217(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+  async BenchmarkTest00217(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const data = `${userInput}`;
+    childProcess.execFileSync("echo", [data]);
+    return { created: true };
   }
 }

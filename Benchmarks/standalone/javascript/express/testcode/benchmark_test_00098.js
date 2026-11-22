@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
+const nodeUtil = require("util");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00098(req, res) {
-  const userInput = req.body.field || "";
-  const data = userInput != null ? userInput : '';
-  libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
+  const userInput = (req.files && req.files[0] && req.files[0].originalname) || "";
+  const data = nodeUtil.format("%s", userInput);
+  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+  xpath.select("//user[name='" + data + "']", xmlDoc);
   res.json({ done: true });
 }
 

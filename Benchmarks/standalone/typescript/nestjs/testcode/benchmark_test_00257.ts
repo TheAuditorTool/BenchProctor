@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as libxmljs from "libxmljs";
-import { IsString } from "class-validator";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import * as jsYamlJsTypes from "js-yaml-js-types";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,12 +18,14 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00257")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00257(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const data = String(userInput).replace(/\u0000/g, "");
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-    return { created: true };
+  @Post("BenchmarkTest00257/:id")
+  async BenchmarkTest00257(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

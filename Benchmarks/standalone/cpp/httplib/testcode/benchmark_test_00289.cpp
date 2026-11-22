@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
-#include <unistd.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,23 +24,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00289(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00289(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string data = !user_input.empty() ? user_input : std::string();
-    char _dst[16];
-    size_t _n = data.size();
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_header_value("Referer");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    const long _unit_cents = 1999;
+    long _qty = std::strtol(data.c_str(), nullptr, 10);
+    if (_qty < 0 || _qty > 100000) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

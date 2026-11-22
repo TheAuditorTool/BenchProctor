@@ -7,20 +7,22 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+struct c_payload { const char *value; };
 
 void benchmark_test_00488(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    printf("%s\n", _p);
-    if (strchr(_p, ';') != NULL) free(_p);
-    free(_p);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    const int _rec_size = 64;
+    int _count = atoi(data);
+    int _bytes = _count * _rec_size;
+    char *_recs = malloc((size_t)_bytes);
+    if (_recs) free(_recs);
 }

@@ -3,22 +3,30 @@ package testcode
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00055(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	data := graphqlVar
-	if _, after, ok := strings.Cut(graphqlVar, ","); ok {
-		data = after
+	rawBody := string(rawBytes)
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(rawBody), &parsed)
+	data, _ := parsed["value"].(string)
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		c.String(http.StatusBadRequest, "malformed order")
+		return
 	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	orderTotal := totalNode.InnerText()
+	c.JSON(http.StatusOK, map[string]string{"total": orderTotal})
 }

@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -33,15 +32,18 @@ public class BenchmarkTest00168 {
 
     @POST
     @Path("/BenchmarkTest00168")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00168(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(multipartValue)); }
-        catch (NumberFormatException e) { data = multipartValue; }
-        request.getSession().setAttribute("displayName", data);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00168(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(xmlValue);
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        int recordCount = boundedVal;
+        java.nio.ByteBuffer exportBuffer = java.nio.ByteBuffer.allocate(recordCount * 512);
+        response.setHeader("X-Export-Capacity", String.valueOf(exportBuffer.capacity()));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.utils.safestring import mark_safe
 from django.http import HttpResponse
-import base64
 
 
-def BenchmarkTest00089(request):
-    cookie_value = request.COOKIES.get('session_token', '')
-    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
+def BenchmarkTest00089(request, path_param):
+    path_value = path_param
+    data = ' '.join(str(path_value).split())
     return HttpResponse(mark_safe('<div>' + str(data) + '</div>'))

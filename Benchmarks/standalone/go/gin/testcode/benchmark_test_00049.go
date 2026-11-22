@@ -3,27 +3,27 @@ package testcode
 
 import (
 	"net/http"
-	"os/exec"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00049(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
+	refererValue := c.GetHeader("Referer")
+	var data string
+	if refererValue != "" {
+		data = refererValue
 	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+	proc, err := os.StartProcess("/bin/sh", []string{"sh", "-c", "echo " + data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	jsonValue := reqBody.Payload
-	var data string
-	if len(jsonValue) > 0 {
-		data = jsonValue
-	} else {
-		data = "default"
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	c.Data(200, "text/plain", output)
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

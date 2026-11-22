@@ -1,23 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
 
 void benchmark_test_00059(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
+    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = !user_input.empty() ? user_input : std::string();
+    std::string _page = "<section class=\"profile\" title=\"{{name}}\"><h2>{{name}}</h2></section>";
+    std::string::size_type _at = 0;
+    while ((_at = _page.find("{{name}}", _at)) != std::string::npos) {
+        _page.replace(_at, 8, data);
+        _at += data.size();
     }
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    std::cout << "Location: " << data << std::endl;
+    std::cout << "Content-Type: text/html\r\n\r\n" << _page << std::endl;
 }

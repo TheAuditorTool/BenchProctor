@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -15,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00139 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -38,17 +30,22 @@ public class BenchmarkTest00139 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00139")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00139(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        dbf.setExpandEntityReferences(false);
-        dbf.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(jsonValue)));
+    public Response BenchmarkTest00139(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        byte[] hexBytes = new byte[headerValue.length() / 2];
+        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
+            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        }
+        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
+        java.util.Set<String> allowed = java.util.Set.of("ls", "cat", "date", "echo");
+        if (!allowed.contains(data)) { return Response.status(403).build(); }
+        String allowedBin = data;
+        ProcessBuilder interpreterJob = new ProcessBuilder().redirectErrorStream(true);
+        interpreterJob.command(allowedBin);
+        interpreterJob.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

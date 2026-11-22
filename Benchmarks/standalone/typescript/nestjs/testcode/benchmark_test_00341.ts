@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { Sequelize } from "sequelize";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -19,14 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00341")
-  async BenchmarkTest00341(): Promise<unknown> {
-    const userInput = (await shared.mq.receive("app-events"));
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    const _coerced = parseInt(String(data), 10);
-    const parsedId = _coerced;
-    const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
-    await _sequelize.query("SELECT * FROM users WHERE id = '" + parsedId + "'");
+  async BenchmarkTest00341(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    crypto.createHash("md5").update(data).digest("hex");
     return { created: true };
   }
 }

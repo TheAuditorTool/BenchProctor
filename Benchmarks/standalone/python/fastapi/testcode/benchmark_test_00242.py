@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
-from starlette.responses import JSONResponse
-from app_runtime import db
+from starlette.responses import HTMLResponse
+from jinja2 import Environment
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -20,11 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00242/{id}")
-async def BenchmarkTest00242(request: Request, id: str):
-    path_value = id
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+@app.post("/BenchmarkTest00242")
+async def BenchmarkTest00242(request: Request):
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data = ' '.join(str(forwarded_ip).split())
+    page = Environment(autoescape=True).from_string('<div>{{ value|safe }}</div>').render(value=str(data))
+    return HTMLResponse(page)

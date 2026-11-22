@@ -11,18 +11,9 @@ class BenchmarkTest00286Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00286
-    user_input = request.referer.to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    system("echo " + processed)
-    render json: { status: "ok" }
+    user_input = request.headers["X-Forwarded-For"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    render html: ("<div>" + data + "</div>").html_safe
   end
 end

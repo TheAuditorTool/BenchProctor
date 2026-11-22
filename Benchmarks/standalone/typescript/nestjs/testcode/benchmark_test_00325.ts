@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as libxmljs from "libxmljs";
+import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +19,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00325")
-  async BenchmarkTest00325(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
+  async BenchmarkTest00325(@Headers("host") host: string): Promise<unknown> {
+    const userInput = host || "";
     let data;
     try { data = JSON.parse(userInput).value || userInput; }
     catch (e) { data = userInput; }
-    libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false } as libxmljs.XMLParseOptions);
+    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+    xpath.select("//user[name='" + processed + "']", xmlDoc);
     return { created: true };
   }
 }

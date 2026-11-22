@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import re
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -21,8 +28,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00062")
 async def BenchmarkTest00062(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = '{}'.format(raw_body)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    cookie_value = request.cookies.get('session_token', '')
+    data = RequestPayload(cookie_value).value
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
     return {"updated": True}

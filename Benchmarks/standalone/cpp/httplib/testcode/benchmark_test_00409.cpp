@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,17 +24,12 @@ struct Client {
 };
 }
 
-void benchmark_test_00409(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00409(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
-    delete[] _p;
+    std::string user_input = req.get_param_value("id");
+    const int _unit_cents = 1999;
+    int _qty = std::atoi(user_input.c_str());
+    int _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

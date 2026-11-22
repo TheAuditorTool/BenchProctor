@@ -10,15 +10,12 @@
 void benchmark_test_00183(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    FILE *_f = fopen(_path, "r");
-    if (_f) fclose(_f);
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

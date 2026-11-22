@@ -8,10 +8,9 @@ class BenchmarkTest00102Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        system('gzip -f /var/app/reports/' . (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Host', '');
+        [$data] = [$userInput, 'http'];
+        $sessionCookie = cookie('session', (string)$data, 0, '/', null, false, true, false, 'strict');
+        return response()->json(['ok' => 1])->withCookie($sessionCookie);
     }
 }

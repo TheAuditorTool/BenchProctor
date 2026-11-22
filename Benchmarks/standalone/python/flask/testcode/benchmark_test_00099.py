@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
+import ldap
 from flask import Flask, request, jsonify
+import os
 
 
 app = Flask(__name__)
@@ -19,9 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00099", methods=["POST"])
 def BenchmarkTest00099():
-    user_id = request.args.get('id', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(user_id)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    header_value = request.headers.get('X-Custom-Header', '')
+    if header_value:
+        data = header_value
+    else:
+        data = ''
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(data) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
+    return jsonify({"result": "success"})

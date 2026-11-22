@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
-from flask import Flask, jsonify
+import ldap
+from flask import Flask, request, jsonify
+import os
 
 
 app = Flask(__name__)
@@ -17,11 +18,10 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00323/<path_param>", methods=["POST"])
-def BenchmarkTest00323(path_param):
-    path_value = path_param
-    def normalize(value):
-        return value.strip()
-    data = normalize(path_value)
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
+@app.route("/BenchmarkTest00323", methods=["POST"])
+def BenchmarkTest00323():
+    origin_value = request.headers.get('Origin', '')
+    data = ' '.join(str(origin_value).split())
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
     return jsonify({"result": "success"})

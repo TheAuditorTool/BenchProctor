@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,14 +23,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00359")
-  async BenchmarkTest00359(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+  async BenchmarkTest00359(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const emailMatch = String(data).match(/@([A-Za-z0-9.-]+)$/);
+    if (!emailMatch) { throw new BadRequestException({ error: "not an email address" }); }
+    const domain = emailMatch[1];
+    return { domain };
   }
 }

@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import base64
+import ldap
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
+import os
 import re
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,11 +26,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00178")
-async def BenchmarkTest00178(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
+async def BenchmarkTest00178(request: Request, req: UserInput):
+    json_value = req.payload
+    data = str(json_value).replace('\x00', '')
     if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
         return JSONResponse({'error': 'forbidden'}, status_code=400)
     processed = data
-    exec(str(processed))
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
     return {"updated": True}

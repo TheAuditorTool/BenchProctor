@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
+require "cgi/escape"
 
 class BenchmarkTest00117 < Sinatra::Base
   before do
@@ -19,9 +19,9 @@ class BenchmarkTest00117 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00117" do
-    user_input = request.cookies["session_token"].to_s
-    data = "%s" % user_input
-    token = SecureRandom.hex(32)
+    user_input = params[:id].to_s
+    data = CGI.unescape(user_input)
+    JSON.parse(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

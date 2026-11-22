@@ -8,12 +8,9 @@ class BenchmarkTest00076Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->json('payload', '');
+        $data = vsprintf('%1$s', [$userInput]);
+        $digest = md5((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

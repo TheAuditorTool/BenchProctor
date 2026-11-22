@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+import urllib.request
+from urllib.parse import urlparse
+import json
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,6 +24,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00210")
 async def BenchmarkTest00210(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    request.session['data'] = str(ua_value)
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = json.loads(graphql_var).get('value', '')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return {"updated": True}

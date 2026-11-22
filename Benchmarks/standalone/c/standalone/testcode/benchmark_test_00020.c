@@ -9,14 +9,14 @@
 
 void benchmark_test_00020(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    size_t _n = strlen(data);
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    printf("%d\n", _mode);
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

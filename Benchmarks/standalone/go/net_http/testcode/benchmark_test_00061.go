@@ -2,26 +2,33 @@
 package testcode
 
 import (
-	"encoding/json"
+	"io"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00061(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	pending := strings.Split(jsonValue, ",")
+	cookieValue := cookieObj.Value
 	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	if cookieValue != "" {
+		data = cookieValue
 	}
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	upstreamReq, err := http.NewRequest(http.MethodGet, data, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

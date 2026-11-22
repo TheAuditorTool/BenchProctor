@@ -1,15 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
+import io
+import defusedxml.ElementTree
 from flask import Flask, jsonify
-import ctypes
+from app_runtime import db
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -27,8 +21,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00133", methods=["POST"])
 def BenchmarkTest00133():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = RequestPayload(env_value).value
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return jsonify({'wrapped': wrapped}), 200
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = f'{comment_value!s}'
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(data).encode()), events=('end',)):
+        element.clear()
+    return jsonify({"result": "success"})

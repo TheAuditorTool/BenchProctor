@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,12 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00049 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -26,16 +19,18 @@ public class BenchmarkTest00049 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00049")
-    public void BenchmarkTest00049(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String prefix = jsonValue.length() > 0 ? jsonValue.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = jsonValue.toLowerCase(); break;
-            case "f": data = jsonValue.toUpperCase(); break;
-            default: data = jsonValue.strip(); break;
+    @PostMapping(path="/BenchmarkTest00049", consumes="text/plain")
+    public void BenchmarkTest00049(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawData);
+        String data = root.path("value").asText();
+        java.util.Map<String, Object> sessionProfile = (java.util.Map<String, Object>) request.getSession().getAttribute("profile");
+        if (sessionProfile == null) {
+            sessionProfile = new java.util.concurrent.ConcurrentHashMap<>();
+            request.getSession().setAttribute("profile", sessionProfile);
         }
-        response.sendRedirect(data);
+        sessionProfile.putAll(java.util.Map.of("displayName", data));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

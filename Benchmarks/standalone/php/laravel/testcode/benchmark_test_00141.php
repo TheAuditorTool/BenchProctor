@@ -8,12 +8,9 @@ class BenchmarkTest00141Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Authorization', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $data = str_replace("\0", '', $userInput);
+        $sessionCookie = cookie('session', (string)$data, 0, '/', null, true, true, false, 'strict');
+        return response()->json(['ok' => 1])->withCookie($sessionCookie);
     }
 }

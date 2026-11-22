@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +23,17 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+extern "C" int RAND_priv_bytes(unsigned char *buf, int num);
 
-void benchmark_test_00280(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00280(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    std::string user_input = req.path_params.at("id");
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    unsigned char _rnd[16];
+    if (RAND_priv_bytes(_rnd, sizeof(_rnd)) != 1) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00348(req, res) {
-  const userInput = (req.body.variables && req.body.variables.input) || "";
-  const data = `${userInput}`;
-  crypto.createHash("sha256").update(data).digest("hex");
-  res.json({ done: true });
+  const userInput = req.headers.referer || "";
+  const data = nodeUtil.format("%s", userInput);
+  res.location(String(data)).sendStatus(303); return;
 }
 
 module.exports = { BenchmarkTest00348 };

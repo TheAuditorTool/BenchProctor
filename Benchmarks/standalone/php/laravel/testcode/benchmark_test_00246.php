@@ -2,18 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00246Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->cookie('session_token', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $result = DB::table('users')->where('id', $data)->first();
-        $value = $result->name;
-        return response()->json(['ok' => 1]);
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        return response('', 302)->header('Location', (string)$data);
     }
 }

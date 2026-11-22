@@ -11,11 +11,12 @@ class BenchmarkTest00162Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $checkedPath = '/var/app/data/' . basename($data);
-        file_put_contents((string)$checkedPath, 'data');
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('Authorization', '');
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        $requested = (int) $data;
+        $wrapped = unpack('l', pack('l', $requested + 1))[1];
+        return new JsonResponse(['wrapped' => $wrapped], 200);
     }
 }

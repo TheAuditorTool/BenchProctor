@@ -1,9 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from sqlalchemy import text
+from starlette.responses import JSONResponse
 import os
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = FastAPI()
 
@@ -22,7 +36,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00123")
 async def BenchmarkTest00123(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = '{}'.format(env_value)
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
+    ua_value = request.headers.get('user-agent', '')
+    data = '%s' % str(ua_value)
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _coerced
+    with Session(_engine) as _session:
+        _session.query(User).from_statement(text('SELECT * FROM users WHERE id = ' + str(processed))).all()
     return {"updated": True}

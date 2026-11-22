@@ -9,18 +9,12 @@
 
 void benchmark_test_00181(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    const int _unit_cents = 1999;
-    int _qty = atoi(data);
-    int _total = _qty * _unit_cents;
-    printf("total=%d\n", _total);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    unsigned int _sum = 0;
+    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
+    printf("%u\n", _sum);
 }

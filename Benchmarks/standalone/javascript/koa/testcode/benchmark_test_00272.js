@@ -2,8 +2,9 @@
 
 const BenchmarkTest00272 = async (ctx) => {
   const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const [data] = String(userInput).split(',');
-  eval(data);
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  ctx.cookies.set("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
   ctx.body = { ack: true };
 }
 

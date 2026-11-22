@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00224(req, res) {
-  const userInput = req.body || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
+  const userInput = req.headers.host || "";
+  const parts = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data = parts.join(',');
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + data + "']").select({ node: usersDoc });
   res.json({ done: true });
 }
 

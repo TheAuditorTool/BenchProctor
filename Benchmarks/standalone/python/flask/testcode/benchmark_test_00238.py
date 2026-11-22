@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-from flask import Flask, request, jsonify
-import re
+from flask import Flask, jsonify
+import os
+from sqlalchemy import create_engine
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = Flask(__name__)
 
@@ -25,12 +22,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00238", methods=["POST"])
 def BenchmarkTest00238():
-    ua_value = request.headers.get('User-Agent', '')
-    reader = make_reader(ua_value)
-    data = reader()
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    with open('/tmp/data', 'r') as fh:
+        file_value = fh.read()
+    data = bytes.fromhex(file_value).decode('utf-8', 'ignore')
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _coerced
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = ' + str(processed))
     return jsonify({"result": "success"})

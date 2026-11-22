@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
 from flask import Flask, request, jsonify
-import os
 
 
 app = Flask(__name__)
@@ -20,7 +18,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00101", methods=["POST"])
 def BenchmarkTest00101():
-    multipart_value = request.form.get('multipart_field', '')
-    data = multipart_value if multipart_value else 'default'
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    cookie_value = request.cookies.get('session_token', '')
+    data = cookie_value if cookie_value else 'default'
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid number'}), 400
+    processed = _coerced
+    eval(str(processed))
+    return jsonify({"result": "success"})

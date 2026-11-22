@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
+const crypto = require("crypto");
+const fs = require("fs");
+const stream = require("node:stream");
 
 const BenchmarkTest00170 = async (ctx) => {
-  const { createClient } = require("redis");
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  const targetUrl = data;
-  http.get(targetUrl);
+  const userInput = ctx.request.headers["x-custom-header"] || "";
+  const [data] = String(userInput).split(',');
+  const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const blockIv = crypto.randomBytes(12);
+  const sealer = crypto.createCipheriv("aes-256-gcm", blockKey, blockIv);
+  stream.Readable.from([String(data)]).pipe(sealer).pipe(fs.createWriteStream("/var/data/cipher.bin")).on("finish", () => fs.writeFileSync("/var/data/cipher.meta", Buffer.concat([blockIv, sealer.getAuthTag()])));
   ctx.body = { ack: true };
 }
 

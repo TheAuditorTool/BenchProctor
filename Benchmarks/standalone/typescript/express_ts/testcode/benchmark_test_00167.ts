@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as nodeUtil from "util";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as shared from "./shared";
+const { db } = shared;
+import isoDompurify from "isomorphic-dompurify";
 
 export const BenchmarkTest00167 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.query.id as string) || "";
-  const data = nodeUtil.format("%s", userInput);
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
-  res.json({ accepted: true });
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const [data] = String(userInput).split(',');
+  const _clean = isoDompurify.sanitize(data);
+  const processed = _clean;
+  res.send("<div>" + processed + "</div>");
 }

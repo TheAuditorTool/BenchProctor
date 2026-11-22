@@ -2,24 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00070', methods: ['POST'])]
 class BenchmarkTest00070Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Connection $conn)
     {
-        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        if (!preg_match('#^[a-zA-Z0-9 _.\\#%\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
-        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $processed . ')');
-        return new JsonResponse(["committed" => true]);
+        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
+        $data = json_decode($userInput, true)['value'] ?? '';
+        $token = (string) (int) (lcg_value() * 1000000000000);
+        $conn->executeStatement('UPDATE users SET reset_token = ? WHERE email = ?', [$token, (string)$data]);
+        return new JsonResponse(['reset' => 'sent'], 200);
     }
 }

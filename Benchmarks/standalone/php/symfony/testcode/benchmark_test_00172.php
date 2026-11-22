@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00172', methods: ['POST'])]
@@ -11,8 +11,8 @@ class BenchmarkTest00172Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        return new RedirectResponse($data);
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        $content = file_get_contents('/var/app/data/' . (string)$userInput);
+        return new JsonResponse(["committed" => true]);
     }
 }

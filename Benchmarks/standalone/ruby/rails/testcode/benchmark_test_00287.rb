@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "socket"
 
 class BenchmarkTest00287Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,11 +11,12 @@ class BenchmarkTest00287Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00287
-    user_input = params[:id].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    TCPSocket.new(data, 80).close
+    user_input = request.headers["X-Forwarded-For"].to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
     render json: { status: "ok" }
   end
 end

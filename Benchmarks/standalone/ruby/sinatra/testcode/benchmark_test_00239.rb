@@ -18,16 +18,12 @@ class BenchmarkTest00239 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00239" do
-    user_input = params[:q].to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    system("echo " + processed)
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

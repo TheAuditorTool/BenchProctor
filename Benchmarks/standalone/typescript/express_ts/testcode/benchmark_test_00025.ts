@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as ldapjs from "ldapjs";
 
 export const BenchmarkTest00025 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
+  const userInput = (req.query.id as string) || "";
   const data = String(userInput).split(/[ \t]+/).join(" ");
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ accepted: true });
+  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const quantity = boundedVal;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) { res.status(400).json({ error: "quantity out of range" }); return; }
+  const totalCents = Math.imul(quantity, 1999);
+  res.json({ quantity, totalCents }); return;
 }

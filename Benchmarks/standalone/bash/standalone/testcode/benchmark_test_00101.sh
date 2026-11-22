@@ -2,16 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00101() {
-  user_input="$HTTP_HOST"
-  if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
-    data="$_parsed"
-  else
-    data="${user_input}"
-  fi
-  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "not a number" >&2; exit 1; fi
-  requested=$data
-  alloc_size=$((requested + 1))
-  echo "alloc:$alloc_size"
+  user_input="$HTTP_COOKIE"
+  data=$(printf "%s" "${user_input}" | tr -s " ")
+  case $data in config.json|index.html|readme.md) checked_path="/var/app/data/$data";; *) echo "forbidden"; exit 1;; esac
+  echo "data" > "$checked_path"
 }
 
 benchmark_test_00101 "$@"

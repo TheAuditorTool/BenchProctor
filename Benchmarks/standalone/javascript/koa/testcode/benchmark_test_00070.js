@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const ldapjs = require("ldapjs");
 
 const BenchmarkTest00070 = async (ctx) => {
-  const userInput = ctx.params.id || "";
+  const userInput = ctx.request.headers.host || "";
   const parts = [];
   for (const token of String(userInput).split(',')) { parts.push(token); }
   const data = parts.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { ctx.status = 404; ctx.body = {error:"not found"}; return; }
-  const value = row.name;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
   ctx.body = { ack: true };
 }
 

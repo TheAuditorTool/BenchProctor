@@ -19,19 +19,20 @@ public class BenchmarkTest00166 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00166")
-    public void BenchmarkTest00166(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = String.format("%s", fieldValue);
-        if (!data.matches("^[a-zA-Z0-9 _.#%\\-]+$")) { response.sendError(400); return; }
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    @GetMapping("/BenchmarkTest00166")
+    public void BenchmarkTest00166(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String prefix = cookieValue.length() > 0 ? cookieValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = cookieValue.toLowerCase(); break;
+            case "f": data = cookieValue.toUpperCase(); break;
+            default: data = cookieValue.strip(); break;
+        }
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
+        String targetUrl = data;
+        new org.springframework.web.servlet.view.RedirectView(targetUrl).render(java.util.Map.of(), request, response);
     }
 }

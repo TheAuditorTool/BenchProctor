@@ -5,6 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -30,16 +31,22 @@ public class BenchmarkTest00130 {
         }
     }
 
-    @GET
+    record FormData(String payload) {}
+
+    @POST
     @Path("/BenchmarkTest00130")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00130(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        java.util.Map.Entry<String,String> pair = java.util.Map.entry(forwardedIp, "form");
-        String data = pair.getKey();
-        int requested = Integer.parseInt(data);
-        int allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00130(@FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uploadName = fileDetail.getFileName();
+        FormData payload = new FormData(uploadName);
+        String data = payload.payload();
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        jakarta.servlet.http.Cookie sessionCookie = new jakarta.servlet.http.Cookie("session", cookieValue);
+        sessionCookie.setPath("/");
+        sessionCookie.setHttpOnly(true);
+        sessionCookie.setAttribute("SameSite", "Strict");
+        response.addCookie(sessionCookie);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

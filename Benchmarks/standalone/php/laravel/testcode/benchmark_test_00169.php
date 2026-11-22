@@ -8,11 +8,12 @@ class BenchmarkTest00169Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $data = str_replace("\0", '', $userInput);
-        if (!preg_match('#^[a-zA-Z0-9 _.\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        session(['data' => (string) $processed]);
+        $userInput = $request->json('payload', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $hashCtx = hash_init('md4');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
         return response()->json(['ok' => 1]);
     }
 }

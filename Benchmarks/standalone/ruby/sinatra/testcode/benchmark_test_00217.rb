@@ -5,7 +5,6 @@ require "uri"
 require "openssl"
 
 class BenchmarkTest00217 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,10 +18,12 @@ class BenchmarkTest00217 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00217" do
-    user_input = params[:q].to_s
-    data = user_input.gsub("\u0000", "")
-    session[:data] = data.to_s
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    content_type :html
+    stream do |out|
+      out << "<div>" + data + "</div>"
+    end
   end
 end

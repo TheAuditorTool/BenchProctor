@@ -5,17 +5,14 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00229(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	var data string
-	for _, token := range strings.Split(commentText, ",") {
-		data = token
-	}
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	data, _ := url.QueryUnescape(pathValue)
 	tokenLen, _ := strconv.Atoi(data)
 	if tokenLen < 16 || tokenLen > 64 {
 		tokenLen = 32

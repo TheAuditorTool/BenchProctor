@@ -8,12 +8,12 @@ class BenchmarkTest00128Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return redirect($targetUrl);
+        $userInput = $request->input('multipart_field', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        $aes = new \phpseclib4\Crypt\AES('gcm');
+        $aes->setKey(hash('sha256', (string) getenv('DATA_ENC_KEY'), true));
+        $aes->setNonce($nonce = random_bytes(12));
+        $ciphertext = $nonce . $aes->encrypt((string)$data) . $aes->getTag();
+        return response()->json(['ok' => 1]);
     }
 }

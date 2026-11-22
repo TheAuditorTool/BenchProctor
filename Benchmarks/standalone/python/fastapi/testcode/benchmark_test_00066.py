@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
-import re
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
+from fastapi import Form
 
 
 app = FastAPI()
@@ -21,14 +21,15 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00066")
-async def BenchmarkTest00066(request: Request):
-    referer_value = request.headers.get('referer', '')
-    if referer_value:
-        data = referer_value
-    else:
-        data = ''
-    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    os.system('echo ' + str(processed))
-    return {"updated": True}
+async def BenchmarkTest00066(request: Request, field: str = Form('')):
+    field_value = field
+    parts = []
+    for token in str(field_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

@@ -3,10 +3,13 @@ use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00043")]
 pub async fn benchmark_test_00043() -> HttpResponse {
-    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
-    let data = env_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let _coerced = matches!(data.to_lowercase().as_str(), "true" | "1" | "yes" | "on");
-    let processed = _coerced.to_string();
-    crate::shared::store_session("data", &processed);
+    let file_value = tokio::fs::read_to_string("/tmp/data").await.unwrap_or_default();
+    let captured = file_value.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query(format!("SELECT id, name FROM users WHERE name = '{}'", data)).execute(&mut _conn);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

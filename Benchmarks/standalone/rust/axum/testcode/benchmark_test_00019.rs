@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Path;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00019(Path(path_id): Path<String>) -> impl IntoResponse {
-    let path_value = path_id.clone();
-    let (payload, _origin) = (path_value.clone(), "http");
-    let data = payload;
-    reqwest::get(&data).await.ok();
+pub async fn benchmark_test_00019(headers: HeaderMap) -> impl IntoResponse {
+    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data: String = ua_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| ua_value.clone());
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _ = sxd_xpath::evaluate_xpath(&_pkg.as_document(), &format!("count(//user[@role='{}'])", data));
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

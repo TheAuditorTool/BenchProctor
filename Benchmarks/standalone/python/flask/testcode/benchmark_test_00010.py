@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from flask import Flask, request, jsonify
-import os
+import requests
+from flask import Flask, jsonify
+import base64
+import pickle
 
 
 app = Flask(__name__)
@@ -20,12 +21,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00010", methods=["POST"])
 def BenchmarkTest00010():
-    cookie_value = request.cookies.get('session_token', '')
-    pending = list(str(cookie_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    pickle.loads(base64.b64decode(data))
     return jsonify({"result": "success"})

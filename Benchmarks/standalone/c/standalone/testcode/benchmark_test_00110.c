@@ -7,21 +7,45 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+typedef struct _xmlTextReader *xmlTextReaderPtr;
+extern xmlTextReaderPtr xmlReaderForMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern int xmlTextReaderRead(xmlTextReaderPtr _reader);
+extern const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr _reader);
+extern void xmlFreeTextReader(xmlTextReaderPtr _reader);
 
 void benchmark_test_00110(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
+    FILE *_src_fp = fopen("/tmp/data", "r");
     if (_src_fp != NULL) {
         if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    xmlTextReaderPtr _reader = xmlReaderForMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
+    if (_reader != NULL) {
+        while (xmlTextReaderRead(_reader) == 1) {
+            const unsigned char *_text = xmlTextReaderConstValue(_reader);
+            if (_text != NULL) fputs((const char *)_text, stdout);
+        }
+        xmlFreeTextReader(_reader);
+    }
 }

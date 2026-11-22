@@ -1,18 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+import urllib.request
+from urllib.parse import urlparse
+import re
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 def BenchmarkTest00057(request):
-    origin_value = request.META.get('HTTP_ORIGIN', '')
-    try:
-        data = json.loads(origin_value).get('value', origin_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = origin_value
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    user_id = request.GET.get('id', '')
+    reader = make_reader(user_id)
+    data = reader()
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JsonResponse({'error': 'forbidden host'}, status=403)
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return JsonResponse({"saved": True})

@@ -8,11 +8,13 @@ class BenchmarkTest00345Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        if (!in_array((string)$data, ['ls', 'cat', 'date', 'whoami'], true)) { return response()->json(['error' => 'forbidden'], 403); }
-        $allowedBin = (string)$data;
-        exec('tar -czf /tmp/backup.tgz ' . (string)$allowedBin);
+        $userInput = $request->json('payload', '');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
+        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
+        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $data . ')');
         return response()->json(['ok' => 1]);
     }
 }

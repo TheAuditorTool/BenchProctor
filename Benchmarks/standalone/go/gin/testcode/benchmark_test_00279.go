@@ -2,18 +2,26 @@
 package testcode
 
 import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"net/http"
-	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00279(c *gin.Context) {
-	hostValue := c.Request.Host
-	content, err := os.ReadFile("/var/app/data/" + hostValue)
+	multipartValue := c.PostForm("multipart_field")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", multipartValue)
+	data := relayBuilder.String()
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
-		c.String(http.StatusNotFound, "not found")
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Data(200, "text/plain", content)
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

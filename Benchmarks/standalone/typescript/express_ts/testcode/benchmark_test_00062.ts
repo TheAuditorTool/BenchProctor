@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
 
 export const BenchmarkTest00062 = async (req: Request, res: Response): Promise<void> => {
   const userInput = (req.cookies?.session_token as string) || "";
-  const data = decodeURIComponent(userInput);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = (row as any).name;
-  res.json({ accepted: true });
+  const data = userInput != null ? userInput : '';
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const plan = planQuotas.get(String(data));
+  if (!plan) { res.status(404).json({ error: "unknown plan" }); return; }
+  const { quota } = plan;
+  res.json({ quota }); return;
 }

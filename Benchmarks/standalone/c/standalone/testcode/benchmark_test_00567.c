@@ -6,23 +6,29 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <curl/curl.h>
 
 void benchmark_test_00567(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
     }
-    const char *user_input = user_input_buf;
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    char _dst[16];
-    size_t _n = strlen(data);
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    memcpy(_dst, data, _n);
-    _dst[_n] = '\0';
-    printf("%s\n", _dst);
+    const char *arg = data;
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) arg = "https://api.internal.svc/data";
+    CURLU *_u = curl_url();
+    curl_url_set(_u, CURLUPART_URL, arg, 0);
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_CURLU, _u);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
+    curl_url_cleanup(_u);
 }

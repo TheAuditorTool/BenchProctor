@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+from starlette.responses import Response
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
 
@@ -21,8 +22,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00284")
 async def BenchmarkTest00284(request: Request):
-    origin_value = request.headers.get('origin', '')
-    data = origin_value if origin_value else 'default'
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    parts = []
+    for token in str(comment_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    return Response(status_code=302, headers={'Location': str(data)})

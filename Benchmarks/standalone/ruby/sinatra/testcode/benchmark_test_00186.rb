@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "base64"
-require "sanitize"
 require "sequel"
 
 DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
@@ -23,10 +21,13 @@ class BenchmarkTest00186 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00186" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = Base64.decode64(user_input)
-    processed = Sanitize.fragment(data, Sanitize::Config::BASIC)
-    content_type :html
-    "<div>" + processed + "</div>"
+    user_input = request.env["HTTP_REFERER"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    _coerced = Integer(data, exception: false).to_s
+    parsed_id = _coerced
+    DB["SELECT * FROM users WHERE id = '" + parsed_id + "'"].prepare(:select, :user_lookup).call
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

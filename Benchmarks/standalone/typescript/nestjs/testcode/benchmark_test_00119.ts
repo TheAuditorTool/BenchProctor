@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { parseXmlString } from "libxmljs2";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,13 +23,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00119")
-  async BenchmarkTest00119(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    eval(data);
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00119(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    let data;
+    try { data = JSON.parse(userInput).value || userInput; }
+    catch (e) { data = userInput; }
+    parseXmlString(String(data), { noent: true, dtdload: true, nonet: false });
     return { created: true };
   }
 }

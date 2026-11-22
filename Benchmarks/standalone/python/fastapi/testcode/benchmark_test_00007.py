@@ -1,8 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from sqlalchemy import text
 import os
-from starlette.responses import JSONResponse
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from fastapi.responses import JSONResponse
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = FastAPI()
 
@@ -21,11 +36,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00007")
 async def BenchmarkTest00007(request: Request):
-    upload_name = getattr((await request.form()).get('doc'), 'filename', '')
-    data = '%s' % str(upload_name)
-    allowed = {'config.json', 'index.html', 'readme.md'}
-    if data not in allowed:
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    checked_path = '/var/app/data/' + data
-    os.unlink(checked_path)
+    referer_value = request.headers.get('referer', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(referer_value)
+    with Session(_engine) as _session:
+        _session.query(User).from_statement(text("SELECT * FROM users WHERE name = '" + str(data) + "'")).all()
     return {"updated": True}

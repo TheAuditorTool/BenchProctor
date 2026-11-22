@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00105Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,9 @@ class BenchmarkTest00105Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00105
-    user_input = params[:id].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    unless data =~ /\A[a-zA-Z0-9 _.#~\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    File.delete("/var/app/data/" + processed)
+    user_input = request.referer.to_s
+    data = "#{user_input}"
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     render json: { status: "ok" }
   end
 end

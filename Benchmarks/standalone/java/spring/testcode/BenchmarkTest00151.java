@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import org.yaml.snakeyaml.Yaml;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00151 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -20,16 +26,19 @@ public class BenchmarkTest00151 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00151")
-    public void BenchmarkTest00151(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(refererValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(new org.yaml.snakeyaml.LoaderOptions()));
-        Object obj = yaml.load(data);
-        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+    record FormData(String payload) {}
+
+    @PostMapping("/BenchmarkTest00151")
+    public void BenchmarkTest00151(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        FormData payload = new FormData(jsonValue);
+        String data = payload.payload();
+        org.bouncycastle.crypto.Digest contentDigest = new org.bouncycastle.crypto.digests.SHA256Digest();
+        byte[] digestInput = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        contentDigest.update(digestInput, 0, digestInput.length);
+        byte[] digest = new byte[contentDigest.getDigestSize()];
+        contentDigest.doFinal(digest, 0);
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

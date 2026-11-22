@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
+import * as shared from "./shared";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import axios from "axios";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,12 +19,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00178")
-  async BenchmarkTest00178(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    crypto.createHash("md5").update(data).digest("hex");
+  async BenchmarkTest00178(): Promise<unknown> {
+    const userInput = (await shared.mq.receive("app-events"));
+    const data = String(userInput).replace(/\u0000/g, "");
+    let _host = "";
+    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
+    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
+    const targetUrl = data;
+    const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+    await axios.request(outbound);
     return { created: true };
   }
 }

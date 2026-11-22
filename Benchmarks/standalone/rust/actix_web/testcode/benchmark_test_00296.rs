@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
+use rand::rngs::SysRng;
 
 #[actix_web::post("/benchmark_test_00296")]
 pub async fn benchmark_test_00296(req: HttpRequest) -> HttpResponse {
-    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    struct FormData { payload: String }
-    let data = FormData { payload: auth_header.clone() }.payload;
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = ua_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    use rand::TryRng;
+    let _token: u64 = SysRng.try_next_u64().expect("OS randomness unavailable");
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

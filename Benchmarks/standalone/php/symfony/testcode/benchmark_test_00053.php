@@ -11,9 +11,10 @@ class BenchmarkTest00053Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = ($userInput !== null) ? $userInput : '';
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $userInput = $request->query->get('id', '');
+        $data = hex2bin($userInput);
+        $errno = 0; $errstr = '';
+        fsockopen((string) parse_url((string)$data, PHP_URL_HOST), 80, $errno, $errstr, 30);
         return new JsonResponse(["committed" => true]);
     }
 }

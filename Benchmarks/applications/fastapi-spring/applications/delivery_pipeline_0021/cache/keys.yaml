@@ -1,0 +1,6 @@
+channels:
+  - name: delivery:inbound:0021
+    payload: json
+keys:
+  - pattern: delivery:record:{id}
+    ttl_seconds: 300

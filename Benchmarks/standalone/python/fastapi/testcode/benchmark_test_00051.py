@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,13 +20,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00051")
 async def BenchmarkTest00051(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = ' '.join(str(comment_value).split())
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+    referer_value = request.headers.get('referer', '')
+    parts = []
+    for token in str(referer_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    code = compile(str(data), '<rule>', 'exec')
+    exec(code)
+    return {"updated": True}

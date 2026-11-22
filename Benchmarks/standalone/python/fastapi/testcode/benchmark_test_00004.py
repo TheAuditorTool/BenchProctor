@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
 from starlette.responses import JSONResponse
-import re
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
+from app_runtime import db
 
 
 def make_reader(raw):
@@ -27,12 +30,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00004")
 async def BenchmarkTest00004(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    reader = make_reader(ua_value)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    reader = make_reader(db_value)
     data = reader()
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return {"updated": True}
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

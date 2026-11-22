@@ -1,4 +1,0 @@
-bleach==6.1.0
-django==5.0.6
-jsonschema==4.22.0
-uvicorn==0.30.1

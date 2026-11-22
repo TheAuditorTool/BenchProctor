@@ -6,22 +6,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <openssl/hmac.h>
 
 void benchmark_test_00058(int argc, char **argv)
 {
     const char *user_input = (argc > 1) ? argv[1] : "";
-    xmlDocPtr _doc = xmlReadMemory(user_input, (int)strlen(user_input), "noname.xml", NULL, XML_PARSE_NONET);
-    if (_doc) xmlFreeDoc(_doc);
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    const char *_kv = getenv("DATA_ENC_KEY");
+    if (_kv == NULL) return;
+    unsigned char _salt[16], _key[32];
+    if (RAND_bytes(_salt, sizeof(_salt)) != 1) return;
+    HMAC(EVP_sha256(), _kv, (int)strlen(_kv), _salt, sizeof(_salt), _key, NULL);
+    unsigned char _nonce[12];
+    RAND_bytes(_nonce, sizeof(_nonce));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[512];
+    int _ctl = 0;
+    EVP_CipherInit_ex(_ctx, EVP_chacha20_poly1305(), NULL, _key, _nonce, 1);
+    EVP_CipherUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strnlen(data, sizeof(_ct)));
+    EVP_CIPHER_CTX_free(_ctx);
 }

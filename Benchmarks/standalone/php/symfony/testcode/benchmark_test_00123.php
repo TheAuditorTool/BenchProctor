@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00123', methods: ['POST'])]
 class BenchmarkTest00123Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $processed = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-        return new Response('<div>' . $processed . '</div>', 200, ['Content-Type' => 'text/html']);
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $data = str_replace("\0", '', $userInput);
+        $requested = (int) $data;
+        $wrapped = unpack('l', pack('l', $requested + 1))[1];
+        return new JsonResponse(['wrapped' => $wrapped], 200);
     }
 }

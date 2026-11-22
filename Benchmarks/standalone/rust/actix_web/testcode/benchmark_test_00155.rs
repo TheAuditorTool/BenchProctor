@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
+use rand::rngs::SysRng;
 
 #[actix_web::post("/benchmark_test_00155")]
-pub async fn benchmark_test_00155(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.to_string();
-    let _coerced = matches!(data.to_lowercase().as_str(), "true" | "1" | "yes" | "on");
-    let processed = _coerced.to_string();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+pub async fn benchmark_test_00155(req: HttpRequest) -> HttpResponse {
+    let header_value = req.headers().get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = header_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    let _token: u64 = rand::random();
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -2,33 +2,26 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
+	"strconv"
+	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00299(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	refererValue := r.Header.Get("Referer")
+	data := strings.ReplaceAll(refererValue, "\x00", "")
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlBody := string(rawBytes)
-	form := submissionForm{payload: xmlBody}
-	data := form.payload
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

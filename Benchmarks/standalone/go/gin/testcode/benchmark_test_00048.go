@@ -2,30 +2,28 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
-	"net/http"
-	"os"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00048(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	capture := func() string { return strings.TrimSpace(uaValue) }
-	data := capture()
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	c.JSON(http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	relayPrefix := ""
+	if len(commentText) > 0 {
+		relayPrefix = strings.ToLower(commentText[:1])
+	}
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = commentText
+	case "f":
+		data = commentText
+	default:
+		data = commentText
+	}
+	c.Writer.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; HttpOnly; SameSite=Strict")
+	c.JSON(200, gin.H{"code": "OK"})
 }

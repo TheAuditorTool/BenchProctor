@@ -2,20 +2,22 @@
 package testcode
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00140(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
-	data := strings.ReplaceAll(userID, "\x00", "")
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	multipartValue := r.FormValue("multipart_field")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(multipartValue)
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

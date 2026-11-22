@@ -5,7 +5,6 @@ require "uri"
 require "openssl"
 
 class BenchmarkTest00266 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,15 +18,16 @@ class BenchmarkTest00266 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00266" do
-    user_input = params[:field].to_s
-    data = user_input.gsub("\u0000", "")
-    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
+    user_input = params[:q].to_s
+    data = "%s" % user_input
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      halt 403, JSON.generate({ error: "forbidden" })
       return
     end
-    processed = data
-    session[:data] = processed.to_s
+    checked_path = resolved
+    content = File.read(checked_path)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

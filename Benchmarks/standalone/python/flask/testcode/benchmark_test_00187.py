@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
-import json
-from lxml import etree
 
 
 app = Flask(__name__)
@@ -20,11 +18,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00187", methods=["POST"])
 def BenchmarkTest00187():
-    xml_value = request.get_data(as_text=True)
-    try:
-        data = json.loads(xml_value).get('value', xml_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = xml_value
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    auth_header = request.headers.get('Authorization', '')
+    data = (lambda v: v.strip())(auth_header)
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    exec(str(processed))
     return jsonify({"result": "success"})

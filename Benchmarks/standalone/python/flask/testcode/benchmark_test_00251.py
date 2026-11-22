@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request
-from flask import render_template_string
-from flask import jsonify
+import random
+from flask import Flask, request, jsonify
+import json
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,6 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00251", methods=["POST"])
 def BenchmarkTest00251():
-    referer_value = request.headers.get('Referer', '')
-    data = '%s' % str(referer_value)
-    return render_template_string('{{ value }}', value=data)
+    field_value = request.form.get('field', '')
+    try:
+        data = json.loads(field_value).get('value', field_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = field_value
+    token = '%032x' % random.getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

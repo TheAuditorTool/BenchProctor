@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
 from flask import Flask, request, jsonify
-from app_runtime import db
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -19,9 +22,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00314", methods=["POST"])
 def BenchmarkTest00314():
-    origin_value = request.headers.get('Origin', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(origin_value),))
-    if result is None:
-        return jsonify({'error': 'not found'}), 404
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    xml_value = request.get_data(as_text=True)
+    if xml_value:
+        data = xml_value
+    else:
+        data = ''
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return jsonify({'length': len(ciphertext)}), 200

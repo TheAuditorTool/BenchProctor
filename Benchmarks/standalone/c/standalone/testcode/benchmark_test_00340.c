@@ -8,20 +8,19 @@
 #include <time.h>
 #include <regex.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00340(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *data = c_passthrough(user_input);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
     regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
+    const char *arg = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "asc";
         regfree(&_re);
     }
     char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", safe);
-    FILE *_f = fopen(_path, "r");
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", arg);
+    FILE *_f = fopen(_path, "w");
     if (_f) fclose(_f);
 }

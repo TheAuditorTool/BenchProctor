@@ -2,26 +2,32 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00142(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	hostValue := r.Host
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(hostValue)
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(xmlBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
+	processed := data
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	targetUrl := data
-	http.Redirect(w, r, targetUrl, http.StatusFound)
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -18,13 +24,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00057")
-  async BenchmarkTest00057(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    fs.writeFileSync("/var/uploads/" + data, "data");
+  async BenchmarkTest00057(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const data = nodeUtil.format("%s", userInput);
+    JSON.parse(data);
     return { created: true };
   }
 }

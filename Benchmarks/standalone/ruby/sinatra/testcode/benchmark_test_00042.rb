@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "nokogiri"
 
 class BenchmarkTest00042 < Sinatra::Base
   before do
@@ -21,14 +19,16 @@ class BenchmarkTest00042 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00042" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = "%s" % user_input
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = params[:multipart_field].to_s
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(user_input) { |ctx| ctx.replace_entities = true }
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ text: handler.text })
   end
 end

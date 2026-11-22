@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,14 +19,13 @@ public class BenchmarkTest00010 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00010/{pathId}")
-    public void BenchmarkTest00010(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", pathValue);
-        String data = sw.toString();
-        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    @PostMapping("/BenchmarkTest00010")
+    public void BenchmarkTest00010(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : fieldValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        response.setContentType("text/html;charset=UTF-8");
+        response.getOutputStream().write(("<div class=\"comment\">" + data + "</div>").getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 }

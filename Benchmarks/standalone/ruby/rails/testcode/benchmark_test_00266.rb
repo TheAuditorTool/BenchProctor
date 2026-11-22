@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00266Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,10 @@ class BenchmarkTest00266Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00266
-    user_input = cookies[:session_token].to_s
-    data = user_input ? user_input : ''
-    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    session[:data] = processed.to_s
+    user_input = request.headers["X-Custom-Header"].to_s
+    data = "%s" % user_input
+    cookie_value = CGI.escape(data.to_s)
+    response.set_header("Set-Cookie", "session=" + cookie_value + "; Path=/; Secure; HttpOnly; SameSite=Strict")
     render json: { status: "ok" }
   end
 end

@@ -33,19 +33,19 @@ public class BenchmarkTest00114 {
     @GET
     @Path("/BenchmarkTest00114")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00114(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(headerValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+    public Response BenchmarkTest00114(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String prefix = userId.length() > 0 ? userId.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = userId.toLowerCase(); break;
+            case "f": data = userId.toUpperCase(); break;
+            default: data = userId.strip(); break;
+        }
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        javax.xml.xpath.XPathExpression roleQuery = xpath.compile("/users/user[@name='" + data + "']/@role");
+        String userRole = roleQuery.evaluate(new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")));
+        response.setHeader("X-User-Role", userRole);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

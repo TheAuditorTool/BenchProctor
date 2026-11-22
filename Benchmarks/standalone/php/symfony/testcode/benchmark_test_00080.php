@@ -12,11 +12,9 @@ class BenchmarkTest00080Controller
 {
     public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = $request->query->get('id', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        if ($result === false) { return new JsonResponse(["error" => "not found"], 404); }
-        $value = $result['name'];
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        $data = sprintf('%s', $userInput);
+        $rows = $conn->createQueryBuilder()->select('*')->from('users')->where('id = :id')->setParameter('id', $data)->executeQuery()->fetchAllAssociative();
         return new JsonResponse(["committed" => true]);
     }
 }

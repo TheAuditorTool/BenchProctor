@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "sanitize"
 
 class BenchmarkTest00307Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,11 @@ class BenchmarkTest00307Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00307
-    user_input = request.query_parameters[:q].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    processed = Sanitize.fragment(data, Sanitize::Config::BASIC)
-    render html: ("<div>" + processed + "</div>").html_safe
+    user_input = request.headers["X-Forwarded-For"].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    JSON.parse(data, create_additions: true)
+    render json: { status: "ok" }
   end
 end

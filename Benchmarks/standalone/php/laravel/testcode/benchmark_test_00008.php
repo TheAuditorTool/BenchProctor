@@ -2,15 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00008Controller
 {
     public function __invoke()
     {
-        $userInput = file_get_contents('http://api.corp.lan/data');
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        unserialize($data);
+        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $aes = new \phpseclib4\Crypt\AES('gcm');
+        $aes->setKey(hash('sha256', (string) getenv('DATA_ENC_KEY'), true));
+        $aes->setNonce($nonce = random_bytes(12));
+        $ciphertext = $nonce . $aes->encrypt((string)$data) . $aes->getTag();
         return response()->json(['ok' => 1]);
     }
 }

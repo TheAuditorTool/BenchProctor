@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -23,8 +21,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00206")
 async def BenchmarkTest00206(request: Request):
     cookie_value = request.cookies.get('session_token', '')
-    parts = str(cookie_value).split(',')
-    data = ' '.join(parts)
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return {"updated": True}
+    data = bytes.fromhex(cookie_value).decode('utf-8', 'ignore')
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return JSONResponse({'allocated': allocated}, status_code=200)

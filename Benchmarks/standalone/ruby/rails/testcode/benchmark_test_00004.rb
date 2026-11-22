@@ -11,8 +11,9 @@ class BenchmarkTest00004Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00004
-    user_input = request.body.read
-    data = user_input ? user_input : ''
-    render html: ("<div>" + data + "</div>").html_safe
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    data = "#{user_input}"
+    cookies[:session] = { value: data, httponly: true, same_site: :strict }
+    render json: { status: "ok" }
   end
 end

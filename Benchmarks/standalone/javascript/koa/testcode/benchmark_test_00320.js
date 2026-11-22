@@ -2,11 +2,9 @@
 const libxmljs = require("libxmljs");
 
 const BenchmarkTest00320 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
+  const userInput = ctx.request.body || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
   ctx.body = { ack: true };
 }
 

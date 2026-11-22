@@ -11,12 +11,9 @@ class BenchmarkTest00130Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00130
-    user_input = request.headers["Authorization"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    system("echo " + data)
+    user_input = params[:id].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    Object.new.instance_eval(data.to_s)
     render json: { status: "ok" }
   end
 end

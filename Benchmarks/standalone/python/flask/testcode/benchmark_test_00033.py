@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-import os
-from flask import jsonify
+import random
+from flask import Flask, request, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,5 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00033", methods=["POST"])
 def BenchmarkTest00033():
-    env_value = os.environ.get('APP_INPUT', '')
-    return redirect(str(env_value))
+    header_value = request.headers.get('X-Custom-Header', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(header_value)
+    token = '%032x' % random.Random().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

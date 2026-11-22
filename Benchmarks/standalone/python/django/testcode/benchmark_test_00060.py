@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+import io
+import defusedxml.ElementTree
+from app_runtime import db
 
 
 def BenchmarkTest00060(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    try:
-        _coerced = float(ua_value)
-    except (TypeError, ValueError):
-        return JsonResponse({'error': 'invalid number'}, status=400)
-    processed = _coerced
-    eval(str(processed))
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = f'{comment_value!s}'
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(data).encode()), events=('end',)):
+        element.clear()
     return JsonResponse({"saved": True})

@@ -11,14 +11,15 @@ class BenchmarkTest00072Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00072
-    user_input = request.user_agent.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
-      render json: { error: "invalid" }, status: 400
+    user_input = params[:id].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
       return
     end
-    processed = data
-    render html: ("<div>" + processed + "</div>").html_safe
+    target_url = data
+    redirect_back_or_to(target_url, allow_other_host: true)
   end
 end

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Query, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { stringifySetCookie } from "cookie";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,11 +18,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00040")
-  async BenchmarkTest00040(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
+  async BenchmarkTest00040(@Query("id") id: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = id || "";
     const transform = (v: string): string => v.trim();
     const data: string = transform(userInput);
-    crypto.createHash("md5").update(data).digest("hex");
+    res.append(
+      "Set-Cookie",
+      stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict" }),
+    );
     return { created: true };
   }
 }

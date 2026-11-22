@@ -19,10 +19,8 @@ class BenchmarkTest00163 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00163" do
-    user_input = request.body.read
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    data = user_input ? user_input : ''
     URI.open(data).read
     content_type :json
     JSON.generate({ status: "ok" })

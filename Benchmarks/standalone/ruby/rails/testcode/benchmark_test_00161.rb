@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "base64"
 
 class BenchmarkTest00161Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,19 +12,17 @@ class BenchmarkTest00161Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00161
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.user_agent.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
-    render json: { status: "ok" }
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

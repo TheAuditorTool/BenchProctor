@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 const crypto = require("crypto");
-const fs = require("fs");
 
 const BenchmarkTest00018 = async (ctx) => {
-  const userInput = ctx.request.headers.referer || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
-  ctx.body = { ack: true };
+  const userInput = ctx.cookies.get("session_token") || "";
+  const data = decodeURIComponent(userInput);
+  const token = crypto.randomInt(2 ** 47).toString(36) + crypto.randomInt(2 ** 47).toString(36) + "-" + String(data).slice(0, 8);
+  ctx.body = { token }; return;
 }
 
 module.exports = { BenchmarkTest00018 };

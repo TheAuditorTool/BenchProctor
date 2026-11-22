@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00246(Path(path_id): Path<String>) -> impl IntoResponse {
-    let path_value = path_id.clone();
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", path_value).ok();
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
+pub async fn benchmark_test_00246() -> impl IntoResponse {
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    let data = if comment_value.len() <= 4096 { comment_value.clone() } else { comment_value.chars().take(4096).collect() };
+    let _ = tokio::fs::read_to_string(format!("/var/app/data/{}", data)).await;
     Json(serde_json::json!({"count": 0})).into_response()
 }

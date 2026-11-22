@@ -1,12 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00193")]
-pub async fn benchmark_test_00193() -> HttpResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let data = comment_value.to_string();
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
-    let _ = value;
+pub async fn benchmark_test_00193(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
+            }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
+        }
+        _mv
+    };
+    let data = if multipart_value.len() <= 4096 { multipart_value.clone() } else { multipart_value.chars().take(4096).collect() };
+    let Some(at) = data.find('@') else { return HttpResponse::BadRequest().finish(); };
+    let mail_domain = &data[at + 1..];
+    let _ = mail_domain;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Query } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,12 +18,9 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00166")
-  async BenchmarkTest00166(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + data + "']", xmlDoc);
+  async BenchmarkTest00166(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    crypto.createHash("md5").update(userInput).digest("hex");
     return { created: true };
   }
 }

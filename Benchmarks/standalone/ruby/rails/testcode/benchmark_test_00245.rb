@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00245Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +11,14 @@ class BenchmarkTest00245Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00245
-    user_input = request.headers["Origin"].to_s
+    user_input = request.headers["X-Custom-Header"].to_s
     data = "%s" % user_input
-    digest = Digest::SHA256.hexdigest(data.to_s)
+    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    system("echo " + processed)
     render json: { status: "ok" }
   end
 end

@@ -2,32 +2,35 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
+	"io"
 	"net/http"
-	"os"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00113(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(pathValue)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	cookieValue := cookieObj.Value
-	data := strings.ReplaceAll(cookieValue, "\x00", "")
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	targetUrl := data
+	upstreamReq, err := http.NewRequest(http.MethodGet, targetUrl, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
-import base64
-from flask import Flask, request, jsonify
-import os
+from app_runtime import db
+from flask import Flask, jsonify
 
 
 app = Flask(__name__)
@@ -21,7 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00115", methods=["POST"])
 def BenchmarkTest00115():
-    cookie_value = request.cookies.get('session_token', '')
-    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    parts = []
+    for token in str(comment_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    return '', 302, {'Location': str(data)}

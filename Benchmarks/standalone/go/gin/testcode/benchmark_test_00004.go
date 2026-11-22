@@ -2,28 +2,29 @@
 package testcode
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
 	"net/http"
-	"os"
+	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00004(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(dbValue)
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := aes.NewCipher(keyHash[:])
-	gcm, _ := cipher.NewGCM(cipherBlock)
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
-	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
+	fieldValue := c.PostForm("field")
+	segments := strings.Split(fieldValue, ",")
+	data := strings.Join(segments, " ")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
+	}
+	processed := data
+	cmd := exec.Command("sh", "-c", "echo "+processed)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Data(200, "text/plain", output)
 }

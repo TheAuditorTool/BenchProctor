@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as ldapjs from "ldapjs";
 
 export const BenchmarkTest00070 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.host as string) || "";
-  function normalize(value: string): string { return value.normalize("NFC"); }
-  const data: string = normalize(userInput);
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
-  res.json({ accepted: true });
+  const userInput = (req.headers.authorization as string) || "";
+  const data = Buffer.from(userInput, "hex").toString();
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  const password = String(req.body?.password ?? "");
+  if (!password) { res.status(400).json({ error: "password required" }); return; }
+  const authenticated = await new Promise<boolean>((resolve) => {
+    ldapClient.bind("uid=" + data + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+  });
+  res.json({ authenticated }); return;
 }

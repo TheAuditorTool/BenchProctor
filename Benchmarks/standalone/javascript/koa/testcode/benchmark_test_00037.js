@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
+const nunjucks = require("nunjucks");
 
 const BenchmarkTest00037 = async (ctx) => {
-  const userInput = ctx.request.headers.authorization || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  childProcess.execSync("echo " + data);
-  ctx.body = { ack: true };
+  const userInput = ctx.request.rawBody || "";
+  const [data] = String(userInput).split(',');
+  const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: data });
+  ctx.body = page;
 }
 
 module.exports = { BenchmarkTest00037 };

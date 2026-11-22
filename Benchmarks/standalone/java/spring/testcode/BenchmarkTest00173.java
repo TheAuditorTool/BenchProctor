@@ -20,15 +20,18 @@ public class BenchmarkTest00173 {
     }
 
     @GetMapping("/BenchmarkTest00173")
-    public void BenchmarkTest00173(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        String data = String.format("%s", hostValue);
-        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.\\-]+$") String value) {}
-        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
-        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { response.sendError(400, "schema invalid"); return; }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    public void BenchmarkTest00173(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(cookieValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
+        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
+        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

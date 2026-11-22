@@ -2,8 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "socket"
 
 class BenchmarkTest00257Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,9 +11,9 @@ class BenchmarkTest00257Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00257
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = format("%<value>s", value: user_input)
-    TCPSocket.new(data, 80).close
+    user_input = request.headers["X-Forwarded-For"].to_s
+    data = user_input.gsub("\u0000", "")
+    response.set_cookie("session", { value: data, secure: true, httponly: true, same_site: :strict })
     render json: { status: "ok" }
   end
 end

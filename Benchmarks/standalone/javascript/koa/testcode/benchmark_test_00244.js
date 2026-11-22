@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const http = require("http");
 
 const BenchmarkTest00244 = async (ctx) => {
-  const userInput = ctx.request.headers["x-forwarded-for"] || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const token = crypto.randomBytes(16).toString("hex");
-  ctx.body = { token, label: String(data) };
+  const userInput = (await (await fetch("https://api.partner.example/v1/records")).json()).data || "";
+  const parts = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data = parts.join(',');
+  http.get(data);
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00244 };

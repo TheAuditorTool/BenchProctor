@@ -5,10 +5,12 @@ use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00218(headers: HeaderMap) -> impl IntoResponse {
-    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = forwarded_ip.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return (StatusCode::NOT_FOUND, "").into_response() };
-    let _ = value;
+    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(host_value.clone());
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
     Json(serde_json::json!({"count": 0})).into_response()
 }

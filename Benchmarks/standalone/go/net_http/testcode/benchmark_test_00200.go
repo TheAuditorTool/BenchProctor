@@ -3,27 +3,28 @@ package testcode
 
 import (
 	"net/http"
-	"strconv"
-
-	"github.com/go-ldap/ldap/v3"
+	"os"
+	"regexp"
 )
 
 func BenchmarkTest00200(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
+	_fileBytes, _ := os.ReadFile("/var/app/data.txt")
+	fileValue := string(_fileBytes)
 	var data string
-	if uaValue != "" {
-		data = uaValue
+	if len(fileValue) > 0 {
+		data = fileValue
+	} else {
+		data = "default"
 	}
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	processed := data
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users ORDER BY " + processed).Scan(&matched).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

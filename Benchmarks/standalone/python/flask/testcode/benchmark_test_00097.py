@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
+import re
 from flask import Flask, request, jsonify
-import json
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -21,11 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00097", methods=["POST"])
 def BenchmarkTest00097():
-    cookie_value = request.cookies.get('session_token', '')
-    try:
-        data = json.loads(cookie_value).get('value', cookie_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = cookie_value
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    user_id = request.args.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    if match is None:
+        return jsonify({'error': 'not an email address'}), 400
+    domain = match.group(1)
+    return jsonify({'domain': domain}), 200

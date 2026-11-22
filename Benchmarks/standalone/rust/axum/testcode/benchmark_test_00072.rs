@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use tokio::net::TcpStream;
-use url::Url;
+use std::collections::HashMap;
+use tokio::process::Command;
 
-pub async fn benchmark_test_00072() -> impl IntoResponse {
-    let msg_value = crate::shared::queue_get_message("app-events");
-    struct FormData { payload: String }
-    let data = FormData { payload: msg_value.clone() }.payload;
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    let _sock_host = if target_url.contains("://") { url::Url::parse(&target_url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { target_url.clone() };
-    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
+pub async fn benchmark_test_00072(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let captured = field_value.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    if let Ok(mut _interp) = Command::new("bash").arg("-s").stdin(std::process::Stdio::piped()).spawn() {
+        if let Some(mut _script) = _interp.stdin.take() {
+            use tokio::io::AsyncWriteExt;
+            _script.write_all(format!("echo {}\n", data).as_bytes()).await.ok();
+        }
+        _interp.wait().await.ok();
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

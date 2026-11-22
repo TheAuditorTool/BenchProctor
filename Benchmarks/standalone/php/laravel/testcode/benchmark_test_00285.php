@@ -2,17 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00285Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('Referer', '');
-        $resolved = realpath('/var/app/data/' . $userInput);
-        if ($resolved === false || strpos($resolved, '/var/app/data/') !== 0) { return response()->json(['error'=>'forbidden'], 403); }
-        $checkedPath = $resolved;
-        unlink((string)$checkedPath);
+        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
+        $data = hex2bin($userInput);
+        $pipes = [];
+        $snippet = proc_open([PHP_BINARY, '-r', (string)$data], [1 => ['pipe', 'w']], $pipes);
+        $result = stream_get_contents($pipes[1]);
+        proc_close($snippet);
         return response()->json(['ok' => 1]);
     }
 }

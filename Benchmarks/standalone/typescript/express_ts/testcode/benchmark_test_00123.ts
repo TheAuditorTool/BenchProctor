@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
 
 export const BenchmarkTest00123 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req as any).file?.originalname as string) || "";
-  const data = userInput != null ? userInput : '';
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
-  res.json({ accepted: true });
+  const userInput = (req.body?.payload as string) || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  const minstd = { state: (Date.now() % 2147483646) + 1, next() { this.state = (this.state * 48271) % 2147483647; return this.state; } };
+  const token = minstd.next().toString(36) + minstd.next().toString(36) + "-" + String(data).slice(0, 8);
+  res.json({ token }); return;
 }

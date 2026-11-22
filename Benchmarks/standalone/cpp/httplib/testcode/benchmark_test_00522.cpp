@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,15 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00522(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data = cpp_own(user_input);
-    const int _unit_cents = 1999;
-    int _qty = std::atoi(data.c_str());
-    int _total = _qty * _unit_cents;
-    std::cout << "total=" << _total << std::endl;
+    std::string user_input = req.body;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    srand48(static_cast<long>(std::time(nullptr)));
+    long _token = lrand48();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -5,8 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import javax.xml.xpath.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,15 +31,18 @@ public class BenchmarkTest00153 {
         }
     }
 
-    @GET
-    @Path("/BenchmarkTest00153")
+    @POST
+    @Path("/BenchmarkTest00153/comments")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00153(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(userId)); }
-        catch (NumberFormatException e) { data = userId; }
-        Files.delete(Paths.get("/var/app/data/" + data));
+    public Response BenchmarkTest00153(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(commentValue);
+        if (!data.matches("^[a-zA-Z0-9 _.%~\\-]+$")) { return Response.status(400).build(); }
+        XPathFactory xpf = XPathFactory.newInstance();
+        XPath xpath = xpf.newXPath();
+        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

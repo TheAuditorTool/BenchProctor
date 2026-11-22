@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from cryptography.fernet import Fernet
+import ldap
 import os
+import re
 
 
 def BenchmarkTest00087(request):
-    xml_value = request.body.decode('utf-8')
-    def normalize(value):
-        return value.strip()
-    data = normalize(xml_value)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    host_value = request.META.get('HTTP_HOST', '')
+    data = ' '.join(str(host_value).split())
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(processed) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
+    return JsonResponse({"saved": True})

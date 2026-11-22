@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "digest"
 
 class BenchmarkTest00260 < Sinatra::Base
   before do
@@ -21,16 +19,14 @@ class BenchmarkTest00260 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00260" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = user_input.gsub("\u0000", "")
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    target_url = data
-    redirect target_url
+    digest = Digest::SHA1.base64digest(data.to_s)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

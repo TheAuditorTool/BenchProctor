@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpResponse, web};
+use tokio::process::Command;
 
 #[actix_web::post("/benchmark_test_00069")]
-pub async fn benchmark_test_00069(body: web::Bytes) -> HttpResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let captured = xml_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
+pub async fn benchmark_test_00069(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let data = field_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    Command::new("sh").arg("-c").arg(format!("cat {}", data)).output().await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

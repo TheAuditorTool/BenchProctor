@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
 from flask import Flask, request
 from flask import jsonify
 
@@ -19,7 +20,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00293", methods=["POST"])
 def BenchmarkTest00293():
-    ua_value = request.headers.get('User-Agent', '')
-    parts = str(ua_value).split(',')
-    data = ' '.join(parts)
-    return '<div>' + str(data) + '</div>'
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = ' '.join(str(graphql_var).split())
+    checked_path = os.path.join('/var/app/data', os.path.basename(data))
+    with open(checked_path, 'r') as fh:
+        content = fh.read()
+    return content

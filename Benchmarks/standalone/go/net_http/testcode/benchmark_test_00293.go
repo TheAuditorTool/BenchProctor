@@ -8,9 +8,8 @@ import (
 )
 
 func BenchmarkTest00293(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	capture := func() string { return strings.TrimSpace(refererValue) }
-	data := capture()
+	hostValue := r.Host
+	data := strings.ReplaceAll(hostValue, "\x00", "")
 	resp, err := http.Get(data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

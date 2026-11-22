@@ -2,23 +2,22 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00223(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	var data string
-	for _, token := range strings.Split(headerValue, ",") {
-		data = token
+	var reqBody struct {
+		Payload string `json:"payload"`
 	}
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	defer rows.Close()
+	jsonValue := reqBody.Payload
+	capture := func() string { return strings.TrimSpace(jsonValue) }
+	data := capture()
+	trustedSettings.Store("partner_callback_host", data)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00255 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  ctx.cookies.set("session", data, { secure: false, httpOnly: true, sameSite: "strict" });
-  ctx.body = { ack: true };
+  const userInput = ctx.params.id || "";
+  const recordCount = parseInt(String(userInput), 10);
+  const table = new ArrayBuffer((recordCount * 64) >>> 0);
+  ctx.body = { allocated: table.byteLength }; return;
 }
 
 module.exports = { BenchmarkTest00255 };

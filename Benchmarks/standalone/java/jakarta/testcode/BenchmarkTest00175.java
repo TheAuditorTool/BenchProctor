@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -14,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00175 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -37,19 +30,19 @@ public class BenchmarkTest00175 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00175")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00175(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String data = String.format("%s", jsonValue);
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00175(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(cookieValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        int quantity = Integer.parseInt(data);
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { return Response.status(422).entity("order exceeds credit limit").build(); }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

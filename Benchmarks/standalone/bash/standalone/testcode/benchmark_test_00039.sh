@@ -2,13 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00039() {
-  user_input="$(jq -r '.value // empty' 2>/dev/null)"
+  user_input="$USER_COMMENT"
   if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
     data="$_parsed"
   else
     data="${user_input}"
   fi
-  echo -n "$data" | sha256sum
+  _bool_re='^(true|false|1|0)$'
+  if [[ ! "$data" =~ $_bool_re ]]; then echo "invalid bool" >&2; exit 1; fi
+  parsed_bool="$data"
+  xmllint --xpath "//user[name='$parsed_bool']" /var/data/users.xml
 }
 
 benchmark_test_00039 "$@"

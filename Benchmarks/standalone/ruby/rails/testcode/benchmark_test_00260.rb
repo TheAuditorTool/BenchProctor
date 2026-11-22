@@ -11,9 +11,12 @@ class BenchmarkTest00260Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00260
-    user_input = request.referer.to_s
-    data = "%s" % user_input
-    system("echo " + data)
+    user_input = request.headers["Authorization"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    Object.new.instance_eval(parsed_bool.to_s)
     render json: { status: "ok" }
   end
 end

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
+use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00050(body: Bytes) -> impl IntoResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = match xml_value.chars().next() { Some(_) => xml_value.clone(), None => "default".to_string() };
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00050(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    use sha2::Digest;
+    let mut _hasher = sha2::Sha256::new();
+    _hasher.update(field_value.as_bytes());
+    let _ = _hasher.finalize();
     Json(serde_json::json!({"count": 0})).into_response()
 }

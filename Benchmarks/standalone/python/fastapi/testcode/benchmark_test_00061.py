@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 import random
-import os
 from starlette.responses import JSONResponse
 from app_runtime import db
 
@@ -23,8 +22,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00061")
 async def BenchmarkTest00061(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = f'{env_value!s}'
-    token = '%032x' % random.getrandbits(128)
+    xml_value = (await request.body()).decode('utf-8')
+    pending = list(str(xml_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    token = '%032x' % random.SystemRandom().getrandbits(128)
     db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
     return JSONResponse({'token': str(token)}, status_code=200)

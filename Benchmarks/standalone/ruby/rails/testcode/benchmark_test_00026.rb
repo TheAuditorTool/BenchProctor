@@ -11,13 +11,12 @@ class BenchmarkTest00026Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00026
-    user_input = request.headers["X-Custom-Header"].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    JSON.parse(data)
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    alphabet = [*"a".."z", *"A".."Z", *"0".."9"]
+    token = alphabet.sample(24).join
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

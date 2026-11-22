@@ -1,0 +1,19 @@
+{
+  "name": "bounce-handler",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "express": "4.22.3",
+    "express-session": "1.19.0",
+    "multer": "2.5.0",
+    "nunjucks": "3.2.4",
+    "pg": "8.23.1",
+    "redis": "4.7.1",
+    "typeorm": "0.3.31"
+  }
+}

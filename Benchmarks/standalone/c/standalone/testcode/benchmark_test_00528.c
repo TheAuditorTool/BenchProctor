@@ -7,18 +7,31 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+typedef struct _xmlParserCtxt *xmlParserCtxtPtr;
+extern xmlParserCtxtPtr xmlNewParserCtxt(void);
+extern xmlDocPtr xmlCtxtReadMemory(xmlParserCtxtPtr _ctxt, const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeParserCtxt(xmlParserCtxtPtr _ctxt);
 
 void benchmark_test_00528(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = c_passthrough(user_input);
-    char _resolved[1024];
-    char _joined[1024];
-    snprintf(_joined, sizeof(_joined), "/var/app/data/%s", data);
-    if (realpath(_joined, _resolved) == NULL) return;
-    if (strncmp(_resolved, "/var/app/data/", 14) != 0) return;
-    const char *safe = _resolved;
-    FILE *_f = fopen(safe, "w");
-    if (_f) fclose(_f);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    xmlParserCtxtPtr _pctx = xmlNewParserCtxt();
+    if (_pctx == NULL) return;
+    xmlDocPtr _doc = xmlCtxtReadMemory(_pctx, data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
+    if (_doc) xmlFreeDoc(_doc);
+    xmlFreeParserCtxt(_pctx);
 }

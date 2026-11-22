@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.parsers.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,14 +19,13 @@ public class BenchmarkTest00042 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00042", consumes="multipart/form-data")
-    public void BenchmarkTest00042(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(multipartValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    @PostMapping("/BenchmarkTest00042")
+    public void BenchmarkTest00042(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.function.Supplier<String> valueSupplier = () -> commentValue.strip();
+        String data = valueSupplier.get();
+        long randValue = java.util.concurrent.ThreadLocalRandom.current().nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

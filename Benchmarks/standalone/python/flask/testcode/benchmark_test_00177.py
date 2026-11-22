@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
+import hashlib
 from flask import Flask, request, jsonify
 
 
@@ -19,7 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00177", methods=["POST"])
 def BenchmarkTest00177():
-    cookie_value = request.cookies.get('session_token', '')
-    data = '%s' % str(cookie_value)
-    parsed = yaml.safe_load(data)
-    return jsonify({'parsed': str(parsed)}), 200
+    auth_header = request.headers.get('Authorization', '')
+    data, _sep, _rest = str(auth_header).partition('\x00')
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: Apache-2.0
+package com.example.assetlibrary;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.yaml.snakeyaml.Yaml;
+
+@Path("/")
+public class ValidateWindow {
+
+    private static String jdbcUrl = "jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE";
+    private static String jdbcUser = "sa";
+    private static String jdbcPassword = "";
+    private static java.sql.Connection connection;
+    static {
+        try {
+            String dbUrl = System.getenv("DATABASE_URL");
+            if (dbUrl != null && dbUrl.startsWith("postgres")) {
+                java.net.URI dbUri = java.net.URI.create(dbUrl);
+                String dbUserInfo = dbUri.getUserInfo() != null ? dbUri.getUserInfo() : "app:app";
+                int dbSep = dbUserInfo.indexOf(':');
+                jdbcUser = dbSep < 0 ? dbUserInfo : dbUserInfo.substring(0, dbSep);
+                jdbcPassword = dbSep < 0 ? "" : dbUserInfo.substring(dbSep + 1);
+                int dbPort = dbUri.getPort() == -1 ? 5432 : dbUri.getPort();
+                jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + dbPort + dbUri.getPath() + "?" + (dbUri.getRawQuery() == null ? "" : dbUri.getRawQuery() + "&") + "stringtype=unspecified";
+            }
+            connection = java.sql.DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
+            if (jdbcUrl.startsWith("jdbc:h2:")) {
+                try (java.sql.Statement stmt = connection.createStatement()) {
+                    stmt.execute("CREATE TABLE IF NOT EXISTS kv_cache (k VARCHAR PRIMARY KEY, value VARCHAR DEFAULT '' NOT NULL)");
+                    stmt.execute("MERGE INTO kv_cache t USING (VALUES ('user_data', 'cached_value')) s(k, value) ON t.k = s.k WHEN NOT MATCHED THEN INSERT (k, value) VALUES (s.k, s.value)");
+                }
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (java.sql.Statement stmt = connection.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GET
+    @Path("/ValidateWindow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response validateWindow(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String heading = java.util.Optional.ofNullable(dbReadColumn("SELECT value FROM kv_cache WHERE k = 'user_data' LIMIT 1")).orElse("");
+        String prefix = heading.length() > 0 ? heading.substring(0, 1).toLowerCase() : "";
+        String addendum;
+        switch (prefix) {
+            case "h": addendum = heading.toLowerCase(); break;
+            case "f": addendum = heading.toUpperCase(); break;
+            default: addendum = heading.strip(); break;
+        }
+        org.yaml.snakeyaml.LoaderOptions loaderOptions = new org.yaml.snakeyaml.LoaderOptions();
+        loaderOptions.setTagInspector(tag -> true);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(loaderOptions));
+        Object obj = yaml.load(addendum);
+        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

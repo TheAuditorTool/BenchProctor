@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
+const stream = require("node:stream");
 
 async function BenchmarkTest00156(req, res) {
-  const userInput = req.headers["user-agent"] || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-  eval(processed);
+  const userInput = process.env.APP_INPUT || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  stream.Readable.from([String(data)]).pipe(crypto.createHash("sha256")).setEncoding("hex").on("data", (checksum) => console.log("content checksum " + checksum));
   res.json({ done: true });
 }
 

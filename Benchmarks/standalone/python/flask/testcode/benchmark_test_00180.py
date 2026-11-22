@@ -1,12 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from dataclasses import dataclass
+import hashlib
 from flask import Flask, request, jsonify
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -24,13 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00180", methods=["POST"])
 def BenchmarkTest00180():
-    auth_header = request.headers.get('Authorization', '')
-    form = FormData(payload=auth_header)
-    data = form.payload
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    eval(str(processed))
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    def normalize(value):
+        return value.strip()
+    data = normalize(upload_name)
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

@@ -8,10 +8,10 @@ class BenchmarkTest00324Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        eval((string)$data);
+        $userInput = $request->header('Host', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $claims = openssl_decrypt((string)$data, 'aes-256-ecb', getenv('DATA_ENC_KEY'));
         return response()->json(['ok' => 1]);
     }
 }

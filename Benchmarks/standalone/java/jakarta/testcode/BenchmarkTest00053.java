@@ -33,16 +33,14 @@ public class BenchmarkTest00053 {
     @GET
     @Path("/BenchmarkTest00053")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00053(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
-        String data = transform.apply(forwardedIp);
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00053(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = String.join(" ", cookieValue.split("[ \\t]+"));
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
+        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
+        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

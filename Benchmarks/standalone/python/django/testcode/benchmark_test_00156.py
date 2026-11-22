@@ -1,9 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import hashlib
+import os
+import json
 
 
 def BenchmarkTest00156(request):
-    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
-    digest = hashlib.md5(str(header_value).encode()).hexdigest()
-    return JsonResponse({'digest': str(digest)}, status=200)
+    env_value = os.environ.get('APP_INPUT', '')
+    try:
+        data = json.loads(env_value).get('value', env_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = env_value
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'invalid number'}, status=400)
+    processed = _coerced
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
+    return JsonResponse({"saved": True})

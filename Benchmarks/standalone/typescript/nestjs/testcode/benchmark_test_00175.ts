@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, ForbiddenException } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import { Body, Controller, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -25,13 +18,18 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00175")
-  async BenchmarkTest00175(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const data = Buffer.from(userInput, "hex").toString();
-    const resolved = path.resolve("/var/app/data", data);
-    if (!resolved.startsWith("/var/app/data/")) { throw new ForbiddenException({error:"forbidden"}); }
-    const checkedPath = resolved;
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  async BenchmarkTest00175(@Body("variables") vars: { input?: string }, @Req() req: Request): Promise<unknown> {
+    const userInput = (vars?.input as string) || "";
+    const data = String(userInput).split(/[ \t]+/).join(" ");
+    if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    const password = String(req.body?.password ?? "");
+    if (!password) { throw new BadRequestException({ error: "password required" }); }
+    const authenticated = await new Promise<boolean>((resolve) => {
+      ldapClient.bind("uid=" + processed + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+    });
+    return { authenticated };
   }
 }

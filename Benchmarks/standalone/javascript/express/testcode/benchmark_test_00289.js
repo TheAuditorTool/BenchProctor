@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
 
 async function BenchmarkTest00289(req, res) {
-  const userInput = req.body.field || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
-  res.json({ done: true });
+  const userInput = req.headers.authorization || "";
+  const data = userInput != null ? userInput : '';
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const plan = planQuotas.get(String(data));
+  if (!plan) { res.status(404).json({ error: "unknown plan" }); return; }
+  const { quota } = plan;
+  res.json({ quota }); return;
 }
 
 module.exports = { BenchmarkTest00289 };

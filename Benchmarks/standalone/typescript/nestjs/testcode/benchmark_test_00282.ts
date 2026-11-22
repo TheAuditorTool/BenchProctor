@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import * as jsYamlJsTypes from "js-yaml-js-types";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,12 +19,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00282")
-  async BenchmarkTest00282(@Headers("authorization") auth: string, @Req() req: Request): Promise<unknown> {
-    const userInput = auth || "";
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-    req.session.data = String(processed);
-    return { created: true };
+  async BenchmarkTest00282(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

@@ -8,10 +8,11 @@ class BenchmarkTest00303Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        $userInput = $request->header('User-Agent', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        ini_set('yaml.decode_php', '1');
+        $document = yaml_parse((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { Controller, createParamDecorator, ExecutionContext, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { DataSource } from "typeorm";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,13 +23,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00031")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00031(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const data = String(userInput).split(/[ \t]+/).join(" ");
-    const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
-    await _dataSource.initialize();
-    await _dataSource.query("SELECT * FROM users WHERE id = '" + data + "'");
+  async BenchmarkTest00031(@Cookies("session_token") cookieToken: string, @Req() req: Request): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    req.session.data = String(data);
     return { created: true };
   }
 }

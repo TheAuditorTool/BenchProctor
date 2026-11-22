@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-import java.security.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -11,12 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00124 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -28,10 +20,17 @@ public class BenchmarkTest00124 {
     }
 
     @PostMapping("/BenchmarkTest00124")
-    public void BenchmarkTest00124(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        byte[] digest = MessageDigest.getInstance("MD5").digest(jsonValue.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    public void BenchmarkTest00124(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        String prefix = fieldValue.length() > 0 ? fieldValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = fieldValue.toLowerCase(); break;
+            case "f": data = fieldValue.toUpperCase(); break;
+            default: data = fieldValue.strip(); break;
+        }
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha1Hex(data);
+        response.setHeader("X-Hash", digestHex);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

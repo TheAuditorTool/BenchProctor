@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 const { db } = require("./shared");
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const isoDompurify = require("isomorphic-dompurify");
+const marked = require("marked");
+const nunjucks = require("nunjucks");
 
 const BenchmarkTest00335 = async (ctx) => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + userInput + "']", xmlDoc);
-  ctx.body = { ack: true };
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  const processed = isoDompurify.sanitize(marked.parse(data));
+  const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+  ctx.body = page;
 }
 
 module.exports = { BenchmarkTest00335 };

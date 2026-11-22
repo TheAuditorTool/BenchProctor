@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::response::Json;
+use url::Url;
 
-pub async fn benchmark_test_00120(headers: HeaderMap) -> impl IntoResponse {
-    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = forwarded_ip.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    crate::shared::ldap_search(&format!("uid={}", data));
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00120(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Ok(Some(_field)) = multipart.next_field().await {
+            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+        }
+        _fname
+    };
+    struct FormData { payload: String }
+    let data = FormData { payload: upload_name.clone() }.payload;
+    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
+    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
+    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
+    let target_url = data.clone();
+    (StatusCode::FOUND, [(axum::http::header::LOCATION, target_url.clone())]).into_response()
 }

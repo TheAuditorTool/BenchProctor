@@ -6,28 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <netdb.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <fcntl.h>
 
 void benchmark_test_00234(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    const char *safe = data;
-    if (strcmp(data, "api.internal.svc") != 0 && strcmp(data, "cdn.internal.svc") != 0) safe = "api.internal.svc";
-    struct addrinfo _hints;
-    struct addrinfo *_ai = NULL;
-    memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(safe, "80", &_hints, &_ai) == 0 && _ai) {
-        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
-        freeaddrinfo(_ai);
-    }
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd < 0) return;
+    ssize_t _got = read(_fd, _rnd, sizeof(_rnd));
+    close(_fd);
+    if (_got != (ssize_t)sizeof(_rnd)) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; _i++) snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    printf("token for %s: %s\n", data, _hex);
 }

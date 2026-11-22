@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00284Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,17 +12,11 @@ class BenchmarkTest00284Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00284
-    user_input = request.headers["X-Custom-Header"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    data = "%s" % user_input
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    render json: { status: "ok" }
   end
 end

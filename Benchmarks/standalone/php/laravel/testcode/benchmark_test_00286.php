@@ -8,9 +8,12 @@ class BenchmarkTest00286Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Host', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $userInput = $request->cookie('session_token', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        if (!in_array((string)$data, ['ls', 'cat', 'date', 'whoami'], true)) { return response()->json(['error' => 'forbidden'], 403); }
+        $allowedBin = (string)$data;
+        shell_exec('bash -c "grep -r ' . $allowedBin . ' /var/app/logs"');
+        return response()->json(['ok' => 1]);
     }
 }

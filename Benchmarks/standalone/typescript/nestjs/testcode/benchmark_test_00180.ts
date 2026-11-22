@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Headers, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import knex from "knex";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,12 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00180")
-  async BenchmarkTest00180(): Promise<unknown> {
-    const userInput = ((await (await fetch("https://api.partner.example/v1/records")).json()) as { data?: string }).data || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-    await _knex.raw("SELECT * FROM users WHERE id = '" + data + "'");
+  async BenchmarkTest00180(@Headers("user-agent") ua: string, @Req() req: Request): Promise<unknown> {
+    const userInput = ua || "";
+    const data = nodeUtil.format("%s", userInput);
+    req.app.locals.announcement = String(data);
     return { created: true };
   }
 }

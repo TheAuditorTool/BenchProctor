@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,17 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
-void benchmark_test_00178(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00178(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char *_dst = new char[32];
-    std::snprintf(_dst, 32, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string user_input = req.get_param_value("field");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    const char *_sp_argv[] = { "sh", "-c", data.c_str(), nullptr };
+    char *const _sp_env[] = { nullptr };
+    pid_t _pid;
+    if (posix_spawn(&_pid, "/bin/sh", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
     res.set_content("ok", "text/plain");
 }

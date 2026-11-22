@@ -8,8 +8,10 @@ class BenchmarkTest00275Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        exec('tar -czf /tmp/backup.tgz ' . (string)$userInput);
+        $userInput = $request->header('X-Custom-Header', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        json_decode($data, true);
         return response()->json(['ok' => 1]);
     }
 }

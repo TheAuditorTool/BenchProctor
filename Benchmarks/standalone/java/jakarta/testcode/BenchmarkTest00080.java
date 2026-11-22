@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -15,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00080 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -38,14 +30,22 @@ public class BenchmarkTest00080 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00080")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00080(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String data = jsonValue.isEmpty() ? "default" : jsonValue;
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    public Response BenchmarkTest00080(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data;
+        try { data = String.valueOf(Integer.parseInt(uaValue)); }
+        catch (NumberFormatException e) { data = uaValue; }
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher blockMode = new org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher(org.bouncycastle.crypto.engines.AESEngine.newInstance());
+        blockMode.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[blockMode.getOutputSize(plain.length)];
+        int sealedLen = blockMode.processBytes(plain, 0, plain.length, sealed, 0);
+        sealedLen += blockMode.doFinal(sealed, sealedLen);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(java.util.Arrays.copyOf(sealed, sealedLen)));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

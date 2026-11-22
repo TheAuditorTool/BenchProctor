@@ -7,15 +7,14 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00310(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
-    system(_cmd);
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(user_input, NULL, 10);
+    unsigned int _sum = 0;
+    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
+    printf("%u\n", _sum);
 }

@@ -3,30 +3,22 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00155(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	var data string
-	if cookieValue != "" {
-		data = cookieValue
-	}
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
-	}
-	processed := data
-	c.Set("data", processed)
+	jsonValue := reqBody.Payload
+	segments := strings.Split(jsonValue, ",")
+	data := strings.Join(segments, " ")
+	htmlOut := "<div>" + data + "</div>"
+	c.Data(200, "text/html", []byte(htmlOut))
 }

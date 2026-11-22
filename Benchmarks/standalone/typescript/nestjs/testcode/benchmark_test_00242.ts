@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as nodeSerialize from "node-serialize";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
@@ -18,10 +18,9 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00242")
-  async BenchmarkTest00242(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
+  async BenchmarkTest00242(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const data = String(userInput).slice(0, 200);
     nodeSerialize.unserialize(data);
     return { created: true };
   }

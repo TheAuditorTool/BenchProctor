@@ -6,21 +6,24 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <regex.h>
 
 void benchmark_test_00501(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
     const char *user_input = user_input_buf;
     const char *data = (strlen(user_input) > 0) ? user_input : "";
-    const int _unit_cents = 1999;
-    int _qty = atoi(data);
-    int _total = _qty * _unit_cents;
-    printf("total=%d\n", _total);
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "config";
+        regfree(&_re);
+    }
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", arg);
+    remove(_path);
 }

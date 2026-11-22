@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00333 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,9 +19,14 @@ class BenchmarkTest00333 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00333" do
-    user_input = request.body.read
+    user_input = request.env["HTTP_USER_AGENT"].to_s
     data = "#{user_input}"
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    session[:data] = processed.to_s
     content_type :json
     JSON.generate({ status: "ok" })
   end

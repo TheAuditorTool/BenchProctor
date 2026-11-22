@@ -11,13 +11,9 @@ class BenchmarkTest00313Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00313
-    user_input = request.headers["Authorization"].to_s
-    pending = user_input.split(',')
+    user_input = User.first&.name.to_s
     data = ''
-    data = pending.shift until pending.empty?
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
-    render json: { status: "ok" }
+    user_input.split(',').each { |token| data = token }
+    send_data("<div>" + data + "</div>", type: "text/html", disposition: "inline")
   end
 end

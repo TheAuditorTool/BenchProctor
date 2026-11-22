@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "net/ldap"
 
 class BenchmarkTest00031 < Sinatra::Base
   before do
@@ -21,14 +19,27 @@ class BenchmarkTest00031 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00031" do
-    user_input = request.cookies["session_token"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.body.read
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
     end
-    data = _normalize_local(user_input)
-    result = DB[:users].where(name: data).first
-    value = result[:name]
+    processed = data
+    password = params[:password].to_s
+    if password.empty?
+      halt 400, JSON.generate({ error: "password required" })
+      return
+    end
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    account = ldap.bind_as(base: "ou=people,dc=example,dc=com", filter: "(uid=" + processed.to_s + ")", password: password)
+    unless account
+      halt 401, JSON.generate({ error: "invalid credentials" })
+      return
+    end
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ dn: account.first.dn })
   end
 end

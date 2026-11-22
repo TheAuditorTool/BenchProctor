@@ -1,9 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from cryptography.fernet import Fernet
+import random
 from starlette.responses import JSONResponse
-import os
+from app_runtime import db
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -22,7 +29,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00077")
 async def BenchmarkTest00077(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = '%s' % (raw_body,)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    user_id = request.query_params.get('id', '')
+    data = RequestPayload(user_id).value
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

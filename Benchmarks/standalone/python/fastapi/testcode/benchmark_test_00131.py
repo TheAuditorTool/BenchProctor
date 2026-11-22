@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-import json
-from fastapi.responses import JSONResponse
+from http.cookies import SimpleCookie
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,10 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00131")
 async def BenchmarkTest00131(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    try:
-        data = json.loads(upload_name).get('value', upload_name)
-    except (json.JSONDecodeError, AttributeError):
-        data = upload_name
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    xml_value = (await request.body()).decode('utf-8')
+    data = ' '.join(str(xml_value).split())
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

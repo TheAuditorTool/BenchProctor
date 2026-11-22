@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 const BenchmarkTest00160 = async (ctx) => {
-  const userInput = ctx.cookies.get("session_token") || "";
-  const data = Buffer.from(userInput, "base64").toString();
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
+  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  ctx.cookies.set("session", data, { secure: false, httpOnly: true, sameSite: "strict" });
   ctx.body = { ack: true };
 }
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <regex>
+#include <cstdlib>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,12 +27,11 @@ struct Client {
 
 void benchmark_test_00412(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _path = std::string("/var/app/data/") + safe;
-    std::remove(_path.c_str());
+    std::string user_input = req.body;
+    const char _buf[16] = "fixedcontent12";
+    size_t _span = std::strtoul(user_input.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    std::cout.write(_buf, static_cast<std::streamsize>(_span));
+    std::cout << std::endl;
     res.set_content("ok", "text/plain");
 }

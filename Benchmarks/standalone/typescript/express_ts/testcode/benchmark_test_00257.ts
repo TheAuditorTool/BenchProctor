@@ -2,8 +2,8 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00257 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = (req.cookies?.session_token as string) || "";
+  const data = Buffer.from(userInput, "hex").toString();
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.end("<section>" + data + "</section>"); return;
 }

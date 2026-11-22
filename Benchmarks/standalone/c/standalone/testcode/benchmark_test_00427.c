@@ -7,19 +7,32 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+typedef struct _xmlTextReader *xmlTextReaderPtr;
+extern xmlTextReaderPtr xmlReaderForMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern int xmlTextReaderRead(xmlTextReaderPtr _reader);
+extern const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr _reader);
+extern void xmlFreeTextReader(xmlTextReaderPtr _reader);
 
 void benchmark_test_00427(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    size_t _n = strlen(data);
-    char *_p = malloc(_n + 1);
-    if (_p == NULL) return;
-    memcpy(_p, data, _n + 1);
-    printf("%s\n", _p);
-    free(_p);
-    memset(_p, 0, _n + 1);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    xmlTextReaderPtr _reader = xmlReaderForMemory(user_input, (int)strlen(user_input), "noname.xml", NULL, XML_PARSE_NONET);
+    if (_reader != NULL) {
+        while (xmlTextReaderRead(_reader) == 1) {
+            const unsigned char *_text = xmlTextReaderConstValue(_reader);
+            if (_text != NULL) fputs((const char *)_text, stdout);
+        }
+        xmlFreeTextReader(_reader);
+    }
 }

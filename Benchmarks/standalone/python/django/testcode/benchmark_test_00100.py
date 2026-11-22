@@ -1,15 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from lxml import etree
-import re
 
 
 def BenchmarkTest00100(request):
-    raw_body = request.body.decode('utf-8')
-    data = raw_body if raw_body else 'default'
-    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
-        return JsonResponse({'error': 'forbidden'}, status=400)
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return JsonResponse({"saved": True})
+    host_value = request.META.get('HTTP_HOST', '')
+    data, _sep, _rest = str(host_value).partition('\x00')
+    resp = JsonResponse({'status': 'ok'})
+    resp.cookies['session'] = str(data)
+    resp.cookies['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    return resp

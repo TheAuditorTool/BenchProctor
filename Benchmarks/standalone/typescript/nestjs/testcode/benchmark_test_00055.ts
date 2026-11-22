@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import * as nodeSerialize from "node-serialize";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +21,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00055")
-  async BenchmarkTest00055(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    nodeSerialize.unserialize(data);
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00055(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.evaluate("//user[name='" + data + "']", usersDoc, null, xpath.XPathResult.ANY_TYPE, null);
     return { created: true };
   }
 }

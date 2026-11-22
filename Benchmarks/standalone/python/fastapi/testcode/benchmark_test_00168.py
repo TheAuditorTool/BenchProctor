@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
 from starlette.responses import JSONResponse
-import os
-import re
 
 
 app = FastAPI()
@@ -23,11 +20,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00168")
 async def BenchmarkTest00168(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    data = '%s' % str(xml_value)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+    multipart_value = (await request.form()).get('multipart_field', '')
+    if multipart_value:
+        data = multipart_value
+    else:
+        data = ''
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return JSONResponse({'error': 'unknown plan'}, status_code=404)
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

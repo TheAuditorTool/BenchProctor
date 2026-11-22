@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
-import re
-from flask import request, jsonify
+from lxml import etree
+from flask import Flask, request, jsonify
+import json
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,10 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00171", methods=["POST"])
 def BenchmarkTest00171():
-    cookie_value = request.cookies.get('session_token', '')
-    data = cookie_value if cookie_value else 'default'
-    if not re.fullmatch("^[a-zA-Z0-9 _.\\-]+$", data):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    session['data'] = str(processed)
+    upload_name = request.files['upload'].filename
+    try:
+        data = json.loads(upload_name).get('value', upload_name)
+    except (json.JSONDecodeError, AttributeError):
+        data = upload_name
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(data) + '"]')
     return jsonify({"result": "success"})

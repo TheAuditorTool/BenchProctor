@@ -11,15 +11,9 @@ class BenchmarkTest00233Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00233
-    user_input = request.body.read
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    eval(processed)
+    user_input = request.headers["Authorization"].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    system("echo " + data)
     render json: { status: "ok" }
   end
 end

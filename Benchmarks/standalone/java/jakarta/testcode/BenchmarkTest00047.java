@@ -37,7 +37,10 @@ public class BenchmarkTest00047 {
         String headerValue = xCustomHeader != null ? xCustomHeader : "";
         java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
         String data = transform.apply(headerValue);
-        response.sendRedirect(data);
-        return Response.ok().build();
+        if (!data.matches("^[a-zA-Z0-9 _.%\\-]+$")) { return Response.status(400).build(); }
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,10 +26,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00195")
-  async BenchmarkTest00195(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const data = `${userInput}`;
-    await db.query({ name: "user-by-id", text: "SELECT * FROM users WHERE id = $1", values: [data] });
+  async BenchmarkTest00195(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.parse("//user[name='" + userInput + "']").select({ node: usersDoc });
     return { created: true };
   }
 }

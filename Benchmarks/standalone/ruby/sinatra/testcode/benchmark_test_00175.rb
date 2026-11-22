@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00175 < Sinatra::Base
   before do
@@ -18,9 +19,11 @@ class BenchmarkTest00175 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00175" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = user_input ? user_input : ''
-    redirect data
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
+    data = sprintf("%s", user_input)
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port, auth: { method: :simple, username: ENV.fetch("LDAP_BIND_DN"), password: ENV.fetch("LDAP_BIND_PASSWORD") })
+    ldap.replace_attribute("uid=" + data.to_s + ",ou=people,dc=example,dc=com", :description, "reviewed")
     content_type :json
     JSON.generate({ status: "ok" })
   end

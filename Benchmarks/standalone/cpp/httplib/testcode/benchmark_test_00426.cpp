@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
+#include <regex>
+#include <functional>
 #include <unordered_map>
 
 namespace httplib {
@@ -11,10 +14,15 @@ struct Request {
     std::unordered_map<std::string, std::string> path_params;
     std::string body;
 };
+struct DataSink {
+    std::function<bool(const char *, size_t)> write;
+    std::function<void()> done;
+};
 struct Response {
     void set_content(const std::string &s, const std::string &type);
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
+    void set_chunked_content_provider(const std::string &content_type, std::function<bool(size_t, DataSink &)> provider) { std::string _chunks; DataSink _sink; _sink.write = [&_chunks](const char *_d, size_t _n) { _chunks.append(_d, _n); return true; }; _sink.done = [] {}; provider(0, _sink); set_content(_chunks, content_type); }
     int status;
 };
 struct Result {};
@@ -24,13 +32,18 @@ struct Client {
 };
 }
 
-void benchmark_test_00426(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00426(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    std::string _ckval = data;
-    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
-    res.set_content("ok", "text/plain");
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>";
+    res.set_chunked_content_provider("text/html", [_html](size_t, httplib::DataSink &_sink) {
+        _sink.write(_html.data(), _html.size());
+        _sink.done();
+        return true;
+    });
 }

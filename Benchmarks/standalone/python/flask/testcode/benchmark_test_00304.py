@@ -1,13 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-from dataclasses import dataclass
 from flask import Flask, request, jsonify
+from app_runtime import db
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -25,8 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00304", methods=["POST"])
 def BenchmarkTest00304():
-    field_value = request.form.get('field', '')
-    form = FormData(payload=field_value)
-    data = form.payload
-    parsed = yaml.safe_load(data)
-    return jsonify({'parsed': str(parsed)}), 200
+    multipart_value = request.form.get('multipart_field', '')
+    data = (lambda v: v.strip())(multipart_value)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return jsonify({'error': 'not found'}), 404
+    value = result['name']
+    return jsonify({'name': str(value)}), 200

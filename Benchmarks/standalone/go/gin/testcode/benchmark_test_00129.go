@@ -3,21 +3,20 @@ package testcode
 
 import (
 	"net/http"
-	"net/url"
-	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00129(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data, _ := url.QueryUnescape(refererValue)
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	cookieValue, err := c.Cookie("session_token")
+	if err != nil {
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	var data string
+	if cookieValue != "" {
+		data = cookieValue
+	}
+	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	c.JSON(200, gin.H{"code": "OK"})
 }

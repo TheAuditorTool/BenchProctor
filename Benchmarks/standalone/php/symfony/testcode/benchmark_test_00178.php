@@ -5,20 +5,15 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Validation;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[Route('/BenchmarkTest00178', methods: ['POST'])]
 class BenchmarkTest00178Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookies->get('session_token', '');
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
         $data = ($userInput !== null) ? $userInput : '';
-        $_violations = Validation::createValidator()->validate((string)$data, [new Assert\Regex(['pattern' => '#^[a-zA-Z0-9 _.\\-]+$#'])]);
-        if (count($_violations) > 0) { error_log('schema validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = (string)$data;
-        $request->getSession()->set('data', (string) $processed);
+        file_get_contents((string)$data);
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -2,22 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00079', methods: ['POST'])]
 class BenchmarkTest00079Controller
 {
-    public function __invoke(Request $request, Connection $conn)
+    public function __invoke()
     {
-        $userInput = $request->headers->get('User-Agent', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        if ($result === false) { return new JsonResponse(["error" => "not found"], 404); }
-        $value = $result['name'];
+        $userInput = getenv('APP_INPUT') ?: '';
+        $data = str_replace("\0", '', $userInput);
+        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
         return new JsonResponse(["committed" => true]);
     }
 }

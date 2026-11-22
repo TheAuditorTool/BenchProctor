@@ -5,9 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.*;
-import java.net.*;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -35,16 +32,18 @@ public class BenchmarkTest00205 {
 
     @POST
     @Path("/BenchmarkTest00205")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00205(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        String data = String.join(" ", multipartValue.split("[ \\t]+"));
-        try {
-            java.net.http.HttpRequest httpReq = java.net.http.HttpRequest.newBuilder(java.net.URI.create(data)).GET().build();
-            java.net.http.HttpResponse<String> httpResp = java.net.http.HttpClient.newHttpClient().send(httpReq, java.net.http.HttpResponse.BodyHandlers.ofString());
-            response.setHeader("X-Fetch-Status", String.valueOf(httpResp.statusCode()));
-        } catch (Exception e) { return Response.status(502).build(); }
+    public Response BenchmarkTest00205(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data = rawData.replace("\u0000", "");
+        if (!data.matches("^[a-zA-Z0-9 _.\\-]+$")) { return Response.status(400).build(); }
+        java.util.Map<String, Object> sessionProfile = (java.util.Map<String, Object>) request.getSession().getAttribute("profile");
+        if (sessionProfile == null) {
+            sessionProfile = new java.util.concurrent.ConcurrentHashMap<>();
+            request.getSession().setAttribute("profile", sessionProfile);
+        }
+        sessionProfile.putAll(java.util.Map.of("displayName", data));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

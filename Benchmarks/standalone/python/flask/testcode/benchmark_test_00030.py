@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
-from flask import Flask, request, jsonify
-from app_runtime import db
+import os
+from flask import Flask, make_response
+from flask import request, jsonify
+import urllib.parse
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -25,6 +27,7 @@ def BenchmarkTest00030():
         data = auth_header
     else:
         data = ''
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

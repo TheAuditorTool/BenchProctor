@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
-from app_runtime import db
-from fastapi.responses import JSONResponse
+import hashlib
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,6 +21,6 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00286")
 async def BenchmarkTest00286(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    defusedxml.ElementTree.fromstring(str(db_value))
-    return {"updated": True}
+    ua_value = request.headers.get('user-agent', '')
+    digest = hashlib.sha3_256(str(ua_value).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

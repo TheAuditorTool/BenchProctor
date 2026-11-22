@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Header, Post } from "@nestjs/common";
+import { Controller, Headers, Post, StreamableFile } from "@nestjs/common";
 import { Response } from "express";
-import isoDompurify from "isomorphic-dompurify";
+import * as shared from "./shared";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00295")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00295(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const [data] = String(userInput).split(',');
-    const _clean = isoDompurify.sanitize(data);
-    const processed = _clean;
-    return "<div>" + processed + "</div>";
+  async BenchmarkTest00295(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    return new StreamableFile(Buffer.from("<section>" + shared.escapeHtml(data) + "</section>"), { type: "text/html; charset=utf-8" });
   }
 }

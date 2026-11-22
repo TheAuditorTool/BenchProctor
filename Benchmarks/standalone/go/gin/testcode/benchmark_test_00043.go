@@ -2,23 +2,30 @@
 package testcode
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00043(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	data := func(v string) string { return strings.TrimSpace(v) }(commentText)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	cookieValue, err := c.Cookie("session_token")
+	if err != nil {
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	data := strings.Join(strings.FieldsFunc(cookieValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	cipherBlock, _ := aes.NewCipher(keyHash[:])
+	gcm, _ := cipher.NewGCM(cipherBlock)
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

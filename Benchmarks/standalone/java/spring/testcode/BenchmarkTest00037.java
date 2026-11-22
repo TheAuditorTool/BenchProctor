@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.security.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,12 +20,12 @@ public class BenchmarkTest00037 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00037", consumes="text/plain")
-    public void BenchmarkTest00037(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        java.util.function.Supplier<String> valueSupplier = () -> rawData.strip();
-        String data = valueSupplier.get();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    @PostMapping(path="/BenchmarkTest00037", consumes="multipart/form-data")
+    public void BenchmarkTest00037(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.isEmpty() ? "default" : multipartValue;
+        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

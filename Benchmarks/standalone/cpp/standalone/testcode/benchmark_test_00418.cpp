@@ -2,17 +2,47 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef struct _xmlTextReader xmlTextReader; typedef xmlTextReader *xmlTextReaderPtr;
+extern "C" xmlTextReaderPtr xmlReaderForMemory(const char *, int, const char *, const char *, int);
+extern "C" int xmlTextReaderRead(xmlTextReaderPtr);
+extern "C" const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr);
+extern "C" void xmlFreeTextReader(xmlTextReaderPtr);
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00418(int, char **)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string _xdoc = data;
+    xmlTextReaderPtr _xr = xmlReaderForMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
+    if (_xr) {
+        while (xmlTextReaderRead(_xr) == 1) {
+            const unsigned char *_xv = xmlTextReaderConstValue(_xr);
+            if (_xv) std::cout << reinterpret_cast<const char *>(_xv);
+        }
+        xmlFreeTextReader(_xr);
+    }
 }

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from cryptography.fernet import Fernet
+import random
 from starlette.responses import JSONResponse
-import os
+import json
+from app_runtime import db
 
 
 app = FastAPI()
@@ -22,9 +23,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00222")
 async def BenchmarkTest00222(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(upload_name)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    kind = 'json' if str(graphql_var).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(graphql_var).strip()
+        case _:
+            data = str(graphql_var)
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

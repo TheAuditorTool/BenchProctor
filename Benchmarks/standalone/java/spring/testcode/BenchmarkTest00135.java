@@ -20,13 +20,13 @@ public class BenchmarkTest00135 {
     }
 
     @GetMapping("/BenchmarkTest00135")
-    public void BenchmarkTest00135(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String data = String.join(" ", uaValue.split("[ \\t]+"));
-        java.util.Set<String> allowed = java.util.Set.of("ls", "cat", "date", "echo");
-        if (!allowed.contains(data)) { response.sendError(403); return; }
-        String allowedBin = data;
-        new ProcessBuilder(allowedBin).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public void BenchmarkTest00135(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = String.join(" ", userId.split("[ \\t]+"));
+        java.util.Map<String, String> regionEndpoints = java.util.Map.of("us-east", "https://us-east.api.svc.local", "eu-west", "https://eu-west.api.svc.local");
+        String regionEndpoint = regionEndpoints.get(data);
+        boolean secureEndpoint = regionEndpoint.startsWith("https://");
+        response.setHeader("X-Region-Secure", String.valueOf(secureEndpoint));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

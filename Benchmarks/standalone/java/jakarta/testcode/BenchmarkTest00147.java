@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,17 +30,17 @@ public class BenchmarkTest00147 {
         }
     }
 
-    record FormData(String payload) {}
-
-    @POST
+    @GET
     @Path("/BenchmarkTest00147")
-    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00147(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        FormData payload = new FormData(rawData);
-        String data = payload.payload();
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    public Response BenchmarkTest00147(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        java.util.Properties store = new java.util.Properties();
+        store.setProperty("value", userId);
+        String data = store.getProperty("value", "");
+        java.util.Random rng = new java.util.Random();
+        int randValue = rng.nextInt() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

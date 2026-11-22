@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
 from flask import Flask, request, jsonify
 
 
@@ -19,11 +18,17 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00074", methods=["POST"])
 def BenchmarkTest00074():
-    upload_name = request.files['doc'].filename
-    data = '%s' % str(upload_name)
-    allowed = {'config.json', 'index.html', 'readme.md'}
-    if data not in allowed:
-        return jsonify({'error': 'forbidden'}), 403
-    checked_path = '/var/app/data/' + data
-    os.unlink(checked_path)
-    return jsonify({"result": "success"})
+    ua_value = request.headers.get('User-Agent', '')
+    pending = list(str(ua_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return jsonify({'allocated': allocated}), 200

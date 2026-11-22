@@ -1,0 +1,6 @@
+topics:
+  - name: documents.events.v0005
+    partitions: 3
+    retention_hours: 24
+    producers:
+    consumers:

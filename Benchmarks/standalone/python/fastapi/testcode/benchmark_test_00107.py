@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from starlette.responses import JSONResponse
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -22,11 +23,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00107")
 async def BenchmarkTest00107(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    pending = list(str(comment_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data = ' '.join(str(forwarded_ip).split())
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

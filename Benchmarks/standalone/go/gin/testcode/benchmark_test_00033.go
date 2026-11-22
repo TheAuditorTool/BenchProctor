@@ -2,31 +2,26 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
-	"net/url"
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00033(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	fieldValue := c.PostForm("field")
+	data := fieldValue
+	if _, after, ok := strings.Cut(fieldValue, ","); ok {
+		data = after
+	}
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(data, 10, 32)
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, "invalid quantity")
 		return
 	}
-	rawBody := string(rawBytes)
-	var data string
-	for _, token := range strings.Split(rawBody, ",") {
-		data = token
-	}
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
-		return
-	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	lineTotal := int32(quantity) * unitPriceCents
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -11,14 +11,10 @@ class BenchmarkTest00140Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        [$data] = [$userInput, 'http'];
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
+        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
         return new JsonResponse(["committed" => true]);
     }
 }

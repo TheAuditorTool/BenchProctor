@@ -2,16 +2,23 @@
 package testcode
 
 import (
-	"fmt"
 	"net"
+	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00163(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data := fmt.Sprintf("%s", refererValue)
-	conn, err := net.Dial("tcp", data)
+	headerValue := c.GetHeader("X-Custom-Header")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(headerValue)
+	dialURL, dialErr := url.Parse(data)
+	if dialErr != nil {
+		c.String(http.StatusBadRequest, "invalid url")
+		return
+	}
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
 	if err == nil {
 		defer conn.Close()
 	}

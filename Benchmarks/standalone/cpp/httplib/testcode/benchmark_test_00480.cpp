@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <ctime>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,14 +27,20 @@ struct Client {
 };
 }
 
-void benchmark_test_00480(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00480(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    if (!user_input.empty()) data = user_input;
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd < 0) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    ssize_t _got = read(_fd, _rnd, sizeof(_rnd));
+    close(_fd);
+    if (_got != static_cast<ssize_t>(sizeof(_rnd))) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
     res.set_content("ok", "text/plain");
 }

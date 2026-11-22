@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from urllib.parse import unquote
+from Crypto.Hash import MD4
 from flask import Flask, request, jsonify
-import os
-from pydantic import Field, ValidationError, create_model
 
 
 app = Flask(__name__)
@@ -22,13 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00232", methods=["POST"])
 def BenchmarkTest00232():
-    referer_value = request.headers.get('Referer', '')
-    data = unquote(referer_value)
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.#%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return jsonify({'error': 'invalid input'}), 400
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return jsonify({"result": "success"})
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = '%s' % (graphql_var,)
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

@@ -2,11 +2,14 @@
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use rand::rngs::SysRng;
 
 pub async fn benchmark_test_00150(headers: HeaderMap) -> impl IntoResponse {
-    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
-    let data = cookie_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+    let header_value = headers.get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let transform = |v: String| v.trim().to_string();
+    let data = transform(header_value.clone());
+    use rand::TryRng;
+    let _token: u64 = SysRng.try_next_u64().expect("OS randomness unavailable");
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
     Json(serde_json::json!({"count": 0})).into_response()
 }

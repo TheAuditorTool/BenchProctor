@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
+require "socket"
 
 class BenchmarkTest00279Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +12,9 @@ class BenchmarkTest00279Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00279
-    user_input = request.referer.to_s
-    data = format("%<value>s", value: user_input)
-    token = SecureRandom.hex(32)
+    user_input = cookies[:session_token].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
     render json: { status: "ok" }
   end
 end

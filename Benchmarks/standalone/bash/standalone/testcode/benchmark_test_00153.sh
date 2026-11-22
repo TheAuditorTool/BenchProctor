@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00153() {
-  user_input="$HTTP_REFERER"
-  data=""
-  IFS="," read -ra _tokens <<< "${user_input}"
-  for token in "${_tokens[@]}"; do data="$token"; done
-  _host=$(echo "$data" | sed -E "s#^[a-zA-Z]+://##; s#[/:].*##")
-  case "$_host" in "["*|"") echo "private range blocked"; exit 1;; esac
-  _ip=$(getent ahosts "$_host" 2>/dev/null | head -n1 | cut -d" " -f1)
-  _ip="${_ip:-$_host}"
-  if ! echo "$_ip" | grep -qE "^[0-9]{1,3}(\.[0-9]{1,3}){3}$"; then echo "non-ipv4 host blocked" >&2; exit 1; fi
-  if echo "$_ip" | grep -qE "^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)"; then echo "private range blocked"; exit 1; fi
-  target_url="$data"
-  curl -s "$target_url"
+  user_input="$HTTP_HOST"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "invalid"; exit 1; fi
+  bounded_val="$data"
+  if [ "$bounded_val" -lt 0 ] || [ "$bounded_val" -gt 2147483647 ]; then echo "out of range" >&2; exit 1; fi
+  if [[ ! "$bounded_val" =~ ^[0-9]{1,18}$ ]]; then echo "not a number" >&2; exit 1; fi
+  record_count=$bounded_val
+  if (( record_count > 1048576 )); then echo "batch too large" >&2; exit 1; fi
+  (( buffer_bytes = record_count * 4096 ))
+  truncate -s "$buffer_bytes" /var/app/spool/batch.buf
 }
 
 benchmark_test_00153 "$@"

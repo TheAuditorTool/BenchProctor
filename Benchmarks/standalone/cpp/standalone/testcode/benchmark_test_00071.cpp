@@ -2,16 +2,18 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
+#include <regex>
 
 void benchmark_test_00071(int, char **)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
-    int _req = std::atoi(data.c_str());
-    int _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input;
+    std::getline(std::cin, user_input);
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
+    if (!std::regex_match(data, _schema)) return;
+    std::string arg = data;
+    std::string _cmd = std::string("ls ") + arg;
+    std::system(_cmd.c_str());
 }

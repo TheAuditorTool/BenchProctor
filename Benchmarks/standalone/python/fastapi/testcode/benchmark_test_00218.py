@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from app_runtime import db
+import os
 from fastapi.responses import JSONResponse
 
 
@@ -22,6 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00218/{id}")
 async def BenchmarkTest00218(request: Request, id: str):
     path_value = id
-    data, _sep, _rest = str(path_value).partition('\x00')
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    def normalize(value):
+        return value.strip()
+    data = normalize(path_value)
+    os.system('echo ' + str(data))
     return {"updated": True}

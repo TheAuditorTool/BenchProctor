@@ -2,44 +2,28 @@
 package testcode
 
 import (
-	"io"
-	"net"
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"net/url"
-	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00120(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	cookieValue, err := c.Cookie("session_token")
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	rawBody := string(rawBytes)
+	pending := strings.Split(cookieValue, ",")
 	var data string
-	if len(rawBody) > 0 {
-		data = rawBody
-	} else {
-		data = "default"
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
 	}
-	parsedURL, _ := url.Parse(data)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
-	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		c.String(http.StatusForbidden, "private range blocked")
-		return
-	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	c.JSON(http.StatusOK, map[string]string{"token": apiToken})
 }

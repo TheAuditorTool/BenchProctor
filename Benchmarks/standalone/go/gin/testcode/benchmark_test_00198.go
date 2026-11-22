@@ -3,14 +3,32 @@ package testcode
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00198(c *gin.Context) {
-	pathValue := c.Param("id")
-	form := submissionForm{payload: pathValue}
-	data := form.payload
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	header, err := c.FormFile("upload")
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad upload")
+		return
+	}
+	uploadName := header.Filename
+	capture := func() string { return strings.TrimSpace(uploadName) }
+	data := capture()
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
+		return
+	}
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
 	c.JSON(200, gin.H{"code": "OK"})
 }

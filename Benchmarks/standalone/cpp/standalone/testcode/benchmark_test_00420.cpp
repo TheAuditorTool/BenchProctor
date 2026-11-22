@@ -2,24 +2,23 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00420(int, char **)
 {
     std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
         }
+        std::fclose(_fp);
     }
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_dst = new char[32];
-    std::sprintf(_dst, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    delete[] _p;
 }

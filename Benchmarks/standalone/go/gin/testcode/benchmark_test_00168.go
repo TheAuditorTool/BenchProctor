@@ -2,22 +2,38 @@
 package testcode
 
 import (
+	"io"
+	"net"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00168(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
+	rawBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	var data string
-	if len(cookieValue) > 0 {
-		data = cookieValue
-	} else {
-		data = "default"
+	xmlBody := string(rawBytes)
+	data := strings.ReplaceAll(xmlBody, "\x00", "")
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
+		return
 	}
-	c.Set("data", data)
+	targetUrl := data
+	dialURL, dialErr := url.Parse(targetUrl)
+	if dialErr != nil {
+		c.String(http.StatusBadRequest, "invalid url")
+		return
+	}
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
+	if err == nil {
+		defer conn.Close()
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

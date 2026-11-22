@@ -1,6 +1,0 @@
-channels:
-  - name: telemetry:inbound:0048
-    payload: json
-keys:
-  - pattern: telemetry:record:{id}
-    ttl_seconds: 300

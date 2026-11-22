@@ -3,11 +3,9 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00266")]
 pub async fn benchmark_test_00266(req: HttpRequest) -> HttpResponse {
-    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut data = String::new();
-    for token in auth_header.split(',') { data = token.to_string(); }
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
-    let _ = value;
+    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = match forwarded_ip.chars().next() { Some(_) => forwarded_ip.clone(), None => "default".to_string() };
+    let _ciphertext = crate::shared::encrypt(&data);
+    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

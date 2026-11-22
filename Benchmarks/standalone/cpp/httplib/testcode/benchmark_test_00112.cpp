@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <unistd.h>
-#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -29,16 +26,22 @@ struct Client {
 void benchmark_test_00112(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.get_header_value("Cookie");
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string arg;
+    for (char _c : data) {
+        if (_c == '&') arg += "&amp;";
+        else if (_c == '<') arg += "&lt;";
+        else if (_c == '>') arg += "&gt;";
+        else if (_c == '"') arg += "&quot;";
+        else if (_c == '\'') arg += "&#39;";
+        else arg.push_back(_c);
     }
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    std::cout << "token for " << data << ": " << (int)_rnd[0] << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string _page = "<section class=\"profile\" title=\"{{name}}\"><h2>{{name}}</h2></section>";
+    std::string::size_type _at = 0;
+    while ((_at = _page.find("{{name}}", _at)) != std::string::npos) {
+        _page.replace(_at, 8, arg);
+        _at += arg.size();
+    }
+    res.set_content(_page, "text/html");
 }

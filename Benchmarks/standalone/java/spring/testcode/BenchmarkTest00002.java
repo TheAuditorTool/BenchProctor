@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,36 +19,16 @@ public class BenchmarkTest00002 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
-                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-    private static String dbReadColumn(String sql) {
-        try (var stmt = connection.createStatement();
-             var rs = stmt.executeQuery(sql)) {
-            return rs.next() ? rs.getString(1) : "";
-        } catch (java.sql.SQLException e) {
-            return "";
-        }
-    }
+    private static String normalize(String v) { return v.strip(); }
 
     @GetMapping("/BenchmarkTest00002")
-    public void BenchmarkTest00002(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
-        byte[] hexBytes = new byte[userName.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(userName.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+    public void BenchmarkTest00002(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = normalize(cookieValue);
+        java.util.Map<String, String> regionEndpoints = java.util.Map.of("us-east", "https://us-east.api.svc.local", "eu-west", "https://eu-west.api.svc.local");
+        String regionEndpoint = regionEndpoints.get(data);
+        boolean secureEndpoint = regionEndpoint.startsWith("https://");
+        response.setHeader("X-Region-Secure", String.valueOf(secureEndpoint));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

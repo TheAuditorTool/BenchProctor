@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from django.utils.safestring import mark_safe
+from django.http import HttpResponse
+import re
 
 
 def BenchmarkTest00178(request):
-    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
-    eval(str(header_value))
-    return JsonResponse({"saved": True})
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    data = '%s' % (ua_value,)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    return HttpResponse(mark_safe('<div>' + str(processed) + '</div>'))

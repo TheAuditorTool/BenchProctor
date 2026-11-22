@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "base64"
 
 class BenchmarkTest00086 < Sinatra::Base
   before do
@@ -19,11 +19,14 @@ class BenchmarkTest00086 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00086" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + user_input.to_s + ")")
+    user_input = params[:id].to_s
+    data = user_input ? user_input : ''
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

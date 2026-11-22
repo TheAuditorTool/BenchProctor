@@ -8,13 +8,13 @@ class BenchmarkTest00229Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Host', '');
-        $data = str_replace("\0", '', $userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        $resolved = gethostbyname($host);
-        if (preg_match('#^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)#', $resolved)) { return response()->json(['error' => 'private range blocked'], 403); }
-        $targetUrl = $data;
-        file_get_contents((string)$targetUrl);
+        $userInput = $request->getContent();
+        [$data] = [$userInput, 'http'];
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$data);
+        if ($item === null) { return response()->json(["error" => "not found"], 404); }
+        $price = $item->getAttribute('price');
         return response()->json(['ok' => 1]);
     }
 }

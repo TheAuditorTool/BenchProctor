@@ -6,18 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
+#include <regex.h>
 
 void benchmark_test_00402(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", data);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "asc";
+        regfree(&_re);
+    }
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", arg);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

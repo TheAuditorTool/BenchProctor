@@ -5,18 +5,18 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00159', methods: ['POST'])]
 class BenchmarkTest00159Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = $request->getContent();
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->headers->get('Authorization', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $conn->executeQuery('SELECT * FROM users ORDER BY ' . $processed);
         return new JsonResponse(["committed" => true]);
     }
 }

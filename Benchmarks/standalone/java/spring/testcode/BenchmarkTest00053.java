@@ -20,10 +20,17 @@ public class BenchmarkTest00053 {
     }
 
     @GetMapping("/BenchmarkTest00053")
-    public void BenchmarkTest00053(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
-        String data = transform.apply(uaValue);
-        response.getWriter().print("<div>" + data + "</div>");
+    public void BenchmarkTest00053(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data;
+        try { data = String.valueOf(Integer.parseInt(envValue)); }
+        catch (NumberFormatException e) { data = envValue; }
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        String boundedVal = data;
+        String displayName = boundedVal.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? boundedVal.strip() : "guest";
+        request.getSession().setAttribute("displayName", displayName);
+        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
+        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
     }
 }

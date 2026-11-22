@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import { stringifySetCookie } from "cookie";
 
 export const BenchmarkTest00097 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body as string) || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = (row as any).name;
+  const userInput = (req.query.id as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  res.append(
+    "Set-Cookie",
+    stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict" }),
+  );
   res.json({ accepted: true });
 }

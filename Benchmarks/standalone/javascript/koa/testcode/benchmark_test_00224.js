@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const isoDompurify = require("isomorphic-dompurify");
-const marked = require("marked");
+const stream = require("node:stream");
 
 const BenchmarkTest00224 = async (ctx) => {
-  const userInput = ctx.request.headers["user-agent"] || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const processed = isoDompurify.sanitize(marked.parse(data));
-  ctx.body = "<div>" + processed + "</div>";
+  const userInput = ctx.request.headers.referer || "";
+  const data = `${userInput}`;
+  ctx.type = "html";
+  ctx.body = stream.Readable.from(["<section>" + data + "</section>"]);
 }
 
 module.exports = { BenchmarkTest00224 };

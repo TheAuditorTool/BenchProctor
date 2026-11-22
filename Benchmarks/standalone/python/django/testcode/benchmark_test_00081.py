@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import subprocess
+import socket
+import urllib.parse
 
 
 def BenchmarkTest00081(request):
-    field_value = request.POST.get('field', '')
-    data, _sep, _rest = str(field_value).partition('\x00')
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
+    user_id = request.GET.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
     return JsonResponse({"saved": True})

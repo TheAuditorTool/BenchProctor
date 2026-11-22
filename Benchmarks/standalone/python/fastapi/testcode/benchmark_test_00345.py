@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from urllib.parse import unquote
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import urllib.parse
 
 
 app = FastAPI()
@@ -22,7 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00345")
 async def BenchmarkTest00345(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = unquote(multipart_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    ua_value = request.headers.get('user-agent', '')
+    parts = str(ua_value).split(',')
+    data = ' '.join(parts)
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

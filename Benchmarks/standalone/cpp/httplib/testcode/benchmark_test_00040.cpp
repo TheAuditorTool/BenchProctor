@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <cstdio>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,16 +23,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+extern "C" int RAND_bytes(unsigned char *buf, int num);
 
-void benchmark_test_00040(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00040(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    delete[] _p;
+    std::string user_input = req.get_header_value("X-Forwarded-For");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    unsigned char _rnd[16];
+    if (RAND_bytes(_rnd, sizeof(_rnd)) != 1) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
     res.set_content("ok", "text/plain");
 }

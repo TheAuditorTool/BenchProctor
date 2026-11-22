@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00003")]
-pub async fn benchmark_test_00003(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut data = String::new();
-    for token in referer_value.split(',') { data = token.to_string(); }
-    let processed = ammonia::clean(&data);
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", processed));
+pub async fn benchmark_test_00003(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Some(Ok(_field)) = payload.next().await {
+            if let Some(_cd) = _field.content_disposition() {
+                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
+            }
+        }
+        _fname
+    };
+    let data = upload_name.to_string();
+    let requested: u32 = data.parse().unwrap_or(0);
+    let count = (requested * 4096) as usize;
+    let _buf: Vec<u8> = vec![0u8; count];
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

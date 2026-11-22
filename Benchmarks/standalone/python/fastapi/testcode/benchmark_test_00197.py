@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
+import random
+import json
 from starlette.responses import JSONResponse
 from app_runtime import db
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -27,11 +23,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00197")
 async def BenchmarkTest00197(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    form = FormData(payload=comment_value)
-    data = form.payload
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = json.loads(db_value).get('value', '')
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

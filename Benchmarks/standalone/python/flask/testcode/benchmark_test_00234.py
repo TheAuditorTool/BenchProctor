@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
+from flask import Flask, abort
+from flask import redirect
+from urllib.parse import urlparse
 from flask import request, jsonify
+import re
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,7 +22,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00234", methods=["POST"])
 def BenchmarkTest00234():
-    raw_body = request.get_data(as_text=True)
-    data, _sep, _rest = str(raw_body).partition('\x00')
-    session['data'] = str(data)
-    return jsonify({"result": "success"})
+    multipart_value = request.form.get('multipart_field', '')
+    data = f'{multipart_value!s}'
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    abort(redirect(str(target_url)))

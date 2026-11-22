@@ -2,17 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00045', methods: ['POST'])]
 class BenchmarkTest00045Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke()
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = ($userInput !== null) ? $userInput : '';
-        return new Response('<div>' . $data . '</div>', 200, ['Content-Type' => 'text/html']);
+        $userInput = getenv('APP_INPUT') ?: '';
+        $data = str_replace("\0", '', $userInput);
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        $pipes = [];
+        $snippet = proc_open([PHP_BINARY, '-r', (string)$parsedBool], [1 => ['pipe', 'w']], $pipes);
+        $result = stream_get_contents($pipes[1]);
+        proc_close($snippet);
+        return new JsonResponse(["committed" => true]);
     }
 }

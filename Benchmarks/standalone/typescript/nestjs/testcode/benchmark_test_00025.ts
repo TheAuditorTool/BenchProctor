@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,13 +20,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00025")
-  async BenchmarkTest00025(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    JSON.parse(data);
+  async BenchmarkTest00025(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+    const streamIv = crypto.randomBytes(8);
+    fs.writeFileSync("/var/data/cipher.iv", streamIv);
+    stream.pipeline(stream.Readable.from([String(data)]), crypto.createCipheriv("des-ede3-cbc", streamKey, streamIv), fs.createWriteStream("/var/data/cipher.bin"), (err: Error | null) => { if (err) console.error("encryption failed", err); });
     return { created: true };
   }
 }

@@ -1,0 +1,6 @@
+channels:
+  - name: identity:inbound:0030
+    payload: json
+keys:
+  - pattern: identity:record:{id}
+    ttl_seconds: 300

@@ -11,10 +11,7 @@ class BenchmarkTest00101Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00101
-    user_input = request.host.to_s
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    redirect_back_or_to(user_input, allow_other_host: true)
   end
 end

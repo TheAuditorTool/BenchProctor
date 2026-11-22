@@ -2,17 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00211Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('User-Agent', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = DB::selectOne('SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1')->body;
+        $data = vsprintf('%1$s', [$userInput]);
+        DB::select('SELECT * FROM users WHERE id = \'' . $data . '\'');
+        return response()->json(['ok' => 1]);
     }
 }

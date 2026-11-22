@@ -5,6 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -30,16 +31,16 @@ public class BenchmarkTest00063 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00063")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00063(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data = envValue.isEmpty() ? "default" : envValue;
-        java.util.Set<String> allowed = java.util.Set.of("ls", "cat", "date", "echo");
-        if (!allowed.contains(data)) { return Response.status(403).build(); }
-        String allowedBin = data;
-        new ProcessBuilder(allowedBin).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00063(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = String.format("%s", multipartValue);
+        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
+        Object codeResult = new jakarta.el.ELProcessor().eval(data);
+        response.setHeader("X-Code-Result", String.valueOf(codeResult));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

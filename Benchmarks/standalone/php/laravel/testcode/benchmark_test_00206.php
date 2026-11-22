@@ -8,9 +8,10 @@ class BenchmarkTest00206Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = str_replace("\0", '', $userInput);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $userInput = $request->input('multipart_field', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
         return response()->json(['ok' => 1]);
     }
 }

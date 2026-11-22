@@ -1,0 +1,6 @@
+topics:
+  - name: payments.events.v0039
+    partitions: 3
+    retention_hours: 24
+    producers:
+    consumers:

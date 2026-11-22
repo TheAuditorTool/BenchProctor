@@ -19,15 +19,14 @@ public class BenchmarkTest00125 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
     @GetMapping("/BenchmarkTest00125")
-    public void BenchmarkTest00125(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        String data = normalize(forwardedIp);
-        int requested = Integer.parseInt(data);
-        int allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public void BenchmarkTest00125(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = String.format("%s", uaValue);
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        javax.xml.xpath.XPathExpression roleQuery = xpath.compile("/users/user[@name='" + data + "']/@role");
+        String userRole = roleQuery.evaluate(new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")));
+        response.setHeader("X-User-Role", userRole);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::HttpResponse;
-use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00063")]
-pub async fn benchmark_test_00063(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Some(Ok(mut _field)) = payload.next().await {
-            let mut _buf: Vec<u8> = Vec::new();
-            while let Some(Ok(_chunk)) = _field.next().await {
-                _buf.extend_from_slice(&_chunk);
-            }
-            _mv = String::from_utf8_lossy(&_buf).to_string();
-        }
-        _mv
-    };
-    let data = multipart_value.replace("\t", " ");
+pub async fn benchmark_test_00063() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = serde_json::from_str::<serde_json::Value>(&db_value)
+        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
     let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = result.unwrap();
+    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
     let _ = value;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

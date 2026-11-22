@@ -8,10 +8,11 @@ class BenchmarkTest00162Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
+        $userInput = $request->header('X-Forwarded-For', '');
+        $pending = explode(',', $userInput);
         $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        json_decode($data, true);
-        return response()->json(['ok' => 1]);
+        while (count($pending)) { $data = array_shift($pending); }
+        $sessionCookie = cookie('session', (string)$data, 0, '/', null, true, true, false, 'strict');
+        return response()->json(['ok' => 1])->withCookie($sessionCookie);
     }
 }

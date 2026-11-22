@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,13 +22,24 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct RatePlan { int limit; };
 
 void benchmark_test_00034(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    char _dst[16];
-    if (user_input.size() < sizeof(_dst)) std::strcpy(_dst, user_input.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_param_value("id");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    static const RatePlan _basic{10}, _pro{100};
+    std::unordered_map<std::string, const RatePlan *> _plans{{"basic", &_basic}, {"pro", &_pro}};
+    const RatePlan *_plan = _plans[data];
+    int _limit = _plan ? _plan->limit : 0;
+    std::cout << "limit " << _limit << std::endl;
     res.set_content("ok", "text/plain");
 }

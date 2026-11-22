@@ -18,9 +18,11 @@ class BenchmarkTest00264 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00264" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    data = sprintf("%s", user_input)
-    eval(data)
+    user_input = request.cookies["session_token"].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    File.delete("/var/app/data/" + data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

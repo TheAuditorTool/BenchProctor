@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00284 = async (ctx) => {
-  const userInput = ctx.params.id || "";
-  const _input = String(userInput);
-  let data;
-  switch (_input.startsWith('{') ? 'json' : 'text') {
-    case 'json': data = _input.normalize('NFC'); break;
-    default: data = _input; break;
-  }
-  ctx.cookies.set("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+  const userInput = ctx.request.headers["x-custom-header"] || "";
+  const data = String(userInput).slice(0, 200);
+  eval(data);
   ctx.body = { ack: true };
 }
 

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -20,13 +22,17 @@ public class BenchmarkTest00026 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00026")
-    public void BenchmarkTest00026(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        java.util.Map.Entry<String,String> tuple = java.util.Map.entry(authHeader, "form");
-        String data = tuple.getKey();
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    @PostMapping(path="/BenchmarkTest00026", consumes="multipart/form-data")
+    public void BenchmarkTest00026(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadName = file != null ? file.getOriginalFilename() : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(uploadName);
+        java.nio.file.Path base = java.nio.file.Paths.get("/var/app/data");
+        java.nio.file.Path resolved = base.resolve(data).normalize();
+        if (!resolved.startsWith(base)) { response.sendError(403); return; }
+        String checkedPath = resolved.toString();
+        String content = Files.readString(Paths.get(checkedPath), java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

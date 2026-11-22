@@ -6,8 +6,8 @@ pub async fn benchmark_test_00137(req: HttpRequest) -> HttpResponse {
     let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
     let transform = |v: String| v.trim().to_string();
     let data = transform(forwarded_ip.clone());
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio|safe }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => data })).unwrap_or_default();
+    return HttpResponse::Ok().content_type("text/html").body(_page);
 }

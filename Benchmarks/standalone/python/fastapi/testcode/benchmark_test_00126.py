@@ -1,15 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-from urllib.parse import urlparse
-import socket
 from starlette.responses import JSONResponse
-import re
-import os
-import redis
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = FastAPI()
 
@@ -28,12 +20,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00126")
 async def BenchmarkTest00126(request: Request):
-    redis_value = redis_client.get('user_data')
-    data = redis_value if redis_value else 'default'
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
-    target_url = data
-    requests.get(str(target_url))
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = '%s' % str(multipart_value)
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
     return {"updated": True}

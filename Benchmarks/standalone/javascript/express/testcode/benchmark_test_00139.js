@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
+const ldapjs = require("ldapjs");
+const joi = require("joi");
 
 async function BenchmarkTest00139(req, res) {
-  const userInput = (req.body.variables && req.body.variables.input) || "";
-  let data;
-  try { data = JSON.parse(userInput).value || ""; }
-  catch (e) { data = String(userInput); }
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  res.redirect(targetUrl);
+  const userInput = (req.files && req.files[0] && req.files[0].originalname) || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  const _schema = joi.string().pattern(/^[a-zA-Z0-9 _.#%\-]+$/).required();
+  const { error: _schemaErr, value: _schemaVal } = _schema.validate(data);
+  if (_schemaErr) { res.status(400).json({error:"invalid"}); return; }
+  const processed = _schemaVal;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00139 };

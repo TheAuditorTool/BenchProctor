@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -34,10 +33,10 @@ public class BenchmarkTest00050 {
     @GET
     @Path("/BenchmarkTest00050")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00050(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        com.fasterxml.jackson.databind.ObjectMapper safeMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        String deserialized = safeMapper.readValue(envValue.getBytes(java.nio.charset.StandardCharsets.UTF_8), String.class);
-        return Response.ok(deserialized, MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00050(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(headerValue);
+        return Response.seeOther(java.net.URI.create(data)).build();
     }
 }

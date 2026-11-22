@@ -3,30 +3,14 @@ package testcode
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00036(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	jsonValue := reqBody.Payload
-	data := fmt.Sprintf("%s", jsonValue)
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
-		return
-	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	data := fmt.Sprintf("%s", dbValue)
+	htmlOut := "<div>" + data + "</div>"
+	c.Data(200, "text/html", []byte(htmlOut))
 }

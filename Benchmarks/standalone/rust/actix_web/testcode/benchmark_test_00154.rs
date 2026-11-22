@@ -3,11 +3,13 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00154")]
 pub async fn benchmark_test_00154(req: HttpRequest) -> HttpResponse {
-    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = match origin_value.chars().next() { Some(_) => origin_value.clone(), None => "default".to_string() };
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    let header_value = req.headers().get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data: String = header_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| header_value.clone());
+    if let Ok(_target) = reqwest::Url::parse(&data) {
+        let _request = reqwest::Request::new(reqwest::Method::GET, _target);
+        let _client = reqwest::Client::new();
+        _client.execute(_request).await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

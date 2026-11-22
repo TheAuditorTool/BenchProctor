@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,13 +20,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00086")
-  async BenchmarkTest00086(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
+  async BenchmarkTest00086(): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    crypto.createHash("md5").update(data).digest("hex");
     return { created: true };
   }
 }

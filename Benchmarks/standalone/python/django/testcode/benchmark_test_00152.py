@@ -1,17 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import subprocess
 import re
+from pathlib import Path
 
 
 def BenchmarkTest00152(request):
-    field_value = request.POST.get('field', '')
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+    cookie_value = request.COOKIES.get('session_token', '')
+    if not re.fullmatch("^(asc|desc|name|created)$", str(cookie_value)):
         return JsonResponse({'error': 'forbidden'}, status=400)
-    processed = data
-    subprocess.run('echo ' + str(processed), shell=True)
+    processed = cookie_value
+    Path('/var/app/data/' + str(processed)).write_text('data')
     return JsonResponse({"saved": True})

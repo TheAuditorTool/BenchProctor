@@ -2,33 +2,28 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00234(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+	userID := c.Query("id")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(userID)
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
 		return
 	}
-	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	c.JSON(http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	defer ldapConn.Close()
+	isAdmin, cmpErr := ldapConn.Compare("uid="+data+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		c.String(http.StatusInternalServerError, cmpErr.Error())
+		return
+	}
+	c.Header("X-Directory-Admin", strconv.FormatBool(isAdmin))
+	c.JSON(200, gin.H{"code": "OK"})
 }

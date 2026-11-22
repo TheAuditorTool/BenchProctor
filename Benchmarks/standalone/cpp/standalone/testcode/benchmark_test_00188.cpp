@@ -1,17 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
+#include <ctime>
 
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
-
-void benchmark_test_00188(int argc, char **argv)
+void benchmark_test_00188(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    std::string data = cpp_own(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    if (std::strchr(_p, ';') != nullptr) delete[] _p;
-    delete[] _p;
+    const char *user_input_env = std::getenv("PATH_INFO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    srand48(static_cast<long>(std::time(nullptr)));
+    long _token = lrand48();
+    std::cout << "token for " << data << ": " << _token << std::endl;
 }

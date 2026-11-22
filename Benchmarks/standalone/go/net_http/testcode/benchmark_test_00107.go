@@ -3,12 +3,18 @@ package testcode
 
 import (
 	"net/http"
-	"strings"
+	"os"
+	"path/filepath"
 )
 
 func BenchmarkTest00107(w http.ResponseWriter, r *http.Request) {
-	multipartValue := r.FormValue("multipart_field")
-	data := strings.Join(strings.FieldsFunc(multipartValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var data string
+	if commentText != "" {
+		data = commentText
+	}
+	checkedPath := filepath.Join("/var/app/data", filepath.Base(data))
+	os.Remove(checkedPath)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

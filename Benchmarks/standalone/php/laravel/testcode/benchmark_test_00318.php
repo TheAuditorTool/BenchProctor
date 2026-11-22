@@ -8,10 +8,8 @@ class BenchmarkTest00318Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
+        $userInput = $request->cookie('session_token', '');
+        mt_srand(ctype_digit((string)$userInput) ? (int)$userInput : 42);
         $token = mt_rand();
         return response()->json(['token' => (string)$token], 200);
     }

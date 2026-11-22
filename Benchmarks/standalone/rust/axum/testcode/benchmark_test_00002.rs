@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
+use tokio::process::Command;
 
-pub async fn benchmark_test_00002(headers: HeaderMap) -> impl IntoResponse {
-    let header_value = headers.get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let _prefix: String = header_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => header_value.to_lowercase(),
-        "f" => header_value.to_uppercase(),
-        _ => header_value.trim().to_string(),
-    };
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+pub async fn benchmark_test_00002(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let data = field_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    Command::new("sh").arg("-c").arg(format!("cat {}", data)).output().await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

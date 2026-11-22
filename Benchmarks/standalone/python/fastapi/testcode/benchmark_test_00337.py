@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
-from starlette.responses import JSONResponse
+from lxml import etree
 from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,10 +22,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00337")
 async def BenchmarkTest00337(request: Request):
-    user_id = request.query_params.get('id', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(user_id)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    parts = []
+    for token in str(db_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(processed) + '"]')
+    find_user(tree)
+    return {"updated": True}

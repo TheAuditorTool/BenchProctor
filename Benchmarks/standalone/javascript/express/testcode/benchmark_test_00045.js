@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00045(req, res) {
-  const userInput = req.body.payload || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  if (!/^[a-zA-Z0-9_.#\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  const { PrismaClient } = require("@prisma/client");
-  const _prisma = new PrismaClient();
-  await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + processed + "'");
-  res.json({ done: true });
+  const userInput = req.query.id || "";
+  const data = decodeURIComponent(userInput);
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.end("<section>" + data + "</section>"); return;
 }
 
 module.exports = { BenchmarkTest00045 };

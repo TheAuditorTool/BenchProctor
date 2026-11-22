@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.*;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -38,14 +37,13 @@ public class BenchmarkTest00059 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00059(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String multipartValue = multipartField != null ? multipartField : "";
-        String data = multipartValue.replace("\u0000", "");
-        java.net.URI parsed = java.net.URI.create(data);
-        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
-        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
-        String targetUrl = data;
-        String socketRaw = String.valueOf(targetUrl);
-        String socketHost = socketRaw.contains("://") ? java.net.URI.create(socketRaw).getHost() : socketRaw;
-        new Socket(socketHost, 80).close();
+        String data;
+        if (multipartValue.length() > 256) { data = multipartValue.substring(0, 256); }
+        else { data = multipartValue; }
+        StringBuilder xmlText = new StringBuilder();
+        javax.xml.parsers.SAXParser saxParser = javax.xml.parsers.SAXParserFactory.newInstance().newSAXParser();
+        saxParser.parse(new org.xml.sax.InputSource(new java.io.StringReader(data)), new org.xml.sax.helpers.DefaultHandler() { @Override public void characters(char[] ch, int start, int length) { xmlText.append(ch, start, length); } });
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

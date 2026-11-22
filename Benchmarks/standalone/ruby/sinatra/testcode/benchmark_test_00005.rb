@@ -3,10 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "nokogiri"
 
 class BenchmarkTest00005 < Sinatra::Base
   before do
@@ -22,11 +19,12 @@ class BenchmarkTest00005 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00005" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    processed = CGI.escapeHTML(data)
-    content_type :html
-    "<div>" + processed + "</div>"
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

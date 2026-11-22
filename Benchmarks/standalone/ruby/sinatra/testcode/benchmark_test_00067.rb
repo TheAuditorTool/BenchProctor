@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "net/ldap"
 
 class BenchmarkTest00067 < Sinatra::Base
   before do
@@ -20,16 +18,9 @@ class BenchmarkTest00067 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00067" do
-    user_input = params[:multipart_field].to_s
-    data = CGI.unescape(user_input)
-    unless data =~ /\A(asc|desc|name|created)\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    data = "#{user_input}"
+    settings.set(:announcement, data.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

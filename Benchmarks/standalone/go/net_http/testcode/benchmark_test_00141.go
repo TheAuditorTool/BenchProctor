@@ -3,15 +3,25 @@ package testcode
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 func BenchmarkTest00141(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	data := originValue
-	if _, after, ok := strings.Cut(originValue, ","); ok {
-		data = after
+	headerValue := r.Header.Get("X-Custom-Header")
+	relayPrefix := ""
+	if len(headerValue) > 0 {
+		relayPrefix = strings.ToLower(headerValue[:1])
 	}
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = headerValue
+	case "f":
+		data = headerValue
+	default:
+		data = headerValue
+	}
+	w.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; Secure; HttpOnly; SameSite=Strict")
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

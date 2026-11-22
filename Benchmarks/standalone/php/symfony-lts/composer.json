@@ -1,0 +1,17 @@
+{
+  "name": "benchproctor/symfony",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "doctrine/dbal": "4.5.0",
+    "doctrine/orm": "3.7.5",
+    "erusev/parsedown": "1.8.0",
+    "ezyang/htmlpurifier": "4.19.1",
+    "guzzlehttp/guzzle": "8.3.0",
+    "phpseclib/phpseclib": "4.0.2",
+    "symfony/framework-bundle": "7.4.21",
+    "symfony/validator": "7.4.21",
+    "symfony/yaml": "7.4.22",
+    "twig/twig": "3.30.0"
+  }
+}

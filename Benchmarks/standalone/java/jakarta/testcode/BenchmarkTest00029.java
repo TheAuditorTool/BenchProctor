@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -15,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00029 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -38,28 +30,18 @@ public class BenchmarkTest00029 {
         }
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
-                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-
-    @POST
+    @GET
     @Path("/BenchmarkTest00029")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00029(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        java.util.Map.Entry<String,String> edge = java.util.Map.entry(jsonValue, "cookie");
-        String data = edge.getKey();
-        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (ResultSet rs = ps.executeQuery()) { rs.next(); }
+    public Response BenchmarkTest00029(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        String data;
+        if (headerValue.length() > 256) { data = headerValue.substring(0, 256); }
+        else { data = headerValue; }
+        String processed = data.matches("^(noop|identity|passthrough|echo)$") ? data : "noop";
+        try (jdk.jshell.JShell snippetShell = jdk.jshell.JShell.builder().executionEngine("local").build()) {
+            java.util.List<jdk.jshell.SnippetEvent> snippetEvents = snippetShell.eval(processed);
+            response.setHeader("X-Code-Result", snippetEvents.isEmpty() ? "" : String.valueOf(snippetEvents.get(0).value()));
         }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }

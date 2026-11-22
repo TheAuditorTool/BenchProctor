@@ -2,13 +2,22 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00106(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: uaValue, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	hostValue := c.Request.Host
+	data := strings.ReplaceAll(hostValue, "\x00", "")
+	resp, err := http.Get(data)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

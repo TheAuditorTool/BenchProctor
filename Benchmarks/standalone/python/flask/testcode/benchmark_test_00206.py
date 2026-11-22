@@ -1,7 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
+import yaml
 from flask import Flask, request, jsonify
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -20,6 +27,6 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00206", methods=["POST"])
 def BenchmarkTest00206():
     origin_value = request.headers.get('Origin', '')
-    data = '%s' % str(origin_value)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    data = RequestPayload(origin_value).value
+    yaml.load(data, Loader=yaml.UnsafeLoader)
+    return jsonify({"result": "success"})

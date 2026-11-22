@@ -21,14 +21,12 @@ class BenchmarkTest00052 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00052" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    content_type :html
+    stream do |out|
+      out << "<div>" + data + "</div>"
     end
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
-    content_type :json
-    JSON.generate({ status: "ok" })
   end
 end

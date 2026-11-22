@@ -2,19 +2,21 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00041(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	form := submissionForm{payload: commentText}
-	data := form.payload
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	headerValue := c.GetHeader("X-Custom-Header")
+	segments := strings.Split(headerValue, ",")
+	data := strings.Join(segments, " ")
+	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

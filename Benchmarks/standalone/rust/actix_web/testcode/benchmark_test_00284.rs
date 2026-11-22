@@ -2,10 +2,10 @@
 use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00284")]
-pub async fn benchmark_test_00284(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let transform = |v: String| v.trim().to_string();
-    let data = transform(field_value.clone());
-    crate::shared::set_cookie(&format!("session={}; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00284(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let user_id = query.get("id").cloned().unwrap_or_default();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(user_id.clone());
+    tokio::fs::remove_file(format!("/var/app/data/{}", data)).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

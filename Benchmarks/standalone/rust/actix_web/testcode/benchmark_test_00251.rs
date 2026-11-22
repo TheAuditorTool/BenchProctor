@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00251")]
-pub async fn benchmark_test_00251(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = referer_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| referer_value.clone());
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00251(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let user_id = query.get("id").cloned().unwrap_or_default();
+    let data = match user_id.chars().next() { Some(_) => user_id.clone(), None => "default".to_string() };
+    let _ = tokio::fs::read_to_string(format!("/var/app/data/{}", data)).await;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

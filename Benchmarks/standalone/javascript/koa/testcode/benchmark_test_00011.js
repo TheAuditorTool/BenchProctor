@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const crypto = require("crypto");
 
 const BenchmarkTest00011 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
+  const userInput = ctx.request.headers.referer || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
   ctx.body = { ack: true };
 }
 

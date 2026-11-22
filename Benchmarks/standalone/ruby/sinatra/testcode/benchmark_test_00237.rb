@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "shellwords"
 
 class BenchmarkTest00237 < Sinatra::Base
   before do
@@ -18,9 +19,11 @@ class BenchmarkTest00237 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00237" do
-    user_input = request.env["HTTP_USER_AGENT"].to_s
-    data = sprintf("%s", user_input)
-    token = rand(1000000)
+    user_input = params[:q].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    processed = Shellwords.escape(data)
+    system("echo " + processed)
     content_type :json
     JSON.generate({ status: "ok" })
   end

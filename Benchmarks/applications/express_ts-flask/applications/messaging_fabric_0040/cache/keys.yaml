@@ -1,6 +1,0 @@
-channels:
-  - name: messaging:inbound:0040
-    payload: json
-keys:
-  - pattern: messaging:record:{id}
-    ttl_seconds: 300

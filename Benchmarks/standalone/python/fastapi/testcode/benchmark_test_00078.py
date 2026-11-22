@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from app_runtime import db
+from pathlib import Path
+from fastapi.responses import JSONResponse
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -21,13 +28,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00078")
 async def BenchmarkTest00078(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    parts = str(auth_header).split(',')
-    data = ' '.join(parts)
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    header_value = request.headers.get('x-custom-header', '')
+    data = RequestPayload(header_value).value
+    Path('/var/app/data/' + str(data)).write_text('data')
     return {"updated": True}

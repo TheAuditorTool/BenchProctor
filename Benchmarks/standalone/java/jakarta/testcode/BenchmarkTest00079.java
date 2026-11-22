@@ -33,11 +33,18 @@ public class BenchmarkTest00079 {
     @GET
     @Path("/BenchmarkTest00079")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00079(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public Response BenchmarkTest00079(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(hostValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        long requested = boundedVal;
+        long allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -2,12 +2,19 @@
 package testcode
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00085(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	headerValue := r.Header.Get("X-Custom-Header")
+	segments := strings.Split(headerValue, ",")
+	data := strings.Join(segments, " ")
+	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

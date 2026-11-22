@@ -2,33 +2,34 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"regexp"
-	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00162(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	form := submissionForm{payload: headerValue}
-	data := form.payload
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	processed := data
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
-		return
+	rawBody := string(rawBytes)
+	relayPrefix := ""
+	if len(rawBody) > 0 {
+		relayPrefix = strings.ToLower(rawBody[:1])
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = rawBody
+	case "f":
+		data = rawBody
+	default:
+		data = rawBody
 	}
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	c.Writer.Header().Add("Set-Cookie", sessionCookie.String())
 	c.JSON(200, gin.H{"code": "OK"})
 }

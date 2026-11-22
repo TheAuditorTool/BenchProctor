@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00080() {
-  user_input="$HTTP_HOST"
-  data="${user_input//$'\x00'/}"
-  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "not a number" >&2; exit 1; fi
-  requested=$data
-  alloc_size=$((requested + 1))
-  echo "alloc:$alloc_size"
+  user_input="$USER_COMMENT"
+  data=$(printf "%s" "$user_input")
+  _schema_re='^[a-zA-Z0-9 #%._-]+$'
+  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
+  processed="$data"
+  ldapsearch -x -b "dc=example,dc=com" "uid=$processed"
 }
 
 benchmark_test_00080 "$@"

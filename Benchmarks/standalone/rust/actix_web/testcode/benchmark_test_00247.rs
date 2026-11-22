@@ -3,10 +3,10 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00247")]
 pub async fn benchmark_test_00247(req: HttpRequest) -> HttpResponse {
-    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = auth_header.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", processed));
+    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = if ua_value.len() <= 4096 { ua_value.clone() } else { ua_value.chars().take(4096).collect() };
+    if !["config.json", "index.html", "readme.md"].contains(&data.as_str()) { return HttpResponse::Forbidden().finish(); }
+    let checked_path = format!("/var/app/data/{}", data);
+    tokio::fs::remove_file(&checked_path).await.ok();
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -1,14 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import io
+from lxml import etree
 from flask import Flask, request, jsonify
-import defusedxml.ElementTree
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -26,7 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00179", methods=["POST"])
 def BenchmarkTest00179():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = RequestPayload(json_value).value
-    defusedxml.ElementTree.fromstring(str(data))
+    raw_body = request.get_data(as_text=True)
+    data = '{}'.format(raw_body)
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
     return jsonify({"result": "success"})

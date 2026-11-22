@@ -3,7 +3,6 @@ package testcode
 
 import (
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -11,13 +10,13 @@ import (
 )
 
 func BenchmarkTest00087(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data := strings.Join(strings.FieldsFunc(refererValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	userID := c.Query("id")
+	data := strings.Join(strings.FieldsFunc(userID, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
 		return
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	processed := data
+	c.Set("data", processed)
 }

@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
-require "net/ldap"
 
 class BenchmarkTest00122 < Sinatra::Base
   before do
@@ -20,19 +18,9 @@ class BenchmarkTest00122 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00122" do
-    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = "#{user_input}"
+    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
     content_type :json
     JSON.generate({ status: "ok" })
   end

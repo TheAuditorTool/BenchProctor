@@ -8,12 +8,9 @@ class BenchmarkTest00048Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Referer', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $resolved = realpath('/var/app/data/' . $data);
-        if ($resolved === false || strpos($resolved, '/var/app/data/') !== 0) { return response()->json(['error'=>'forbidden'], 403); }
-        $checkedPath = $resolved;
-        $content = file_get_contents($checkedPath);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Authorization', '');
+        [$data] = [$userInput, 'http'];
+        $sessionCookie = cookie('session', (string)$data, 0, '/', null, true, true, false, 'strict');
+        return response()->json(['ok' => 1])->withCookie($sessionCookie);
     }
 }

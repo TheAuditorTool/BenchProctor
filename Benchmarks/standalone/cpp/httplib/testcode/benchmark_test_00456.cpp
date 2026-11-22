@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,15 +23,20 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00456(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    int _x = 0;
-    if (!data.empty()) _x = (int)data[0];
-    std::cout << (_x + (int)data.size()) << std::endl;
+    std::string user_input = req.get_header_value("Host");
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    const size_t _rec_size = 64;
+    long _count = std::strtol(data.c_str(), nullptr, 10);
+    if (_count <= 0 || _count > 65536) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = new (std::nothrow) char[_bytes];
+    delete[] _recs;
     res.set_content("ok", "text/plain");
 }

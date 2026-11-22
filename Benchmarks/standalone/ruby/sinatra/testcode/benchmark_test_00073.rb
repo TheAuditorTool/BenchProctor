@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00073 < Sinatra::Base
   before do
@@ -18,10 +19,18 @@ class BenchmarkTest00073 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00073" do
-    user_input = params[:upload][:filename].to_s rescue ""
-    data = sprintf("%s", user_input)
-    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = true }
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ text: handler.text })
   end
 end

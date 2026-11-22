@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-from lxml import etree
+from django.http import HttpResponse
+from django.template import Template, Context
+import json
 
 
 def BenchmarkTest00117(request):
-    upload_name = request.FILES['upload'].name
-    data = '%s' % (upload_name,)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return JsonResponse({"saved": True})
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(json_value)
+    page = Template('<div>{{ value|safe }}</div>').render(Context({'value': str(data)}))
+    return HttpResponse(page)

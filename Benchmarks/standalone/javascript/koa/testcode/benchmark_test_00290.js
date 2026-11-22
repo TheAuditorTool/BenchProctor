@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
 
 const BenchmarkTest00290 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const data = `${userInput}`;
-  crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(data));
+  const userInput = ctx.query.id || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  ctx.res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict");
   ctx.body = { ack: true };
 }
 

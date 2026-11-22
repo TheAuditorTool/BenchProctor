@@ -1,11 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00032")]
-pub async fn benchmark_test_00032(req: HttpRequest) -> HttpResponse {
-    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    fn normalize(value: String) -> String { value.trim().to_string() }
-    let data = normalize(origin_value.clone());
-    reqwest::get(&data).await.ok();
+pub async fn benchmark_test_00032(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
+            }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
+        }
+        _mv
+    };
+    let data: String = multipart_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| multipart_value.clone());
+    if let Ok(_target) = reqwest::Url::parse(&data) {
+        let _request = reqwest::Request::new(reqwest::Method::GET, _target);
+        let _client = reqwest::Client::new();
+        _client.execute(_request).await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

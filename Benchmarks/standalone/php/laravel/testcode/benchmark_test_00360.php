@@ -8,10 +8,12 @@ class BenchmarkTest00360Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        eval((string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Referer', '');
+        $data = sprintf('%s', $userInput);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return redirect($targetUrl);
     }
 }

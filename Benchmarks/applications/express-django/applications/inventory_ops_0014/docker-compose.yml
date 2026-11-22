@@ -1,0 +1,64 @@
+services:
+  catalog-api:
+    build: ./services/catalog-api
+    environment:
+      - SERVICE_NAME=catalog-api
+      - DATABASE_URL=postgres://app:app@db:5432/app
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      cache:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      supplier-feed:
+        condition: service_healthy
+  supplier-feed:
+    build: ./services/supplier-feed
+    environment:
+      - SERVICE_NAME=supplier-feed
+      - DATABASE_URL=postgres://app:app@db:5432/app
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      cache:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+  cache:
+    image: redis:8.8.2-alpine3.23@sha256:f4ded511357f7c60551133fbceb0d07874a2240bfe3d1baaa49769a70ff83465
+    command: ["sh", "-c", "(until redis-cli SET user_data cached_value >/dev/null 2>&1; do sleep 1; done) & exec docker-entrypoint.sh redis-server"]
+    ports:
+      - "6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli GET user_data | grep -q ."]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  db:
+    image: postgres:18.6-alpine3.23@sha256:dec395d8c09c45609d6deb5c2388a07882d64fa59b1d98c1895792e085f57888
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: "app"
+      POSTGRES_PASSWORD: "app"
+      POSTGRES_DB: "app"
+    volumes:
+      - ./db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

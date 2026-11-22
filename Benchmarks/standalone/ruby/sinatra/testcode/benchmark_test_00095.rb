@@ -3,6 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "net/http"
+require "socket"
 
 class BenchmarkTest00095 < Sinatra::Base
   before do
@@ -18,12 +20,16 @@ class BenchmarkTest00095 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00095" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
     record = { payload: user_input.to_s }
     data = record.fetch(:payload)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    TCPSocket.new(URI.parse(target_url.to_s).host, 80).close
     content_type :json
     JSON.generate({ status: "ok" })
   end

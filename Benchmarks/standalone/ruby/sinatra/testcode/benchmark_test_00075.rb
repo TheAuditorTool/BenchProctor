@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00075 < Sinatra::Base
   before do
@@ -20,9 +19,15 @@ class BenchmarkTest00075 < Sinatra::Base
   end
   post "/benchmark_test_00075" do
     user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = format("%<value>s", value: user_input)
-    digest = Digest::SHA256.hexdigest(data.to_s)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    unless %w[ls cat date whoami].include?(data.to_s)
+      halt 400, JSON.generate({ error: "forbidden" })
+      return
+    end
+    system(data.to_s)
   end
 end

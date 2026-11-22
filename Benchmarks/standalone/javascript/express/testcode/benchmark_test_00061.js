@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
+const nodeUtil = require("util");
 
 async function BenchmarkTest00061(req, res) {
-  const userInput = process.env.APP_INPUT || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  eval(data);
-  res.json({ done: true });
+  const userInput = req.cookies.session_token || "";
+  const data = nodeUtil.format("%s", userInput);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const targetUrl = data;
+  res.redirect(targetUrl);
 }
 
 module.exports = { BenchmarkTest00061 };

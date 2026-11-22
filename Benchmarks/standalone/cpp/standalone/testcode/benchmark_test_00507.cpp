@@ -4,32 +4,13 @@
 #include <cstdlib>
 #include <unistd.h>
 
-struct sqlite3; struct sqlite3_stmt;
-extern "C" int sqlite3_open(const char *, sqlite3 **);
-extern "C" int sqlite3_exec(sqlite3 *, const char *, int (*)(void *, int, char **, char **), void *, char **);
-extern "C" int sqlite3_prepare_v2(sqlite3 *, const char *, int, sqlite3_stmt **, const char **);
-extern "C" int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int, void (*)(void *));
-extern "C" int sqlite3_step(sqlite3_stmt *);
-extern "C" int sqlite3_finalize(sqlite3_stmt *);
-
 void benchmark_test_00507(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    sqlite3 *_db = nullptr;
-    sqlite3_open("app.db", &_db);
-    sqlite3_stmt *_st = nullptr;
-    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_st, nullptr);
-    sqlite3_bind_text(_st, 1, data.c_str(), -1, nullptr);
-    sqlite3_step(_st);
-    sqlite3_finalize(_st);
+    const char *user_input_env = std::getenv("HTTP_HOST");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = !user_input.empty() ? user_input : std::string();
+    std::string _loc = data;
+    for (char &_c : _loc) if (_c == '\r' || _c == '\n') _c = ' ';
+    const std::string _refresh = "Refresh: 0; url=" + _loc + "\r\n\r\n";
+    std::cout.write(_refresh.data(), static_cast<std::streamsize>(_refresh.size()));
 }

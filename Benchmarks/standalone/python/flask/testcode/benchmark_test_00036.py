@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, session
-import os
-from flask import jsonify
+import hashlib
+import json
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,7 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00036", methods=["POST"])
 def BenchmarkTest00036():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = str(env_value).replace('\x00', '')
-    session['data'] = str(data)
-    return jsonify({"result": "success"})
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = json.loads(graphql_var).get('value', '')
+    digest = hashlib.sha3_256(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

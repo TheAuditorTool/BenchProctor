@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
+#include <regex>
 
 void benchmark_test_00172(int, char **)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("PATH_INFO");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
     if (!user_input.empty()) data = user_input;
-    const long _unit_cents = 1999;
-    long _qty = std::strtol(data.c_str(), nullptr, 10);
-    if (_qty < 0 || _qty > 100000) return;
-    long _total = _qty * _unit_cents;
-    std::cout << "total=" << _total << std::endl;
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>";
+    std::fputs("Content-Type: text/html\r\n\r\n", stdout);
+    std::fwrite(_html.data(), 1, _html.size(), stdout);
 }

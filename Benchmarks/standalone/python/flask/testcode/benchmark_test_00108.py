@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from flask import Flask, request, jsonify
-import json
-from app_runtime import db
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -20,11 +21,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00108", methods=["POST"])
 def BenchmarkTest00108():
-    referer_value = request.headers.get('Referer', '')
-    try:
-        data = json.loads(referer_value).get('value', referer_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = referer_value
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    ua_value = request.headers.get('User-Agent', '')
+    if ua_value:
+        data = ua_value
+    else:
+        data = ''
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

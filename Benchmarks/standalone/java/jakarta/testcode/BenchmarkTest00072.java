@@ -30,17 +30,19 @@ public class BenchmarkTest00072 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00072")
+    @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00072(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        byte[] hexBytes = new byte[userId.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(userId.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00072(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String data = String.join(" ", xmlValue.split("[ \\t]+"));
+        org.bouncycastle.crypto.Digest contentDigest = new org.bouncycastle.crypto.digests.MD4Digest();
+        byte[] digestInput = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        contentDigest.update(digestInput, 0, digestInput.length);
+        byte[] digest = new byte[contentDigest.getDigestSize()];
+        contentDigest.doFinal(digest, 0);
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

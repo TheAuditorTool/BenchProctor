@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "yaml"
 
 class BenchmarkTest00140Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,16 +12,10 @@ class BenchmarkTest00140Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00140
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    data = user_input.gsub("\u0000", "")
-    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    user_input = request.headers["Origin"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    YAML.unsafe_load(data)
     render json: { status: "ok" }
   end
 end

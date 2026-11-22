@@ -3,6 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00332 < Sinatra::Base
   before do
@@ -18,13 +21,13 @@ class BenchmarkTest00332 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00332" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    user_input = params[:multipart_field].to_s
     transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
     data = transform.call(user_input)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
+    result = DB[:users].where(name: data).first
+    return halt 404, JSON.generate({ error: "not found" }) if result.nil?
+    value = result[:name]
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ name: value })
   end
 end

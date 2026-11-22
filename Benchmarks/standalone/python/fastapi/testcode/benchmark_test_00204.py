@@ -20,8 +20,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00204")
 async def BenchmarkTest00204(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = str(multipart_value).replace('\x00', '')
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    if upload_name:
+        data = upload_name
+    else:
+        data = ''
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

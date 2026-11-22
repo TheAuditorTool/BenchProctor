@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as ldapjs from "ldapjs";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 
 export const BenchmarkTest00034 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  function normalize(value: string): string { return value.normalize("NFC"); }
-  const data: string = normalize(userInput);
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  const userInput = (req.headers.origin as string) || "";
+  const data = String(userInput).slice(0, 200);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + processed + "']").select({ node: usersDoc });
   res.json({ accepted: true });
 }

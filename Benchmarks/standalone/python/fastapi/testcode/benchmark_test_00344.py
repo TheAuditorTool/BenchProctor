@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import base64
-import pickle
 from fastapi.responses import JSONResponse
 
 
@@ -22,9 +20,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00344")
 async def BenchmarkTest00344(request: Request):
-    origin_value = request.headers.get('origin', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(origin_value)
-    pickle.loads(base64.b64decode(data))
+    cookie_value = request.cookies.get('session_token', '')
+    parts = str(cookie_value).split(',')
+    data = ' '.join(parts)
+    eval(str(data))
     return {"updated": True}

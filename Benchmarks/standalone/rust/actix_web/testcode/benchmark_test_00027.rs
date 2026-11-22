@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
-use url::Url;
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00027")]
-pub async fn benchmark_test_00027(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let mut data = String::new();
-    for token in raw_body.split(',') { data = token.to_string(); }
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+pub async fn benchmark_test_00027() -> HttpResponse {
+    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
+    let captured = env_value.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
+    let processed = _bounded.to_string();
+    let quantity: u32 = processed.parse().unwrap_or(0);
+    let Some(total_cents) = quantity.checked_mul(1299) else { return HttpResponse::BadRequest().finish(); };
+    crate::shared::db_exec_bind("INSERT INTO logs (data) VALUES ($1)", &total_cents.to_string());
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

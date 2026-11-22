@@ -1,18 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from app_runtime import db
+from lxml import etree
 from fastapi.responses import JSONResponse
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
-
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -29,10 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00148")
 async def BenchmarkTest00148(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    reader = make_reader(db_value)
-    data = reader()
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    request.session['data'] = str(processed)
+    raw_body = (await request.body()).decode('utf-8')
+    data = ' '.join(str(raw_body).split())
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
     return {"updated": True}

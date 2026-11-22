@@ -8,8 +8,11 @@ class BenchmarkTest00300Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        json_decode($userInput, true);
+        $userInput = $request->cookie('session_token', '');
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        unlink('/var/app/data/' . $data);
         return response()->json(['ok' => 1]);
     }
 }

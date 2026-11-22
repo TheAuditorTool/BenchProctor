@@ -18,10 +18,11 @@ class BenchmarkTest00309 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00309" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    system("echo " + data)
+    user_input = request.env["HTTP_HOST"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    cookie_value = Rack::Utils.escape(data.to_s)
+    headers["Set-Cookie"] = "session=" + cookie_value + "; Path=/; Secure; HttpOnly; SameSite=Strict"
     content_type :json
     JSON.generate({ status: "ok" })
   end

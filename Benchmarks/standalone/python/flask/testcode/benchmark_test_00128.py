@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request
-from flask import jsonify
+import ldap
+from flask import Flask, request, jsonify
+import os
 
 
 app = Flask(__name__)
@@ -19,6 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00128", methods=["POST"])
 def BenchmarkTest00128():
-    auth_header = request.headers.get('Authorization', '')
-    data = (lambda v: v.strip())(auth_header)
-    return '<div>' + str(data) + '</div>'
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    parts = []
+    for token in str(json_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    return jsonify({"result": "success"})

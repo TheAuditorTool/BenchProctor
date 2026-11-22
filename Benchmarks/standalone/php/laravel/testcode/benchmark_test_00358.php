@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00358Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        $result = DB::table('users')->where('id', $data)->first();
-        if ($result === null) { return response()->json(["error" => "not found"], 404); }
-        $value = $result->name;
-        return response()->json(['ok' => 1]);
+        $userInput = $request->getContent();
+        $data = json_decode($userInput, true)['value'] ?? '';
+        $processed = \Parsedown::instance()->setSafeMode(true)->text($data);
+        $stream = function () use ($processed) {
+            echo '<div class="comment">' . $processed . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

@@ -16,10 +16,11 @@ void benchmark_test_00481(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    char *_dst = new char[16];
-    std::strncpy(_dst, data.c_str(), 15);
-    _dst[15] = '\0';
-    delete[] _dst;
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    char _first = _p[0];
+    std::cout << _first << std::endl;
 }

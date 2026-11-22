@@ -6,12 +6,39 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 void benchmark_test_00167(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    const char *_kv = getenv("DATA_ENC_KEY");
+    if (_kv == NULL) return;
+    unsigned char _key[32];
+    EVP_Digest(_kv, strlen(_kv), _key, NULL, EVP_sha256(), NULL);
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[528];
+    int _ctl = 0;
+    EVP_EncryptInit_ex2(_ctx, EVP_aes_256_ecb(), _key, NULL, NULL);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strnlen(data, 512));
+    EVP_CIPHER_CTX_free(_ctx);
 }

@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
+require "open3"
 
 class BenchmarkTest00006 < Sinatra::Base
   before do
@@ -19,10 +19,10 @@ class BenchmarkTest00006 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00006" do
-    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    token = SecureRandom.hex(32)
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    Open3.capture2e("echo " + data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { Sequelize } from "sequelize";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,14 +16,11 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00170")
-  async BenchmarkTest00170(): Promise<unknown> {
-    const userInput = JSON.parse(fs.readFileSync("/etc/app/config.json", "utf8")).value;
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
-    await _sequelize.query("SELECT * FROM users WHERE id = '" + data + "'");
-    return { created: true };
+  @Post("BenchmarkTest00170/:id")
+  async BenchmarkTest00170(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const recordCount = parseInt(String(userInput), 10);
+    const table = new ArrayBuffer((recordCount * 64) >>> 0);
+    return { allocated: table.byteLength };
   }
 }

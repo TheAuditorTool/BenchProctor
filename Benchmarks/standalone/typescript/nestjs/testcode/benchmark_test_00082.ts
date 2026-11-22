@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, NotFoundException } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as nodeUtil from "util";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,15 +21,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00082")
-  async BenchmarkTest00082(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00082(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = nodeUtil.format("%s", userInput);
+    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+    xpath.select("//user[name='" + data + "']", xmlDoc);
     return { created: true };
   }
 }

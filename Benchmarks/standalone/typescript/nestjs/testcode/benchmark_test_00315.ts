@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,14 +19,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00315")
-  async BenchmarkTest00315(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    eval(String(parsedNum));
-    return { created: true };
+  async BenchmarkTest00315(): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    const data = `${userInput}`;
+    const emailMatch = String(data).match(/@([A-Za-z0-9.-]+)$/);
+    if (!emailMatch) { throw new BadRequestException({ error: "not an email address" }); }
+    const domain = emailMatch[1];
+    return { domain };
   }
 }

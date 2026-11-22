@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import re
-from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -22,10 +23,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00215")
 async def BenchmarkTest00215(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    db.execute('SELECT * FROM users ORDER BY ' + str(processed))
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    request.session.update({'data': str(data)})
     return {"updated": True}

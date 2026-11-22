@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00269")]
-pub async fn benchmark_test_00269(req: HttpRequest) -> HttpResponse {
-    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = origin_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
+pub async fn benchmark_test_00269(body: web::Bytes) -> HttpResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = if raw_body.len() <= 4096 { raw_body.clone() } else { raw_body.chars().take(4096).collect() };
+    let _cmdline = std::ffi::CString::new(format!("grep {} /var/log/app.log", data)).unwrap_or_default();
+    unsafe { libc::system(_cmdline.as_ptr()) };
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

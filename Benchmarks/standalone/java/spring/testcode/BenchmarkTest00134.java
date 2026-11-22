@@ -19,17 +19,19 @@ public class BenchmarkTest00134 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00134")
-    public void BenchmarkTest00134(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        String data = String.join(" ", forwardedIp.split("[ \\t]+"));
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    @PostMapping("/BenchmarkTest00134")
+    public void BenchmarkTest00134(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = String.format("%s", commentValue);
+        String processed = data.matches("^(plain|markdown|html|text)$") ? data : "plain";
+        String profileXslt = "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">" + "<xsl:output method=\"html\" omit-xml-declaration=\"yes\"/><xsl:param name=\"bio\"/>" + "<xsl:template match=\"/\"><div class=\"bio\"><xsl:value-of select=\"$bio\" disable-output-escaping=\"yes\"/></div></xsl:template></xsl:stylesheet>";
+        javax.xml.transform.TransformerFactory profileFactory = javax.xml.transform.TransformerFactory.newInstance();
+        profileFactory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        profileFactory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        javax.xml.transform.Transformer profileView = profileFactory.newTransformer(new javax.xml.transform.stream.StreamSource(new java.io.StringReader(profileXslt)));
+        profileView.setParameter("bio", processed);
+        java.io.StringWriter renderedProfile = new java.io.StringWriter();
+        profileView.transform(new javax.xml.transform.stream.StreamSource(new java.io.StringReader("<profile/>")), new javax.xml.transform.stream.StreamResult(renderedProfile));
+        response.getWriter().print(renderedProfile.toString());
     }
 }

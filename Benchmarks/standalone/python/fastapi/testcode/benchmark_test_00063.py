@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-from fastapi import FastAPI, Request
 import os
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
-from app_runtime import db
+import re
 
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -22,13 +24,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00063")
 async def BenchmarkTest00063(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    if env_value:
-        data = env_value
-    else:
-        data = ''
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+    referer_value = request.headers.get('referer', '')
+    data = ' '.join(str(referer_value).split())
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    request.session['data'] = str(processed)
+    return {"updated": True}

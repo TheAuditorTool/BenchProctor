@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-import re
+import ldap
 from starlette.responses import JSONResponse
+import os
+from pydantic import Field, ValidationError, create_model
+from app_runtime import db
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -24,10 +24,18 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00211")
 async def BenchmarkTest00211(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = raw_body if raw_body else 'default'
-    if not re.fullmatch("^[a-zA-Z0-9 _.\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    kind = 'json' if str(db_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(db_value).strip()
+        case _:
+            data = str(db_value)
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.#%\\-]+$")))(value=str(data))
+    except ValidationError:
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
     processed = data
-    request.session['data'] = str(processed)
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(processed) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
     return {"updated": True}

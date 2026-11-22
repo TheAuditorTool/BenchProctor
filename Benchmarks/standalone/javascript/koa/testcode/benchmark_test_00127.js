@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const nodeUtil = require("util");
+const jsYaml = require("js-yaml");
 
 const BenchmarkTest00127 = async (ctx) => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  ctx.redirect(data);
+  const userInput = process.env.APP_INPUT || "";
+  const data = nodeUtil.format("%s", userInput);
+  const jsYamlJsTypes = require("js-yaml-js-types");
+  const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) });
+  ctx.body = { title: String(reportSpec?.title ?? "") }; return;
 }
 
 module.exports = { BenchmarkTest00127 };

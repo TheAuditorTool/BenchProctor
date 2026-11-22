@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from app_runtime import db
+from flask import Flask, request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -19,7 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00321", methods=["POST"])
 def BenchmarkTest00321():
-    raw_body = request.get_data(as_text=True)
-    data, _sep, _rest = str(raw_body).partition('\x00')
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
-    return jsonify({"result": "success"})
+    referer_value = request.headers.get('Referer', '')
+    parts = str(referer_value).split(',')
+    data = ' '.join(parts)
+    with open('/var/app/data/' + str(data), 'r') as fh:
+        content = fh.read()
+    return content

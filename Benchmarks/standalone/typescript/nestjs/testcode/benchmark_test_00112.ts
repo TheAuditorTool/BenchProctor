@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post } from "@nestjs/common";
+import { Controller, Headers, Post, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,13 +16,11 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00112/:id")
-  async BenchmarkTest00112(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const data = String(userInput).split(/[ \t]+/).join(" ");
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-    return { created: true };
+  @Post("BenchmarkTest00112")
+  async BenchmarkTest00112(@Headers("host") host: string, @Res() res: Response): Promise<unknown> {
+    const userInput = host || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    return res.redirect(303, String(data));
   }
 }

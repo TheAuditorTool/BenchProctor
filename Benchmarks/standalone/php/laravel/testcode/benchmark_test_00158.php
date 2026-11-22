@@ -8,10 +8,13 @@ class BenchmarkTest00158Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $content = file_get_contents('/var/app/data/' . (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return \Illuminate\Support\Facades\Redirect::away((string)$targetUrl);
     }
 }

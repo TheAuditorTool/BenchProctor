@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
 from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,9 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00096")
 async def BenchmarkTest00096(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    def normalize(value):
-        return value.strip()
-    data = normalize(raw_body)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+    cookie_value = request.cookies.get('session_token', '')
+    data = '{}'.format(cookie_value)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

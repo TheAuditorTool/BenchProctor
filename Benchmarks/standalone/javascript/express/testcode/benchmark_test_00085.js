@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+const { db } = require("./shared");
+const crypto = require("crypto");
 
 async function BenchmarkTest00085(req, res) {
-  const userInput = (req.file && req.file.originalname) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const { DataSource } = require("typeorm");
-  const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
-  await _dataSource.initialize();
-  await _dataSource.query("SELECT * FROM users WHERE id = '" + data + "'");
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  crypto.createHash("sha256").update(data).digest("hex");
   res.json({ done: true });
 }
 

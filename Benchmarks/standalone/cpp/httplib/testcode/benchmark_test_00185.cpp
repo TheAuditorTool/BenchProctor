@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <unistd.h>
 #include <unordered_map>
 
@@ -27,22 +25,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00185(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00185(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
+    std::string user_input = req.get_param_value("field");
     std::string _raw = user_input;
     auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
     std::string data = _closure();
     const char _buf[16] = "fixedcontent12";
     size_t _span = std::strtoul(data.c_str(), nullptr, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
     std::cout.write(_buf, static_cast<std::streamsize>(_span));
     std::cout << std::endl;
     res.set_content("ok", "text/plain");

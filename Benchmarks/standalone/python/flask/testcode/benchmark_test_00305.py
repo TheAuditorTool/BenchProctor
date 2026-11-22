@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
-from flask import request, jsonify
+import io
+from lxml import etree
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,10 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00305", methods=["POST"])
 def BenchmarkTest00305():
-    xml_value = request.get_data(as_text=True)
-    parts = []
-    for token in str(xml_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    session['data'] = str(data)
+    raw_body = request.get_data(as_text=True)
+    data = raw_body.decode('utf-8', 'ignore') if isinstance(raw_body, bytes) else raw_body
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
     return jsonify({"result": "success"})

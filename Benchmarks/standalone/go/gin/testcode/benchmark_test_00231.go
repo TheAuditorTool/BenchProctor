@@ -2,17 +2,20 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00231(c *gin.Context) {
-	userID := c.Query("id")
-	data := fmt.Sprintf("%s", userID)
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	header, err := c.FormFile("upload")
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad upload")
+		return
+	}
+	uploadName := header.Filename
+	data := strings.ReplaceAll(uploadName, "\x00", "")
+	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	c.JSON(200, gin.H{"code": "OK"})
 }

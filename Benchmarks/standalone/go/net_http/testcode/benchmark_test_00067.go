@@ -2,24 +2,31 @@
 package testcode
 
 import (
-	"io"
+	"context"
 	"net/http"
-	"os"
+	"os/exec"
+	"regexp"
 	"strings"
+	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00067(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	authHeader := r.Header.Get("Authorization")
+	data := func(v string) string { return strings.TrimSpace(v) }(authHeader)
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	data := strings.ReplaceAll(rawBody, "\x00", "")
-	content, err := os.ReadFile("/var/app/data/" + data)
-	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	w.Write(content)
+	processed := data
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", processed)
+	output, _ := cmd.CombinedOutput()
+	w.Write(output)
 }

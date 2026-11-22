@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from dataclasses import dataclass
+import base64
 from flask import Flask, request, jsonify
+import pickle
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -24,13 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00102", methods=["POST"])
 def BenchmarkTest00102():
-    xml_value = request.get_data(as_text=True)
-    form = FormData(payload=xml_value)
-    data = form.payload
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    eval(str(processed))
+    auth_header = request.headers.get('Authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    pickle.loads(base64.b64decode(data))
     return jsonify({"result": "success"})

@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00106() {
-  user_input="$HTTP_ORIGIN"
-  data="${user_input:-default}"
-  checked_path=$(realpath -m "/var/app/data/$data")
-  if [[ ! "$checked_path" == /var/app/data/* ]]; then echo "forbidden"; exit 1; fi
-  rm -f "$checked_path"
+  user_input="$(jq -r '.value // empty' 2>/dev/null)"
+  data=""
+  IFS="," read -ra _tokens <<< "${user_input}"
+  for token in "${_tokens[@]}"; do data="$token"; done
+  curl -s --max-time 10 -- "$data"
 }
 
 benchmark_test_00106 "$@"

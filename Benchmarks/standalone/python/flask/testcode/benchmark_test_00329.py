@@ -1,17 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
+import ldap
+import jsonschema
+from flask import Flask, request, jsonify
 import os
-from flask import Flask, session
-from flask import jsonify
-from app_runtime import db
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -27,10 +21,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00329", methods=["POST"])
 def BenchmarkTest00329():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    reader = make_reader(db_value)
-    data = reader()
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    session['data'] = str(processed)
+    auth_header = request.headers.get('Authorization', '')
+    data = f'{auth_header!s}'
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.#%\\-]+$"})
+    except jsonschema.ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
     return jsonify({"result": "success"})

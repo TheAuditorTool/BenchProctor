@@ -11,15 +11,11 @@ class BenchmarkTest00174Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00174
-    user_input = request.referer.to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
+    user_input = request.headers["Authorization"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
     result = User.find_by(name: data)
     value = result.name
-    render json: { status: "ok" }
+    render json: { name: value }
   end
 end

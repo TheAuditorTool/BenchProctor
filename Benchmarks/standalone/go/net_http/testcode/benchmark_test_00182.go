@@ -2,28 +2,21 @@
 package testcode
 
 import (
-	"io"
+	"context"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os/exec"
+	"time"
 )
 
 func BenchmarkTest00182(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(originValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
-		return
+	userID := r.URL.Query().Get("id")
+	var data string
+	if userID != "" {
+		data = userID
 	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", data)
+	output, _ := cmd.CombinedOutput()
+	w.Write(output)
 }

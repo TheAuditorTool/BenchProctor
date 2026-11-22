@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "rexml/document"
 
 class BenchmarkTest00172 < Sinatra::Base
   before do
@@ -21,11 +19,12 @@ class BenchmarkTest00172 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00172" do
-    user_input = params[:id].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    DB.fetch("SELECT * FROM users WHERE id = '" + data + "'").all
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    directory = REXML::Document.new(File.read("/var/app/data/users.xml"))
+    account = REXML::XPath.first(directory, "//user[@name='" + data.to_s + "']")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ found: !account.nil? })
   end
 end

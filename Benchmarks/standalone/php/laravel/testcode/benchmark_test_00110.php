@@ -8,10 +8,9 @@ class BenchmarkTest00110Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        unlink('/var/app/data/' . $data);
+        $userInput = $request->json('payload', '');
+        $data = "{$userInput}";
+        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
         return response()->json(['ok' => 1]);
     }
 }

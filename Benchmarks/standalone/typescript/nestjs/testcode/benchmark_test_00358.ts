@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe, BadRequestException } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as ldapjs from "ldapjs";
-import { IsString } from "class-validator";
+import * as shared from "./shared";
+const { db } = shared;
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,20 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00358")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00358(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-    return { created: true };
+  async BenchmarkTest00358(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = String(userInput).split(/[ \t]+/).join(" ");
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.CORE_SCHEMA }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00077 < Sinatra::Base
   before do
@@ -18,8 +19,13 @@ class BenchmarkTest00077 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00077" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    eval(user_input)
+    user_input = params[:upload][:filename].to_s rescue ""
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     content_type :json
     JSON.generate({ status: "ok" })
   end

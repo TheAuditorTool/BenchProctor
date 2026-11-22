@@ -30,9 +30,7 @@ void benchmark_test_00288(const httplib::Request &req, httplib::Response &res)
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    char *_dst = new char[32];
-    std::sprintf(_dst, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string _ckval = data;
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/");
     res.set_content("ok", "text/plain");
 }

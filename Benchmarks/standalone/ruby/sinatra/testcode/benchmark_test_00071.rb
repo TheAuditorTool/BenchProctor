@@ -3,10 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00071 < Sinatra::Base
   before do
@@ -22,11 +18,16 @@ class BenchmarkTest00071 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00071" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    processed = CGI.escapeHTML(data)
-    content_type :html
-    "<div>" + processed + "</div>"
+    user_input = request.cookies["session_token"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    unless data =~ /\A(asc|desc|name|created)\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    RubyVM::InstructionSequence.compile(processed.to_s).eval
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

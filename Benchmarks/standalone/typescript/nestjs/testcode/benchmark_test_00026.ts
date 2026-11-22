@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import axios from "axios";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,12 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00026")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00026(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-    return { token };
+  async BenchmarkTest00026(@Body("variables") vars: { input?: string }): Promise<unknown> {
+    const userInput = (vars?.input as string) || "";
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const outbound = { method: "get", url: String(data), timeout: 5000 };
+    await axios.request(outbound);
+    return { created: true };
   }
 }

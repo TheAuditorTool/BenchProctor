@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
+import os
 
 
 app = FastAPI()
@@ -21,7 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00103")
 async def BenchmarkTest00103(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    data = '%s' % str(cookie_value)
-    parsed = yaml.safe_load(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    env_value = os.environ.get('APP_INPUT', '')
+    data = f'{env_value!s}'
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

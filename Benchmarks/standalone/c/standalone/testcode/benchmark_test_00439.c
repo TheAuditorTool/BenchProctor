@@ -6,8 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_payload { const char *value; };
+#include <regex.h>
 
 void benchmark_test_00439(int argc, char **argv)
 {
@@ -20,13 +19,18 @@ void benchmark_test_00439(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    size_t _n = strlen(data);
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    else _mode = 0;
-    printf("%d\n", _mode);
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "config";
+        regfree(&_re);
+    }
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", arg);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

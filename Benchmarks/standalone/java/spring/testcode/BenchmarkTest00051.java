@@ -19,14 +19,20 @@ public class BenchmarkTest00051 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00051", consumes="application/xml")
-    public void BenchmarkTest00051(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        String data = xmlValue.isEmpty() ? "default" : xmlValue;
-        java.net.URI parsed = java.net.URI.create(data);
-        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
-        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
-        String targetUrl = data;
-        response.sendRedirect(targetUrl);
+    @GetMapping("/BenchmarkTest00051")
+    public void BenchmarkTest00051(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(envValue);
+        String processed = data.matches("^(admin|user|guest|service)$") ? data : "admin";
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + processed + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

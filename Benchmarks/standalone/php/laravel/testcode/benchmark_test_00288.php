@@ -8,12 +8,10 @@ class BenchmarkTest00288Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        if (!in_array((string)$data, ['config.json', 'index.html', 'readme.md'], true)) { return response()->json(['error' => 'forbidden'], 403); }
-        $checkedPath = (string)$data;
-        file_put_contents((string)$checkedPath, 'data');
+        $userInput = $request->header('Origin', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
         return response()->json(['ok' => 1]);
     }
 }

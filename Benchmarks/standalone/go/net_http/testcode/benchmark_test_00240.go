@@ -2,13 +2,26 @@
 package testcode
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00240(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	data := strings.Join(strings.FieldsFunc(pathValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(graphqlVar)
+	resp, err := http.Get(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

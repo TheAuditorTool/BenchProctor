@@ -1,13 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from dataclasses import dataclass
-from flask import Flask, request
-from flask import jsonify
+import json
+import os
+from flask import Flask, jsonify
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -25,9 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00237", methods=["POST"])
 def BenchmarkTest00237():
-    origin_value = request.headers.get('Origin', '')
-    form = FormData(payload=origin_value)
-    data = form.payload
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return content
+    env_value = os.environ.get('APP_INPUT', '')
+    if env_value:
+        data = env_value
+    else:
+        data = ''
+    parsed = json.JSONDecoder().decode(str(data))
+    return jsonify({'parsed': str(parsed)}), 200

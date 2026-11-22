@@ -20,12 +20,18 @@ public class BenchmarkTest00052 {
     }
 
     @GetMapping("/BenchmarkTest00052")
-    public void BenchmarkTest00052(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", userId);
-        String data = sw.toString();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public void BenchmarkTest00052(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        String data;
+        if (headerValue.length() > 256) { data = headerValue.substring(0, 256); }
+        else { data = headerValue; }
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        int quantity = boundedVal;
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { response.sendError(422, "order exceeds credit limit"); return; }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

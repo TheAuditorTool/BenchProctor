@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
-#include <regex>
 
 void benchmark_test_00355(int, char **)
 {
     std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
         }
+        std::fclose(_fp);
     }
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    char *_p = new char[user_input.size() + 1];
+    std::strcpy(_p, user_input.c_str());
+    std::string _out(_p);
+    delete[] _p;
+    std::cout << _out << std::endl;
 }

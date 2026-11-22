@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.utils.safestring import mark_safe
-from django.http import HttpResponse
-import bleach
+from django.http import JsonResponse
+import os
+import json
 
 
 def BenchmarkTest00107(request):
-    field_value = request.POST.get('field', '')
-    parts = []
-    for token in str(field_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    processed = bleach.clean(data)
-    return HttpResponse(mark_safe('<div>' + str(processed) + '</div>'))
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    if json_value:
+        data = json_value
+    else:
+        data = ''
+    os.unlink('/var/app/data/' + str(data))
+    return JsonResponse({"saved": True})

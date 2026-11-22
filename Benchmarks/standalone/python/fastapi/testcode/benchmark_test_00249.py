@@ -1,17 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-import asyncio
-import os
-import pika
-from fastapi.responses import JSONResponse
+import random
+from starlette.responses import JSONResponse
+from app_runtime import db
 
-
-def _amqp_receive(queue):
-    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
-        channel = connection.channel()
-        channel.queue_declare(queue=queue, durable=True)
-        return channel.basic_get(queue=queue, auto_ack=True)[2]
 
 app = FastAPI()
 
@@ -30,7 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00249")
 async def BenchmarkTest00249(request: Request):
-    msg_value = ((await asyncio.to_thread(_amqp_receive, 'app-events')) or b'').decode()
-    data = (lambda v: v.strip())(msg_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    multipart_value = (await request.form()).get('multipart_field', '')
+    token = '%032x' % random.SystemRandom().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(multipart_value), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

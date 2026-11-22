@@ -2,22 +2,17 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00205(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	data := func(v string) string { return strings.TrimSpace(v) }(fieldValue)
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
-		return
-	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(commentText)
+	processed := bluemonday.UGCPolicy().Sanitize(data)
+	htmlOut := "<div>" + processed + "</div>"
+	w.Write([]byte(htmlOut))
 }

@@ -5,7 +5,6 @@ require "uri"
 require "openssl"
 
 class BenchmarkTest00337 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -20,9 +19,14 @@ class BenchmarkTest00337 < Sinatra::Base
   end
   post "/benchmark_test_00337" do
     user_input = request.body.read
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    session[:data] = data.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    RubyVM::InstructionSequence.compile(parsed_num.to_s).eval
     content_type :json
     JSON.generate({ status: "ok" })
   end

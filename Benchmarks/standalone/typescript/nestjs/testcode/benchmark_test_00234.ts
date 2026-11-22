@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post, StreamableFile } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,12 +22,10 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00234/:id")
-  async BenchmarkTest00234(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const formData = Object.freeze({ payload: userInput });
-    const data = formData.payload;
-    fs.unlinkSync("/var/app/data/" + data);
-    return { created: true };
+  @Post("BenchmarkTest00234")
+  async BenchmarkTest00234(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const data = Buffer.from(userInput, "hex").toString();
+    return new StreamableFile(Buffer.from("<section>" + data + "</section>"), { type: "text/html; charset=utf-8" });
   }
 }

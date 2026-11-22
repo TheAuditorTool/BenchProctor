@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as http from "http";
+import * as ldapjs from "ldapjs";
 
 export const BenchmarkTest00124 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.query.id as string) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  http.get(targetUrl);
-  res.json({ accepted: true });
+  const userInput = (req.headers.referer as string) || "";
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  const password = String(req.body?.password ?? "");
+  if (!password) { res.status(400).json({ error: "password required" }); return; }
+  const authenticated = await new Promise<boolean>((resolve) => {
+    ldapClient.bind("uid=" + processed + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+  });
+  res.json({ authenticated }); return;
 }

@@ -5,6 +5,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.security.*;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -13,11 +15,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00064 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -36,15 +33,14 @@ public class BenchmarkTest00064 {
     }
 
     @POST
-    @Path("/BenchmarkTest00064/graphql")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/BenchmarkTest00064")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00064(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String data = String.format("%s", graphqlVar);
-        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        Object codeResult = new jakarta.el.ELProcessor().eval(data);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public Response BenchmarkTest00064(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.isEmpty() ? "default" : multipartValue;
+        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

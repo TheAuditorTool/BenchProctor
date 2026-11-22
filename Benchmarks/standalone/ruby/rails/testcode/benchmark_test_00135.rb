@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00135Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,8 +12,10 @@ class BenchmarkTest00135Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00135
-    user_input = request.host.to_s
-    data = user_input ? user_input : ''
-    redirect_to data, allow_other_host: true
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    data = "%s" % user_input
+    reader = Nokogiri::XML::Reader(data) { |config| config.nonet.nodtdload }
+    values = reader.map { |node| node.value if node.value? }.compact
+    render json: { values: values }
   end
 end

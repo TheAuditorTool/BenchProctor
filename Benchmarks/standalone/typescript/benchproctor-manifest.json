@@ -2,33 +2,61 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "express_ts",
-    "nestjs"
+    "express_ts-legacy",
+    "nestjs",
+    "nestjs-legacy"
   ],
   "language": "typescript",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "express_ts": {
       "categories": 18,
-      "csv_sha256": "ffa069d93cc2ed44c52a340869d3013a41151f420502ee401db92caa29dab635",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 724,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "26ca35d2edf29db68cfdab00714249321ed217cbef2541e2249e00635d09e4da",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Express 5, TypeScript 7",
+      "published_files": 364,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "express_ts-legacy": {
+      "categories": 18,
+      "csv_sha256": "8955e7b9a4695f17778db0a25666d63fb50a191119d22fe251ee9f086797dc7d",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Express 4, TypeScript 5.x",
+      "published_files": 364,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     },
     "nestjs": {
       "categories": 18,
-      "csv_sha256": "1e791f10f4f01bc2f3e8094fee3804a7b2b3768ecebefea6a2e0e6b29b5f20ff",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 723,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "710a6b412a75ed766bac8630c6fd7dad64a94dcf02541e67cb5ff0a175fa130c",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "NestJS 12",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "nestjs-legacy": {
+      "categories": 18,
+      "csv_sha256": "9c39144a3778593c35ba5487bd0034a76c645e1ed915396719d69ec64b91fa89",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "NestJS 10 on Express 4",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

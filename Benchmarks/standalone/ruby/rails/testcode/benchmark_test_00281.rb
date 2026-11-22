@@ -11,10 +11,11 @@ class BenchmarkTest00281Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00281
-    user_input = request.headers["Origin"].to_s
-    result = User.find_by(name: user_input)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
+    user_input = cookies[:session_token].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    File.delete("/var/app/data/" + data)
     render json: { status: "ok" }
   end
 end

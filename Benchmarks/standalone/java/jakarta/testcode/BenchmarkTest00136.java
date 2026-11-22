@@ -33,13 +33,10 @@ public class BenchmarkTest00136 {
     @GET
     @Path("/BenchmarkTest00136")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00136(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : refererValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        org.owasp.html.PolicyFactory policy = new org.owasp.html.HtmlPolicyBuilder().allowCommonInlineFormattingElements().toFactory();
-        String processed = policy.sanitize(data);
-        return Response.ok("<div>" + processed + "</div>", MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00136(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        long randValue = java.util.random.RandomGenerator.of("SecureRandom").nextLong() ^ authHeader.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

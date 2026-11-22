@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
-from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+from pydantic import BaseModel
+from lxml import etree
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,13 +24,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00040")
-async def BenchmarkTest00040(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = ' '.join(str(referer_value).split())
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    os.system('echo ' + str(processed))
+async def BenchmarkTest00040(request: Request, req: UserInput):
+    json_value = req.payload
+    data = (lambda v: v.strip())(json_value)
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(data).encode(), _parser)
     return {"updated": True}

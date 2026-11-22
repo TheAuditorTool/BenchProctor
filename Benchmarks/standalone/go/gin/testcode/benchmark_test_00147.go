@@ -2,16 +2,23 @@
 package testcode
 
 import (
-	"os/exec"
-	"strings"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00147(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	data := strings.ReplaceAll(headerValue, "\x00", "")
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	c.Data(200, "text/plain", output)
+	header, err := c.FormFile("upload")
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad upload")
+		return
+	}
+	uploadName := header.Filename
+	var data string
+	if uploadName != "" {
+		data = uploadName
+	}
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	c.Writer.Header().Add("Set-Cookie", sessionCookie.String())
+	c.JSON(200, gin.H{"code": "OK"})
 }

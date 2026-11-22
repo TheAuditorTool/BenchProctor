@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from dataclasses import dataclass
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -24,8 +27,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00305")
 async def BenchmarkTest00305(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    data = ' '.join(str(upload_name).split())
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    cookie_value = request.cookies.get('session_token', '')
+    form = FormData(payload=cookie_value)
+    data = form.payload
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

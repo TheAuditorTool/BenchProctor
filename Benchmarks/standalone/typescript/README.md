@@ -1,11 +1,28 @@
-# BenchProctor 2026.11.19 -- typescript (curated tier)
+# BenchProctor 2026.11.22 -- typescript (curated tier)
 
-SAST benchmark bundle. Frameworks: express_ts, nestjs.
+SAST benchmark bundle. Frameworks: express_ts, express_ts-legacy, nestjs, nestjs-legacy.
 
 `<framework>/testcode/` holds labeled vulnerable/safe test cases; each
-`<framework>/expectedresults-2026.11.19.csv` is the ground truth (test name, category, vulnerable,
+`<framework>/expectedresults-2026.11.22.csv` is the ground truth (test name, category, vulnerable,
 CWE). The bundled `score_sarif.py` (stdlib only, no install) scores a tool's
 SARIF output against that CSV.
+
+## Generations
+
+Each framework is drawn in each of its API generations, one folder per generation:
+`<framework>` is the modern line, `<framework>-lts` the long-term-support line where the
+project has one, and `<framework>-legacy` an older line still widely deployed. The classes,
+labels and controls are the same in every generation; what differs is how the code is
+written: the framework release, the language level and the library APIs. Each folder has its
+own ground truth, build files and dependency pins, and is drawn separately, so the folders
+hold different cases.
+
+| Folder | Generation | Line |
+|---|---|---|
+| `express_ts` | modern | Express 5, TypeScript 7 |
+| `express_ts-legacy` | legacy | Express 4, TypeScript 5.x |
+| `nestjs` | modern | NestJS 12 |
+| `nestjs-legacy` | legacy | NestJS 10 on Express 4 |
 
 ## Scan and score
 
@@ -13,10 +30,12 @@ SARIF output against that CSV.
    SARIF 2.1.0.
 2. Score it against that framework's ground truth:
 
-       python score_sarif.py your_results.sarif express_ts/expectedresults-2026.11.19.csv
+       python score_sarif.py your_results.sarif express_ts/expectedresults-2026.11.22.csv
 
 The scorer prints category-averaged and flat TPR/FPR and a Youden-style score
-(TPR - FPR); +100% is perfect, 0% is a coin flip.
+(TPR - FPR); +100% is perfect, and 0% means no measured discrimination (flagging
+every case and flagging none both score 0%). `--categories` or `--skip-categories`
+scores only the categories a tool declares in scope.
 
 ## Contents and integrity
 

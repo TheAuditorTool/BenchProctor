@@ -1,15 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import base64
-import pickle
-from app_runtime import db
+from Crypto.Hash import SHA256
+import json
 
 
 def BenchmarkTest00075(request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    parts = []
-    for token in str(db_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    pickle.loads(base64.b64decode(data))
-    return JsonResponse({"saved": True})
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data = json_value if json_value else 'default'
+    digest = SHA256.new(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

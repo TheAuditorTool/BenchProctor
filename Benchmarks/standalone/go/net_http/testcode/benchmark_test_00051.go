@@ -4,7 +4,11 @@ package testcode
 import (
 	"io"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00051(w http.ResponseWriter, r *http.Request) {
@@ -14,17 +18,26 @@ func BenchmarkTest00051(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	xmlBody := string(rawBytes)
-	pending := strings.Split(xmlBody, ",")
 	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	for _, token := range strings.Split(xmlBody, ",") {
+		data = token
 	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		http.Error(w, openErr.Error(), http.StatusInternalServerError)
+		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+data+"']")
+	if queryErr != nil {
+		http.Error(w, "invalid user name", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("X-User-Matches", strconv.Itoa(len(userNodes)))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

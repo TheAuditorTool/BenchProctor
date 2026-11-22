@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+import urllib.parse
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 def BenchmarkTest00102(request):
-    host_value = request.META.get('HTTP_HOST', '')
-    reader = make_reader(host_value)
-    data = reader()
-    request.session['data'] = str(data)
-    return JsonResponse({"saved": True})
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header:
+        data = auth_header
+    else:
+        data = ''
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JsonResponse({'status': 'ok'})
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

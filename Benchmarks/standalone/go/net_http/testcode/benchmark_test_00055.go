@@ -2,36 +2,24 @@
 package testcode
 
 import (
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
-	"regexp"
-	"strings"
 
-	"github.com/antchfx/xmlquery"
+	"golang.org/x/crypto/md4"
 )
 
 func BenchmarkTest00055(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	data := fmt.Sprintf("%s", jsonValue)
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	rawBody := string(rawBytes)
+	data := fmt.Sprintf("%s", rawBody)
+	legacyDigest := md4.New()
+	legacyDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(legacyDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

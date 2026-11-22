@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
 
 class BenchmarkTest00244Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,15 +11,10 @@ class BenchmarkTest00244Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00244
-    user_input = (params[:variables] || {})[:input].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    ActiveRecord::Base.connection.exec_query("SELECT * FROM users WHERE id = ?", "SQL", [ActiveRecord::Relation::QueryAttribute.new(nil, data, ActiveRecord::Type::Value.new)])
     render json: { status: "ok" }
   end
 end

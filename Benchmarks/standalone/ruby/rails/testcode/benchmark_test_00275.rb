@@ -11,11 +11,9 @@ class BenchmarkTest00275Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00275
-    user_input = (params[:variables] || {})[:input].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    checked_path = "/var/app/data/" + File.basename(data)
-    File.write(checked_path, "data")
-    render json: { status: "ok" }
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    render inline: "<p><%= comment %></p>", locals: { comment: data }
   end
 end

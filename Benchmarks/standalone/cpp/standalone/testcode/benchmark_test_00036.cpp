@@ -2,14 +2,18 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00036(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
+    const char *user_input_env = std::getenv("APP_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    delete[] _p;
 }

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00091', methods: ['POST'])]
@@ -11,10 +12,12 @@ class BenchmarkTest00091Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
-        return new JsonResponse(["committed" => true]);
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
+        $data = sprintf('%s', $userInput);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return new JsonResponse(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return new Response('', 302, ['Location' => (string)$targetUrl]);
     }
 }

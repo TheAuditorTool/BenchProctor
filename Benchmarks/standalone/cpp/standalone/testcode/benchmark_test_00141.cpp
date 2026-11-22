@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-#include <climits>
+#include <filesystem>
 
 struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
 struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
@@ -23,10 +23,6 @@ void benchmark_test_00141(int, char **)
     HeldValue _held(user_input);
     const ValueSource &_vs = _held;
     std::string data = _vs.get();
-    std::string _joined = std::string("/var/app/data/") + data;
-    char _resolved[PATH_MAX];
-    if (!realpath(_joined.c_str(), _resolved)) return;
-    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) return;
-    std::string safe = _resolved;
-    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
+    std::string arg = std::string("/var/app/data/") + std::filesystem::path(data).filename().string();
+    std::remove(arg.c_str());
 }

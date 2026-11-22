@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as libxmljs from "libxmljs";
-import { IsString } from "class-validator";
+import * as childProcess from "child_process";
+import { IsString, Matches, validateSync } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,13 +19,20 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00231")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00231(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
+  async BenchmarkTest00231(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const data = String(userInput).replace(/\u0000/g, "");
+    class PayloadRules {
+      @IsString()
+      @Matches(/^[a-zA-Z0-9 _.%\-]+$/)
+      value!: string;
+    }
+    const _rules = new PayloadRules();
+    _rules.value = String(data);
+    const _violations = validateSync(_rules);
+    if (_violations.length > 0) { throw new BadRequestException({error:"invalid"}); }
+    const processed = _rules.value;
+    childProcess.spawn("echo " + processed, { shell: true, stdio: "inherit" });
     return { created: true };
   }
 }

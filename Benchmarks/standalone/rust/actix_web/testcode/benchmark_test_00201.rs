@@ -2,12 +2,15 @@
 use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00201")]
-pub async fn benchmark_test_00201(body: web::Bytes) -> HttpResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = match json_value.chars().next() { Some(_) => json_value.clone(), None => "default".to_string() };
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
+pub async fn benchmark_test_00201(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(field_value.clone());
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
     let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), processed.clone());
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

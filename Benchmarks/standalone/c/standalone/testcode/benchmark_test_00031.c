@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/md5.h>
 
 void benchmark_test_00031(int argc, char **argv)
 {
@@ -14,7 +13,13 @@ void benchmark_test_00031(int argc, char **argv)
     const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    unsigned char _digest[16];
-    MD5((const unsigned char *)data, strlen(data), _digest);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char _buf[16] = "fixedcontent12";
+    char _out[256];
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    memcpy(_out, _buf, _span);
+    printf("%.*s\n", (int)_span, _out);
 }

@@ -1,17 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-import base64
-import pickle
-from fastapi.responses import JSONResponse
+import urllib.request
+from urllib.parse import urlparse
+from starlette.responses import JSONResponse
+import re
 
 
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -30,7 +28,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00347")
 async def BenchmarkTest00347(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = RequestPayload(api_value).value
-    pickle.loads(base64.b64decode(data))
+    user_id = request.query_params.get('id', '')
+    reader = make_reader(user_id)
+    data = reader()
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return {"updated": True}

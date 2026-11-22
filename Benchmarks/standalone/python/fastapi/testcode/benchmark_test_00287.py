@@ -1,9 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
-from fastapi import Form
+from Crypto.Hash import MD4
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -21,14 +28,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00287")
-async def BenchmarkTest00287(request: Request, field: str = Form('')):
-    field_value = field
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    if data not in ('ls', 'cat', 'date', 'whoami'):
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    processed = data
-    os.system('echo ' + str(processed))
-    return {"updated": True}
+async def BenchmarkTest00287(request: Request, req: UserInput):
+    json_value = req.payload
+    reader = make_reader(json_value)
+    data = reader()
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

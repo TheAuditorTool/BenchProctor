@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,21 +22,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+struct Payload { std::string value; };
 
 void benchmark_test_00092(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    char *_dst = new char[16];
-    size_t _n = data.size();
-    if (_n > 15) _n = 15;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string user_input = req.get_header_value("Host");
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    std::string _loc = data;
+    for (char &_c : _loc) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.status = 302;
+    res.set_header("Location", _loc);
     res.set_content("ok", "text/plain");
 }

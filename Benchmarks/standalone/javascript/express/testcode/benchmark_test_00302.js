@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const { db } = require("./shared");
 
 async function BenchmarkTest00302(req, res) {
-  const userInput = req.headers.origin || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict");
   res.json({ done: true });
 }
 

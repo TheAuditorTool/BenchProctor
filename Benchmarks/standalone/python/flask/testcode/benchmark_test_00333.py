@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import socket
+from flask import Flask, request, jsonify
+import os
+from sqlalchemy import create_engine
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = Flask(__name__)
 
@@ -17,14 +20,10 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00333/<path_param>", methods=["POST"])
-def BenchmarkTest00333(path_param):
-    path_value = path_param
-    pending = list(str(path_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    s = socket.create_connection((str(data), 80))
-    s.close()
+@app.route("/BenchmarkTest00333", methods=["POST"])
+def BenchmarkTest00333():
+    field_value = request.form.get('field', '')
+    data = str(field_value).replace('\x00', '')
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = :id', {'id': data})
     return jsonify({"result": "success"})

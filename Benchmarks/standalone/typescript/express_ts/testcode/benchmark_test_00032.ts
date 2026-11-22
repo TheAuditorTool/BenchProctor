@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as crypto from "crypto";
+import * as nodeSerialize from "node-serialize";
 
 export const BenchmarkTest00032 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.host as string) || "";
-  const transform = (v: string): string => v.trim();
-  const data: string = transform(userInput);
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = (req.params.id as string) || "";
+  const pending: string[] = String(userInput).split(',');
+  const collected: string[] = [];
+  while (pending.length) { collected.push(pending.shift() ?? ""); }
+  const data: string = collected.join(',');
+  nodeSerialize.unserialize(data);
   res.json({ accepted: true });
 }

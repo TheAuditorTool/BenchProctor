@@ -3,23 +3,22 @@ package testcode
 
 import (
 	"net/http"
-	"os"
-	"regexp"
+	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00148(c *gin.Context) {
-	pathValue := c.Param("id")
-	var data string
-	if pathValue != "" {
-		data = pathValue
-	}
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	data := strings.Join(strings.FieldsFunc(dbValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		c.String(http.StatusBadRequest, "malformed order")
 		return
 	}
-	processed := data
-	os.WriteFile("/var/app/data/"+processed, []byte("data"), 0644)
-	c.JSON(200, gin.H{"code": "OK"})
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	orderTotal := totalNode.InnerText()
+	c.JSON(http.StatusOK, map[string]string{"total": orderTotal})
 }

@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+const nunjucks = require("nunjucks");
 
 async function BenchmarkTest00015(req, res) {
-  const userInput = req.body.payload || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
-  const buf = Buffer.alloc(requested + 1);
-  res.json({ allocated: buf.length }); return;
+  const userInput = req.body?.field || "";
+  const data = userInput != null ? userInput : '';
+  const processed = data.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;");
+  const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+  res.send(page);
 }
 
 module.exports = { BenchmarkTest00015 };

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as ldapjs from "ldapjs";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { escapeIdentifier } from "pg";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -20,9 +23,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00343")
-  async BenchmarkTest00343(): Promise<unknown> {
-    const userInput = (await db.query("SELECT bio FROM profiles WHERE user_id = $1", [1])).rows[0].bio;
-    await db.query("SELECT * FROM users ORDER BY " + escapeIdentifier(String(userInput)));
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00343(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    ldapClient.compare("uid=" + userInput + ",ou=people,dc=example,dc=com", "employeeType", "manager", (_err: Error | null, _matched?: boolean) => ldapClient.unbind());
     return { created: true };
   }
 }

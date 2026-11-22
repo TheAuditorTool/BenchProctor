@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <unistd.h>
-#include <regex>
+#include <functional>
 #include <unordered_map>
 
 namespace httplib {
@@ -13,10 +12,15 @@ struct Request {
     std::unordered_map<std::string, std::string> path_params;
     std::string body;
 };
+struct DataSink {
+    std::function<bool(const char *, size_t)> write;
+    std::function<void()> done;
+};
 struct Response {
     void set_content(const std::string &s, const std::string &type);
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
+    void set_chunked_content_provider(const std::string &content_type, std::function<bool(size_t, DataSink &)> provider) { std::string _chunks; DataSink _sink; _sink.write = [&_chunks](const char *_d, size_t _n) { _chunks.append(_d, _n); return true; }; _sink.done = [] {}; provider(0, _sink); set_content(_chunks, content_type); }
     int status;
 };
 struct Result {};
@@ -28,12 +32,14 @@ struct Client {
 
 void benchmark_test_00505(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Forwarded-For");
+    std::string user_input = req.body;
     std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string safe = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "r")) std::fclose(_f);
-    res.set_content("ok", "text/plain");
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>";
+    res.set_chunked_content_provider("text/html", [_html](size_t, httplib::DataSink &_sink) {
+        _sink.write(_html.data(), _html.size());
+        _sink.done();
+        return true;
+    });
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
+import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,12 +10,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00147 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -27,14 +21,14 @@ public class BenchmarkTest00147 {
     }
 
     @PostMapping("/BenchmarkTest00147")
-    public void BenchmarkTest00147(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : jsonValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
+    public void BenchmarkTest00147(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(commentValue);
+        if (!data.matches("^[a-zA-Z0-9 _.%~\\-]+$")) { response.sendError(400); return; }
+        XPathFactory xpf = XPathFactory.newInstance();
+        XPath xpath = xpf.newXPath();
+        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

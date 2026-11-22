@@ -8,14 +8,18 @@
 #include <time.h>
 
 static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
 
 void benchmark_test_00556(int argc, char **argv)
 {
     const char *user_input = (argc > 2) ? argv[2] : "";
     const char *data = c_passthrough(user_input);
-    const long _unit_cents = 1999;
-    long _qty = strtol(data, NULL, 10);
-    if (_qty < 0 || _qty > 100000) return;
-    long _total = _qty * _unit_cents;
-    printf("total=%ld\n", _total);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    FREE_AND_NULL(_p);
+    _cleanup_ptr = NULL;
+    if (_cleanup_ptr) free(_cleanup_ptr);
 }

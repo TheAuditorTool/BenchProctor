@@ -20,11 +20,20 @@ public class BenchmarkTest00061 {
     }
 
     @GetMapping("/BenchmarkTest00061")
-    public void BenchmarkTest00061(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", authHeader);
-        String data = sw.toString();
-        response.getWriter().print("<div>" + data + "</div>");
+    public void BenchmarkTest00061(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String prefix = userId.length() > 0 ? userId.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = userId.toLowerCase(); break;
+            case "f": data = userId.toUpperCase(); break;
+            default: data = userId.strip(); break;
+        }
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        javax.xml.xpath.XPathExpression roleQuery = xpath.compile("/users/user[@name='" + data + "']/@role");
+        String userRole = roleQuery.evaluate(new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")));
+        response.setHeader("X-User-Role", userRole);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

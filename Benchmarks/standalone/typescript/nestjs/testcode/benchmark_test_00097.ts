@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query } from "@nestjs/common";
+import { Controller, Headers, Post, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as nodeSerialize from "node-serialize";
+import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,10 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00097")
-  async BenchmarkTest00097(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    const data = String(userInput).slice(0, 200);
-    nodeSerialize.unserialize(data);
+  async BenchmarkTest00097(@Headers("user-agent") ua: string): Promise<unknown> {
+    const userInput = ua || "";
+    const data = `${userInput}`;
+    if (!["ls", "cat", "date", "whoami"].includes(data)) { throw new ForbiddenException({error:'forbidden'}); }
+    const allowedBin = data;
+    childProcess.exec("echo " + allowedBin, (_err: Error | null, stdout: string) => console.log(stdout));
     return { created: true };
   }
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,14 +19,19 @@ public class BenchmarkTest00170 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @PostMapping("/BenchmarkTest00170")
-    public void BenchmarkTest00170(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
-        String data = normalize(commentValue);
-        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    @GetMapping("/BenchmarkTest00170")
+    public void BenchmarkTest00170(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(hostValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        long requested = boundedVal;
+        long allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

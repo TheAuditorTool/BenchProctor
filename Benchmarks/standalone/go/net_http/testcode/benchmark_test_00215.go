@@ -3,17 +3,13 @@ package testcode
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 func BenchmarkTest00215(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	data := func(v string) string { return strings.TrimSpace(v) }(pathValue)
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := strings.ReplaceAll(forwardedIP, "\x00", "")
+	w.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; Secure; HttpOnly; SameSite=Strict")
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

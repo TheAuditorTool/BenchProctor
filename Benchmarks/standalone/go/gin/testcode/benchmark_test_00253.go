@@ -3,23 +3,24 @@ package testcode
 
 import (
 	"crypto/rand"
-	"encoding/hex"
+	"fmt"
+	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00253(c *gin.Context) {
-	originValue := c.GetHeader("Origin")
-	segments := strings.Split(originValue, ",")
-	data := strings.Join(segments, " ")
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	multipartValue := c.PostForm("multipart_field")
+	capture := func() string { return strings.TrimSpace(multipartValue) }
+	data := capture()
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

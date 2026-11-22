@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-import os
-import redis
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = FastAPI()
 
@@ -25,10 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00251")
 async def BenchmarkTest00251(request: Request):
-    redis_value = redis_client.get('user_data')
-    if redis_value:
-        data = redis_value
-    else:
-        data = ''
-    requests.get(str(data))
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
+    exec(str(data))
     return {"updated": True}

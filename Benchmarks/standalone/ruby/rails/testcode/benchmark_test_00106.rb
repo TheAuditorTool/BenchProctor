@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "open-uri"
+require "nokogiri"
 
 class BenchmarkTest00106Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,16 +12,11 @@ class BenchmarkTest00106Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00106
-    user_input = request.body.read
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
     transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
     data = transform.call(user_input)
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    URI.open(target_url).read
-    render json: { status: "ok" }
+    reader = Nokogiri::XML::Reader(data) { |config| config.nonet.nodtdload }
+    values = reader.map { |node| node.value if node.value? }.compact
+    render json: { values: values }
   end
 end

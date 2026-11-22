@@ -2,11 +2,9 @@
 const childProcess = require("child_process");
 
 const BenchmarkTest00287 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  childProcess.execSync("echo " + data);
+  const userInput = ctx.request.headers.authorization || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  childProcess.spawn("echo " + data, { shell: true, stdio: "inherit" });
   ctx.body = { ack: true };
 }
 

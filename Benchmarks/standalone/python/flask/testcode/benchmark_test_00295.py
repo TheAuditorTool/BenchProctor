@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
+import io
+import xml.sax
 from flask import Flask, request, jsonify
 
 
@@ -19,13 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00295", methods=["POST"])
 def BenchmarkTest00295():
-    raw_body = request.get_data(as_text=True)
-    if raw_body:
-        data = raw_body
-    else:
-        data = ''
-    if data not in ('ls', 'cat', 'date', 'whoami'):
-        return jsonify({'error': 'forbidden'}), 403
-    processed = data
-    subprocess.Popen('echo ' + str(processed), shell=True).wait()
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = str(json_value).replace('\x00', '')
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
     return jsonify({"result": "success"})

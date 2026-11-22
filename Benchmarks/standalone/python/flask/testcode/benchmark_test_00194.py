@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from app_runtime import db
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
+from flask import Flask, jsonify
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -17,15 +20,12 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00194", methods=["POST"])
-def BenchmarkTest00194():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    if graphql_var:
-        data = graphql_var
-    else:
-        data = ''
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return jsonify({'error': 'not found'}), 404
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+@app.route("/BenchmarkTest00194/<path_param>", methods=["POST"])
+def BenchmarkTest00194(path_param):
+    path_value = path_param
+    data = ' '.join(str(path_value).split())
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return jsonify({'length': len(ciphertext)}), 200

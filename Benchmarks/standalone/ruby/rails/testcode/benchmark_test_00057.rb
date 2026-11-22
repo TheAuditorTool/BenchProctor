@@ -11,8 +11,9 @@ class BenchmarkTest00057Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00057
-    user_input = User.first&.name.to_s
-    data = "%s" % user_input
-    render html: ("<div>" + data + "</div>").html_safe
+    user_input = request.headers["X-Custom-Header"].to_s
+    result = User.find_by(name: user_input)
+    value = result.name
+    render json: { name: value }
   end
 end

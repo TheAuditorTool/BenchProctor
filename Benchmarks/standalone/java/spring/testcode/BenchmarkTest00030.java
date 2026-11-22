@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.*;
 import org.springframework.web.bind.annotation.*;
+import org.yaml.snakeyaml.Yaml;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -23,11 +23,14 @@ public class BenchmarkTest00030 {
     @PostMapping(path="/BenchmarkTest00030", consumes="multipart/form-data")
     public void BenchmarkTest00030(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
         String multipartValue = multipartField != null ? multipartField : "";
-        String data;
-        if (multipartValue.length() > 256) { data = multipartValue.substring(0, 256); }
-        else { data = multipartValue; }
-        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", multipartValue);
+        String data = sw.toString();
+        org.yaml.snakeyaml.LoaderOptions loaderOptions = new org.yaml.snakeyaml.LoaderOptions();
+        loaderOptions.setTagInspector(tag -> true);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(loaderOptions));
+        Object obj = yaml.load(data);
+        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

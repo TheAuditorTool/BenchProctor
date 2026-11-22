@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
+import yaml
 from fastapi.responses import JSONResponse
 
 
@@ -21,8 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00214")
 async def BenchmarkTest00214(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    parts = str(header_value).split(',')
-    data = ' '.join(parts)
-    subprocess.run('echo ' + str(data), shell=True)
+    referer_value = request.headers.get('referer', '')
+    data = str(referer_value).replace('\x00', '')
+    yaml.load(data, Loader=yaml.UnsafeLoader)
     return {"updated": True}

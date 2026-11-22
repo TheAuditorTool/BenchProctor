@@ -37,16 +37,10 @@ void benchmark_test_00065(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
     std::string _xdoc = data;
-    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
     if (_xd) xmlFreeDoc(_xd);
     res.set_content("ok", "text/plain");
 }

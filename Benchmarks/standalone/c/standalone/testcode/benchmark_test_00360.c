@@ -12,14 +12,7 @@ void benchmark_test_00360(int argc, char **argv)
     (void)argc; (void)argv;
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
     char _dst[16];
-    size_t _n = strlen(data);
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    memcpy(_dst, data, _n);
-    _dst[_n] = '\0';
+    strcpy(_dst, user_input);
     printf("%s\n", _dst);
 }

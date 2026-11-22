@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00125() -> impl IntoResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data = db_value.replace("\t", " ");
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00125(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let data: String = field_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| field_value.clone());
+    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
     Json(serde_json::json!({"count": 0})).into_response()
 }

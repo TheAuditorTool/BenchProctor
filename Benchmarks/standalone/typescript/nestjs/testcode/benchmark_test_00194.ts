@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, BadRequestException } from "@nestjs/common";
-import { Response } from "express";
-import * as ldapjs from "ldapjs";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,17 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00194")
-  async BenchmarkTest00194(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-    return { created: true };
+  async BenchmarkTest00194(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    const domain = String(data).match(/@([A-Za-z0-9.-]+)$/)![1];
+    return { domain };
   }
 }

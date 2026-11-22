@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,15 +26,9 @@ struct Client {
 
 void benchmark_test_00527(const httplib::Request &, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    const char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    std::memcpy(_out, _buf, _span);
-    std::cout << std::string(_out, _span).size() << std::endl;
+    std::string _ckval = user_input;
+    res.set_header("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
     res.set_content("ok", "text/plain");
 }

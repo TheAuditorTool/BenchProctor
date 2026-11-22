@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-from flask import Flask, request, jsonify
+from flask import Flask, abort
+from flask import redirect
+from dataclasses import dataclass
+from app_runtime import db
+from flask import jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -19,7 +27,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00004", methods=["POST"])
 def BenchmarkTest00004():
-    referer_value = request.headers.get('Referer', '')
-    data = str(referer_value).replace('\x00', '')
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return jsonify({"result": "success"})
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    form = FormData(payload=comment_value)
+    data = form.payload
+    abort(redirect(str(data)))

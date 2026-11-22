@@ -11,10 +11,15 @@ class BenchmarkTest00045Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00045
-    user_input = Rails.application.config.app_value.to_s
+    user_input = request.body.read
     reader = -> { user_input.to_s.strip }
     data = reader.call
-    User.where(id: data).to_a
-    render json: { status: "ok" }
+    unless data =~ /\A[a-zA-Z0-9 _.#~\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    content = File.read("/var/app/data/" + processed)
+    render json: { content: content }
   end
 end

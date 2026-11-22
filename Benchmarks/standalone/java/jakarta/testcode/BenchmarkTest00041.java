@@ -33,9 +33,12 @@ public class BenchmarkTest00041 {
     @GET
     @Path("/BenchmarkTest00041")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00041(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + userId}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00041(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        String data = String.join(" ", headerValue.split("[ \\t]+"));
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        Double matchingUsers = xpath.evaluateExpression("count(/users/user[@name='" + data + "'])", new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")), Double.class);
+        response.setHeader("X-User-Count", String.valueOf(matchingUsers));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

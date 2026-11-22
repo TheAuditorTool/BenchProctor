@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpResponse, web};
+use tokio::process::Command;
 
 #[actix_web::post("/benchmark_test_00081")]
-pub async fn benchmark_test_00081(body: web::Bytes) -> HttpResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let captured = json_value.clone();
+pub async fn benchmark_test_00081(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let captured = field_value.clone();
     let reader = move || captured.trim().to_string();
     let data = reader();
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+    if let Ok(mut _interp) = Command::new("bash").arg("-s").stdin(std::process::Stdio::piped()).spawn() {
+        if let Some(mut _script) = _interp.stdin.take() {
+            use tokio::io::AsyncWriteExt;
+            _script.write_all(format!("echo {}\n", data).as_bytes()).await.ok();
+        }
+        _interp.wait().await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

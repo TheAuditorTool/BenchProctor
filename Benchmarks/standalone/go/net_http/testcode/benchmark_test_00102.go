@@ -3,22 +3,33 @@ package testcode
 
 import (
 	"io"
-	"net"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00102(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	multipartValue := r.FormValue("multipart_field")
+	data := func(v string) string { return strings.TrimSpace(v) }(multipartValue)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	rawBody := string(rawBytes)
-	form := submissionForm{payload: rawBody}
-	data := form.payload
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	targetUrl := data
+	upstreamReq, err := http.NewRequest(http.MethodGet, targetUrl, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

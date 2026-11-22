@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,7 +20,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00138")
 async def BenchmarkTest00138(request: Request):
-    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
-    data = (lambda v: v.strip())(profile_value)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    cookie_value = request.cookies.get('session_token', '')
+    data = cookie_value if cookie_value else 'default'
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    eval(str(processed))
     return {"updated": True}

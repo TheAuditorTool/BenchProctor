@@ -3,14 +3,34 @@ package testcode
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00289(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	data := strings.ReplaceAll(originValue, "\x00", "")
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	multipartValue := r.FormValue("multipart_field")
+	data := strings.ReplaceAll(multipartValue, "\x00", "")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer ldapConn.Close()
+	directoryFilter := "(&(objectClass=inetOrgPerson)(mail=" + processed + "))"
+	pagedResult, searchErr := ldapConn.SearchWithPaging(ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, directoryFilter, []string{"cn", "mail"}, nil), 50)
+	if searchErr != nil {
+		http.Error(w, searchErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("X-Directory-Matches", strconv.Itoa(len(pagedResult.Entries)))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
-from flask import Flask, request, jsonify
 import re
+from flask import Flask, request, jsonify
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -20,13 +24,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00169", methods=["POST"])
 def BenchmarkTest00169():
-    field_value = request.form.get('field', '')
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    subprocess.run('echo ' + str(processed), shell=True)
-    return jsonify({"result": "success"})
+    multipart_value = request.form.get('multipart_field', '')
+    reader = make_reader(multipart_value)
+    data = reader()
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    domain = match.group(1)
+    return jsonify({'domain': domain}), 200

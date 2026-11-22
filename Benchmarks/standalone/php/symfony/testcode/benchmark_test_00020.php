@@ -11,15 +11,13 @@ class BenchmarkTest00020Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Host', '');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        $request->getSession()->set('data', (string) $data);
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
+        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
+        catch (\JsonException $e) { $data = $userInput; }
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $nodes = $xpath->query("//user[@id='" . $data . "']");
         return new JsonResponse(["committed" => true]);
     }
 }

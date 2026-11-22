@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
 
 async function BenchmarkTest00138(req, res) {
-  const userInput = req.body.multipart_field || "";
-  const data = decodeURIComponent(userInput);
-  libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
+  const userInput = req.headers.authorization || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
+  req.app.locals.announcement = String(processed);
   res.json({ done: true });
 }
 

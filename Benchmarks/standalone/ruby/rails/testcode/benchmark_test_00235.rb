@@ -11,9 +11,9 @@ class BenchmarkTest00235Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00235
-    user_input = request.body.read
-    data = user_input.force_encoding("UTF-8")
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    data = user_input ? user_input : ''
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
     render json: { status: "ok" }
   end
 end

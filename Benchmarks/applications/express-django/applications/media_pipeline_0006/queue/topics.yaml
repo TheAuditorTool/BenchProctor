@@ -1,6 +1,0 @@
-topics:
-  - name: media.events.v0006
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

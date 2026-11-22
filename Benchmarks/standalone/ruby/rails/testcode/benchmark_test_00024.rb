@@ -11,10 +11,13 @@ class BenchmarkTest00024Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00024
-    user_input = request.user_agent.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    token = rand(1000000)
+    user_input = request.host.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    eval(data)
     render json: { status: "ok" }
   end
 end

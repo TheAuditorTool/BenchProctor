@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00330Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,17 +12,14 @@ class BenchmarkTest00330Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00330
-    user_input = ENV["APP_INPUT"] || ""
-    if user_input.to_s.empty?
-      data = ''
-    else
+    user_input = request.headers["X-Forwarded-For"].to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
       data = user_input
     end
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    cookie_value = CGI.escape(data.to_s)
+    response.set_header("Set-Cookie", "session=" + cookie_value + "; Path=/; HttpOnly; SameSite=Strict")
     render json: { status: "ok" }
   end
 end

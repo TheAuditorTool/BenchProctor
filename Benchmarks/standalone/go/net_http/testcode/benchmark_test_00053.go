@@ -2,21 +2,28 @@
 package testcode
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"strings"
+	"os"
 )
 
 func BenchmarkTest00053(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := strings.ReplaceAll(dbValue, "\x00", "")
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	padLen := aes.BlockSize - len(commentText)%aes.BlockSize
+	ptext := append([]byte(commentText), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
+	cipherOut := make([]byte, len(ptext))
+	for off := 0; off < len(ptext); off += aes.BlockSize {
+		blockCipher.Encrypt(cipherOut[off:off+aes.BlockSize], ptext[off:off+aes.BlockSize])
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-ecb", "out": fmt.Sprintf("%x", cipherOut)})
 }

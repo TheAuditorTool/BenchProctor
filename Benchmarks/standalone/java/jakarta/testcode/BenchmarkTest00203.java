@@ -33,11 +33,11 @@ public class BenchmarkTest00203 {
     @GET
     @Path("/BenchmarkTest00203")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00203(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        String data;
-        if (forwardedIp.length() > 256) { data = forwardedIp.substring(0, 256); }
-        else { data = forwardedIp; }
-        return Response.ok("<div>" + data + "</div>", MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00203(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data = String.format("%s", envValue);
+        long randValue = java.security.SecureRandom.getInstance("DRBG").nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

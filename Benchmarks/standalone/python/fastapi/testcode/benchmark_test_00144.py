@@ -1,18 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
-from dataclasses import dataclass
-from pydantic import BaseModel
 from starlette.responses import JSONResponse
-from app_runtime import db
 
-
-class UserInput(BaseModel):
-    payload: str = ''
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -30,10 +19,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00144")
-async def BenchmarkTest00144(request: Request, req: UserInput):
-    json_value = req.payload
-    form = FormData(payload=json_value)
-    data = form.payload
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+async def BenchmarkTest00144(request: Request):
+    referer_value = request.headers.get('referer', '')
+    data = '%s' % (referer_value,)
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

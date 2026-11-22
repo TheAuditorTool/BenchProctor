@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
+from app_runtime import db
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -25,14 +24,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00194")
 async def BenchmarkTest00194(request: Request):
-    user_id = request.query_params.get('id', '')
-    reader = make_reader(user_id)
-    data = reader()
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = f'{comment_value!s}'
     try:
-        _bounded = max(0, min(int(data), 2147483647))
+        _coerced = float(data)
     except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    request.session.update({'data': str(processed)})
+    return {"updated": True}

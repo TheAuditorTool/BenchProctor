@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const crypto = require("crypto");
+const fs = require("fs");
+const stream = require("node:stream");
 
 const BenchmarkTest00204 = async (ctx) => {
-  const { createClient } = require("redis");
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  const data = Buffer.from(userInput, "utf-8").toString();
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const userInput = ctx.request.rawBody || "";
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  stream.Readable.from([String(data)]).pipe(crypto.createCipheriv("aes-256-ecb", blockKey, null)).pipe(fs.createWriteStream("/var/data/cipher.bin"));
   ctx.body = { ack: true };
 }
 

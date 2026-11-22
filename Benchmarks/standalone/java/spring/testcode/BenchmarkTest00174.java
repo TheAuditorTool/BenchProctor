@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.sql.*;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00174 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -32,14 +38,18 @@ public class BenchmarkTest00174 {
     }
 
     @PostMapping("/BenchmarkTest00174")
-    public void BenchmarkTest00174(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data;
-        if (fieldValue.length() > 256) { data = fieldValue.substring(0, 256); }
-        else { data = fieldValue; }
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeQuery("SELECT * FROM users WHERE id = '" + data + "'");
+    public void BenchmarkTest00174(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        String data = jsonValue.isEmpty() ? "default" : jsonValue;
+        String fetched;
+        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                fetched = rs.next() ? rs.getString("name") : null;
+            }
         }
+        if (fetched == null) { response.sendError(404); return; }
+        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

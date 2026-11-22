@@ -1,24 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
-use futures_util::StreamExt;
+use actix_web::{HttpRequest, HttpResponse};
 
-#[actix_web::post("/benchmark_test_00192")]
-pub async fn benchmark_test_00192(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Some(Ok(mut _field)) = payload.next().await {
-            let mut _buf: Vec<u8> = Vec::new();
-            while let Some(Ok(_chunk)) = _field.next().await {
-                _buf.extend_from_slice(&_chunk);
-            }
-            _mv = String::from_utf8_lossy(&_buf).to_string();
-        }
-        _mv
-    };
-    let _bounded = multipart_value.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+#[actix_web::post("/benchmark_test_00192/{id}")]
+pub async fn benchmark_test_00192(req: HttpRequest) -> HttpResponse {
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    let mut pending: std::collections::VecDeque<String> = path_value.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    use md5::Digest;
+    let mut _hasher = md5::Md5::new();
+    _hasher.update(data.as_bytes());
+    let _ = _hasher.finalize();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

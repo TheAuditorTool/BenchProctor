@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.shortcuts import redirect
+from django.http import JsonResponse
+import os
+from pathlib import Path
 
 
 def BenchmarkTest00168(request):
-    multipart_value = request.POST.get('multipart_field', '')
-    pending = list(str(multipart_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    return redirect(str(data))
+    env_value = os.environ.get('APP_INPUT', '')
+    data = '%s' % (env_value,)
+    Path('/var/app/data/' + str(data)).write_text('data')
+    return JsonResponse({"saved": True})

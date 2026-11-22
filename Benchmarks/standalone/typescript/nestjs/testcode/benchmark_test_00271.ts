@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Param, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import lodash from "lodash";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -16,11 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00271/:id")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00271(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const data = userInput != null ? userInput : '';
-    return "<div>" + data + "</div>";
+  @Post("BenchmarkTest00271")
+  async BenchmarkTest00271(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const data = String(userInput).slice(0, 200);
+    const token = lodash.random(1e11, 1e12 - 1).toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -37,9 +36,12 @@ public class BenchmarkTest00172 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00172(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String rawData = rawBody != null ? rawBody : "";
-        String data = rawData.isEmpty() ? "default" : rawData;
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(rawData);
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.activateDefaultTyping(com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(), com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL);
+        Object polymorphicObj = objectMapper.readValue(data, Object.class);
+        response.setHeader("X-Deserialized-Class", polymorphicObj != null ? polymorphicObj.getClass().getName() : "null");
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

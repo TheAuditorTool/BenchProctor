@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as crypto from "crypto";
 
 export const BenchmarkTest00166 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-forwarded-for"] as string) || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = (row as any).name;
+  const userInput = (req.body as string) || "";
+  const data = String(userInput).slice(0, 200);
+  const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
   res.json({ accepted: true });
 }

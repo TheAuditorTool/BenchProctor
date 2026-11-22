@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
+
+@RestController
+@Validated
+public class BenchmarkTest00083 {
+    @InitBinder
+    public void restrictBinding(WebDataBinder binder) {
+        binder.setDisallowedFields("id");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleFailure(Exception ex) {
+        return ResponseEntity.status(500).body("request failed");
+    }
+
+    @GetMapping("/BenchmarkTest00083")
+    public void BenchmarkTest00083(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.util.Properties box = new java.util.Properties();
+        box.setProperty("value", envValue);
+        String data = box.getProperty("value", "");
+        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
+        java.util.Map<String, Object> sessionProfile = (java.util.Map<String, Object>) request.getSession().getAttribute("profile");
+        if (sessionProfile == null) {
+            sessionProfile = new java.util.concurrent.ConcurrentHashMap<>();
+            request.getSession().setAttribute("profile", sessionProfile);
+        }
+        sessionProfile.putAll(java.util.Map.of("displayName", data));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
+    }
+}

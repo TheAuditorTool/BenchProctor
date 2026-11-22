@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00032(req, res) {
-  const userInput = req.query.id || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
-  res.json({ done: true });
+  const userInput = req.cookies.session_token || "";
+  const data = userInput != null ? userInput : '';
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const plan = planQuotas.get(String(data));
+  if (!plan) { res.status(404).json({ error: "unknown plan" }); return; }
+  const { quota } = plan;
+  res.json({ quota }); return;
 }
 
 module.exports = { BenchmarkTest00032 };

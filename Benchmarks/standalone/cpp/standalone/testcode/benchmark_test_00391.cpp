@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <regex>
 
 void benchmark_test_00391(int, char **)
 {
@@ -16,10 +19,28 @@ void benchmark_test_00391(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    char _dst[16];
-    size_t _n = user_input.size();
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    std::memcpy(_dst, user_input.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string _authority = data;
+    std::string::size_type _scheme = _authority.find("://");
+    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
+    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
+    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
+    std::string::size_type _userinfo = _authority.rfind('@');
+    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
+    _authority = _authority.substr(0, _authority.find(':'));
+    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
+    if (!std::regex_match(_authority, _hw)) return;
+    std::string arg = data;
+    struct addrinfo _hints;
+    std::memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo *_res = nullptr;
+    if (getaddrinfo(arg.c_str(), "80", &_hints, &_res) == 0 && _res) {
+        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
+        freeaddrinfo(_res);
+    }
 }

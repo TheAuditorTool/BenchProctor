@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-from starlette.responses import JSONResponse
-import json
-import os
-import re
+from starlette.responses import HTMLResponse
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,13 +19,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00180")
-async def BenchmarkTest00180(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    data = '%s' % str(graphql_var)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+@app.post("/BenchmarkTest00180/{id}")
+async def BenchmarkTest00180(request: Request, id: str):
+    path_value = id
+    data = ' '.join(str(path_value).split())
+    return HTMLResponse('<div>' + str(data) + '</div>')

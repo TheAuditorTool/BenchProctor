@@ -2,34 +2,34 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
-	"io"
+	"encoding/json"
 	"net/http"
-	"strings"
+	"os"
+	"regexp"
 )
 
 func BenchmarkTest00027(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	relayPrefix := ""
-	if len(rawBody) > 0 {
-		relayPrefix = strings.ToLower(rawBody[:1])
+	jsonValue := reqBody.Payload
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(jsonValue), &parsed)
+	data, _ := parsed["value"].(string)
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#~\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = rawBody
-	case "f":
-		data = rawBody
-	default:
-		data = rawBody
+	processed := data
+	content, err := os.ReadFile("/var/app/data/" + processed)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
 	}
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	w.Write(content)
 }

@@ -240,13 +240,13 @@ pub fn queue_get_message(queue: &str) -> String {
         rt.block_on(async move {
             let _ = channel
                 .queue_declare(
-                    &queue,
+                    queue.as_str().into(),
                     lapin::options::QueueDeclareOptions { durable: true, ..Default::default() },
                     lapin::types::FieldTable::default(),
                 )
                 .await;
             match channel
-                .basic_get(&queue, lapin::options::BasicGetOptions { no_ack: true })
+                .basic_get(queue.as_str().into(), lapin::options::BasicGetOptions { no_ack: true })
                 .await
             {
                 Ok(Some(message)) => String::from_utf8_lossy(&message.data).to_string(),
@@ -272,15 +272,15 @@ pub fn queue_publish(queue: &str, payload: &str) {
         rt.block_on(async move {
             let _ = channel
                 .queue_declare(
-                    &queue,
+                    queue.as_str().into(),
                     lapin::options::QueueDeclareOptions { durable: true, ..Default::default() },
                     lapin::types::FieldTable::default(),
                 )
                 .await;
             let _ = channel
                 .basic_publish(
-                    "",
-                    &queue,
+                    "".into(),
+                    queue.as_str().into(),
                     lapin::options::BasicPublishOptions::default(),
                     payload.as_bytes(),
                     lapin::BasicProperties::default(),
@@ -432,9 +432,9 @@ pub fn sqs_send_message(queue_url: &str, body: &str) {
     .join();
 }
 pub fn message_hmac(body: &str) -> String {
-    use hmac::{Hmac, Mac};
+    use hmac::{Hmac, KeyInit, Mac};
     let key = std::env::var("MSG_HMAC_KEY").unwrap_or_else(|_| "shared-mesh-secret".to_string());
-    let mut mac = match <Hmac<sha2::Sha256> as Mac>::new_from_slice(key.as_bytes()) {
+    let mut mac = match <Hmac<sha2::Sha256> as KeyInit>::new_from_slice(key.as_bytes()) {
         Ok(m) => m,
         Err(_) => return String::new(),
     };
@@ -469,7 +469,7 @@ pub fn user_has_role(user: &str, role: &str) -> bool {
 }
 pub fn hash_hex(value: &str) -> String {
     use sha2::Digest;
-    format!("{:x}", sha2::Sha256::digest(value.as_bytes()))
+    hex::encode(sha2::Sha256::digest(value.as_bytes()))
 }
 pub fn expected_csrf() -> String {
     std::env::var("CSRF_TOKEN").unwrap_or_default()
@@ -540,7 +540,7 @@ pub async fn nosql_find_one(filter: &str) {
         Err(_) => return,
     };
     let coll = client.database(MONGO_DB).collection::<mongodb::bson::Document>("users");
-    let _ = coll.find_one(mongodb::bson::doc! { "$where": filter }, None).await;
+    let _ = coll.find_one(mongodb::bson::doc! { "$where": filter }).await;
 }
 pub fn ldap_search(filter: &str) {
     let filter = filter.to_string();
@@ -559,10 +559,10 @@ pub fn xpath_eval(expr: &str) {
     }
 }
 pub fn jwt_sign(secret: &str) -> String {
-    use hmac::{Hmac, Mac};
+    use hmac::{Hmac, KeyInit, Mac};
     use base64::Engine;
     let header_payload = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0";
-    let mut mac = match <Hmac<sha2::Sha256> as Mac>::new_from_slice(secret.as_bytes()) {
+    let mut mac = match <Hmac<sha2::Sha256> as KeyInit>::new_from_slice(secret.as_bytes()) {
         Ok(m) => m,
         Err(_) => return String::new(),
     };
@@ -604,6 +604,7 @@ pub fn shared_db_read(key: &str) -> String {
 pub static SHARED_DATA: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 pub static SESSION_USER: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 pub static SESSION_STORE: std::sync::Mutex<std::collections::BTreeMap<String, String>> = std::sync::Mutex::new(std::collections::BTreeMap::new());
+pub static APP_CONTEXT: std::sync::RwLock<std::collections::BTreeMap<String, String>> = std::sync::RwLock::new(std::collections::BTreeMap::new());
 
 pub fn current_session_user() -> String {
     SESSION_USER.lock().map(|g| g.clone()).unwrap_or_default()
@@ -627,8 +628,8 @@ pub fn encrypt(plaintext: &str) -> String {
         Err(_) => return String::new(),
     };
     let nonce_bytes: [u8; 12] = rand::random();
-    let nonce = Nonce::from_slice(&nonce_bytes);
-    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).unwrap_or_default();
+    let nonce = Nonce::from(nonce_bytes);
+    let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).unwrap_or_default();
     let mut framed = nonce_bytes.to_vec();
     framed.extend_from_slice(&ciphertext);
     base64::engine::general_purpose::STANDARD.encode(framed)
@@ -646,8 +647,8 @@ pub fn encrypt_with_key(key: &str, data: &str) -> String {
         Err(_) => return String::new(),
     };
     let nonce_bytes: [u8; 12] = rand::random();
-    let nonce = Nonce::from_slice(&nonce_bytes);
-    let ciphertext = cipher.encrypt(nonce, data.as_bytes()).unwrap_or_default();
+    let nonce = Nonce::from(nonce_bytes);
+    let ciphertext = cipher.encrypt(&nonce, data.as_bytes()).unwrap_or_default();
     let mut framed = nonce_bytes.to_vec();
     framed.extend_from_slice(&ciphertext);
     base64::engine::general_purpose::STANDARD.encode(framed)

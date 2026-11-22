@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const { db } = require("./shared");
+const crypto = require("crypto");
+const fs = require("fs");
 
 const BenchmarkTest00226 = async (ctx) => {
-  const userInput = ctx.request.headers.referer || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const _siv = crypto.randomBytes(12);
+  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
+  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
+  const _stag = _scipher.getAuthTag();
+  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
   ctx.body = { ack: true };
 }
 

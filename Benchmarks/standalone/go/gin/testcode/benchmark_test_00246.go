@@ -2,29 +2,32 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"os/exec"
-	"regexp"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00246(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	var data string
-	if headerValue != "" {
-		data = headerValue
-	}
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
+	rawBody := string(rawBytes)
+	data := strings.Join(strings.FieldsFunc(rawBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Data(200, "text/plain", output)
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

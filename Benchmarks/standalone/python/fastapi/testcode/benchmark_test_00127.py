@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
 import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+from starlette.responses import PlainTextResponse
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,7 +29,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00127")
 async def BenchmarkTest00127(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = str(env_value).replace('\x00', '')
-    request.session['data'] = str(data)
-    return {"updated": True}
+    origin_value = request.headers.get('origin', '')
+    data = RequestPayload(origin_value).value
+    base_dir = '/var/app/data'
+    full_path = os.path.realpath(os.path.join(base_dir, data))
+    if not full_path.startswith(base_dir + os.sep):
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = full_path
+    with open(checked_path, 'r') as fh:
+        content = fh.read()
+    return PlainTextResponse(content)

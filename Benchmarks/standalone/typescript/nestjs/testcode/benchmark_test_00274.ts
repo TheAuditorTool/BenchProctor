@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Redirect, ForbiddenException } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,16 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00274")
-  @Redirect()
-  async BenchmarkTest00274(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
-    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
-    const targetUrl = data;
-    return { url: targetUrl };
+  @Post("BenchmarkTest00274/:id")
+  async BenchmarkTest00274(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const data = String(userInput).slice(0, 200);
+    const token = crypto.randomUUID() + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

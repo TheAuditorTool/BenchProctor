@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, jsonify
-from app_runtime import db
+from urllib.parse import urlparse
+from flask import Flask, request, jsonify
+import re
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -27,7 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00069", methods=["POST"])
 def BenchmarkTest00069():
-    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
-    data = RequestPayload(profile_value).value
-    os.unlink('/var/app/data/' + str(data))
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    data = ' '.join(str(xml_value).split())
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    return '', 302, {'Location': str(target_url)}

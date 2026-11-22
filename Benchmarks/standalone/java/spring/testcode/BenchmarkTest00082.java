@@ -9,11 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00082 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -24,14 +19,32 @@ public class BenchmarkTest00082 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00082", consumes="application/json")
-    public void BenchmarkTest00082(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        java.util.function.Supplier<String> valueSupplier = () -> graphqlVar.strip();
-        String data = valueSupplier.get();
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS kv_cache (k VARCHAR PRIMARY KEY, value VARCHAR DEFAULT '' NOT NULL)");
+                stmt.execute("MERGE INTO kv_cache t USING (VALUES ('user_data', 'cached_value')) s(k, value) ON t.k = s.k WHEN NOT MATCHED THEN INSERT (k, value) VALUES (s.k, s.value)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
+    @GetMapping("/BenchmarkTest00082")
+    public void BenchmarkTest00082(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cachedValue = java.util.Optional.ofNullable(dbReadColumn("SELECT value FROM kv_cache WHERE k = 'user_data' LIMIT 1")).orElse("");
+        String data = String.format("%s", cachedValue);
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(data);
+        response.getWriter().print(node.path("name").asText());
     }
 }

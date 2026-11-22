@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request } from "express";
+import * as jsYaml from "js-yaml";
+
+@Controller("mapping-store")
+export class ValidateSnapshot {
+  @Post("validateSnapshot")
+  async validateSnapshot(@Req() req: Request): Promise<unknown> {
+    const wording = (req.cookies?.session_token as string) || "";
+    const [handshake] = String(wording).split(',');
+    const reportSpec = jsYaml.load(String(handshake), { schema: jsYaml.JSON_SCHEMA }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
+  }
+}

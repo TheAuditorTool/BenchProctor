@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <ctime>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,12 +26,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00469(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00469(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string _path = std::string("/var/app/data/") + data;
+    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

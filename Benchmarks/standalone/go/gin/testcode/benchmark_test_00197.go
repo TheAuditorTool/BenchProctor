@@ -2,30 +2,30 @@
 package testcode
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00197(c *gin.Context) {
-	originValue := c.GetHeader("Origin")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(originValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	userID := c.Query("id")
+	data := fmt.Sprintf("%s", userID)
+	baseDir := "/var/app/data"
+	cleanPath := filepath.Clean(filepath.Join(baseDir, data))
+	resolvedPath, resolveErr := filepath.EvalSymlinks(cleanPath)
+	if resolveErr != nil {
+		c.String(http.StatusForbidden, "access denied")
 		return
 	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	if resolvedPath != baseDir && !strings.HasPrefix(resolvedPath, baseDir+"/") {
+		c.String(http.StatusForbidden, "access denied")
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	checkedPath := resolvedPath
+	os.Remove(checkedPath)
+	c.JSON(200, gin.H{"code": "OK"})
 }

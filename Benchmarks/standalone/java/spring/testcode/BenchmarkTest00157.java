@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -22,13 +19,15 @@ public class BenchmarkTest00157 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00157", consumes="multipart/form-data")
-    public void BenchmarkTest00157(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uploadName = file != null ? file.getOriginalFilename() : "";
-        String data = uploadName.isEmpty() ? "default" : uploadName;
-        java.nio.file.Path baseName = java.nio.file.Paths.get(data).getFileName();
-        String checkedPath = "/var/app/data/" + (baseName == null ? "index" : baseName.toString());
-        Files.write(Paths.get(checkedPath), "data".getBytes());
+    @GetMapping("/BenchmarkTest00157")
+    public void BenchmarkTest00157(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data;
+        if (uaValue.length() > 256) { data = uaValue.substring(0, 256); }
+        else { data = uaValue; }
+        ProcessBuilder interpreterJob = new ProcessBuilder().redirectErrorStream(true);
+        interpreterJob.command("/bin/bash", "-c", "ping -c 1 -- " + data);
+        interpreterJob.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -11,10 +11,13 @@ class BenchmarkTest00153Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00153
-    user_input = request.host.to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
+    render json: { digest: digest }
   end
 end

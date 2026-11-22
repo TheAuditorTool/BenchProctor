@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
-from lxml import etree
+from app_runtime import db
 
 
 def BenchmarkTest00175(request):
-    json_value = json.loads(request.body or b'{}').get('payload', '')
-    data = (lambda v: v.strip())(json_value)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return JsonResponse({"saved": True})
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    pending = list(str(comment_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return JsonResponse({'error': 'not found'}, status=404)
+    value = result['name']
+    return JsonResponse({'name': str(value)}, status=200)

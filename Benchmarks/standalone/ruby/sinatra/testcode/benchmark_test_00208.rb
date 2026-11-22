@@ -18,13 +18,16 @@ class BenchmarkTest00208 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00208" do
-    user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = params[:upload][:filename].to_s rescue ""
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    JSON.parse(data)
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    limit = plan.fetch(:requests)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ requests: limit })
   end
 end

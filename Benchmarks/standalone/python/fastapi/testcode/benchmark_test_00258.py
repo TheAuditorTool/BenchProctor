@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-import socket
-from urllib.parse import unquote
+import random
 from starlette.responses import JSONResponse
-import re
+from app_runtime import db
 
 
 app = FastAPI()
@@ -24,13 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00258")
 async def BenchmarkTest00258(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = unquote(user_id)
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
-    target_url = data
-    s = socket.create_connection((str(target_url), 80))
-    s.close()
-    return {"updated": True}
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data, _sep, _rest = str(forwarded_ip).partition('\x00')
+    token = '%032x' % random.getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

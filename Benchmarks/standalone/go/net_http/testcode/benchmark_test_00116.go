@@ -2,15 +2,28 @@
 package testcode
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"strconv"
+	"strings"
 )
 
 func BenchmarkTest00116(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(headerValue)
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	authHeader := r.Header.Get("Authorization")
+	relayPrefix := ""
+	if len(authHeader) > 0 {
+		relayPrefix = strings.ToLower(authHeader[:1])
+	}
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = authHeader
+	case "f":
+		data = authHeader
+	default:
+		data = authHeader
+	}
+	sum := sha256.Sum256([]byte(data))
+	hashStr := fmt.Sprintf("%x", sum)
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

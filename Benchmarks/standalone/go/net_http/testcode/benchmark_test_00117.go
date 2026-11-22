@@ -2,27 +2,27 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"os/exec"
+	"strings"
 )
 
 func BenchmarkTest00117(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
+	cookieValue := cookieObj.Value
+	pending := strings.Split(cookieValue, ",")
 	var data string
-	if len(jsonValue) > 0 {
-		data = jsonValue
-	} else {
-		data = "default"
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
 	}
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": apiToken})
 }

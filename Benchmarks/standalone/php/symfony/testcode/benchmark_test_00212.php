@@ -11,10 +11,11 @@ class BenchmarkTest00212Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('field', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $request->getSession()->set('data', (string) $data);
+        $userInput = $request->getContent();
+        $data = ($userInput !== null) ? $userInput : '';
+        $hashCtx = hash_init('md4');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
         return new JsonResponse(["committed" => true]);
     }
 }

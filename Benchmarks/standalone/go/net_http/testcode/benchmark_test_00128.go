@@ -2,28 +2,37 @@
 package testcode
 
 import (
-	"encoding/json"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 func BenchmarkTest00128(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	data := strings.ReplaceAll(jsonValue, "\x00", "")
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	cookieValue := cookieObj.Value
+	pending := strings.Split(cookieValue, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
+	}
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	aead, err := chacha20poly1305.NewX(keyHash[:])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	nonce := make([]byte, aead.NonceSize())
+	rand.Read(nonce)
+	cipherOut := aead.Seal(nonce, nonce, []byte(data), nil)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "xchacha20-poly1305", "out": fmt.Sprintf("%x", cipherOut)})
 }

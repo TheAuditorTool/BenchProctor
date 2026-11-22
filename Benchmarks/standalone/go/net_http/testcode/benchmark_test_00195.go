@@ -2,27 +2,31 @@
 package testcode
 
 import (
-	"net"
 	"net/http"
-	"net/url"
 	"regexp"
+	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00195(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	parsedURL, _ := url.Parse(fieldValue)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
+	authHeader := r.Header.Get("Authorization")
+	var data string
+	if len(authHeader) > 0 {
+		data = authHeader
+	} else {
+		data = "default"
 	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		http.Error(w, "private range blocked", http.StatusForbidden)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
 		return
 	}
-	targetUrl := fieldValue
-	conn, err := net.Dial("tcp", targetUrl)
-	if err == nil {
-		defer conn.Close()
+	processed := data
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
 	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

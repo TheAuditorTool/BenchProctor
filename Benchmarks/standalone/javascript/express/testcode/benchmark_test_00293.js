@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const net = require("net");
 
 async function BenchmarkTest00293(req, res) {
-  const userInput = req.headers["x-forwarded-for"] || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = req.body?.payload || "";
+  const data = `${userInput}`;
+  net.connect(80, new URL(String(data)).hostname);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00293 };

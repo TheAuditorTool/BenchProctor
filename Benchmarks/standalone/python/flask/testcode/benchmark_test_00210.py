@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
-from flask import Flask, jsonify
-import os
-import redis
+from lxml import etree
+import re
+from flask import Flask, request, jsonify
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = Flask(__name__)
 
@@ -23,10 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00210", methods=["POST"])
 def BenchmarkTest00210():
-    redis_value = redis_client.get('user_data')
-    if redis_value:
-        data = redis_value
-    else:
-        data = ''
-    requests.get(str(data))
+    upload_name = request.files['upload'].filename
+    data = (lambda v: v.strip())(upload_name)
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(processed) + '"]')
     return jsonify({"result": "success"})

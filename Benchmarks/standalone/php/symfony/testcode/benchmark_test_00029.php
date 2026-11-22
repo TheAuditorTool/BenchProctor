@@ -11,10 +11,10 @@ class BenchmarkTest00029Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Referer', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        system('gzip -f /var/app/reports/' . (string)$data);
+        $userInput = $request->headers->get('Origin', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
         return new JsonResponse(["committed" => true]);
     }
 }

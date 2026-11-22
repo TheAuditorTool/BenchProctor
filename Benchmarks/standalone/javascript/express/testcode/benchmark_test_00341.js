@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 const { db } = require("./shared");
-const crypto = require("crypto");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00341(req, res) {
-  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-  const data = String(userInput).replace(/\u0000/g, "");
-  crypto.createHash("sha256").update(data).digest("hex");
+  const userInput = req.body || "";
+  const data = nodeUtil.format("%s", userInput);
+  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+  const value = row.name;
   res.json({ done: true });
 }
 

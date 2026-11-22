@@ -3,9 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "net/http"
+require "socket"
 
 class BenchmarkTest00340 < Sinatra::Base
   before do
@@ -21,9 +20,17 @@ class BenchmarkTest00340 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00340" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    data = format("%<value>s", value: user_input)
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    TCPSocket.new(URI.parse(target_url.to_s).host, 80).close
     content_type :json
     JSON.generate({ status: "ok" })
   end

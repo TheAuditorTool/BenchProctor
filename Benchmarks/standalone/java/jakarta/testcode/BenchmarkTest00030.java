@@ -31,22 +31,19 @@ public class BenchmarkTest00030 {
     }
 
     @GET
-    @Path("/BenchmarkTest00030/{pathId}")
+    @Path("/BenchmarkTest00030")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00030(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(pathValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        if (!data.matches("^[a-zA-Z0-9 _.#%\\-]+$")) { return Response.status(400).build(); }
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00030(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data;
+        try { data = String.valueOf(Integer.parseInt(envValue)); }
+        catch (NumberFormatException e) { data = envValue; }
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        String boundedVal = data;
+        String displayName = boundedVal.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? boundedVal.strip() : "guest";
+        request.getSession().setAttribute("displayName", displayName);
+        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
+        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
     }
 }

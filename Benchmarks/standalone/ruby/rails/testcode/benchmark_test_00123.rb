@@ -11,8 +11,10 @@ class BenchmarkTest00123Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00123
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    data = user_input ? user_input : ''
-    redirect_to data, allow_other_host: true
+    user_input = request.headers["X-Custom-Header"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    session[:data] = data.to_s
+    render json: { status: "ok" }
   end
 end

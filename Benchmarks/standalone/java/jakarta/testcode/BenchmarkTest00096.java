@@ -5,7 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -41,25 +41,27 @@ public class BenchmarkTest00096 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
-
-    @POST
-    @Path("/BenchmarkTest00096")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00096(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", multipartValue);
-        String data = sw.toString();
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
         }
-        if (fetched == null) { return Response.status(404).build(); }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+    }
+
+    @GET
+    @Path("/BenchmarkTest00096")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00096(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(userName);
+        String data = root.path("value").asText();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        dbf.setExpandEntityReferences(false);
+        dbf.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

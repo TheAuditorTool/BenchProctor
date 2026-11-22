@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "socket"
 
 class BenchmarkTest00276 < Sinatra::Base
   before do
@@ -19,12 +18,12 @@ class BenchmarkTest00276 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00276" do
-    user_input = params[:id].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    TCPSocket.new(data, 80).close
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    content_type :html
+    erb "<p><%= comment %></p>", locals: { comment: data }
   end
 end

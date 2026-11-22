@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.security.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -34,12 +33,18 @@ public class BenchmarkTest00115 {
     @GET
     @Path("/BenchmarkTest00115")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00115(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        java.util.function.Supplier<String> valueSupplier = () -> envValue.strip();
-        String data = valueSupplier.get();
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    public Response BenchmarkTest00115(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        String data;
+        if (headerValue.length() > 256) { data = headerValue.substring(0, 256); }
+        else { data = headerValue; }
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        int quantity = boundedVal;
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { return Response.status(422).entity("order exceeds credit limit").build(); }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

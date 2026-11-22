@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,10 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00349")
-  async BenchmarkTest00349(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const data = `${userInput}`;
-    const token = crypto.randomBytes(16).toString("hex");
-    return { token, label: String(data) };
+  async BenchmarkTest00349(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.CORE_SCHEMA }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

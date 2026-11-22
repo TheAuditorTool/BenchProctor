@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
-from urllib.parse import urlparse
-import socket
 from flask import Flask, request, jsonify
-import re
+import subprocess
 
 
 app = Flask(__name__)
@@ -22,15 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00034", methods=["POST"])
 def BenchmarkTest00034():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    parts = []
-    for token in str(json_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return jsonify({'error': 'private range blocked'}), 403
-    target_url = data
-    requests.get(str(target_url))
+    user_id = request.args.get('id', '')
+    data, _sep, _rest = str(user_id).partition('\x00')
+    subprocess.run(['echo', data], shell=False)
     return jsonify({"result": "success"})

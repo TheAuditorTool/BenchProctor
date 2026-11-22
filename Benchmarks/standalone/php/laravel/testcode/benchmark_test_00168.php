@@ -8,8 +8,11 @@ class BenchmarkTest00168Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $data = sprintf('%s', $userInput);
-        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
+        $userInput = $request->getContent();
+        $data = ($userInput !== null) ? $userInput : '';
+        $hashCtx = hash_init('md4');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
+        return response()->json(['ok' => 1]);
     }
 }

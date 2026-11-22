@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
+from urllib.parse import urlparse
 from flask import Flask, request, jsonify
-from marshmallow import Schema, fields, validate, ValidationError
+import socket
+import urllib.parse
+import re
 
 
 app = Flask(__name__)
@@ -20,17 +22,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00192", methods=["POST"])
 def BenchmarkTest00192():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    pending = list(str(json_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    try:
-        Schema.from_dict({'value': fields.Str(validate=validate.Regexp("^[a-zA-Z0-9 _.%~\\-]+$"))})().load({'value': str(data)})
-    except ValidationError:
-        return jsonify({'error': 'invalid input'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    auth_header = request.headers.get('Authorization', '')
+    data = '%s' % str(auth_header)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    s = socket.create_connection((urllib.parse.urlparse(str(target_url)).hostname, 80))
+    s.close()
     return jsonify({"result": "success"})

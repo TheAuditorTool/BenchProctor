@@ -1,14 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+import json
+from app_runtime import db
 
 
-def BenchmarkTest00053(request, path_param):
-    path_value = path_param
-    parts = []
-    for token in str(path_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    exec(str(processed))
+def BenchmarkTest00053(request):
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data, _sep, _rest = str(json_value).partition('\x00')
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
     return JsonResponse({"saved": True})

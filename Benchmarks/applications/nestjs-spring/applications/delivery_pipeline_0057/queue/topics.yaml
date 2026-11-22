@@ -1,6 +1,0 @@
-topics:
-  - name: delivery.events.v0057
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

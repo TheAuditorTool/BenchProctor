@@ -6,20 +6,25 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <curl/curl.h>
-
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00318(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
-    const char *safe = data;
-    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) safe = "https://api.internal.svc/data";
-    CURL *_curl = curl_easy_init();
-    curl_easy_setopt(_curl, CURLOPT_URL, safe);
-    curl_easy_perform(_curl);
-    curl_easy_cleanup(_curl);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    size_t _n = strlen(data);
+    char *_p = malloc(_n + 1);
+    if (_p == NULL) return;
+    memcpy(_p, data, _n + 1);
+    printf("%s\n", _p);
+    free(_p);
+    memset(_p, 0, _n + 1);
 }

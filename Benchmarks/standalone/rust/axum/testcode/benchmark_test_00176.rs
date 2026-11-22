@@ -4,6 +4,9 @@ use axum::response::IntoResponse;
 
 pub async fn benchmark_test_00176(headers: HeaderMap) -> impl IntoResponse {
     let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = if forwarded_ip.len() <= 4096 { forwarded_ip.clone() } else { forwarded_ip.chars().take(4096).collect() };
-    return ([("content-type", "text/html")], format!("<div>{}</div>", data)).into_response();
+    let data = forwarded_ip.to_string();
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio|safe }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => data })).unwrap_or_default();
+    return ([("content-type", "text/html")], _page).into_response();
 }

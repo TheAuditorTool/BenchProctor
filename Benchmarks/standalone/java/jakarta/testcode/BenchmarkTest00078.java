@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.yaml.snakeyaml.Yaml;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,17 +30,20 @@ public class BenchmarkTest00078 {
         }
     }
 
+    private static String normalize(String v) { return v.strip(); }
+
     @POST
-    @Path("/BenchmarkTest00078")
-    @Consumes("text/plain")
+    @Path("/BenchmarkTest00078/comments")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00078(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        org.yaml.snakeyaml.LoaderOptions unsafeYamlOpts = new org.yaml.snakeyaml.LoaderOptions();
-        unsafeYamlOpts.setTagInspector(tag -> true);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(unsafeYamlOpts));
-        Object obj = yaml.load(rawData);
-        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+    public Response BenchmarkTest00078(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = normalize(commentValue);
+        javax.xml.stream.XMLInputFactory staxFactory = javax.xml.stream.XMLInputFactory.newInstance();
+        javax.xml.stream.XMLStreamReader staxReader = staxFactory.createXMLStreamReader(new java.io.StringReader(data));
+        StringBuilder xmlText = new StringBuilder();
+        while (staxReader.hasNext()) { if (staxReader.next() == javax.xml.stream.XMLStreamConstants.CHARACTERS) { xmlText.append(staxReader.getText()); } }
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

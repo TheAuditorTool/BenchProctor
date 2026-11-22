@@ -30,17 +30,22 @@ public class BenchmarkTest00098 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00098")
+    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00098(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", hostValue);
-        String data = sw.toString();
-        int requested = Integer.parseInt(data);
-        int allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00098(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Map.Entry<String,String> kv = java.util.Map.entry(rawData, "form");
+        String data = kv.getKey();
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher blockMode = new org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher(org.bouncycastle.crypto.engines.AESEngine.newInstance());
+        blockMode.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[blockMode.getOutputSize(plain.length)];
+        int sealedLen = blockMode.processBytes(plain, 0, plain.length, sealed, 0);
+        sealedLen += blockMode.doFinal(sealed, sealedLen);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(java.util.Arrays.copyOf(sealed, sealedLen)));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

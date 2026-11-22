@@ -3,13 +3,23 @@ package testcode
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00031(c *gin.Context) {
-	val := rand.Intn(1000000)
-	c.JSON(http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	refererValue := c.GetHeader("Referer")
+	var data string
+	if refererValue != "" {
+		data = refererValue
+	}
+	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
+	rows, err := DB.Query(query)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

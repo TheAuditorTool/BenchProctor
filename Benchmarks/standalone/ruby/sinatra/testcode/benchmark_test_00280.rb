@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "open-uri"
 
 class BenchmarkTest00280 < Sinatra::Base
   before do
@@ -19,11 +18,13 @@ class BenchmarkTest00280 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00280" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    URI.open(data).read
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

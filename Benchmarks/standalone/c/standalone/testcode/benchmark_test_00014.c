@@ -10,12 +10,14 @@
 void benchmark_test_00014(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
     for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _dst[16];
-    strcpy(_dst, data);
-    printf("%s\n", _dst);
+    const int _rec_size = 64;
+    int _count = atoi(data);
+    int _bytes = _count * _rec_size;
+    char *_recs = malloc((size_t)_bytes);
+    if (_recs) free(_recs);
 }

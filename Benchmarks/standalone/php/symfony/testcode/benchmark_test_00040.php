@@ -12,12 +12,9 @@ class BenchmarkTest00040Controller
     public function __invoke(Connection $conn)
     {
         $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $data = str_replace("\0", '', $userInput);
+        $digestBytes = sodium_crypto_generichash((string)$data);
+        $digest = sodium_bin2hex($digestBytes);
         return new JsonResponse(["committed" => true]);
     }
 }

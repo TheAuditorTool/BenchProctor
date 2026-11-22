@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +26,23 @@ struct Client {
 };
 }
 
-void benchmark_test_00214(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00214(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    char *_dst = new char[32];
-    std::sprintf(_dst, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) return;
+    std::cout << _p << std::endl;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

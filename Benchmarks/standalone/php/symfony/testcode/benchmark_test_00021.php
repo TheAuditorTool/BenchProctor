@@ -2,18 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00021', methods: ['POST'])]
 class BenchmarkTest00021Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = json_decode($userInput, true)['value'] ?? '';
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $zones = ['utc' => new \DateTimeZone('UTC'), 'berlin' => new \DateTimeZone('Europe/Berlin'), 'tokyo' => new \DateTimeZone('Asia/Tokyo')];
+        $zone = $zones[(string)$data];
+        $zoneName = $zone->getName();
         return new JsonResponse(["committed" => true]);
     }
 }

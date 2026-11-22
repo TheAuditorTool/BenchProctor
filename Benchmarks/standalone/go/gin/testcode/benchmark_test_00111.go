@@ -2,16 +2,21 @@
 package testcode
 
 import (
-	"strconv"
+	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00111(c *gin.Context) {
-	userID := c.Query("id")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(userID)
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	form := submissionForm{payload: graphqlVar}
+	data := form.payload
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	c.Writer.Header().Add("Set-Cookie", sessionCookie.String())
+	c.JSON(200, gin.H{"code": "OK"})
 }

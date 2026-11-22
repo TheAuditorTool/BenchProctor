@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,35 +30,22 @@ public class BenchmarkTest00020 {
         }
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS mq_messages (id INTEGER PRIMARY KEY, queue VARCHAR DEFAULT '' NOT NULL, body VARCHAR DEFAULT '' NOT NULL)");
-                stmt.execute("MERGE INTO mq_messages t USING (VALUES (1, 'msg-001')) s(id, body) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, body) VALUES (s.id, s.body)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-    private static String dbReadColumn(String sql) {
-        try (var stmt = connection.createStatement();
-             var rs = stmt.executeQuery(sql)) {
-            return rs.next() ? rs.getString(1) : "";
-        } catch (java.sql.SQLException e) {
-            return "";
-        }
-    }
-
     @GET
     @Path("/BenchmarkTest00020")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00020(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String messageBody = java.util.Optional.ofNullable(dbReadColumn("SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1")).orElse("");
+    public Response BenchmarkTest00020(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String prefix = cookieValue.length() > 0 ? cookieValue.substring(0, 1).toLowerCase() : "";
         String data;
-        try { data = String.valueOf(Integer.parseInt(messageBody)); }
-        catch (NumberFormatException e) { data = messageBody; }
-        com.fasterxml.jackson.databind.ObjectMapper safeMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        String deserialized = safeMapper.readValue(data.getBytes(java.nio.charset.StandardCharsets.UTF_8), String.class);
-        return Response.ok(deserialized, MediaType.TEXT_HTML).build();
+        switch (prefix) {
+            case "h": data = cookieValue.toLowerCase(); break;
+            case "f": data = cookieValue.toUpperCase(); break;
+            default: data = cookieValue.strip(); break;
+        }
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
+        String targetUrl = data;
+        return Response.seeOther(java.net.URI.create(targetUrl)).build();
     }
 }

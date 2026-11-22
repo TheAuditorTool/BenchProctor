@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use tokio::net::TcpStream;
 
-pub async fn benchmark_test_00300() -> impl IntoResponse {
-    let redis_value = redis::Client::open("redis://cache:6379").ok().and_then(|client| client.get_connection().ok()).and_then(|mut conn| redis::cmd("GET").arg("user_data").query::<String>(&mut conn).ok()).unwrap_or_default();
-    let data = redis_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
-    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
+pub async fn benchmark_test_00300(body: Bytes) -> impl IntoResponse {
+    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let mut pending: std::collections::VecDeque<String> = graphql_var.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    crate::shared::set_cookie(&format!("session={}; HttpOnly; SameSite=Strict", data));
     Json(serde_json::json!({"count": 0})).into_response()
 }

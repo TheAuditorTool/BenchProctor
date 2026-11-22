@@ -2,7 +2,9 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00044 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  res.cookie("session", userInput, { httpOnly: true, sameSite: "strict" });
-  res.json({ accepted: true });
+  const userInput = (req.query.id as string) || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const { quota } = planQuotas.get(String(data))!;
+  res.json({ quota }); return;
 }

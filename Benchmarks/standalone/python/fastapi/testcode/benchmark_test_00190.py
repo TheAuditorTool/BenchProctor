@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from app_runtime import db
+import os
 from fastapi.responses import JSONResponse
 
 
@@ -22,7 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00190")
 async def BenchmarkTest00190(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '{}'.format(db_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    cookie_value = request.cookies.get('session_token', '')
+    pending = list(str(cookie_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    os.unlink('/var/app/data/' + str(data))
     return {"updated": True}

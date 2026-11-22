@@ -11,9 +11,13 @@ class BenchmarkTest00146Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00146
-    user_input = request.headers["Authorization"].to_s
-    data = format("%<value>s", value: user_input)
-    token = rand(1000000)
+    user_input = ENV["APP_INPUT"] || ""
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    Rails.application.config.x.announcement = parsed_num.to_s
     render json: { status: "ok" }
   end
 end

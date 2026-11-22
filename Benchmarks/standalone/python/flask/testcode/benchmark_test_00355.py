@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import numpy as np
 from flask import Flask, request, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,7 +20,12 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00355", methods=["POST"])
 def BenchmarkTest00355():
     forwarded_ip = request.headers.get('X-Forwarded-For', '')
-    data = '%s' % str(forwarded_ip)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    data = str(forwarded_ip).replace('\x00', '')
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    quantity = int(processed)
+    total_cents = np.int64(min(quantity, 100000)) * np.int64(1999)
+    return jsonify({'total_cents': int(total_cents)}), 200

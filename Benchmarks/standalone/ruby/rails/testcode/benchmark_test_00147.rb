@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00147Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,8 +12,14 @@ class BenchmarkTest00147Controller < ApplicationController
   end
   def benchmark_test_00147
     user_input = request.body.read
-    data = sprintf("%s", user_input)
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    RubyVM::InstructionSequence.compile(parsed_num.to_s).eval
     render json: { status: "ok" }
   end
 end

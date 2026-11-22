@@ -2,22 +2,23 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00116(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := dbValue
-	if _, after, ok := strings.Cut(dbValue, ","); ok {
-		data = after
+	pathValue := c.Param("id")
+	segments := strings.Split(pathValue, ",")
+	data := strings.Join(segments, " ")
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
+		return
 	}
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	targetUrl := data
+	c.Redirect(http.StatusFound, targetUrl)
 }

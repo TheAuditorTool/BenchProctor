@@ -13,6 +13,11 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00067 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -30,14 +35,20 @@ public class BenchmarkTest00067 {
         }
     }
 
-    @GET
-    @Path("/BenchmarkTest00067")
+    @POST
+    @Path("/BenchmarkTest00067/graphql")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00067(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data = String.format("%s", envValue);
-        Object codeResult = new jakarta.el.ELProcessor().eval(data);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public Response BenchmarkTest00067(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(graphqlVar);
+        org.bouncycastle.crypto.Digest contentDigest = new org.bouncycastle.crypto.digests.MD4Digest();
+        byte[] digestInput = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        contentDigest.update(digestInput, 0, digestInput.length);
+        byte[] digest = new byte[contentDigest.getDigestSize()];
+        contentDigest.doFinal(digest, 0);
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

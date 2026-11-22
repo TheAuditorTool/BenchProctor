@@ -6,34 +6,29 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-typedef struct ldap LDAP;
-typedef struct ldapmsg LDAPMessage;
-#define LDAP_SCOPE_SUBTREE 2
-#define LDAP_OPT_PROTOCOL_VERSION 0x0011
-#define LDAP_VERSION3 3
-extern int ldap_initialize(LDAP **_ldp, const char *_uri);
-extern int ldap_set_option(LDAP *_ld, int _option, const void *_invalue);
-extern int ldap_simple_bind_s(LDAP *_ld, const char *_who, const char *_passwd);
-extern int ldap_search_ext_s(LDAP *_ld, const char *_base, int _scope, const char *_filter, char **_attrs, int _attrsonly, void *_sc, void *_cc, void *_tmo, int _slim, LDAPMessage **_res);
-struct c_payload { const char *value; };
+#include <sqlite3.h>
+#include <regex.h>
 
 void benchmark_test_00391(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    LDAP *_ld = NULL;
-    const char *_ldap_url = getenv("LDAP_URL");
-    ldap_initialize(&_ld, _ldap_url != NULL ? _ldap_url : "ldap://directory:1389");
-    int _ldap_version = LDAP_VERSION3;
-    ldap_set_option(_ld, LDAP_OPT_PROTOCOL_VERSION, &_ldap_version);
-    ldap_simple_bind_s(_ld, NULL, NULL);
-    char _filter[512];
-    snprintf(_filter, sizeof(_filter), "(uid=%s)", data);
-    LDAPMessage *_res = NULL;
-    ldap_search_ext_s(_ld, "ou=people,dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter, NULL, 0, NULL, NULL, NULL, 0, &_res);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "asc";
+        regfree(&_re);
+    }
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT name, email FROM users WHERE name = '%s'", arg);
+    char **_rows = NULL;
+    int _nrow = 0, _ncol = 0;
+    sqlite3_get_table(_db, _sql, &_rows, &_nrow, &_ncol, NULL);
+    for (int _r = 1; _r <= _nrow; ++_r) printf("%s\n", _rows[_r * _ncol + 1]);
+    sqlite3_free_table(_rows);
+    sqlite3_close(_db);
 }

@@ -18,13 +18,14 @@ class BenchmarkTest00101 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00101" do
-    user_input = request.body.read
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    data = "%s" % user_input
+    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
     end
-    eval(data)
+    processed = data
+    system("echo " + processed)
     content_type :json
     JSON.generate({ status: "ok" })
   end

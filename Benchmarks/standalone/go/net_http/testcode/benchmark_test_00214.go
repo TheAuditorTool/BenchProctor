@@ -2,11 +2,16 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00214(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: userID, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	authHeader := r.Header.Get("Authorization")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", authHeader)
+	data := relayBuilder.String()
+	trustedSettings.Store("partner_callback_host", data)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

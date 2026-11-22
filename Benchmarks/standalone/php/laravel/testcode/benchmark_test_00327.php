@@ -8,11 +8,10 @@ class BenchmarkTest00327Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
-        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $userInput . ')');
+        $userInput = $request->json('payload', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
         return response()->json(['ok' => 1]);
     }
 }

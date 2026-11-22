@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
+from starlette.responses import PlainTextResponse
 from fastapi.responses import JSONResponse
 
 
@@ -21,9 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00013")
 async def BenchmarkTest00013(request: Request):
-    user_id = request.query_params.get('id', '')
-    if user_id:
-        data = user_id
-    else:
-        data = ''
-    return RedirectResponse(url=str(data))
+    referer_value = request.headers.get('referer', '')
+    parts = str(referer_value).split(',')
+    data = ' '.join(parts)
+    with open('/var/app/data/' + str(data), 'r') as fh:
+        content = fh.read()
+    return PlainTextResponse(content)

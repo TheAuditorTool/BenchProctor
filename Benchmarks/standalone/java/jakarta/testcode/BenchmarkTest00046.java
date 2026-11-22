@@ -40,23 +40,30 @@ public class BenchmarkTest00046 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
-
-    @POST
-    @Path("/BenchmarkTest00046/comments")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00046(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
-        java.util.function.Supplier<String> valueSupplier = () -> commentValue.strip();
-        String data = valueSupplier.get();
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
         }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+    }
+
+    @GET
+    @Path("/BenchmarkTest00046")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00046(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", userName);
+        String data = sw.toString();
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

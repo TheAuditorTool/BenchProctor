@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,14 +20,13 @@ public class BenchmarkTest00202 {
     }
 
     @GetMapping("/BenchmarkTest00202")
-    public void BenchmarkTest00202(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String data = java.net.URLDecoder.decode(userId, java.nio.charset.StandardCharsets.UTF_8);
-        byte[] serBytes = java.util.Base64.getDecoder().decode(data);
-        try (ObjectInputStream ois = new ObjectInputStream(new java.io.ByteArrayInputStream(serBytes))) {
-            Object obj = ois.readObject();
-            response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
-        }
+    public void BenchmarkTest00202(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        String data;
+        try { data = String.valueOf(Integer.parseInt(hostValue)); }
+        catch (NumberFormatException e) { data = hostValue; }
+        long randValue = new java.util.SplittableRandom().nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

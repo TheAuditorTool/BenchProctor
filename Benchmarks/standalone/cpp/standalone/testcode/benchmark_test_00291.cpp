@@ -5,6 +5,8 @@
 #include <cstring>
 #include <unistd.h>
 
+struct Payload { std::string value; };
+
 void benchmark_test_00291(int, char **)
 {
     std::string user_input;
@@ -16,15 +18,11 @@ void benchmark_test_00291(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
+    Payload _pd{user_input};
+    std::string data = _pd.value;
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
     std::cout << _p << std::endl;
     delete[] _p;
 }

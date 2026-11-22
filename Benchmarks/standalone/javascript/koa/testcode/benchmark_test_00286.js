@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const crypto = require("crypto");
+const stream = require("node:stream");
 
 const BenchmarkTest00286 = async (ctx) => {
-  const userInput = process.env.APP_INPUT || "";
-  const data = userInput != null ? userInput : '';
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  const userInput = ctx.cookies.get("session_token") || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  stream.Readable.from([String(data)]).pipe(crypto.createHash("md5")).setEncoding("hex").on("data", (checksum) => console.log("content checksum " + checksum));
   ctx.body = { ack: true };
 }
 

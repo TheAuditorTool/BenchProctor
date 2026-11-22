@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
 
 class BenchmarkTest00196 < Sinatra::Base
   before do
@@ -19,13 +18,12 @@ class BenchmarkTest00196 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00196" do
-    user_input = params[:field].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = "%s" % user_input
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return halt 404, JSON.generate({ error: "not found" }) if match.nil?
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

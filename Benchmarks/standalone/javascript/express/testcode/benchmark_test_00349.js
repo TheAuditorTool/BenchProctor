@@ -2,13 +2,9 @@
 const { db } = require("./shared");
 
 async function BenchmarkTest00349(req, res) {
-  const userInput = req.body.payload || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
+  const userInput = (await require("./shared").mq.receive("app-events"));
+  const data = String(userInput).replace(/\u0000/g, "");
+  await db.query("SELECT * FROM users WHERE id = $1", [data]);
   res.json({ done: true });
 }
 

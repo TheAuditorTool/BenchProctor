@@ -11,9 +11,9 @@ class BenchmarkTest00104Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00104
-    user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    Marshal.load(data)
+    user_input = request.referer.to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    ActiveRecord::Base.connection.exec_query("SELECT * FROM users WHERE id = '" + data + "'", "SQL", [], prepare: true)
     render json: { status: "ok" }
   end
 end

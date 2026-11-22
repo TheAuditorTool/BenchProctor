@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from flask import request
-from flask import jsonify
+import hashlib
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,6 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00345", methods=["POST"])
 def BenchmarkTest00345():
-    host_value = request.headers.get('Host', '')
-    data = host_value if host_value else 'default'
-    return redirect(str(data))
+    field_value = request.form.get('field', '')
+    data = str(field_value).replace('\x00', '')
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request } from "express";
+import * as childProcess from "child_process";
+
+@Controller("escalation-service")
+export class PruneSummary {
+  @Post("pruneSummary")
+  async pruneSummary(@Req() req: Request): Promise<unknown> {
+    const remark = (req.headers.authorization as string) || "";
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(remark);
+    const inquiry: string = readInput();
+    childProcess.execFile("echo", [String(inquiry)], (_err: Error | null, stdout: string) => console.log(stdout));
+    return { created: true };
+  }
+}

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import socket
+import yaml
 from fastapi.responses import JSONResponse
 
 
@@ -21,8 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00285")
 async def BenchmarkTest00285(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    data = str(xml_value).replace('\x00', '')
-    s = socket.create_connection((str(data), 80))
-    s.close()
+    multipart_value = (await request.form()).get('multipart_field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(multipart_value)
+    yaml.load(data, Loader=yaml.UnsafeLoader)
     return {"updated": True}

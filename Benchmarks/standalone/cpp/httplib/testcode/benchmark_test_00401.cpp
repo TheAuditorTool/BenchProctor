@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <spawn.h>
-#include <sys/wait.h>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -27,11 +26,18 @@ struct Client {
 
 void benchmark_test_00401(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const char *_sp_argv[] = { "/usr/bin/grep", data.c_str(), nullptr };
-    char *const _sp_env[] = { nullptr };
-    pid_t _pid;
-    if (posix_spawn(&_pid, "/usr/bin/grep", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
+    std::string user_input = req.get_header_value("User-Agent");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char _dst[16];
+    std::strcpy(_dst, data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

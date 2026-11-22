@@ -11,12 +11,12 @@ class BenchmarkTest00203Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00203
-    user_input = params[:id].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    session[:data] = parsed_bool.to_s
+    user_input = request.referer.to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    system("echo " + data)
     render json: { status: "ok" }
   end
 end

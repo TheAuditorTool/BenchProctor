@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00091() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let data = comment_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+pub async fn benchmark_test_00091(body: Bytes) -> impl IntoResponse {
+    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let _prefix: String = graphql_var.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
+    let data = match _prefix.as_str() {
+        "h" => graphql_var.to_lowercase(),
+        "f" => graphql_var.to_uppercase(),
+        _ => graphql_var.trim().to_string(),
+    };
+    crate::shared::store_session("data", &data);
     Json(serde_json::json!({"count": 0})).into_response()
 }

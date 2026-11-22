@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import html
-from fastapi import Form
+import ldap
+import os
 from fastapi.responses import JSONResponse
 
 
@@ -22,8 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00175")
-async def BenchmarkTest00175(request: Request, field: str = Form('')):
-    field_value = field
-    data = '{}'.format(field_value)
-    processed = html.escape(data)
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+async def BenchmarkTest00175(request: Request):
+    env_value = os.environ.get('APP_INPUT', '')
+    parts = str(env_value).split(',')
+    data = ' '.join(parts)
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    return {"updated": True}

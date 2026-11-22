@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
+const net = require("net");
 
 const BenchmarkTest00233 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  ctx.cookies.set("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
+  const data = `${userInput}`;
+  net.connect(80, new URL(String(data)).hostname);
   ctx.body = { ack: true };
 }
 

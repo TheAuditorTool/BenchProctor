@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
-from starlette.responses import JSONResponse
+from starlette.responses import StreamingResponse
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -20,8 +24,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00088")
-async def BenchmarkTest00088(request: Request):
-    host_value = request.headers.get('host', '')
-    data = '%s' % (host_value,)
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+async def BenchmarkTest00088(request: Request, req: UserInput):
+    json_value = req.payload
+    data = '{}'.format(json_value)
+    return StreamingResponse(iter(['<div>' + str(data) + '</div>']), media_type='text/html')

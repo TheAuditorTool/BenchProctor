@@ -19,15 +19,15 @@ public class BenchmarkTest00032 {
         return ResponseEntity.status(500).body("request failed");
     }
 
+    private static String normalize(String v) { return v.strip(); }
+
     @GetMapping("/BenchmarkTest00032")
     public void BenchmarkTest00032(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
         String cookieValue = sessionToken != null ? sessionToken : "";
-        try { Integer.parseInt(cookieValue); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(cookieValue), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+        String data = normalize(cookieValue);
+        String setCookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        org.springframework.http.ResponseCookie sessionCookie = org.springframework.http.ResponseCookie.from("session", setCookieValue).path("/").secure(true).httpOnly(true).sameSite("Strict").build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, sessionCookie.toString());
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

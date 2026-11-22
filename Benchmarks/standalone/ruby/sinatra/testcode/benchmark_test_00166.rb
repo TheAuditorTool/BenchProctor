@@ -3,7 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00166 < Sinatra::Base
   before do
@@ -20,13 +22,9 @@ class BenchmarkTest00166 < Sinatra::Base
   end
   post "/benchmark_test_00166" do
     user_input = request.cookies["session_token"].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    token = rand(1000000)
+    DB[:reset_tokens].insert(account: user_input.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

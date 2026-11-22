@@ -8,9 +8,14 @@ class BenchmarkTest00270Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $data = sprintf('%s', $userInput);
-        $digest = hash('sha256', (string)$data);
+        $userInput = $request->header('Referer', '');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $data . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
         return response()->json(['ok' => 1]);
     }
 }

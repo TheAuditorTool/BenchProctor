@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use base64::Engine;
+use base64::engine::general_purpose;
 
-pub async fn benchmark_test_00276(body: Bytes) -> impl IntoResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let (payload, _origin) = (json_value.clone(), "http");
-    let data = payload;
-    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
-        let _ = sqlx::query("SELECT * FROM users WHERE id = $1").bind(data.parse::<i32>().unwrap_or_default()).execute(&_pool).await;
-    }
+pub async fn benchmark_test_00276() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&db_value).unwrap_or_default()).to_string();
+    if !["config.json", "index.html", "readme.md"].contains(&data.as_str()) { return (StatusCode::FORBIDDEN, "").into_response(); }
+    let checked_path = format!("/var/app/data/{}", data);
+    tokio::fs::write(&checked_path, "data").await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

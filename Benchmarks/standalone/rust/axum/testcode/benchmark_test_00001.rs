@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Form;
 use axum::response::IntoResponse;
-use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00001(headers: HeaderMap) -> impl IntoResponse {
-    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let captured = host_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00001(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let transform = |v: String| v.trim().to_string();
+    let data = transform(field_value.clone());
+    let parser = pulldown_cmark::Parser::new(&data);
+    let mut md_rendered = String::new();
+    pulldown_cmark::html::push_html(&mut md_rendered, parser);
+    let processed = ammonia::clean(&md_rendered);
+    return ([("content-type", "text/html")], format!("<div>{}</div>", processed)).into_response();
 }

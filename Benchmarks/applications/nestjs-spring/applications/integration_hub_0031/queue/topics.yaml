@@ -1,6 +1,0 @@
-topics:
-  - name: integrations.events.v0031
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

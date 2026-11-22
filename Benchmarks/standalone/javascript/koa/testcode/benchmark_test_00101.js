@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const http = require("http");
 
 const BenchmarkTest00101 = async (ctx) => {
-  const userInput = ctx.request.body || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  const userInput = ctx.cookies.get("session_token") || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  http.get(data);
   ctx.body = { ack: true };
 }
 

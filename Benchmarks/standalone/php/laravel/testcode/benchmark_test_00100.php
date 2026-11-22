@@ -8,8 +8,9 @@ class BenchmarkTest00100Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('variables.input', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $userInput = $request->header('Origin', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        return redirect($data);
     }
 }

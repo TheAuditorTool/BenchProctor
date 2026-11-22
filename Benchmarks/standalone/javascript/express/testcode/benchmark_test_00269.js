@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const { db } = require("./shared");
+const vm = require("node:vm");
 
 async function BenchmarkTest00269(req, res) {
-  const userInput = req.body.multipart_field || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  vm.runInNewContext(String(processed), { Math });
   res.json({ done: true });
 }
 

@@ -8,7 +8,10 @@ class BenchmarkTest00212Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        return response('<div>' . $userInput . '</div>')->header('Content-Type', 'text/html');
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        $digest = hash('sha256', (string)$data);
+        return response()->json(['ok' => 1]);
     }
 }

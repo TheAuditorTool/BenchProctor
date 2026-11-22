@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "redcarpet"
+require "socket"
 
 class BenchmarkTest00168Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +12,9 @@ class BenchmarkTest00168Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00168
-    user_input = request.user_agent.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    processed = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(filter_html: true, no_styles: true, safe_links_only: true)).render(data)
-    render html: ("<div>" + processed + "</div>").html_safe
+    user_input = request.query_parameters[:q].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
+    render json: { status: "ok" }
   end
 end

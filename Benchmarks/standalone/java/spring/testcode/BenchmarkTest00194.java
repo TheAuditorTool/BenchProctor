@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,13 +22,16 @@ public class BenchmarkTest00194 {
     @PostMapping("/BenchmarkTest00194")
     public void BenchmarkTest00194(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
         String fieldValue = field != null ? field : "";
-        String data = fieldValue.isEmpty() ? "default" : fieldValue;
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        String boundedVal = data;
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + boundedVal + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", fieldValue);
+        String data = sw.toString();
+        javax.xml.stream.XMLInputFactory staxFactory = javax.xml.stream.XMLInputFactory.newInstance();
+        staxFactory.setProperty(javax.xml.stream.XMLInputFactory.SUPPORT_DTD, false);
+        staxFactory.setProperty(javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        javax.xml.stream.XMLStreamReader staxReader = staxFactory.createXMLStreamReader(new java.io.StringReader(data));
+        StringBuilder xmlText = new StringBuilder();
+        while (staxReader.hasNext()) { if (staxReader.next() == javax.xml.stream.XMLStreamConstants.CHARACTERS) { xmlText.append(staxReader.getText()); } }
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,14 +30,22 @@ public class BenchmarkTest00017 {
         }
     }
 
-    @POST
+    record FormData(String payload) {}
+
+    @GET
     @Path("/BenchmarkTest00017")
-    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00017(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        String data = String.format("%s", rawData);
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    public Response BenchmarkTest00017(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        FormData payload = new FormData(envValue);
+        String data = payload.payload();
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00277")]
-pub async fn benchmark_test_00277() -> HttpResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data = String::from_utf8_lossy(&hex::decode(&db_value).unwrap_or_default()).to_string();
-    let base = std::path::Path::new("/var/app/data");
-    let candidate = tokio::fs::canonicalize(base.join(&data)).await.unwrap_or_default();
-    if !candidate.starts_with(base) { return HttpResponse::Forbidden().finish(); }
-    let checked_path = candidate.to_string_lossy().to_string();
-    tokio::fs::remove_file(&checked_path).await.ok();
+pub async fn benchmark_test_00277(req: HttpRequest) -> HttpResponse {
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = match referer_value.chars().next() { Some(_) => referer_value.clone(), None => "default".to_string() };
+    let Some(at) = data.find('@') else { return HttpResponse::BadRequest().finish(); };
+    let mail_domain = &data[at + 1..];
+    let _ = mail_domain;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

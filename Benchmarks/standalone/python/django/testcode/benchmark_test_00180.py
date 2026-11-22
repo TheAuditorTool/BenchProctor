@@ -1,12 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from django.core.cache import cache
 import json
-from app_runtime import db
 
 
 def BenchmarkTest00180(request):
-    json_value = json.loads(request.body or b'{}').get('payload', '')
-    data = json.loads(json_value).get('value', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    raw_body = request.body.decode('utf-8')
+    try:
+        data = json.loads(raw_body).get('value', raw_body)
+    except (json.JSONDecodeError, AttributeError):
+        data = raw_body
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'invalid number'}, status=400)
+    processed = _coerced
+    cache.set('active_tenant', str(processed), None)
+    return JsonResponse({"saved": True})

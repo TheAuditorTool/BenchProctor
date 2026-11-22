@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+from pydantic import BaseModel
+from starlette.responses import HTMLResponse
+from jinja2 import Environment
 from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -20,12 +25,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00161")
-async def BenchmarkTest00161(request: Request):
-    user_id = request.query_params.get('id', '')
-    parts = []
-    for token in str(user_id).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+async def BenchmarkTest00161(request: Request, req: UserInput):
+    json_value = req.payload
+    if json_value:
+        data = json_value
+    else:
+        data = ''
+    page = Environment(autoescape=True).from_string('<div>{{ value|safe }}</div>').render(value=str(data))
+    return HTMLResponse(page)

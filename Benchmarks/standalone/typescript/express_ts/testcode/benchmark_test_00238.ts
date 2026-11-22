@@ -2,8 +2,11 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00238 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-forwarded-for"] as string) || "";
-  const data = `${userInput}`;
-  res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
-  res.json({ accepted: true });
+  const userInput = (req.body as string) || "";
+  const _coerced = Math.max(0, Math.min(parseInt(String(userInput), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const requested = boundedVal;
+  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
+  const buf = Buffer.alloc(requested + 1);
+  res.json({ allocated: buf.length }); return;
 }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, BadRequestException } from "@nestjs/common";
-import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,13 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00193")
-  async BenchmarkTest00193(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
+  async BenchmarkTest00193(@Req() req: Request): Promise<unknown> {
+    const userInput = (req.body as string) || "";
     const data = `${userInput}`;
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + processed + "']", xmlDoc);
-    return { created: true };
+    const quantity = parseInt(String(data), 10);
+    const totalCents = Math.imul(quantity, 1999);
+    return { quantity, totalCents };
   }
 }

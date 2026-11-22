@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from starlette.responses import JSONResponse
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -18,14 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00133")
-async def BenchmarkTest00133(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    kind = 'json' if str(cookie_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(cookie_value).strip()
-        case _:
-            data = str(cookie_value)
-    eval(str(data))
-    return {"updated": True}
+@app.post("/BenchmarkTest00133/{id}")
+async def BenchmarkTest00133(request: Request, id: str):
+    path_value = id
+    data = path_value if path_value else 'default'
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

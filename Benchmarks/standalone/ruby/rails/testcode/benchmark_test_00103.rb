@@ -11,9 +11,13 @@ class BenchmarkTest00103Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00103
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    data = "#{user_input}"
-    session[:data] = data.to_s
+    user_input = request.headers["Authorization"].to_s
+    unless user_input =~ /\A[a-zA-Z0-9 _.#~\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = user_input
+    File.write("/var/uploads/" + processed, "data")
     render json: { status: "ok" }
   end
 end

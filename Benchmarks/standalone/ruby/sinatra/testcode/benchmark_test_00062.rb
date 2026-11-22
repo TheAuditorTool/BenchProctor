@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00062 < Sinatra::Base
   before do
@@ -18,19 +19,18 @@ class BenchmarkTest00062 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00062" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    redirect target_url
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

@@ -2,32 +2,14 @@
 package testcode
 
 import (
-	"context"
-	"io"
-	"net/http"
-	"strings"
+	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00097(c *gin.Context) {
-	var msgValue string
-	_sqsOut, _sqsErr := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String("https://sqs.us-east-1.amazonaws.com/123456789012/app-events"),
-		MaxNumberOfMessages: 1,
-	})
-	if _sqsErr == nil && len(_sqsOut.Messages) > 0 {
-		msgValue = aws.ToString(_sqsOut.Messages[0].Body)
-	}
-	data := strings.ReplaceAll(msgValue, "\x00", "")
-	resp, err := http.Get(data)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	refererValue := c.GetHeader("Referer")
+	data := fmt.Sprintf("%s", refererValue)
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(c.Writer, "<p>Results for %s</p>", data)
 }

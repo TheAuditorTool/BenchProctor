@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const crypto = require("crypto");
 
 const BenchmarkTest00212 = async (ctx) => {
-  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-  const data = String(userInput).replace(/\u0000/g, "");
-  crypto.createHash("sha256").update(data).digest("hex");
+  const userInput = ctx.request.headers.referer || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  const targetUrl = data;
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+  await axios.request(outbound);
   ctx.body = { ack: true };
 }
 

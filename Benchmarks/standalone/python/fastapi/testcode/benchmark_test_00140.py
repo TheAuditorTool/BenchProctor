@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
-from dataclasses import dataclass
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
-from app_runtime import db
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -28,8 +21,15 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00140")
 async def BenchmarkTest00140(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    form = FormData(payload=db_value)
-    data = form.payload
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    pending = list(str(forwarded_ip).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from urllib.parse import urlparse
-import requests
-from flask import jsonify
-import re
+from flask import Flask, jsonify
+import socket
+import urllib.parse
 
 
 app = Flask(__name__)
@@ -20,15 +18,14 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00042", methods=["POST"])
-def BenchmarkTest00042():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    if api_value:
-        data = api_value
-    else:
-        data = ''
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return jsonify({'error': 'forbidden host'}), 403
-    target_url = data
-    return redirect(str(target_url))
+@app.route("/BenchmarkTest00042/<path_param>", methods=["POST"])
+def BenchmarkTest00042(path_param):
+    path_value = path_param
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
+    return jsonify({"result": "success"})

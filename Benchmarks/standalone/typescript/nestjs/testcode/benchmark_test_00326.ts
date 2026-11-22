@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { sql } from "drizzle-orm";
-import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,11 +19,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00326")
-  async BenchmarkTest00326(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const data = userInput != null ? userInput : '';
-    const _drizzle = drizzle(new Database(":memory:"));
-    await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
+  async BenchmarkTest00326(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    stream.Readable.from([String(data)]).pipe(crypto.createHash("sha256")).setEncoding("hex").on("data", (checksum: string) => console.log("content checksum " + checksum));
     return { created: true };
   }
 }

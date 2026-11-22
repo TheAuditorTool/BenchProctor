@@ -2,21 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00180() {
-  user_input="$(jq -r '.variables.input // empty' 2>/dev/null)"
-  _prefix="${user_input:0:1}"
-  case "$_prefix" in
-    h|H) data=$(printf '%s' "${user_input}" | tr '[:upper:]' '[:lower:]');;
-    f|F) data=$(printf '%s' "${user_input}" | tr '[:lower:]' '[:upper:]');;
-    *) data="${user_input}";;
-  esac
-  _host=$(echo "$data" | sed -E "s#^[a-zA-Z]+://##; s#[/:].*##")
-  case "$_host" in "["*|"") echo "private range blocked"; exit 1;; esac
-  _ip=$(getent ahosts "$_host" 2>/dev/null | head -n1 | cut -d" " -f1)
-  _ip="${_ip:-$_host}"
-  if ! echo "$_ip" | grep -qE "^[0-9]{1,3}(\.[0-9]{1,3}){3}$"; then echo "non-ipv4 host blocked" >&2; exit 1; fi
-  if echo "$_ip" | grep -qE "^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)"; then echo "private range blocked"; exit 1; fi
-  target_url="$data"
-  curl -s "$target_url"
+  user_input="$QUERY_STRING"
+  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
+  data=$(normalize "$user_input")
+  _int_re='^-?[0-9]+$'
+  if [[ ! "$data" =~ $_int_re ]]; then echo "invalid"; exit 1; fi
+  parsed_id="$data"
+  psql "$DATABASE_URL" -qAt -c "PREPARE user_lookup AS SELECT * FROM users WHERE id = $parsed_id; EXECUTE user_lookup;"
 }
 
 benchmark_test_00180 "$@"

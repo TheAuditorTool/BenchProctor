@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const libxmljs = require("libxmljs");
 
 async function BenchmarkTest00272(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
+  const userInput = req.query.id || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict");
   res.json({ done: true });
 }
 

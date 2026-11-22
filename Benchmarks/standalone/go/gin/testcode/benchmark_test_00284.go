@@ -2,24 +2,26 @@
 package testcode
 
 import (
-	"encoding/base64"
-	"net"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00284(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
+	refererValue := c.GetHeader("Referer")
+	upstreamReq, err := http.NewRequest(http.MethodGet, refererValue, nil)
 	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	decodedBytes, _ := base64.StdEncoding.DecodeString(cookieValue)
-	data := string(decodedBytes)
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		c.String(http.StatusBadGateway, err.Error())
+		return
 	}
-	c.JSON(200, gin.H{"code": "OK"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

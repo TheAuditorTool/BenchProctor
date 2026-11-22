@@ -11,16 +11,10 @@ class BenchmarkTest00053Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00053
-    user_input = request.user_agent.to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = request.headers["X-Custom-Header"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
     render json: { status: "ok" }
   end
 end

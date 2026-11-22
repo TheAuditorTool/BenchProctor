@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,8 +18,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00082", methods=["POST"])
 def BenchmarkTest00082():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = '{}'.format(json_value)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    multipart_value = request.form.get('multipart_field', '')
+    if multipart_value:
+        data = multipart_value
+    else:
+        data = ''
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return jsonify({'error': 'unknown plan'}), 404
+    value = label.upper()
+    return jsonify({'plan': value}), 200

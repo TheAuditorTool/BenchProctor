@@ -8,10 +8,8 @@ class BenchmarkTest00293Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        session(['data' => (string) $data]);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->cookie('session_token', '');
+        $data = sprintf('%s', $userInput);
+        return response('', 302)->header('Location', (string)$data);
     }
 }

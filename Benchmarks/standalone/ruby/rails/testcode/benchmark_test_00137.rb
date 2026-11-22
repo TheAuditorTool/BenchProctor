@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "base64"
 
 class BenchmarkTest00137Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +12,13 @@ class BenchmarkTest00137Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00137
-    user_input = User.first&.name.to_s
-    data = "#{user_input}"
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
-    render json: { status: "ok" }
+    user_input = request.headers["X-Forwarded-For"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
+    _cipher.encrypt
+    _cipher.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))[0, _cipher.key_len]
+    iv = _cipher.random_iv
+    ciphertext = iv + _cipher.update(data.to_s) + _cipher.final + _cipher.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

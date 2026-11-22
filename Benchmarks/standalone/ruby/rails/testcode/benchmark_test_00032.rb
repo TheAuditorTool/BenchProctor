@@ -11,9 +11,15 @@ class BenchmarkTest00032Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00032
-    user_input = cookies[:session_token].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    render html: ("<div>" + data + "</div>").html_safe
+    user_input = User.first&.name.to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    unless %w[config.json index.html readme.md].include?(data.to_s)
+      render json: { error: "forbidden" }, status: 403
+      return
+    end
+    checked_path = data
+    File.delete(checked_path)
+    render json: { status: "ok" }
   end
 end

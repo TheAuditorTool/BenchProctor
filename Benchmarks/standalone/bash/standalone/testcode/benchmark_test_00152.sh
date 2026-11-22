@@ -2,13 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00152() {
-  user_input="$(jq -r '.variables.input // empty' 2>/dev/null)"
-  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
-  data="${_mapped[0]}"
-  _enum_re='^(asc|desc|name|created)$'
-  if [[ ! "$data" =~ $_enum_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  cat "/var/app/data/$processed"
+  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  data=$(printf "%s" "$user_input")
+  printf '%s' "$data" | openssl enc -aes-256-ecb -pbkdf2 -iter 600000 -pass env:DATA_ENC_KEY -out /var/app/run/record.enc
 }
 
 benchmark_test_00152 "$@"

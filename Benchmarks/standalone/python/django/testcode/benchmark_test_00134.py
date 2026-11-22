@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import random
-import os
-from app_runtime import db
+import ctypes
 
 
 def BenchmarkTest00134(request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = f'{env_value!s}'
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JsonResponse({'token': str(token)}, status=200)
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    pending = list(str(auth_header).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return JsonResponse({'wrapped': wrapped}, status=200)

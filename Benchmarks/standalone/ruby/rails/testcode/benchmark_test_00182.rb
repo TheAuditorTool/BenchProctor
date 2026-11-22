@@ -11,14 +11,9 @@ class BenchmarkTest00182Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00182
-    user_input = request.query_parameters[:q].to_s
-    data = user_input ? user_input : ''
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    system("echo " + processed)
-    render json: { status: "ok" }
+    user_input = request.headers["Origin"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    redirect_to data, allow_other_host: true
   end
 end

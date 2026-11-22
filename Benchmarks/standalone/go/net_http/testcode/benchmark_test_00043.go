@@ -2,23 +2,17 @@
 package testcode
 
 import (
+	"crypto/sha3"
+	"encoding/hex"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00043(w http.ResponseWriter, r *http.Request) {
-	forwardedIP := r.Header.Get("X-Forwarded-For")
-	segments := strings.Split(forwardedIP, ",")
-	data := strings.Join(segments, " ")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		http.Error(w, "not found", 404)
-		return
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	originValue := r.Header.Get("Origin")
+	form := submissionForm{payload: originValue}
+	data := form.payload
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

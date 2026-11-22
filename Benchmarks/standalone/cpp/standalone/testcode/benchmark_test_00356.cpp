@@ -2,23 +2,16 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 
 void benchmark_test_00356(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
+    std::string _page = "<section class=\"profile\" title=\"{{name}}\"><h2>{{name}}</h2></section>";
+    std::string::size_type _at = 0;
+    while ((_at = _page.find("{{name}}", _at)) != std::string::npos) {
+        _page.replace(_at, 8, user_input);
+        _at += user_input.size();
     }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    _p = nullptr;
+    std::cout << "Content-Type: text/html\r\n\r\n" << _page << std::endl;
 }

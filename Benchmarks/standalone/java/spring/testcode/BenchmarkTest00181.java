@@ -19,16 +19,29 @@ public class BenchmarkTest00181 {
         return ResponseEntity.status(500).body("request failed");
     }
 
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
+
     @GetMapping("/BenchmarkTest00181")
-    public void BenchmarkTest00181(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(refererValue)); }
-        catch (NumberFormatException e) { data = refererValue; }
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    public void BenchmarkTest00181(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        if (!userName.matches("^[a-zA-Z0-9 _.#%\\-]+$")) { response.sendError(400); return; }
+        response.getWriter().print("<div>" + userName + "</div>");
     }
 }

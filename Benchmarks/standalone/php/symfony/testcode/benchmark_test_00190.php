@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00190', methods: ['POST'])]
 class BenchmarkTest00190Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        unserialize($data);
+        $userInput = $request->query->get('id', '');
+        [$data] = [$userInput, 'http'];
+        $quotedArg = escapeshellarg((string)$data);
+        exec('tar -czf /tmp/backup.tgz ' . (string)$quotedArg);
         return new JsonResponse(["committed" => true]);
     }
 }

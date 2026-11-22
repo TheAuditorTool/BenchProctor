@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00025Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +11,14 @@ class BenchmarkTest00025Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00025
-    user_input = request.query_parameters[:q].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.body.read
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    digest = Digest::SHA256.hexdigest(data.to_s)
-    render json: { status: "ok" }
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

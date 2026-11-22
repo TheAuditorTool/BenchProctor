@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
+from Crypto.Hash import SHA256
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
-from app_runtime import db
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -26,12 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00220")
-async def BenchmarkTest00220(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    form = FormData(payload=db_value)
-    data = form.payload
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+async def BenchmarkTest00220(request: Request, req: UserInput):
+    json_value = req.payload
+    data = f'{json_value!s}'
+    digest = SHA256.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

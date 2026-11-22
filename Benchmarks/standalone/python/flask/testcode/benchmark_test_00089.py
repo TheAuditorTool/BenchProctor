@@ -3,11 +3,6 @@ import hashlib
 from flask import Flask, request, jsonify
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
-
 app = Flask(__name__)
 
 
@@ -24,8 +19,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00089", methods=["POST"])
 def BenchmarkTest00089():
-    cookie_value = request.cookies.get('session_token', '')
-    reader = make_reader(cookie_value)
-    data = reader()
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    ua_value = request.headers.get('User-Agent', '')
+    digest = hashlib.sha3_256(str(ua_value).encode()).hexdigest()
     return jsonify({'digest': str(digest)}), 200

@@ -3,7 +3,11 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "dry/schema"
 require "net/ldap"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00022 < Sinatra::Base
   before do
@@ -19,9 +23,11 @@ class BenchmarkTest00022 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00022" do
-    user_input = params[:field].to_s
-    data = user_input.gsub("\u0000", "")
-    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+    user_input = DB[:comments].first&.fetch(:text, "").to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
+    unless schema.call(value: data.to_s).success?
       halt 400, JSON.generate({ error: "invalid" })
       return
     end

@@ -2,22 +2,27 @@
 package testcode
 
 import (
-	"context"
 	"net/http"
+	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00015(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(dbValue)
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		http.Error(w, "malformed order", http.StatusBadRequest)
 		return
 	}
-	cookieValue := cookieObj.Value
-	var data string
-	if len(cookieValue) > 0 {
-		data = cookieValue
-	} else {
-		data = "default"
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	if totalNode == nil {
+		http.Error(w, "order total missing", http.StatusBadRequest)
+		return
 	}
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
+	orderTotal := totalNode.InnerText()
+	RespondJSON(w, http.StatusOK, map[string]string{"total": orderTotal})
 }

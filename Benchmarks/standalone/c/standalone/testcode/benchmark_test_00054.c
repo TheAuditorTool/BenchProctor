@@ -7,17 +7,19 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00054(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    const long _unit_cents = 1999;
-    long _qty = strtol(data, NULL, 10);
-    if (_qty < 0 || _qty > 100000) return;
-    long _total = _qty * _unit_cents;
-    printf("total=%ld\n", _total);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    const char *data = c_passthrough(user_input);
+    size_t _n = strlen(data);
+    char *_p = malloc(_n + 1);
+    if (_p == NULL) return;
+    memcpy(_p, data, _n + 1);
+    printf("%s\n", _p);
+    free(_p);
+    memset(_p, 0, _n + 1);
 }

@@ -2,21 +2,24 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00014(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+	originValue := r.Header.Get("Origin")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", originValue)
+	data := relayBuilder.String()
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	cookieValue := cookieObj.Value
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(cookieValue)
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	targetUrl := data
+	w.Header().Set("Location", targetUrl)
+	w.WriteHeader(http.StatusSeeOther)
 }

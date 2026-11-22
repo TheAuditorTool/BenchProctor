@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,11 +21,11 @@ public class BenchmarkTest00110 {
     }
 
     @PostMapping("/BenchmarkTest00110")
-    public void BenchmarkTest00110(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = String.join(" ", fieldValue.split("[ \\t]+"));
-        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    public void BenchmarkTest00110(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = commentValue.replace("\u0000", "");
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; HttpOnly; SameSite=Strict");
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

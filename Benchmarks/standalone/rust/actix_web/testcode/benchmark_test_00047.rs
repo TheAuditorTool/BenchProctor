@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00047")]
-pub async fn benchmark_test_00047(body: web::Bytes) -> HttpResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = match graphql_var.chars().next() { Some(_) => graphql_var.clone(), None => "default".to_string() };
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
+pub async fn benchmark_test_00047(req: HttpRequest) -> HttpResponse {
+    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
+    let data = cookie_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query(format!("SELECT id, name FROM users WHERE name = '{}'", data)).execute(&mut _conn);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

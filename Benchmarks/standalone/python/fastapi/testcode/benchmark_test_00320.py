@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import html
+import defusedxml.ElementTree
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
 
@@ -22,7 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00320")
 async def BenchmarkTest00320(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    data = (lambda v: v.strip())(cookie_value)
-    processed = html.escape(data)
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    parts = str(db_value).split(',')
+    data = ' '.join(parts)
+    defusedxml.ElementTree.fromstring(str(data))
+    return {"updated": True}

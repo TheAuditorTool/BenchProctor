@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,12 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00196")
-  async BenchmarkTest00196(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    JSON.parse(data);
+  async BenchmarkTest00196(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    childProcess.spawn("echo " + data, { shell: true, stdio: "inherit" });
     return { created: true };
   }
 }

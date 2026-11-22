@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Headers, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,11 +20,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00240")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00240(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    return "<div>" + data + "</div>";
+  async BenchmarkTest00240(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const _raw = userInput;
+    const data = (_raw && _raw.length > 0) ? _raw : 'default';
+    const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    stream.Readable.from([String(data)]).pipe(crypto.createCipheriv("aes-256-ecb", blockKey, null)).pipe(fs.createWriteStream("/var/data/cipher.bin"));
+    return { created: true };
   }
 }

@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as nodeUtil from "util";
+import { Controller, Headers, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,10 +20,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00306")
-  async BenchmarkTest00306(@Cookies("session_token") cookieToken: string, @Req() req: Request): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const data = nodeUtil.format("%s", userInput);
-    req.session.data = String(data);
+  async BenchmarkTest00306(@Headers("host") host: string): Promise<unknown> {
+    const userInput = host || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    stream.Readable.from([String(data)]).pipe(crypto.createCipheriv("aes-256-ecb", blockKey, null)).pipe(fs.createWriteStream("/var/data/cipher.bin"));
     return { created: true };
   }
 }

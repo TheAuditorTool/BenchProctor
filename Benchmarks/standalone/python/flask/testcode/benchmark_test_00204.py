@@ -1,10 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
-from flask import Flask, request, jsonify
-from app_runtime import db
+import os
+from http.cookies import SimpleCookie
+from flask import Flask, make_response
+from dataclasses import dataclass
+from flask import request, jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -20,7 +28,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00204", methods=["POST"])
 def BenchmarkTest00204():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(graphql_var), token))
-    return jsonify({'token': str(token)}), 200
+    cookie_value = request.cookies.get('session_token', '')
+    form = FormData(payload=cookie_value)
+    data = form.payload
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers.add('Set-Cookie', cookie['session'].OutputString())
+    return resp

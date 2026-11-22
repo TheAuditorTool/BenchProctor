@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import socket
-from fastapi.responses import JSONResponse
+import ldap3
+import re
+from fastapi import Form
+from starlette.responses import JSONResponse
+import os
 
 
 app = FastAPI()
@@ -20,12 +23,17 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00057")
-async def BenchmarkTest00057(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    parts = []
-    for token in str(raw_body).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    s = socket.create_connection((str(data), 80))
-    s.close()
+async def BenchmarkTest00057(request: Request, field: str = Form('')):
+    field_value = field
+    kind = 'json' if str(field_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(field_value).strip()
+        case _:
+            data = str(field_value)
+    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(processed) + ')', attributes=['cn'])
     return {"updated": True}

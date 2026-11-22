@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -30,23 +26,9 @@ struct Client {
 
 void benchmark_test_00007(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
-    }
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    const char *_sep = std::strstr(user_input.c_str(), "://");
+    if (_sep) std::putchar(_sep[3]);
+    std::putchar('\n');
     res.set_content("ok", "text/plain");
 }

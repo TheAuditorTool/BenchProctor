@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import base64
-from flask import Flask, request, jsonify
-import socket
+import os
+from flask import Flask, make_response
+from flask import request, jsonify
+import urllib.parse
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -20,8 +22,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00215", methods=["POST"])
 def BenchmarkTest00215():
-    auth_header = request.headers.get('Authorization', '')
-    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
-    s = socket.create_connection((str(data), 80))
-    s.close()
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    data = str(xml_value).replace('\x00', '')
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00385(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
     }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
-    delete[] _p;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    int _x = 0;
+    if (!data.empty()) _x = (int)data[0];
+    std::cout << (_x + (int)data.size()) << std::endl;
 }

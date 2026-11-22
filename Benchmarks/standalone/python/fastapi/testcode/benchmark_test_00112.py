@@ -1,8 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+import requests
+import asyncio
+import os
+import pika
 from fastapi.responses import JSONResponse
 
+
+def _amqp_receive(queue):
+    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
+        channel = connection.channel()
+        channel.queue_declare(queue=queue, durable=True)
+        return channel.basic_get(queue=queue, auto_ack=True)[2]
 
 app = FastAPI()
 
@@ -21,11 +30,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00112")
 async def BenchmarkTest00112(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    if raw_body:
-        data = raw_body
-    else:
-        data = ''
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    msg_value = ((await asyncio.to_thread(_amqp_receive, 'app-events')) or b'').decode()
+    parts = str(msg_value).split(',')
+    data = ' '.join(parts)
+    requests.get(str(data))
     return {"updated": True}

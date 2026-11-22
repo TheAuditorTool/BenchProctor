@@ -2,23 +2,25 @@
 package testcode
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00224(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	hexBytes, _ := hex.DecodeString(headerValue)
-	data := string(hexBytes)
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	uaValue := c.GetHeader("User-Agent")
+	data := fmt.Sprintf("%s", uaValue)
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	if upstream == nil {
+		c.String(http.StatusNotFound, "unknown service")
 		return
 	}
-	defer rows.Close()
-	c.JSON(200, gin.H{"code": "OK"})
+	upstreamHost := upstream.Host
+	c.JSON(http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

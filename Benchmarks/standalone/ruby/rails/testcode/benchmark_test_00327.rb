@@ -13,9 +13,8 @@ class BenchmarkTest00327Controller < ApplicationController
   end
   def benchmark_test_00327
     user_input = request.headers["Origin"].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
+    data = user_input.gsub("\u0000", "")
     digest = Digest::SHA256.hexdigest(data.to_s)
-    render json: { status: "ok" }
+    render json: { digest: digest }
   end
 end

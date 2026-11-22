@@ -5,7 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.xpath.*;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -33,19 +33,15 @@ public class BenchmarkTest00179 {
 
     @POST
     @Path("/BenchmarkTest00179")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00179(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", fieldValue);
-        String data = sw.toString();
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        String boundedVal = data;
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + boundedVal + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+    public Response BenchmarkTest00179(@FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uploadName = fileDetail.getFileName();
+        String data = uploadName.replace("\u0000", "");
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.activateDefaultTyping(com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(), com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL);
+        Object polymorphicObj = objectMapper.readValue(data, Object.class);
+        response.setHeader("X-Deserialized-Class", polymorphicObj != null ? polymorphicObj.getClass().getName() : "null");
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, ForbiddenException } from "@nestjs/common";
-import { Response } from "express";
-import * as http from "http";
+import { Controller, Headers, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,14 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00360")
-  async BenchmarkTest00360(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const data = `${userInput}`;
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
-    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
-    const targetUrl = data;
-    http.get(targetUrl);
+  async BenchmarkTest00360(@Headers("host") host: string, @Req() req: Request): Promise<unknown> {
+    const userInput = host || "";
+    const data = userInput != null ? userInput : '';
+    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
+    Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
     return { created: true };
   }
 }

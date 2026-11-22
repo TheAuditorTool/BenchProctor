@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import base64
-from flask import Flask, request, jsonify
-import re
+import secrets
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,10 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00359", methods=["POST"])
 def BenchmarkTest00359():
-    cookie_value = request.cookies.get('session_token', '')
-    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    exec(str(processed))
-    return jsonify({"result": "success"})
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    def normalize(value):
+        return value.strip()
+    data = normalize(db_value)
+    token = secrets.token_bytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

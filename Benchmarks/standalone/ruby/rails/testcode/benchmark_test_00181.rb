@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
+require "erb"
 
 class BenchmarkTest00181Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,18 +12,8 @@ class BenchmarkTest00181Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00181
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    data = "%s" % user_input
+    render html: ERB::Util.html_escape(data)
   end
 end

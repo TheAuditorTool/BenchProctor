@@ -2,24 +2,33 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00213(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	data := strings.Join(strings.FieldsFunc(headerValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	hostValue := c.Request.Host
+	var data string
+	for _, token := range strings.Split(hostValue, ",") {
+		data = token
 	}
-	if result == nil {
-		c.String(404, "not found")
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
 		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(boundedVal, 10, 32)
+	if err != nil {
+		c.String(http.StatusBadRequest, "invalid quantity")
+		return
+	}
+	lineTotal := int64(quantity) * int64(unitPriceCents)
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -2,17 +2,24 @@
 package testcode
 
 import (
+	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00265(c *gin.Context) {
-	pathValue := c.Param("id")
-	var data string
-	if len(pathValue) > 0 {
-		data = pathValue
-	} else {
-		data = "default"
+	var reqBody struct {
+		Payload string `json:"payload"`
 	}
-	htmlOut := "<div>" + data + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
+	}
+	jsonValue := reqBody.Payload
+	data := fmt.Sprintf("%s", jsonValue)
+	requested, _ := strconv.Atoi(data)
+	wrapped := int32(requested + 1)
+	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
 }

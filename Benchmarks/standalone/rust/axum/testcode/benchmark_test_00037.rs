@@ -4,10 +4,9 @@ use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00037(body: Bytes) -> impl IntoResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let xml_value = String::from_utf8_lossy(&body).to_string();
     use std::fmt::Write;
     let mut data = String::new();
-    write!(&mut data, "{}", graphql_var).ok();
-    crate::shared::store_session("data", &data);
-    Json(serde_json::json!({"count": 0})).into_response()
+    write!(&mut data, "{}", xml_value).ok();
+    return (axum::response::AppendHeaders([(axum::http::header::SET_COOKIE, format!("session={}; Secure; HttpOnly; SameSite=Strict", urlencoding::encode(&data)))]), Json(serde_json::json!({"count": 0}))).into_response();
 }

@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "net/http"
 
 class BenchmarkTest00020 < Sinatra::Base
   before do
@@ -19,13 +19,15 @@ class BenchmarkTest00020 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00020" do
-    user_input = params[:q].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    digest = Digest::SHA256.hexdigest(data.to_s)
+    user_input = request.env["HTTP_REFERER"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    uri = URI.parse(data.to_s)
+    outbound = Net::HTTP::Get.new(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    reply = http.request(outbound)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ upstream_status: reply.code.to_i })
   end
 end

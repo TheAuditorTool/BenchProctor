@@ -19,22 +19,14 @@ public class BenchmarkTest00163 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00163")
-    public void BenchmarkTest00163(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+    @GetMapping("/BenchmarkTest00163")
+    public void BenchmarkTest00163(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
         String data;
-        if (commentValue.length() > 256) { data = commentValue.substring(0, 256); }
-        else { data = commentValue; }
-        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.#%\\-]+$") String value) {}
-        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
-        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { response.sendError(400, "schema invalid"); return; }
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+        try { data = String.valueOf(Integer.parseInt(originValue)); }
+        catch (NumberFormatException e) { data = originValue; }
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha256Hex(data);
+        response.setHeader("X-Hash", digestHex);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

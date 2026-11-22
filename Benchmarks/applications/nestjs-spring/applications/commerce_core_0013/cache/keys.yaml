@@ -1,0 +1,6 @@
+channels:
+  - name: orders:inbound:0013
+    payload: json
+keys:
+  - pattern: orders:record:{id}
+    ttl_seconds: 300

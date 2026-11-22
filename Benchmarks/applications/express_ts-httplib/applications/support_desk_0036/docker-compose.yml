@@ -1,0 +1,27 @@
+services:
+  sla-monitor:
+    build: ./services/sla-monitor
+    environment:
+      - SERVICE_NAME=sla-monitor
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      escalation-service:
+        condition: service_healthy
+  escalation-service:
+    build: ./services/escalation-service
+    environment:
+      - SERVICE_NAME=escalation-service
+    ports:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

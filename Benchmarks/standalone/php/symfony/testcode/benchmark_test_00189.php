@@ -11,10 +11,8 @@ class BenchmarkTest00189Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Referer', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        exec('tar -czf /tmp/backup.tgz ' . (string)$userInput);
         return new JsonResponse(["committed" => true]);
     }
 }

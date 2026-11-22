@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Res } from "@nestjs/common";
 import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,10 +19,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00052")
-  async BenchmarkTest00052(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const data = userInput != null ? userInput : '';
-    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-    return { token };
+  async BenchmarkTest00052(@Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict");
+    return { created: true };
   }
 }

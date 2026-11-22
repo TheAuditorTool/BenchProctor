@@ -6,18 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-struct c_payload { const char *value; };
+#include <regex.h>
 
 void benchmark_test_00436(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    const int _rec_size = 64;
-    int _count = atoi(data);
-    int _bytes = _count * _rec_size;
-    char *_recs = malloc((size_t)_bytes);
-    if (_recs) free(_recs);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    regex_t _re;
+    const char *arg = user_input;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, user_input, 0, NULL, 0) != 0) arg = "asc";
+        regfree(&_re);
+    }
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", arg);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

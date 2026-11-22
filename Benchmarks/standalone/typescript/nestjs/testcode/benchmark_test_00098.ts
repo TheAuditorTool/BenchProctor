@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,12 +20,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00098")
-  async BenchmarkTest00098(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
+  async BenchmarkTest00098(@Headers("x-custom-header") hdr: string): Promise<unknown> {
+    const userInput = hdr || "";
+    const [data] = String(userInput).split(',');
+    const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    const blockIv = crypto.randomBytes(12);
+    const sealer = crypto.createCipheriv("aes-256-gcm", blockKey, blockIv);
+    stream.Readable.from([String(data)]).pipe(sealer).pipe(fs.createWriteStream("/var/data/cipher.bin")).on("finish", () => fs.writeFileSync("/var/data/cipher.meta", Buffer.concat([blockIv, sealer.getAuthTag()])));
     return { created: true };
   }
 }

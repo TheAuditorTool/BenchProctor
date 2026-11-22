@@ -1,15 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-from cryptography.fernet import Fernet
+from django.http import HttpResponse
+from django.template import Template, Context
 import json
-import os
 
 
 def BenchmarkTest00193(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    try:
-        data = json.loads(ua_value).get('value', ua_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = ua_value
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data, _sep, _rest = str(json_value).partition('\x00')
+    page = Template('<div>{{ value }}</div>').render(Context({'value': str(data)}))
+    return HttpResponse(page)

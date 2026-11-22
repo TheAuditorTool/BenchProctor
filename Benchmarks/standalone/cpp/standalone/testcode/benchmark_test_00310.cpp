@@ -1,22 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00310(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
+    const char *user_input_env = std::getenv("PATH_INFO");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    std::string _ckval = data;
-    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
+    char *_p = new char[user_input.size() + 1];
+    std::strcpy(_p, user_input.c_str());
+    std::cout << _p << std::endl;
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
+    delete[] _p;
 }

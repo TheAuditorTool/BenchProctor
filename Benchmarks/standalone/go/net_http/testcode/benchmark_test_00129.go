@@ -2,21 +2,36 @@
 package testcode
 
 import (
+	"encoding/json"
+	"net"
 	"net/http"
-	"os"
+	"net/url"
 	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00129(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(fieldValue)
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#~\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	form := submissionForm{payload: graphqlVar}
+	data := form.payload
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	processed := data
-	os.Remove("/var/app/data/" + processed)
+	targetUrl := data
+	dialURL, dialErr := url.Parse(targetUrl)
+	if dialErr != nil {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
+	if err == nil {
+		defer conn.Close()
+	}
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -4,6 +4,12 @@ use actix_web::{HttpResponse, web};
 #[actix_web::post("/benchmark_test_00274")]
 pub async fn benchmark_test_00274(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
     let field_value = form.get("field").cloned().unwrap_or_default();
-    let data = match field_value.chars().next() { Some(_) => field_value.clone(), None => "default".to_string() };
-    HttpResponse::Found().append_header(("Location", data.as_str())).finish()
+    let transform = |v: String| v.trim().to_string();
+    let data = transform(field_value.clone());
+    if let Ok((_conn, mut _ldap)) = ldap3::LdapConnAsync::new(&std::env::var("LDAP_URL").unwrap_or_else(|_| "ldap://directory:1389".to_string())).await {
+        ldap3::drive!(_conn);
+        let _ = _ldap.compare(&format!("uid={},ou=people,dc=example,dc=com", data), "employeeType", "manager").await;
+        let _ = _ldap.unbind().await;
+    }
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

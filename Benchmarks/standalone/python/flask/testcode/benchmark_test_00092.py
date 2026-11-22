@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, jsonify
+import subprocess
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -17,10 +17,9 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00092/<path_param>", methods=["POST"])
-def BenchmarkTest00092(path_param):
-    path_value = path_param
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+@app.route("/BenchmarkTest00092", methods=["POST"])
+def BenchmarkTest00092():
+    field_value = request.form.get('field', '')
+    data = '{}'.format(field_value)
+    subprocess.run(['echo', data], shell=False)
+    return jsonify({"result": "success"})

@@ -11,12 +11,10 @@ class BenchmarkTest00038Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00038
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
     cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
     render json: { status: "ok" }
   end

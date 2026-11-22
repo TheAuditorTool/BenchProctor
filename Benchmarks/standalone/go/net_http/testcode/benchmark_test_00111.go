@@ -2,27 +2,30 @@
 package testcode
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
+	"encoding/json"
+	"io"
 	"net/http"
-	"os"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00111(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	data := headerValue
-	if _, after, ok := strings.Cut(headerValue, ","); ok {
-		data = after
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
 	}
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := aes.NewCipher(keyHash[:])
-	gcm, _ := cipher.NewGCM(cipherBlock)
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
+	rawBody := string(rawBytes)
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(rawBody), &parsed)
+	data, _ := parsed["value"].(string)
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		http.Error(w, "malformed order", http.StatusBadRequest)
+		return
+	}
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	orderTotal := totalNode.InnerText()
+	RespondJSON(w, http.StatusOK, map[string]string{"total": orderTotal})
 }

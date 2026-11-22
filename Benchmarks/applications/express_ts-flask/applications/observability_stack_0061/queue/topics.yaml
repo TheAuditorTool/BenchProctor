@@ -1,6 +1,0 @@
-topics:
-  - name: telemetry.events.v0061
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

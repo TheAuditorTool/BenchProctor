@@ -11,14 +11,10 @@ class BenchmarkTest00158Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('multipart_field', '');
-        $data = urldecode($userInput);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
-        return new JsonResponse(["committed" => true]);
+        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
+        $data = str_replace("\0", '', $userInput);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, true, true, false, 'Strict'));
+        return $resp;
     }
 }

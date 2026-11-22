@@ -3,11 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00133 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -21,10 +19,9 @@ class BenchmarkTest00133 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00133" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
     data = sprintf("%s", user_input)
-    result = DB[:users].where(name: data).first
-    value = result[:name]
+    session[:data] = data.to_s
     content_type :json
     JSON.generate({ status: "ok" })
   end

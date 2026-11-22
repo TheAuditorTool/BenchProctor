@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from urllib.parse import unquote
-from flask import Flask, request, jsonify
-import os
-import re
+from flask import Flask, request
+from flask import render_template_string
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -22,11 +20,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00320", methods=["POST"])
 def BenchmarkTest00320():
-    multipart_value = request.form.get('multipart_field', '')
-    data = unquote(multipart_value)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return jsonify({"result": "success"})
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = ' '.join(str(forwarded_ip).split())
+    return render_template_string('<div>{{ value|safe }}</div>', value=str(data))

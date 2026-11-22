@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+import subprocess
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,9 +21,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00358")
 async def BenchmarkTest00358(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    data = '%s' % (header_value,)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    request.session['data'] = str(processed)
+    cookie_value = request.cookies.get('session_token', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(cookie_value)
+    if data not in ('ls', 'cat', 'date', 'whoami'):
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    processed = data
+    subprocess.Popen('echo ' + str(processed), shell=True).wait()
     return {"updated": True}

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,11 +16,13 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00020/:id")
-  async BenchmarkTest00020(@Param("id") pathId: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = pathId;
-    const data = nodeUtil.format("%s", userInput);
-    res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
-    return { created: true };
+  @Post("BenchmarkTest00020")
+  async BenchmarkTest00020(@Body("variables") vars: { input?: string }): Promise<unknown> {
+    const userInput = (vars?.input as string) || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const minstd = { state: (Date.now() % 2147483646) + 1, next() { this.state = (this.state * 48271) % 2147483647; return this.state; } };
+    const token = minstd.next().toString(36) + minstd.next().toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

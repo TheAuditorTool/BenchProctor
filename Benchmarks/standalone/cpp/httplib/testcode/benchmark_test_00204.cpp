@@ -2,9 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,22 +23,13 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00204(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
-    }
+    std::string user_input = req.get_param_value("id");
+    char *_dst = new char[16];
+    std::strncpy(_dst, user_input.c_str(), 15);
+    _dst[15] = '\0';
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

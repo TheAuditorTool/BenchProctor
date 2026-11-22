@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const isoDompurify = require("isomorphic-dompurify");
+const nodeSerialize = require("node-serialize");
 
 async function BenchmarkTest00019(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const _clean = isoDompurify.sanitize(data);
-  const processed = _clean;
-  res.send("<div>" + processed + "</div>");
+  const userInput = req.body || "";
+  const data = `${userInput}`;
+  nodeSerialize.unserialize(data);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00019 };

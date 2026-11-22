@@ -8,9 +8,13 @@ class BenchmarkTest00138Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('variables.input', '');
-        $data = vsprintf('%1$s', [$userInput]);
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = $request->input('field', '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $email = $xpath->evaluate("string(//user[@id='" . $data . "']/email)");
         return response()->json(['ok' => 1]);
     }
 }

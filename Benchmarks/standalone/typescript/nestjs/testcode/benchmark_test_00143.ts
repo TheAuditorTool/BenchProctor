@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req, ForbiddenException } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as fs from "fs";
+import { Controller, Post, UploadedFile, UseInterceptors, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,13 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00143")
-  async BenchmarkTest00143(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const data = String(userInput).slice(0, 200);
-    const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
-    if (!allowedFiles.has(data)) { throw new ForbiddenException({error:"forbidden"}); }
-    const checkedPath = "/var/app/data/" + data;
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00143(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = String(userInput).split(/[ \t]+/).join(" ");
+    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    eval(processed);
+    return { created: true };
   }
 }

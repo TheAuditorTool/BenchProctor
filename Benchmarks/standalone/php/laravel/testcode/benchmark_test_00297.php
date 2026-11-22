@@ -2,15 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00297Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $data = "{$userInput}";
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $userInput = $request->input('field', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $actions = ['asc' => 'sort_asc', 'desc' => 'sort_desc', 'name' => 'by_name', 'created' => 'by_date'];
+        $result = $actions[(string)$processed] ?? 'noop';
         return response()->json(['ok' => 1]);
     }
 }

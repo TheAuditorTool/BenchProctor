@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Redirect, Req, ForbiddenException } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Body, Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import * as jsYamlJsTypes from "js-yaml-js-types";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,16 +19,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00164")
-  @Redirect()
-  async BenchmarkTest00164(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    let data;
-    try { data = JSON.parse(userInput).value || ""; }
-    catch (e) { data = String(userInput); }
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
-    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
-    const targetUrl = data;
-    return { url: targetUrl };
+  async BenchmarkTest00164(@Body("field") field: string): Promise<unknown> {
+    const userInput = field || "";
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

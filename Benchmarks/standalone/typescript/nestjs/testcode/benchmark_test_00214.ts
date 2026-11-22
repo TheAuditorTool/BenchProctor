@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Headers, Post, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
-import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { stringifySetCookie } from "cookie";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,14 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00214")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00214(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const data = userInput != null ? userInput : '';
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  async BenchmarkTest00214(@Headers("x-forwarded-for") xff: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = xff || "";
+    const data = String(userInput).replace(/\u0000/g, "");
+    res.append(
+      "Set-Cookie",
+      stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict", secure: true }),
+    );
     return { created: true };
   }
 }

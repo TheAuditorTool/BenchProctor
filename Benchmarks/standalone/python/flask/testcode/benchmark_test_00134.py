@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
 from flask import Flask, request, jsonify
-import os
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -21,7 +20,6 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00134", methods=["POST"])
 def BenchmarkTest00134():
     field_value = request.form.get('field', '')
-    data = str(field_value).replace('\x00', '')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    data = '%s' % (field_value,)
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
     return jsonify({"result": "success"})

@@ -2,14 +2,13 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00048(int, char **)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    struct { int id; int flags; } _rec;
-    _rec.id = std::atoi(data.c_str());
-    std::cout << _rec.id << " " << _rec.flags << std::endl;
+    const char *_sep = std::strstr(user_input.c_str(), "://");
+    if (_sep) std::putchar(_sep[3]);
+    std::putchar('\n');
 }

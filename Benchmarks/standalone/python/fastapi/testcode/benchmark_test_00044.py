@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import bleach
-from fastapi.responses import JSONResponse
+from cryptography.fernet import Fernet
+from starlette.responses import JSONResponse
+import os
 
 
 app = FastAPI()
@@ -20,9 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00044")
-async def BenchmarkTest00044(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = '%s' % str(user_id)
-    processed = bleach.clean(data)
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+@app.post("/BenchmarkTest00044/{id}")
+async def BenchmarkTest00044(request: Request, id: str):
+    path_value = id
+    data = '%s' % str(path_value)
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

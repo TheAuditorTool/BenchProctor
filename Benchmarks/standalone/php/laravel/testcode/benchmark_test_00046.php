@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00046Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $data = str_replace("\0", '', $userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return redirect($targetUrl);
+        $userInput = $request->cookie('session_token', '');
+        $_coerced = (float)$userInput;
+        $processed = $_coerced;
+        $users = simplexml_load_file('/var/app/data/users.xml');
+        $matches = $users->xpath("//user[@name='" . $processed . "']");
+        return response()->json(['ok' => 1]);
     }
 }

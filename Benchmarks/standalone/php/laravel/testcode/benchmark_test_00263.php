@@ -2,14 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00263Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->input('multipart_field', '');
-        $data = str_replace("\0", '', $userInput);
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
+        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
+        return response()->json(['ok' => 1]);
     }
 }

@@ -2,18 +2,28 @@
 package testcode
 
 import (
-	"crypto/md5"
 	"fmt"
 	"net/http"
-	"net/url"
+	"regexp"
+	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00290(c *gin.Context) {
 	fieldValue := c.PostForm("field")
-	data, _ := url.QueryUnescape(fieldValue)
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	data := fmt.Sprintf("%s", fieldValue)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
+		return
+	}
+	processed := data
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	c.JSON(200, gin.H{"code": "OK"})
 }

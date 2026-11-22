@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00039 = async (ctx) => {
-  const userInput = ctx.query.id || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
+  const userInput = ctx.request.headers.referer || "";
+  const data = userInput != null ? userInput : '';
+  const { Sequelize, DataTypes } = require("sequelize");
+  const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
+  const User = _sequelize.define("User", { name: DataTypes.STRING }, { tableName: "users", timestamps: false });
+  await User.findAll({ where: _sequelize.literal("name = '" + data + "'") });
   ctx.body = { ack: true };
 }
 

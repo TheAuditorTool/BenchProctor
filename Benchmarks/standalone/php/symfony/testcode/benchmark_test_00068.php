@@ -11,9 +11,10 @@ class BenchmarkTest00068Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookies->get('session_token', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $digest = md5((string)$data);
+        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
+        $data = ($userInput !== null) ? $userInput : '';
+        $sealed = base64_decode((string)$data, true) ?: '';
+        $claims = openssl_decrypt(substr($sealed, 28), 'aes-256-gcm', getenv('DATA_ENC_KEY'), OPENSSL_RAW_DATA, substr($sealed, 0, 12), substr($sealed, 12, 16));
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -2,7 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <regex>
 #include <unordered_map>
 
@@ -28,13 +29,16 @@ struct Client {
 
 void benchmark_test_00485(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
+    std::string user_input = req.path_params.at("id");
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    std::string safe = std::regex_match(data, std::regex("^(status|info|list|show)$")) ? data : std::string("status");
-    std::string _cmd = std::string("grep ") + safe + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    static const std::regex _schema("^[a-zA-Z0-9 _.%\\-]+$");
+    if (!std::regex_match(data, _schema)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    std::string arg = data;
+    const char *_sp_argv[] = { "sh", "-c", arg.c_str(), nullptr };
+    char *const _sp_env[] = { nullptr };
+    pid_t _pid;
+    if (posix_spawn(&_pid, "/bin/sh", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
     res.set_content("ok", "text/plain");
 }

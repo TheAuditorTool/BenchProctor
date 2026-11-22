@@ -11,10 +11,10 @@ class BenchmarkTest00259Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00259
-    user_input = request.headers["Authorization"].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
+    user_input = request.referer.to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    File.write("/var/uploads/" + data, "data")
     render json: { status: "ok" }
   end
 end

@@ -4,7 +4,14 @@
 benchmark_test_00072() {
   user_input="$(tr '&' '\n' | grep '^field=' | cut -d= -f2-)"
   data=$(printf "%s" "${user_input}" | tr -s " ")
-  echo "$data" | xmllint --nonet - > /dev/null 2>&1
+  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "invalid"; exit 1; fi
+  bounded_val="$data"
+  if [ "$bounded_val" -lt 0 ] || [ "$bounded_val" -gt 2147483647 ]; then echo "out of range" >&2; exit 1; fi
+  if [[ ! "$bounded_val" =~ ^-?[0-9]+$ ]]; then echo "invalid" >&2; exit 1; fi
+  requested=$bounded_val
+  if [ "${#requested}" -gt 10 ] || [ "$requested" -lt 0 ] || [ "$requested" -gt 2147483646 ]; then echo "out of range" >&2; exit 1; fi
+  alloc_size=$((requested + 1))
+  echo "alloc:$alloc_size"
 }
 
 benchmark_test_00072 "$@"

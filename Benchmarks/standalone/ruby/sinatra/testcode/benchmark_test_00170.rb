@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00170 < Sinatra::Base
   before do
@@ -19,13 +18,12 @@ class BenchmarkTest00170 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00170" do
-    user_input = params[:upload][:filename].to_s rescue ""
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = "%s" % user_input
+    unless %w[ls cat date whoami].include?(data.to_s)
+      halt 400, JSON.generate({ error: "forbidden" })
+      return
     end
-    data = _normalize_local(user_input)
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
-    content_type :json
-    JSON.generate({ status: "ok" })
+    IO.popen(["sh", "-c", data.to_s], &:read)
   end
 end

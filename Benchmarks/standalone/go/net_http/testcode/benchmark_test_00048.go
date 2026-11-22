@@ -2,28 +2,21 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
-	"os/exec"
-	"regexp"
+	"net/url"
+	"strconv"
 )
 
 func BenchmarkTest00048(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	userID := r.URL.Query().Get("id")
+	data, _ := url.QueryUnescape(userID)
+	var _num float64
+	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
+		http.Error(w, "invalid number", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$")
-	if !validPattern.MatchString(jsonValue) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-	processed := jsonValue
-	cmd := exec.Command("python3", "-c", processed)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
+	trustedSettings.Store("partner_callback_host", boundedVal)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

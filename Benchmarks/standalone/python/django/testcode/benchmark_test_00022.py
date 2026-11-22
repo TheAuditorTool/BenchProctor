@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from app_runtime import db
+from django.http import HttpResponseRedirect
+from urllib.parse import urlparse
+import re
 
 
 def BenchmarkTest00022(request):
-    origin_value = request.META.get('HTTP_ORIGIN', '')
-    parts = []
-    for token in str(origin_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JsonResponse({'error': 'not found'}, status=404)
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    upload_name = request.FILES['upload'].name
+    parts = str(upload_name).split(',')
+    data = ' '.join(parts)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JsonResponse({'error': 'forbidden host'}, status=403)
+    target_url = data
+    return HttpResponseRedirect(str(target_url))

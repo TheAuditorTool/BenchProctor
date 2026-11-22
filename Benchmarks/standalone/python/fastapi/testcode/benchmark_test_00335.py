@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-import requests
 from starlette.responses import JSONResponse
-import re
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 app = FastAPI()
@@ -24,10 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00335")
 async def BenchmarkTest00335(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = ' '.join(str(api_value).split())
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    referer_value = request.headers.get('referer', '')
+    data = str(referer_value).replace('\x00', '')
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

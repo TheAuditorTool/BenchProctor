@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from starlette.responses import JSONResponse
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -22,8 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00230")
 async def BenchmarkTest00230(request: Request):
     user_id = request.query_params.get('id', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(user_id)
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
-    return {"updated": True}
+    data = '%s' % str(user_id)
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

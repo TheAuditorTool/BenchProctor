@@ -1,14 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ldap
-import os
+from django.core.cache import cache
+import json
 
 
 def BenchmarkTest00092(request):
-    field_value = request.POST.get('field', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(field_value)
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
+    data = str(graphql_var).replace('\x00', '')
+    cache.set('active_tenant', str(data), None)
     return JsonResponse({"saved": True})

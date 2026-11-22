@@ -30,35 +30,16 @@ public class BenchmarkTest00071 {
         }
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
-                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-
     @GET
     @Path("/BenchmarkTest00071")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00071(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(uaValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
-        }
-        if (fetched == null) { return Response.status(404).build(); }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+    public Response BenchmarkTest00071(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data;
+        try { data = String.valueOf(Integer.parseInt(originValue)); }
+        catch (NumberFormatException e) { data = originValue; }
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha256Hex(data);
+        response.setHeader("X-Hash", digestHex);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

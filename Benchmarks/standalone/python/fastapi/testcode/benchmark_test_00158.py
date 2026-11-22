@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import socket
+from lxml import etree
+from dataclasses import dataclass
 from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -21,8 +27,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00158")
 async def BenchmarkTest00158(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = (lambda v: v.strip())(referer_value)
-    s = socket.create_connection((str(data), 80))
-    s.close()
+    user_id = request.query_params.get('id', '')
+    form = FormData(payload=user_id)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(data) + '"]')
     return {"updated": True}

@@ -5,6 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -30,14 +31,18 @@ public class BenchmarkTest00196 {
         }
     }
 
-    @GET
+    private static String normalize(String v) { return v.strip(); }
+
+    @POST
     @Path("/BenchmarkTest00196")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00196(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        java.util.function.Supplier<String> valueSupplier = () -> headerValue.strip();
-        String data = valueSupplier.get();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00196(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = normalize(multipartValue);
+        int requested = Integer.parseInt(data);
+        int allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

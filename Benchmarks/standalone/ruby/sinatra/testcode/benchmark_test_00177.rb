@@ -3,10 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "resolv"
-require "ipaddr"
-require "open-uri"
+require "open3"
 
 class BenchmarkTest00177 < Sinatra::Base
   before do
@@ -22,16 +19,9 @@ class BenchmarkTest00177 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00177" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
     data = user_input ? user_input : ''
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      halt 403, JSON.generate({ error: "private range blocked" })
-      return
-    end
-    target_url = data
-    URI.open(target_url).read
+    Open3.capture2e("echo", data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

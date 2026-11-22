@@ -3,33 +3,31 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
-	"strings"
+	"strconv"
 
-	"github.com/antchfx/xmlquery"
-	"github.com/go-playground/validator/v10"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00139(w http.ResponseWriter, r *http.Request) {
-	forwardedIP := r.Header.Get("X-Forwarded-For")
-	var data string
-	if forwardedIP != "" {
-		data = forwardedIP
-	}
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	cookieValue := cookieObj.Value
+	form := submissionForm{payload: cookieValue}
+	data := form.payload
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	defer ldapConn.Close()
+	isAdmin, cmpErr := ldapConn.Compare("uid="+data+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		http.Error(w, cmpErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("X-Directory-Admin", strconv.FormatBool(isAdmin))
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

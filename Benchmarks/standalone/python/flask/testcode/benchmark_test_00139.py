@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, jsonify
-from app_runtime import db
+from flask import Flask, request, jsonify
+import ctypes
 
 
 app = Flask(__name__)
@@ -20,12 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00139", methods=["POST"])
 def BenchmarkTest00139():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    kind = 'json' if str(comment_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(comment_value).strip()
-        case _:
-            data = str(comment_value)
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    host_value = request.headers.get('Host', '')
+    data = ' '.join(str(host_value).split())
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return jsonify({'wrapped': wrapped}), 200

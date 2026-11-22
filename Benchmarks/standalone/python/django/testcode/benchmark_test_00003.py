@@ -1,17 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
 import json
-import defusedxml.ElementTree
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 def BenchmarkTest00003(request):
-    json_value = json.loads(request.body or b'{}').get('payload', '')
-    reader = make_reader(json_value)
-    data = reader()
-    defusedxml.ElementTree.fromstring(str(data))
-    return JsonResponse({"saved": True})
+    xml_value = request.body.decode('utf-8')
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    parsed = json.JSONDecoder().decode(str(data))
+    return JsonResponse({'parsed': str(parsed)}, status=200)

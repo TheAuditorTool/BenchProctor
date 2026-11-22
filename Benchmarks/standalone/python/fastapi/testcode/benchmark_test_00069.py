@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from fastapi.responses import JSONResponse
+import urllib.request
+from urllib.parse import urlparse
+from fastapi import Form
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
@@ -20,8 +23,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00069")
-async def BenchmarkTest00069(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = str(referer_value).replace('\x00', '')
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+async def BenchmarkTest00069(request: Request, field: str = Form('')):
+    field_value = field
+    data = f'{field_value!s}'
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return {"updated": True}

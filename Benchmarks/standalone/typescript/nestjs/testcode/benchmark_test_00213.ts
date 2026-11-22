@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as ldapjs from "ldapjs";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,13 +19,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00213")
-  async BenchmarkTest00213(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  async BenchmarkTest00213(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+    const value = (row as any).name;
     return { created: true };
   }
 }

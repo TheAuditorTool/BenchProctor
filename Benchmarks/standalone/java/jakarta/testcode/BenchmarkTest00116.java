@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -14,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00116 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -37,20 +30,29 @@ public class BenchmarkTest00116 {
         }
     }
 
-    @POST
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static final class EntityManagers {
+        static final jakarta.persistence.EntityManagerFactory FACTORY = jakarta.persistence.Persistence.createEntityManagerFactory("appPU");
+    }
+
+    @GET
     @Path("/BenchmarkTest00116")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00116(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String prefix = jsonValue.length() > 0 ? jsonValue.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = jsonValue.toLowerCase(); break;
-            case "f": data = jsonValue.toUpperCase(); break;
-            default: data = jsonValue.strip(); break;
-        }
-        response.sendRedirect(data);
-        return Response.ok().build();
+    public Response BenchmarkTest00116(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fileValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/var/app/data.txt")))).orElse("");
+        java.util.function.Supplier<String> valueSupplier = () -> fileValue.strip();
+        String data = valueSupplier.get();
+        jakarta.persistence.EntityManager em = EntityManagers.FACTORY.createEntityManager();
+        em.createNativeQuery("SELECT id, name FROM users WHERE name = '" + data + "'").getResultList();
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

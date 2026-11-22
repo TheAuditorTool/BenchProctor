@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+from urllib.parse import urlparse
+from dataclasses import dataclass
+import requests
+from starlette.responses import JSONResponse
+import socket
+import urllib.parse
+import re
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -26,7 +31,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00115")
 async def BenchmarkTest00115(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    reader = make_reader(cookie_value)
-    data = reader()
-    return HTMLResponse('<div>' + str(data) + '</div>')
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    form = FormData(payload=api_value)
+    data = form.payload
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    s = socket.create_connection((urllib.parse.urlparse(str(target_url)).hostname, 80))
+    s.close()
+    return {"updated": True}

@@ -8,20 +8,22 @@ in benchmark code and how often it flags safe code.
 
 > ## Release status
 >
-> **The current release is 2026.11.19, with C and C++ at 2026.11.19.1.** It is a curated release:
+> **The current release is 2026.11.22.** It is a curated release:
 >
 > - **15,372 standalone cases** in 11 languages across 21 framework targets, exactly 7,686
 >   vulnerable and 7,686 safe;
-> - **368 multi-service applications** in five languages, holding 5,299 labeled flows.
+> - **368 multi-service applications** in five languages, holding 5,284 labeled flows.
 >
-> 2026.11.19.1 is a deeper C and C++ draw: 1,140 C and 2,112 C++ cases, three more memory-safety
-> classes (double free, memory leak, uninitialized variable), and three distinct sink forms for
-> every C and C++ memory-safety and integer-overflow class. The other nine languages and the
-> applications are unchanged from 2026.11.19. Each folder's `benchproctor-manifest.json` names the
-> release it belongs to.
+> New in 2026.11.22: every framework is drawn in its **API generations**, an older line that is
+> still widely deployed beside the current one, and the long-term-support line where the project
+> has one (Spring Boot 2.7, 3.5 and 4.1, for example), each in its own folder. Every dependency
+> is an exact version with its lockfile, and every container image is pinned by digest. Every
+> weakness class draws from at least three distinct sink forms per side, apart from a few
+> documented exceptions. See [changelog.md](changelog.md).
 >
 > It is published as plain files in `Benchmarks/`, so every case and answer key can be read here
-> without unpacking anything. Earlier releases are kept under [`archive/`](archive/).
+> without unpacking anything. Earlier releases are kept under [`archive/`](archive/), one zip per
+> release.
 >
 > Releases are curated. Each release is a fresh draw: easy and medium difficulty only, on a fixed
 > list of frameworks and weakness classes. The larger corpus it is
@@ -41,21 +43,23 @@ Youden's J.
 ```bash
 # 1. clone this repository; the current release is in Benchmarks/
 
-# 2. scan one framework's testcode and export SARIF 2.1.0
+# 2. scan one framework generation's testcode and export SARIF 2.1.0
 your-tool scan Benchmarks/standalone/java/spring/testcode --format sarif -o results.sarif
 
 # 3. score against its answer key (standard-library Python, zero dependencies)
 python Benchmarks/standalone/java/score_sarif.py results.sarif \
-  Benchmarks/standalone/java/spring/expectedresults-2026.11.19.csv
+  Benchmarks/standalone/java/spring/expectedresults-2026.11.22.csv
 
 # 4. read category-averaged and flat-aggregate TPR, FPR, and Youden's J
 ```
 
-The scorer recovers each finding's CWE from the SARIF `ruleId`, the result or rule `properties` or
-`tags` (for example `external/cwe/cwe-089`), or CWE `taxa`. This supports many common SARIF
-encodings without configuration. If your tool emits no CWE, add `--match-mode filename` (any
-finding on a vulnerable file counts; this rewards over-flagging, so prefer the default). The same
-`score_sarif.py` ships in every standalone language folder. The applications have their own scorer; see
+`spring` is the modern generation; `spring-lts` and `spring-legacy` beside it are scanned and
+scored the same way, each against its own answer key. The scorer recovers each finding's CWE from
+the SARIF `ruleId`, the result or rule `properties` or `tags` (for example
+`external/cwe/cwe-089`), or CWE `taxa`. This supports many common SARIF encodings without
+configuration. If your tool emits no CWE, add `--match-mode filename` (any finding on a vulnerable
+file counts; this rewards over-flagging, so prefer the default). The same `score_sarif.py` ships in
+every standalone language folder. The applications have their own scorer; see
 [Applications](#applications).
 
 ## Why another benchmark
@@ -70,28 +74,32 @@ Many existing public SAST benchmarks exhibit one or more of these structural lim
   analyzing the code.
 - **Limited structural coverage.** Many suites focus on one language and single-file findings,
   without testing a flow that crosses a service boundary.
+- **One framework release.** Code in the field spans several releases of each framework and
+  runtime, and an analyzer that only knows the newest APIs misses the older ones.
 
 BenchProctor reduces exact-case memorization and label leakage by construction, covers 11
-languages, and adds multi-service applications whose flows cross a process boundary.
+languages in more than one generation each, and adds multi-service applications whose flows cross
+a process boundary.
 
 ## What's in this release
 
 | | |
 |---|---|
-| **Release** | `2026.11.19`; C and C++ `2026.11.19.1` |
+| **Release** | `2026.11.22` |
 | **Standalone cases** | 15,372: 7,686 vulnerable and 7,686 safe |
 | **Languages** | 11: Java, Python, Go, Rust, TypeScript, JavaScript, PHP, Ruby, Bash, C, C++ |
 | **Framework targets** | 21 (see the table below) |
+| **API generations** | 46 folders over the 21 targets: 21 legacy, 4 long-term support, 21 modern (see [Generations](#generations)) |
 | **Weakness classes** | 25, mapped to 25 distinct CWE IDs |
-| **Sampling** | 20 vulnerable + 20 safe cases for every framework and class pair (30 + 30 in C, 24 + 24 in C++): 366 pairs |
-| **Applications** | 368 two-service applications over 6 service graphs, in TypeScript, JavaScript, Python, Java and C++ |
-| **Application flows** | 5,299 labeled flows: 1,473 vulnerable and 3,826 safe |
+| **Sampling** | 20 vulnerable + 20 safe cases for every framework and class pair (30 + 30 in C, 24 + 24 in C++), split across the framework's generations: 366 pairs |
+| **Applications** | 368 two-service applications over 6 service graphs, in TypeScript, JavaScript, Python, Java and C++, each written in one generation of both services |
+| **Application flows** | 5,284 labeled flows: 1,460 vulnerable and 3,824 safe |
 | **Difficulty** | easy and medium |
 
-Every framework and class pair is balanced exactly. Under Youden's J, a flag-everything tool
-scores 0 because its true-positive and false-positive rates are both 100%. Some cases use shared
-runtime or companion files required by their language or framework; these files are not scored
-separately.
+Every framework and class pair is balanced exactly, and so is every generation folder. Under
+Youden's J, a flag-everything tool scores 0 because its true-positive and false-positive rates are
+both 100%. Some cases use shared runtime or companion files required by their language or
+framework; these files are not scored separately.
 
 ### What this release does not contain
 
@@ -118,6 +126,21 @@ Read a score on this release as a floor check on broadly known classes, not as a
 - **Anti-leakage by construction.** Emitted files carry no comments, no CWE tags, no category names,
   or label-bearing identifiers. File IDs are shuffled, so filenames do not encode a case's class
   or label. The CSV answer keys are the only published source of labels.
+- **Several sink forms per class.** Each class ends in at least three distinct sink statements
+  per side (for SQL injection, a prepared statement built by concatenation and an ORM raw query
+  beside the plain query), with no form above 60% of a side. The exceptions are documented in the
+  changelog: Bash weak cipher and XML external entity, JavaScript and TypeScript deserialization,
+  and the share of PHP deserialization's safe side.
+- **Generations.** A class is written in each generation of its framework the way that line
+  writes it: its framework release, language level and library APIs, including the deprecated
+  APIs an older line still uses. The labels and controls are the same in every generation.
+- **Exact, vetted dependencies.** Every dependency manifest pins exact versions, the Node
+  services ship a `package-lock.json`, the Python services a hashed lock, and every container
+  image is pinned by tag and digest. Versions are the newest
+  stable release of their line published on or before 2026-10-22; a later release is taken only
+  where it fixes a published advisory. The legacy and long-term-support generations keep their
+  line's own releases, so a dependency scanner reports the advisories open in those lines: they
+  are part of what such code looks like in the field, and they are not part of the ground truth.
 - **Seed rotation.** Each release is drawn with its own seed. A new release keeps the same
   languages, frameworks, classes and difficulty, and emits different combinations and
   identifiers. This limits the usefulness of exact-file and filename memorization and is designed
@@ -144,12 +167,44 @@ Read a score on this release as a floor check on broadly known classes, not as a
 A framework target carries the classes that occur in its language. C and C++ include memory-safety
 classes; the managed languages do not.
 
+### Generations
+
+Each framework target is drawn in each of its API generations, and each generation is its own
+folder with its own answer key, build files and dependency pins: `<framework>` is the modern line,
+`<framework>-lts` the long-term-support line where the project has one, and `<framework>-legacy`
+an older line that is still widely deployed. A target's depth is split across its generations (10
+and 10 per side over two, 7, 7 and 6 over three; 15 and 15 in C, 12 and 12 in C++), and each
+generation is drawn separately, so the folders hold different cases.
+
+| Target | Legacy | Long-term support | Modern |
+|---|---|---|---|
+| Java Spring | Spring Boot 2.7, Java 11, `javax.*` | Spring Boot 3.5, Java 21 | Spring Boot 4.1, Java 25 |
+| Java Jakarta EE | Java EE 8 (JAX-RS 2.1, Servlet 4, Jersey 2), Java 11 | Jakarta EE 10, Java 21 | Jakarta EE 11, Java 25 |
+| Python Django | Django 4.2 | Django 5.2 LTS | Django 6.1 |
+| Python Flask | Flask 2.3, Werkzeug 2.3 | | Flask 3.1 |
+| Python FastAPI | FastAPI 0.99 with pydantic 1 | | FastAPI 0.161 with pydantic 2 |
+| PHP Symfony | Symfony 5.4 | Symfony 7.4 LTS | Symfony 8.1 |
+| PHP Laravel | Laravel 10, PHP 8.1 | | Laravel 13, PHP 8.5 |
+| Ruby Rails | Rails 7.1, Ruby 3.2 | | Rails 8.1, Ruby 4.0 |
+| Ruby Sinatra | Sinatra 3, Rack 2 | | Sinatra 4, Rack 3 |
+| JavaScript Express | Express 4, Node 20 | | Express 5, Node 24 |
+| JavaScript Koa | Koa 2 | | Koa 3 |
+| TypeScript Express | Express 4, TypeScript 5 | | Express 5, TypeScript 7 |
+| TypeScript NestJS | NestJS 10 on Express 4 | | NestJS 12 |
+| Go Gin, net/http | a `go 1.20` module: `io/ioutil`, `interface{}`, seeded `math/rand` | | Go 1.27: `any`, `math/rand/v2`, the standard library's pbkdf2 and sha3 |
+| Rust Actix-web, Axum | edition 2021, rand 0.8, RustCrypto 0.10 | | edition 2024, rand 0.10, RustCrypto 0.11 |
+| C | C99 | | C17 |
+| C++ | C++14, POSIX file calls in place of `std::filesystem` | | C++20 |
+| Bash | bash 3.2 idioms (backquotes, `case` globs, `expr`) | | bash 5 |
+
+Each language folder's README lists the line of every folder it holds.
+
 ### C and C++ prerequisites
 
 "Standalone" means one file per case, not free of dependencies. The C and C++ standard libraries
-have no SQL, HTTP, cryptography or message-queue API, so some cases call a library: 212 of the 1,140
-C cases call SQLite, libcurl or OpenSSL, and 28 of the 2,112 C++ cases call the hiredis or
-RabbitMQ C client. A tool that compiles the cases, or resolves their `#include` lines, needs those
+have no SQL, HTTP, cryptography or message-queue API, so some cases call a library: 239 of the 1,140
+C cases include SQLite, libcurl or OpenSSL headers, and 18 of the 2,112 C++ cases include the
+hiredis or RabbitMQ C client headers. A tool that compiles the cases, or resolves their `#include` lines, needs those
 libraries' development headers:
 
 - Fedora / RHEL: `dnf install openssl-devel sqlite-devel libcurl-devel hiredis-devel librabbitmq-devel`
@@ -182,30 +237,34 @@ An application is a small project made of two services that call each other over
 its own container file. One primary flow starts at the entry service and ends at a sink in the
 backend service. Further single-file flows, vulnerable and safe, and plain safe modules sit
 around it, all of them labeled, so a tool has to tell the flows that matter from the code that
-surrounds them. Each application also carries a `docker-compose.yml`.
+surrounds them. Each application also carries a `docker-compose.yml`. Each application is written
+in one generation of both its services, and each graph's applications are split between the
+legacy and the modern generation; an application's build files and container images name the
+releases it targets.
 
 | Service graph | Applications | Flows | Vulnerable | Safe |
 |---|---:|---:|---:|---:|
 | Express (TypeScript) to Flask | 64 | 920 | 255 | 665 |
-| NestJS to Spring | 64 | 920 | 255 | 665 |
-| Express (JavaScript) to Django | 64 | 923 | 258 | 665 |
-| Express (TypeScript) to cpp-httplib | 48 | 694 | 194 | 500 |
-| FastAPI to Spring | 64 | 921 | 255 | 666 |
-| Jakarta EE to NestJS | 64 | 921 | 256 | 665 |
-| **Total** | **368** | **5,299** | **1,473** | **3,826** |
+| NestJS to Spring | 64 | 917 | 252 | 665 |
+| Express (JavaScript) to Django | 64 | 920 | 255 | 665 |
+| Express (TypeScript) to cpp-httplib | 48 | 691 | 192 | 499 |
+| FastAPI to Spring | 64 | 918 | 253 | 665 |
+| Jakarta EE to NestJS | 64 | 918 | 253 | 665 |
+| **Total** | **368** | **5,284** | **1,460** | **3,824** |
 
 Applications are built around six classes (SQL injection, cross-site scripting, OS command
 injection, server-side request forgery, path traversal, deserialization) and two two-stage chains
 (an unauthenticated entry leading to cross-site scripting, and an unvalidated URL leading to
-server-side request forgery). The C++ graph carries six of the eight: it has no deserialization
+server-side request forgery, whose entry service checks the destination against an allowlist when
+the chain is blocked). The C++ graph carries six of the eight: it has no deserialization
 application and no unvalidated-URL chain. In half of the applications the chain completes; in the
 other half a control on the path holds.
 
 ```bash
 your-tool scan Benchmarks/applications/nestjs-spring/applications --format sarif -o results.sarif
 python Benchmarks/applications/score_apps.py \
-  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.19.csv \
-  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.19.csv \
+  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.22.csv \
+  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.22.csv \
   --tool-sarif results.sarif
 ```
 
@@ -236,34 +295,40 @@ After a tool runs, scoring computes a confusion matrix and one subtraction:
 
 Scores are reported in two forms. The **category-averaged** headline score weights each class
 equally so large classes cannot dominate; the **flat aggregate** score weights every case equally.
-With twenty cases per side, one case moves a single framework and class pair by five points and a
-framework's headline score by well under one point, so per-class scores carry real signal. Any tool that emits compatible
-SARIF 2.1.0 can be scored; both scorers are single standard-library Python files with no
-dependencies.
+Each generation folder is scored against its own answer key (test names restart in every folder).
+With ten cases per side in a folder, one case moves that folder's score for a class by ten points
+(about fifteen with seven per side) and its headline score by under one point, so per-class scores
+carry real signal. Any tool that emits compatible SARIF 2.1.0 can be scored; both scorers are
+single standard-library Python files with no dependencies.
 
 A tool that does not attempt some classes can declare its scope. `--skip-categories ldapi,sqli`
 leaves those classes out of the score, and `--categories null_deref,use_after_free` scores only
 the listed ones; the summary names every class left out, so a scoped score is never mistaken for
-a full one. These options are in `scripts/score_sarif.py` and the copies bundled in the C and C++ folders,
-and in every other language folder from the next release on.
+a full one. These options are in `scripts/score_sarif.py` and in the copy bundled in every language
+folder.
 
 ## How the labels are verified
 
 Before release, every source file in this release was put through the native toolchain for its
-language. Nothing was sampled:
+language and generation. Nothing was sampled:
 
-- **Java:** every standalone file compiled with `javac`, one run per framework; every Java service
-  of the applications compiled with Maven.
-- **Python:** every standalone file parsed, and every case checked for undefined names; every
-  Python service of the applications byte-compiled.
-- **Go:** `go build` and `go vet` over each framework's module.
-- **Rust:** `cargo check` over each framework's crate.
+- **Java:** every standalone file compiled with `javac`, one run per framework and generation at
+  that generation's Java release (11, 21 or 25).
+- **Python:** every standalone file parsed, and every case checked for undefined names.
+- **Go:** `go build` and `go vet` over each generation's module.
+- **Rust:** `cargo check` over each generation's crate, against its locked dependencies.
 - **TypeScript:** `tsc` in strict mode over every TypeScript source file, standalone and
-  applications.
-- **C++ applications:** every C++ service built with its own `Makefile`.
-- **JavaScript, PHP, Ruby, C, C++, Bash:** every file syntax-checked with `node --check`, `php -l`,
-  `ruby -c`, `gcc`, `g++` and `bash -n`. The C and C++ files were checked with their libraries'
-  development headers installed (see [C and C++ prerequisites](#c-and-c-prerequisites)).
+  applications, with TypeScript 5.9 for the legacy generation and 7.0 for the modern one.
+- **JavaScript, PHP, Ruby, C, C++, Bash:** every file, standalone and applications,
+  syntax-checked with `node --check`, `php -l`, `ruby -c`, `gcc`, `g++` and `bash -n`, the C and
+  C++ files at their generation's standard (C99 or C17, C++14 or C++20). The C and C++ files were
+  checked with their libraries' development headers installed (see
+  [C and C++ prerequisites](#c-and-c-prerequisites)).
+- **Applications, whole projects:** on every service graph, 24 applications (at least one of every
+  application type and an even sample of the rest, 144 in all), built the way the project builds:
+  each service's own `Makefile` for C++, `mvn compile` for Java, a byte-compile of the Python
+  modules and `node --check` of the JavaScript. The Java services of a further sample of
+  applications were compiled together, application by application.
 
 On top of that, a suite of deterministic gates runs with no AI and no LLM-as-judge: each
 `vulnerable` case must carry a real source-to-sink flow, each `safe` twin must neutralize it for
@@ -272,13 +337,23 @@ and idiom checks must hold. For the applications, further gates check that each 
 matches the services on disk and that every vulnerable flow's scored line holds a statement.
 
 Finally, every bundle was scored the way you would score it, with the scorer shipped in it and the
-answer keys shipped beside the code, against a perfect answer: every standalone
-framework scores +100%, and on every application graph every flow is judged right, every CWE is
-named and every service-graph edge is recovered.
+answer keys shipped beside the code, against a perfect answer: every standalone folder scores
++100%, and on every application graph every flow is judged right, every CWE is named and every
+service-graph edge is recovered.
 
-The applications were also run. One application of every archetype was built and brought up
-under Docker, a request was sent to its entry service, and the sink's own log confirmed the
-payload arrived.
+The applications were also run. On every service graph and in both generations, applications were
+built from their own Dockerfiles, started with their own `docker-compose.yml`, and sent one request
+at the entry service carrying a marker in every input the entry reads. A run counts only when the
+marker shows up at the far end of the chain: in the backend service's own log, or, when the scored
+sink is a database query, in the database's own statement log. The applications tried first are
+those whose primary flow carries the request to the backend unchanged, and one that does not build
+or start, or whose entry refuses or fails the request, fails its graph at once. Eleven of the twelve
+graph and generation pairs passed. On the legacy generation of Express (TypeScript) to cpp-httplib,
+no candidate backend's sink writes anything a log can show (a socket connect, a file open, an HTML
+write), so no run there can pass; a copy of one of those applications with a single print added at
+the sink showed the marker arriving at the backend. Every TypeScript service of the applications was
+also installed from its own lockfile and type-checked with its own compiler against the installed
+type packages.
 
 Published bundles contain test code, required support artifacts, CSV answer keys, the scorers,
 manifests, checksums, and documentation. Internal per-case proof metadata and the perfect-score
@@ -289,24 +364,27 @@ labels can be inferred.
 ## Layout and integrity
 
 The current release is published as plain files under `Benchmarks/`: one folder per language under
-`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 26,824
-files in all (47.1 MiB). The C and C++ folders are release 2026.11.19.1, the others 2026.11.19. `Benchmarks/SHASUMS256.txt` lists the SHA-256 of every file; from
-`Benchmarks/`, `sha256sum -c SHASUMS256.txt` checks them all.
+`Benchmarks/standalone/` and one for the applications under `Benchmarks/applications/`, 27,529
+files in all (76.1 MiB), every folder release 2026.11.22. `Benchmarks/SHASUMS256.txt` lists the
+SHA-256 of every file; from `Benchmarks/`, `sha256sum -c SHASUMS256.txt` checks them all.
 
-Each standalone language folder holds a `testcode/` directory for each framework, the
-`expectedresults-<version>.csv` answer key, the bundled `score_sarif.py`, a
-`benchproctor-manifest.json` (version, per-framework counts, SHA-256 checksums of the answer key
-and the scorer, and the libraries the C and C++ cases include), and a README. Each framework folder
-also carries its language's dependency manifest, derived from what its cases import: `pom.xml`
-(Java), `go.mod` (Go), `Cargo.toml` (Rust), `requirements.txt` (Python), `package.json`
+Each standalone language folder holds one folder per framework and generation, each with a
+`testcode/` directory and its `expectedresults-<version>.csv` answer key, plus the bundled
+`score_sarif.py`, a `benchproctor-manifest.json` (version, per-folder counts, generation and line,
+SHA-256 checksums of the answer keys and the scorer, and the libraries the C and C++ cases include),
+and a README. Each folder also carries its language's dependency manifest for that generation,
+derived from what its cases import and pinned to exact versions: `pom.xml` (Java), `go.mod` and
+`go.sum` (Go), `Cargo.toml` (Rust), `requirements.txt` (Python), `package.json`
 (JavaScript, TypeScript), `composer.json` (PHP) or a `Gemfile` (Ruby), so a tool that resolves
 types can install exactly the packages the cases use. The applications folder holds one directory
 per service graph with its `applications/`, its two answer-key CSVs, and `score_apps.py`; every
-service carries its own Dockerfile and dependency manifest.
+service carries its own Dockerfile and dependency manifest, and its lockfile where its language
+has one.
 
-Earlier releases are kept whole under [`archive/`](archive/), one folder per release, each with
-its own `SHASUMS256.txt`. Release 2026.11.16 was published as one zip per bundle; it is kept there
-unpacked, and its original zips remain in this repository's history.
+Earlier releases are kept under [`archive/`](archive/) as one zip per release:
+`archive/<version>.zip` holds a `<version>/` folder with that release's files and its own
+`SHASUMS256.txt`, and `archive/SHASUMS256.txt` lists the SHA-256 of every zip. The zips are
+written byte for byte reproducibly, so the same files always give the same zip.
 
 ## Corrections and ground-truth disputes
 
@@ -346,11 +424,11 @@ with scores on any later release.
 
 ## Releases
 
-Release 2026.11.19 is the current release, in `Benchmarks/`; earlier releases are under
+Release 2026.11.22 is the current release, in `Benchmarks/`; earlier releases are under
 [`archive/`](archive/). The scorers in `scripts/` use only the Python standard library: clone the repository, point a scorer at a corpus and your SARIF, and read the resulting
 metrics. The release history is in [changelog.md](changelog.md), and a step-by-step guide is in
 [usage.md](usage.md).
 
 ## License
 
-Apache License 2.0, see [LICENSE](LICENSE). Created and maintained by the author of BenchProctor.
+Apache License 2.0, see [LICENSE](LICENSE). Created and maintained by Code Reality Labs (https://coderealitylabs.com).

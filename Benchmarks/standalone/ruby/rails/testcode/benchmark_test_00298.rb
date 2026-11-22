@@ -11,11 +11,9 @@ class BenchmarkTest00298Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00298
-    user_input = ENV["APP_INPUT"] || ""
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    result = User.find_by(name: data)
-    value = result.name
+    user_input = request.referer.to_s
+    data = user_input ? user_input : ''
+    User.where(id: data).to_a
     render json: { status: "ok" }
   end
 end

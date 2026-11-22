@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import secrets
 from flask import Flask, request, jsonify
-import re
+from app_runtime import db
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -24,11 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00184", methods=["POST"])
 def BenchmarkTest00184():
-    raw_body = request.get_data(as_text=True)
-    reader = make_reader(raw_body)
-    data = reader()
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    exec(str(processed))
-    return jsonify({"result": "success"})
+    multipart_value = request.form.get('multipart_field', '')
+    if multipart_value:
+        data = multipart_value
+    else:
+        data = ''
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

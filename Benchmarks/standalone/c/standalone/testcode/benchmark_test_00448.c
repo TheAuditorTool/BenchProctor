@@ -7,23 +7,21 @@
 #include <stdint.h>
 #include <time.h>
 #include <openssl/evp.h>
-#include <openssl/rand.h>
 
 void benchmark_test_00448(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
     char data[512];
     size_t _li = 0;
     for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
     data[_li] = '\0';
-    unsigned char _iv[8];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_md4(), NULL);
+    EVP_DigestUpdate(_mdctx, data, strlen(data));
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
 }

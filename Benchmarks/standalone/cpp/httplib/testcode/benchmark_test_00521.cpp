@@ -36,17 +36,12 @@ enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_
 
 void benchmark_test_00521(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("multipart_field");
+    std::string user_input = req.body;
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
-    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
-    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
-    std::string _xexpr = std::string("/users/user[@name='") + data + "']";
-    xmlXPathObjectPtr _xobj = xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
-    if (_xobj) xmlXPathFreeObject(_xobj);
-    xmlXPathFreeContext(_xctx);
-    xmlFreeDoc(_xdoc);
+    std::string _xdoc = data;
+    xmlDocPtr _xd = xmlReadMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    if (_xd) xmlFreeDoc(_xd);
     res.set_content("ok", "text/plain");
 }

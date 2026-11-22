@@ -2,22 +2,28 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00131(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
+	header, err := c.FormFile("upload")
 	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+		c.String(http.StatusBadRequest, "bad upload")
 		return
 	}
-	segments := strings.Split(cookieValue, ",")
-	data := strings.Join(segments, " ")
-	processed := bluemonday.UGCPolicy().Sanitize(data)
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	uploadName := header.Filename
+	data := fmt.Sprintf("%s", uploadName)
+	const exportRecordSize = 512
+	recordCount, err := strconv.ParseInt(data, 10, 32)
+	if err != nil {
+		c.String(http.StatusBadRequest, "invalid record count")
+		return
+	}
+	exportBuf := make([]byte, 0, int32(recordCount)*exportRecordSize)
+	c.Header("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -11,10 +11,15 @@ class BenchmarkTest00253Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00253
-    user_input = request.host.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    eval(data)
+    user_input = request.body.read
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    Rails.application.config.x.announcement = parsed_num.to_s
     render json: { status: "ok" }
   end
 end

@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00049 < Sinatra::Base
   before do
@@ -19,15 +18,17 @@ class BenchmarkTest00049 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00049" do
-    user_input = request.env["HTTP_HOST"].to_s
-    data = "#{user_input}"
-    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      halt 403, JSON.generate({ error: "forbidden" })
       return
     end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    checked_path = resolved
+    content = File.read(checked_path)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

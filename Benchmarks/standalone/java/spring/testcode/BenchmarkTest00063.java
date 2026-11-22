@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,14 +19,15 @@ public class BenchmarkTest00063 {
         return ResponseEntity.status(500).body("request failed");
     }
 
+    record FormData(String payload) {}
+
     @GetMapping("/BenchmarkTest00063")
     public void BenchmarkTest00063(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
         String refererValue = referer != null ? referer : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(refererValue)); }
-        catch (NumberFormatException e) { data = refererValue; }
-        String content = Files.readString(Paths.get("/var/app/data/" + data), java.nio.charset.StandardCharsets.UTF_8);
-        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+        FormData payload = new FormData(refererValue);
+        String data = payload.payload();
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha1Hex(data);
+        response.setHeader("X-Hash", digestHex);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

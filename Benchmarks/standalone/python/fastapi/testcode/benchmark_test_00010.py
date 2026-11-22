@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
-import re
-from starlette.responses import JSONResponse
+import requests
+import os
+from sqlalchemy import create_engine
+from fastapi.responses import JSONResponse
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -27,11 +25,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00010")
 async def BenchmarkTest00010(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    reader = make_reader(header_value)
-    data = reader()
-    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    subprocess.Popen('echo ' + str(processed), shell=True).wait()
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    with _engine.connect() as conn:
+        conn.exec_driver_sql("SELECT * FROM users WHERE name = '" + str(data) + "'")
     return {"updated": True}

@@ -19,16 +19,14 @@ public class BenchmarkTest00034 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
     @GetMapping("/BenchmarkTest00034")
-    public void BenchmarkTest00034(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data = normalize(authHeader);
-        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
-        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + processed});
-        pb.redirectErrorStream(true);
-        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public void BenchmarkTest00034(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        org.apache.hc.client5.http.classic.methods.HttpGet fetchRequest = new org.apache.hc.client5.http.classic.methods.HttpGet(refererValue);
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient fetchClient = org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            int fetchStatus = fetchClient.execute(fetchRequest, fetchResponse -> fetchResponse.getCode());
+            response.setHeader("X-Fetch-Status", String.valueOf(fetchStatus));
+        }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

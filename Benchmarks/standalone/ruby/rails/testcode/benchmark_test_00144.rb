@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
+require "nokogiri"
 
 class BenchmarkTest00144Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +12,11 @@ class BenchmarkTest00144Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00144
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    token = SecureRandom.hex(32)
+    user_input = User.first&.name.to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
+    _ = _doc
     render json: { status: "ok" }
   end
 end

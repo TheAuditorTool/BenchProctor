@@ -30,15 +30,15 @@ public class BenchmarkTest00188 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00188")
-    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00188(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        java.util.function.Supplier<String> valueSupplier = () -> rawData.strip();
-        String data = valueSupplier.get();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00188(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        String data = authHeader.replace("\u0000", "");
+        ProcessBuilder interpreterJob = new ProcessBuilder().redirectErrorStream(true);
+        interpreterJob.command("/bin/bash", "-c", "ping -c 1 -- " + data);
+        interpreterJob.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

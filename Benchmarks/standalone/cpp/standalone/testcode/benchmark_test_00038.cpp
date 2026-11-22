@@ -3,15 +3,21 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
 
 void benchmark_test_00038(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    const char *user_input_env = std::getenv("QUERY_STRING");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    const char *_argv[] = { "/bin/echo", data.c_str(), nullptr };
-    execv("/bin/echo", const_cast<char *const *>(_argv));
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    std::string _ckval = data;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    std::printf("Set-Cookie: session=%s; HttpOnly; SameSite=Strict; Path=/\r\n", _ckval.c_str());
 }

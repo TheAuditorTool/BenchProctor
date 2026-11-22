@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as http from "http";
+import * as shared from "./shared";
+const { db } = shared;
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +22,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00339")
-  async BenchmarkTest00339(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    http.get(data);
+  async BenchmarkTest00339(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = Buffer.from(userInput, "hex").toString();
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.parse("//user[name='" + data + "']").select({ node: usersDoc });
     return { created: true };
   }
 }

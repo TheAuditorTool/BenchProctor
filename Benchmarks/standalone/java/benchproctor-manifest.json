@@ -2,33 +2,85 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "jakarta",
-    "spring"
+    "jakarta-legacy",
+    "jakarta-lts",
+    "spring",
+    "spring-legacy",
+    "spring-lts"
   ],
   "language": "java",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "jakarta": {
       "categories": 18,
-      "csv_sha256": "2839bfcff5eb2588379213671fc63a2bbde795630b84083b8c6b8c0e2b9a0415",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 721,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "a6ba2bb07e3931956b986f68061481729686235aa98ce4b687548eadfdd78670",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Jakarta EE 11 (Servlet 6.1, Jersey 4), Java 25",
+      "published_files": 217,
+      "safe": 108,
+      "total": 216,
+      "vulnerable": 108
+    },
+    "jakarta-legacy": {
+      "categories": 18,
+      "csv_sha256": "4e956b914ad86cb3ef9e79ec100c01a126cf6177cf8fdd0a02a9f0d9783d02c8",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Java EE 8 (javax.ws.rs 2.1, Servlet 4, Jersey 2), Java 11",
+      "published_files": 253,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
+    },
+    "jakarta-lts": {
+      "categories": 18,
+      "csv_sha256": "7dc153ea13bc3d925ddca0edbb5fc66d426faf8bc303c905ddf736f97ed15b3f",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "lts",
+      "line": "Jakarta EE 10 (Servlet 6.0, Jersey 3.1), Java 21",
+      "published_files": 253,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
     },
     "spring": {
       "categories": 18,
-      "csv_sha256": "d50ad871f2bc296a71e256fbccbeb3061b5a42a8d574e1f534baafd245ce5946",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 721,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "f09aa733c37042df4b428eb8405f0583ba3c5cef3240939865fa8c837816138e",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Spring Boot 4.1, Java 25, Jakarta EE 11",
+      "published_files": 217,
+      "safe": 108,
+      "total": 216,
+      "vulnerable": 108
+    },
+    "spring-legacy": {
+      "categories": 18,
+      "csv_sha256": "5c79094c4ff47850dd8851a768f0bca17d1008568b14f0da595c0fcbc36f7c75",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Spring Boot 2.7, Java 11, javax.*",
+      "published_files": 253,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
+    },
+    "spring-lts": {
+      "categories": 18,
+      "csv_sha256": "dd0461d9018494809f58efb046f85c77b66332c031f3fc42d8b3078f4ff9a570",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "lts",
+      "line": "Spring Boot 3.5, Java 21, jakarta.*",
+      "published_files": 253,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

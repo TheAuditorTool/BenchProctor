@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from starlette.responses import JSONResponse
+import json
 import os
-from fastapi.responses import JSONResponse
+import hashlib
 
 
 app = FastAPI()
@@ -21,7 +25,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00327")
 async def BenchmarkTest00327(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    checked_path = os.path.join('/var/app/data', os.path.basename(auth_header))
-    os.unlink(checked_path)
-    return {"updated": True}
+    header_value = request.headers.get('x-custom-header', '')
+    try:
+        data = json.loads(header_value).get('value', header_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = header_value
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(str(data).encode()) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

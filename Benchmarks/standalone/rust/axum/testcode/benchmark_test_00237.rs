@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00237(headers: HeaderMap) -> impl IntoResponse {
-    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = host_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| host_value.clone());
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+pub async fn benchmark_test_00237() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", db_value).ok();
+    use aes::cipher::{BlockCipherEncrypt, KeyInit};
+    let data_key = hex::decode(std::env::var("DATA_ENCRYPTION_KEY").unwrap_or_default()).unwrap_or_default();
+    if let Ok(_aes) = aes::Aes256::new_from_slice(&data_key) {
+        let mut _ciphertext = data.as_bytes().to_vec();
+        let _pad = 16 - _ciphertext.len() % 16;
+        _ciphertext.resize(_ciphertext.len() + _pad, _pad as u8);
+        for _block in _ciphertext.chunks_exact_mut(16) {
+            _aes.encrypt_block(_block.try_into().expect("a 16-byte block"));
+        }
+        tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

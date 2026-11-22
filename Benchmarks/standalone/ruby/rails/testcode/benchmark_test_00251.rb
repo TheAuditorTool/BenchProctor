@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open3"
 
 class BenchmarkTest00251Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,12 +12,12 @@ class BenchmarkTest00251Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00251
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    user_input = cookies[:session_token].to_s
     def _normalize_local(v)
       v.to_s.strip
     end
     data = _normalize_local(user_input)
-    content = File.read("/var/app/data/" + data)
+    Open3.capture2e("echo " + data)
     render json: { status: "ok" }
   end
 end

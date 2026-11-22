@@ -7,17 +7,21 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00408(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    const char *safe = data;
-    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) safe = "/bin/echo";
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", safe);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    unsigned int _sum = 0;
+    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
+    printf("%u\n", _sum);
 }

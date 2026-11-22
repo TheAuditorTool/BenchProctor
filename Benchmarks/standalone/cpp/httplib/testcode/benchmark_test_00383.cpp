@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <unistd.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,23 +23,30 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+extern "C" xmlXPathObjectPtr xmlXPathEval(const unsigned char *, xmlXPathContextPtr);
 
-void benchmark_test_00383(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00383(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    struct { int id; int flags; } _rec;
-    _rec.id = std::atoi(data.c_str());
-    std::cout << _rec.id << " " << _rec.flags << std::endl;
+    std::string user_input = req.get_header_value("Host");
+    static const std::regex _re("^[a-zA-Z0-9 _.%~\\-]+$");
+    std::string arg = std::regex_match(user_input, _re) ? user_input : std::string("default");
+    std::string _xsrc = "<users><user name=\"admin\" role=\"root\"/></users>";
+    xmlDocPtr _xdoc = xmlReadMemory(_xsrc.c_str(), (int)_xsrc.size(), "users.xml", nullptr, XML_PARSE_NONET);
+    xmlXPathContextPtr _xctx = xmlXPathNewContext(_xdoc);
+    std::string _xexpr = std::string("/users/user[@name='") + arg + "']";
+    xmlXPathObjectPtr _xobj = xmlXPathEval(reinterpret_cast<const unsigned char *>(_xexpr.c_str()), _xctx);
+    if (_xobj) xmlXPathFreeObject(_xobj);
+    xmlXPathFreeContext(_xctx);
+    xmlFreeDoc(_xdoc);
     res.set_content("ok", "text/plain");
 }

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import random
 from flask import Flask, request, jsonify
-import defusedxml.ElementTree
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,7 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00063", methods=["POST"])
 def BenchmarkTest00063():
-    multipart_value = request.form.get('multipart_field', '')
-    data = '{}'.format(multipart_value)
-    defusedxml.ElementTree.fromstring(str(data))
-    return jsonify({"result": "success"})
+    user_id = request.args.get('id', '')
+    data = ' '.join(str(user_id).split())
+    token = '%032x' % random.getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

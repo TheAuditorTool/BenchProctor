@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00173")]
-pub async fn benchmark_test_00173(req: HttpRequest) -> HttpResponse {
-    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = ua_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| ua_value.clone());
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = result.unwrap();
-    let _ = value;
+pub async fn benchmark_test_00173(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
+            }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
+        }
+        _mv
+    };
+    let data = multipart_value.to_string();
+    tokio::fs::remove_file(format!("/var/app/data/{}", data)).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

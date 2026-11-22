@@ -5,6 +5,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -30,18 +32,18 @@ public class BenchmarkTest00142 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00142")
+    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00142(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data;
-        if (envValue.length() > 256) { data = envValue.substring(0, 256); }
-        else { data = envValue; }
-        if (!data.matches("^[a-zA-Z0-9 _.\\-]+$")) { return Response.status(400).build(); }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00142(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(rawData.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        String content = Files.readString(Paths.get("/var/app/data/" + data), java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

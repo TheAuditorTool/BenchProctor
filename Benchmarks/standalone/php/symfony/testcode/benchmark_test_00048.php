@@ -11,10 +11,9 @@ class BenchmarkTest00048Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->cookies->get('session_token', '');
+        mt_srand(ctype_digit((string)$userInput) ? (int)$userInput : 42);
+        $token = mt_rand();
+        return new JsonResponse(['token' => (string)$token], 200);
     }
 }

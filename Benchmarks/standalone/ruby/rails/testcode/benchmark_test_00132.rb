@@ -11,10 +11,9 @@ class BenchmarkTest00132Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00132
-    user_input = request.body.read
-    payload, _origin = user_input, 'http'
-    data = payload
-    session[:data] = data.to_s
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    data = sprintf("%s", user_input)
+    User.where(id: data).to_a
     render json: { status: "ok" }
   end
 end

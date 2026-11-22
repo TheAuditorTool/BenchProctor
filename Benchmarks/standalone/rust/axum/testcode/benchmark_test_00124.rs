@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00124(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Ok(Some(_field)) = multipart.next_field().await {
-            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+pub async fn benchmark_test_00124(headers: HeaderMap) -> impl IntoResponse {
+    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = match forwarded_ip.chars().next() { Some(_) => forwarded_ip.clone(), None => "default".to_string() };
+    let _coerced = data.parse::<f64>().unwrap_or(0.0);
+    let processed = _coerced.to_string();
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _doc = _pkg.as_document();
+        let _factory = sxd_xpath::Factory::new();
+        if let Ok(Some(_xpath)) = _factory.build(&format!("//user[@id='{}']/@role", processed)) {
+            let _ = _xpath.evaluate(&sxd_xpath::Context::new(), _doc.root());
         }
-        _fname
-    };
-    let data = upload_name.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const path = require("path");
-const fs = require("fs");
+const { db } = require("./shared");
+const isoDompurify = require("isomorphic-dompurify");
+const nunjucks = require("nunjucks");
 
 async function BenchmarkTest00331(req, res) {
-  const userInput = (req && req.file && req.file.originalname) || "";
-  const data = userInput != null ? userInput : '';
-  const resolved = path.resolve("/var/app/data", data);
-  if (!resolved.startsWith("/var/app/data/")) { res.status(403).json({error:"forbidden"}); return; }
-  const checkedPath = resolved;
-  const fileContent = fs.readFileSync(checkedPath, "utf8");
-  res.send(fileContent);
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const data = `${userInput}`;
+  const _clean = isoDompurify.sanitize(data);
+  const processed = _clean;
+  const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+  res.send(page);
 }
 
 module.exports = { BenchmarkTest00331 };

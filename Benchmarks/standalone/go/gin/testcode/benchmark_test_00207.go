@@ -2,33 +2,28 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"regexp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00207(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
-		return
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	uploadName := header.Filename
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
 	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(uploadName)
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
-		return
-	}
-	processed := data
-	query := fmt.Sprintf("SELECT * FROM users ORDER BY %s", processed)
-	rows, err := DB.Query(query)
+	data, _ := unpack(graphqlVar)
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(data, 10, 32)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusBadRequest, "invalid quantity")
 		return
 	}
-	defer rows.Close()
+	lineTotal := int32(quantity) * unitPriceCents
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
 	c.JSON(200, gin.H{"code": "OK"})
 }

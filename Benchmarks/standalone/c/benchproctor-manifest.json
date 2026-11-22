@@ -1,7 +1,8 @@
 {
   "benchmark": "benchproctor",
   "frameworks": [
-    "standalone"
+    "standalone",
+    "standalone-legacy"
   ],
   "language": "c",
   "scorer": {
@@ -11,15 +12,18 @@
   "suites": {
     "standalone": {
       "categories": 19,
-      "csv_sha256": "17f0062489397fb430d3e04830172ffafd57bc6d10c0990dd3e42cbef40a4c5e",
-      "expectedresults_csv": "expectedresults-2026.11.19.1.csv",
+      "csv_sha256": "795dffee5cbe3569d5e60b31d82ef9ec361979993a61fe9e264129f109c02c87",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "C17",
       "prerequisites": [
         {
           "debian": "libssl-dev",
           "fedora": "openssl-devel",
-          "files": 120,
+          "files": 69,
           "headers": [
             "openssl/evp.h",
+            "openssl/hmac.h",
             "openssl/md5.h",
             "openssl/rand.h",
             "openssl/sha.h"
@@ -29,7 +33,7 @@
         {
           "debian": "libsqlite3-dev",
           "fedora": "sqlite-devel",
-          "files": 60,
+          "files": 30,
           "headers": [
             "sqlite3.h"
           ],
@@ -38,19 +42,63 @@
         {
           "debian": "libcurl4-openssl-dev",
           "fedora": "libcurl-devel",
-          "files": 32,
+          "files": 20,
           "headers": [
             "curl/curl.h"
           ],
           "library": "libcurl"
         }
       ],
-      "published_files": 1140,
-      "safe": 570,
-      "total": 1140,
-      "vulnerable": 570
+      "published_files": 570,
+      "safe": 285,
+      "total": 570,
+      "vulnerable": 285
+    },
+    "standalone-legacy": {
+      "categories": 19,
+      "csv_sha256": "14620a16b26f3a449ad9c583111fadfce5d953e15c22c165fdb7917cf8dcdee9",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "C99",
+      "prerequisites": [
+        {
+          "debian": "libssl-dev",
+          "fedora": "openssl-devel",
+          "files": 70,
+          "headers": [
+            "openssl/evp.h",
+            "openssl/hmac.h",
+            "openssl/md5.h",
+            "openssl/rand.h",
+            "openssl/sha.h"
+          ],
+          "library": "OpenSSL"
+        },
+        {
+          "debian": "libsqlite3-dev",
+          "fedora": "sqlite-devel",
+          "files": 30,
+          "headers": [
+            "sqlite3.h"
+          ],
+          "library": "SQLite 3"
+        },
+        {
+          "debian": "libcurl4-openssl-dev",
+          "fedora": "libcurl-devel",
+          "files": 20,
+          "headers": [
+            "curl/curl.h"
+          ],
+          "library": "libcurl"
+        }
+      ],
+      "published_files": 570,
+      "safe": 285,
+      "total": 570,
+      "vulnerable": 285
     }
   },
   "tier": "curated",
-  "version": "2026.11.19.1"
+  "version": "2026.11.22"
 }

@@ -3,18 +3,30 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
+	"os"
 )
 
 func BenchmarkTest00261(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(authHeader)
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	cookieValue := cookieObj.Value
+	var data string
+	if cookieValue != "" {
+		data = cookieValue
+	}
+	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
+	if !allowed[data] {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	checkedPath := "/var/app/data/" + data
+	content, err := os.ReadFile(checkedPath)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.Write(content)
 }

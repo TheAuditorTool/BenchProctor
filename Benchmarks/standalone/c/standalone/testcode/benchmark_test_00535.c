@@ -9,14 +9,11 @@
 
 void benchmark_test_00535(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _dst[16];
-    size_t _n = strlen(data);
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    memcpy(_dst, data, _n);
-    _dst[_n] = '\0';
-    printf("%s\n", _dst);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char *_found = strchr(data, '=');
+    if (_found != NULL) printf("%c\n", *_found);
 }

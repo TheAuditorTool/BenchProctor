@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
+import numpy as np
 import os
-from flask import Flask, make_response
-from flask import jsonify
-from app_runtime import db
+from flask import Flask, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,9 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00062", methods=["POST"])
 def BenchmarkTest00062():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    parts = str(db_value).split(',')
-    data = ' '.join(parts)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    env_value = os.environ.get('APP_INPUT', '')
+    data = env_value if env_value else 'default'
+    quantity = int(str(data))
+    total_cents = np.int32(quantity) * np.int32(1999)
+    return jsonify({'total_cents': int(total_cents)}), 200

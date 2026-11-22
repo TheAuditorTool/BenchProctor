@@ -1,15 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ctypes
+import hashlib
 
 
 def BenchmarkTest00149(request):
-    multipart_value = request.POST.get('multipart_field', '')
-    pending = list(str(multipart_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JsonResponse({'wrapped': wrapped}, status=200)
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    digest = hashlib.sha3_256(str(ua_value).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

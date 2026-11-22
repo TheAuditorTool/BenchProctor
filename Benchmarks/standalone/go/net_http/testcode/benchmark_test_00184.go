@@ -2,33 +2,15 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"os/exec"
-	"regexp"
 )
 
 func BenchmarkTest00184(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	jsonValue := reqBody.Payload
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(jsonValue)
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
-		return
-	}
-	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(output)
+	userID := r.URL.Query().Get("id")
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", userID, apiToken)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": apiToken})
 }

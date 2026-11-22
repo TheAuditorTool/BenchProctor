@@ -14,13 +14,9 @@ void benchmark_test_00398(int argc, char **argv)
     if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_dst = malloc(16);
-    if (_dst == NULL) return;
-    size_t _n = strlen(data);
-    if (_n > 15) _n = 15;
-    memcpy(_dst, data, _n);
-    _dst[_n] = '\0';
-    printf("%s\n", _dst);
-    free(_dst);
+    long _req = strtol(data, NULL, 10);
+    if (_req < 0 || _req > 2147483646L) return;
+    long _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

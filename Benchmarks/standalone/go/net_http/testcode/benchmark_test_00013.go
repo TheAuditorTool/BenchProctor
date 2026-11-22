@@ -2,15 +2,27 @@
 package testcode
 
 import (
-	"encoding/json"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 func BenchmarkTest00013(w http.ResponseWriter, r *http.Request) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	relayPrefix := ""
+	if len(commentText) > 0 {
+		relayPrefix = strings.ToLower(commentText[:1])
 	}
-	json.NewDecoder(r.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	http.Redirect(w, r, graphqlVar, http.StatusFound)
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = commentText
+	case "f":
+		data = commentText
+	default:
+		data = commentText
+	}
+	w.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; HttpOnly; SameSite=Strict")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

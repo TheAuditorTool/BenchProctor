@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
+const libxmljs = require("libxmljs");
 
 const BenchmarkTest00237 = async (ctx) => {
-  const userInput = ctx.params.id || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  childProcess.execSync("echo " + data);
+  const userInput = ctx.request.body || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
   ctx.body = { ack: true };
 }
 

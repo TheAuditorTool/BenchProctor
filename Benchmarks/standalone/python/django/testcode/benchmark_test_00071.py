@@ -5,9 +5,7 @@ from app_runtime import db
 
 def BenchmarkTest00071(request):
     cookie_value = request.COOKIES.get('session_token', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(cookie_value)
+    data = '{}'.format(cookie_value)
     result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
     value = result['name']
     return JsonResponse({'name': str(value)}, status=200)

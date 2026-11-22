@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
+import random
 from flask import Flask, request, jsonify
-import os
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,9 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00260", methods=["POST"])
 def BenchmarkTest00260():
-    xml_value = request.get_data(as_text=True)
-    def normalize(value):
-        return value.strip()
-    data = normalize(xml_value)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    multipart_value = request.form.get('multipart_field', '')
+    token = '%032x' % random.SystemRandom().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(multipart_value), token))
+    return jsonify({'token': str(token)}), 200

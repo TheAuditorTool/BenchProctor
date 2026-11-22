@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -38,8 +37,6 @@ public class BenchmarkTest00100 {
             try (var stmt = connection.createStatement()) {
                 stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
                 stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-                stmt.execute("CREATE TABLE IF NOT EXISTS kv_cache (k VARCHAR PRIMARY KEY, value VARCHAR DEFAULT '' NOT NULL)");
-                stmt.execute("MERGE INTO kv_cache t USING (VALUES ('user_data', 'cached_value')) s(k, value) ON t.k = s.k WHEN NOT MATCHED THEN INSERT (k, value) VALUES (s.k, s.value)");
             }
         } catch (java.sql.SQLException ignored) {}
     }
@@ -56,13 +53,20 @@ public class BenchmarkTest00100 {
     @Path("/BenchmarkTest00100")
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00100(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cachedValue = java.util.Optional.ofNullable(dbReadColumn("SELECT value FROM kv_cache WHERE k = 'user_data' LIMIT 1")).orElse("");
-        String data;
-        try { data = new String(java.util.Base64.getDecoder().decode(cachedValue), java.nio.charset.StandardCharsets.UTF_8); }
-        catch (IllegalArgumentException base64Ex) { data = cachedValue; }
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeQuery("SELECT * FROM users WHERE id = '" + data + "'");
-        }
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        java.util.Map.Entry<String,String> pair = java.util.Map.entry(userName, "header");
+        String data = pair.getKey();
+        String processed = data.matches("^(admin|user|guest|service)$") ? data : "admin";
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            javax.naming.NamingEnumeration<javax.naming.NameClassPair> groupEntries = ctx.list("cn=" + processed + ",ou=groups,dc=example,dc=com");
+            int groupSize = 0;
+            while (groupEntries.hasMore()) { groupEntries.next(); groupSize++; }
+            response.setHeader("X-Group-Size", String.valueOf(groupSize));
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

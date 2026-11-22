@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 
 export const BenchmarkTest00253 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.origin as string) || "";
-  const data = String(userInput).slice(0, 200);
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  res.json({ allocated: buf.length }); return;
+  const userInput = (req.headers.authorization as string) || "";
+  const data = Buffer.from(userInput, "base64").toString();
+  stream.Readable.from([String(data)]).pipe(crypto.createHash("md5")).setEncoding("hex").on("data", (checksum: string) => console.log("content checksum " + checksum));
+  res.json({ accepted: true });
 }

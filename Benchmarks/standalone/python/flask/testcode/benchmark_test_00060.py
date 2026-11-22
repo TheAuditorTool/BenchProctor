@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from flask import request
-from flask import jsonify
+import io
+import xml.sax
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,6 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00060", methods=["POST"])
 def BenchmarkTest00060():
-    multipart_value = request.form.get('multipart_field', '')
-    data, _sep, _rest = str(multipart_value).partition('\x00')
-    return redirect(str(data))
+    xml_value = request.get_data(as_text=True)
+    data = xml_value if xml_value else 'default'
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return jsonify({"result": "success"})

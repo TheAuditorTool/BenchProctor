@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::response::Json;
 
-pub async fn benchmark_test_00010(headers: HeaderMap) -> impl IntoResponse {
-    let header_value = headers.get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    struct FormData { payload: String }
-    let data = FormData { payload: header_value.clone() }.payload;
-    crate::shared::store_session("data", &data);
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00010() -> impl IntoResponse {
+    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
+    let data = if env_value.len() <= 4096 { env_value.clone() } else { env_value.chars().take(4096).collect() };
+    (StatusCode::FOUND, [(axum::http::header::LOCATION, data.clone())]).into_response()
 }

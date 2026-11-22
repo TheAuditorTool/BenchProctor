@@ -18,10 +18,10 @@ class BenchmarkTest00153 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00153" do
-    user_input = request.env["HTTP_REFERER"].to_s
+    user_input = request.env["HTTP_HOST"].to_s
     payload, _origin = user_input, 'http'
     data = payload
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    response.add_header("set-cookie", Rack::Utils.set_cookie_header("session", { value: data, httponly: true, same_site: :strict }))
     content_type :json
     JSON.generate({ status: "ok" })
   end

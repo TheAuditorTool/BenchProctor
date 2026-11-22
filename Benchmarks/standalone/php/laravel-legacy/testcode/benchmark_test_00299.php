@@ -1,0 +1,23 @@
+<?php
+// SPDX-License-Identifier: Apache-2.0
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class BenchmarkTest00299Controller
+{
+    public function __invoke()
+    {
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $data = (!empty($userInput)) ? $userInput : '';
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        $outbound = new \GuzzleHttp\Psr7\Request('GET', (string)$targetUrl);
+        $http = new \GuzzleHttp\Client(['timeout' => 5]);
+        $upstream = $http->send($outbound);
+        return response()->json(['ok' => 1]);
+    }
+}

@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -14,6 +13,11 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00169 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -31,37 +35,28 @@ public class BenchmarkTest00169 {
         }
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
-                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-                stmt.execute("CREATE TABLE IF NOT EXISTS profiles (id INTEGER PRIMARY KEY, user_id INTEGER DEFAULT 0 NOT NULL, bio VARCHAR DEFAULT '' NOT NULL)");
-                stmt.execute("MERGE INTO profiles t USING (VALUES (1, 1, 'Enjoys hiking'), (2, 2, 'Coffee enthusiast'), (3, 3, 'Site administrator')) s(id, user_id, bio) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, user_id, bio) VALUES (s.id, s.user_id, s.bio)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-    private static String dbReadColumn(String sql) {
-        try (var stmt = connection.createStatement();
-             var rs = stmt.executeQuery(sql)) {
-            return rs.next() ? rs.getString(1) : "";
-        } catch (java.sql.SQLException e) {
-            return "";
-        }
-    }
-
-    @GET
-    @Path("/BenchmarkTest00169")
+    @POST
+    @Path("/BenchmarkTest00169/graphql")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00169(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String profileBio = java.util.Optional.ofNullable(dbReadColumn("SELECT bio FROM profiles LIMIT 1")).orElse("");
-        java.util.function.Supplier<String> valueSupplier = () -> profileBio.strip();
-        String data = valueSupplier.get();
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeQuery("SELECT * FROM users WHERE id = '" + data + "'");
-        }
+    public Response BenchmarkTest00169(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", graphqlVar);
+        String data = sw.toString();
+        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.#%\\-]+$") String value) {}
+        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { return Response.status(400).entity("schema invalid").build(); }
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            javax.naming.NamingEnumeration<javax.naming.NameClassPair> groupEntries = ctx.list("cn=" + data + ",ou=groups,dc=example,dc=com");
+            int groupSize = 0;
+            while (groupEntries.hasMore()) { groupEntries.next(); groupSize++; }
+            response.setHeader("X-Group-Size", String.valueOf(groupSize));
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

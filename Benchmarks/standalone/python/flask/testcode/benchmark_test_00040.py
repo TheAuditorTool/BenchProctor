@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-from flask import Flask, request, jsonify
-import json
+from flask import Flask, request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -20,10 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00040", methods=["POST"])
 def BenchmarkTest00040():
-    origin_value = request.headers.get('Origin', '')
-    try:
-        data = json.loads(origin_value).get('value', origin_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = origin_value
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return jsonify({"result": "success"})
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    with open('/var/app/data/' + str(json_value), 'r') as fh:
+        content = fh.read()
+    return content

@@ -2,20 +2,31 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00276(w http.ResponseWriter, r *http.Request) {
 	hostValue := r.Host
-	data := func(v string) string { return strings.TrimSpace(v) }(hostValue)
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	var data string
+	for _, token := range strings.Split(hostValue, ",") {
+		data = token
+	}
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		http.Error(w, "invalid integer", http.StatusBadRequest)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(boundedVal, 10, 32)
+	if err != nil {
+		http.Error(w, "invalid quantity", http.StatusBadRequest)
+		return
+	}
+	lineTotal := int64(quantity) * int64(unitPriceCents)
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

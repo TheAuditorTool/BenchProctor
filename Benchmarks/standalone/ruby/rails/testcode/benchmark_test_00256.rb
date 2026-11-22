@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
+require "base64"
 
 class BenchmarkTest00256Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +12,15 @@ class BenchmarkTest00256Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00256
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    Marshal.load(data)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
+    _cipher.encrypt
+    _cipher.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))[0, _cipher.key_len]
+    iv = _cipher.random_iv
+    ciphertext = iv + _cipher.update(data.to_s) + _cipher.final + _cipher.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

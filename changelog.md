@@ -7,6 +7,120 @@ replaced: a correction ships as a new release, and a withdrawal is recorded here
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2026.11.22] - 2026-11-22
+
+A new draw of the whole curated release: every folder under `Benchmarks/` carries this version.
+The folders it replaces moved into the archive, which now keeps one zip per release:
+2026.11.19's nine languages and applications joined its C and C++ folders in
+`archive/2026.11.19.zip`, 2026.11.19.1's C and C++ folders are in `archive/2026.11.19.1.zip`, and
+the folder kept for 2026.11.16 became `archive/2026.11.16.zip`. `archive/SHASUMS256.txt` lists the
+SHA-256 of every zip.
+
+### Added
+
+- **API generations.** Every framework is drawn in its API generations, each in its own folder
+  beside the others: the modern line (`<framework>`), an older line that is still widely deployed
+  (`<framework>-legacy`), and the long-term-support line where the project has one
+  (`<framework>-lts`). Spring, Jakarta EE, Django and Symfony have all three; the other targets
+  have legacy and modern. A class is written in each generation the way that line writes it: its
+  framework release, language level and library APIs, including the deprecated APIs an older line
+  still uses (`javax.*` on Java 11, `io/ioutil` on a `go 1.20` module, Express 4's `body-parser`,
+  pydantic 1 validators, SQLAlchemy 1.4, rand 0.8, bash 3.2 idioms, C99 and C++14). The labels and
+  controls are the same in every generation. A target's depth is split across its generations, so
+  the release keeps its size: 46 folders over the 21 targets (21 legacy, 4 long-term support, 21
+  modern), each with its own answer key, build files and pins. Each application is written in one
+  generation of both its services, and each graph's applications are split between legacy and
+  modern. The README lists every line.
+- **Exact, vetted dependencies.** Every dependency manifest pins exact versions (`package.json`,
+  `requirements.txt`, `composer.json`, `Gemfile`, `pom.xml`, `go.mod`, `Cargo.toml`); the
+  applications' Node services ship a `package-lock.json` and their Python services a hashed
+  `requirements.lock`, and every container image is pinned
+  by tag and digest. Versions are the newest stable release of their line published on or before
+  2026-10-22, and a later release is taken only where it fixes a published advisory. The legacy
+  and long-term-support folders use their own lines' releases, so a dependency scanner reports the
+  advisories still open in those lines; they are not part of the ground truth.
+
+### Changed
+
+- **Every weakness class draws from at least three sink forms per side.** In 2026.11.19 most
+  classes outside C and C++ rendered a single sink statement per side: every Python SQL injection
+  case, for example, called `cursor.execute` on a concatenated string, so a tool that models that
+  one call scored the class and a tool that does not scored zero. Each class now ends in at least
+  three distinct sink statements per side (a prepared statement built by concatenation and an ORM
+  raw query beside the plain query, for SQL injection), and no form is more than 60% of a side.
+  The documented exceptions are where a language's own tools offer fewer forms: Bash weak cipher
+  (`openssl enc` and `gpg`), Bash XML external entity (`xmllint` and `xsltproc`, and `xmllint`
+  alone on the safe side), JavaScript and TypeScript deserialization (`node-serialize` and a YAML
+  loader extended with JavaScript types), and PHP deserialization's safe side, where `json_decode`
+  can pass 60%. The applications draw the new forms too.
+- **Safe server-side request forgery cases rely on a destination allowlist.** Resolving a host,
+  checking the address and letting the HTTP client resolve it again is beaten by DNS rebinding,
+  so that check no longer counts as a working control in a safe case. The applications'
+  unvalidated-URL chain is blocked by an allowlist at its entry service in the same way.
+- **The modern generation moves to current releases:** Java 25 with Spring Boot 4.1 and Jakarta EE
+  11; Node 24 with Express 5, Koa 3, NestJS 12 and TypeScript 7; Python 3.14 with Django 6.1 and
+  FastAPI 0.161; PHP 8.5 with Laravel 13 and Symfony 8.1; Ruby 4.0 with Rails 8.1; Go 1.27; Rust
+  edition 2024.
+- **The archive keeps one zip per release.** `archive/<version>.zip` holds that release's
+  folders and its own `SHASUMS256.txt`, written reproducibly, and `archive/SHASUMS256.txt` lists
+  every zip; the latest release stays as plain files under `Benchmarks/`.
+- Every language folder carries the `score_sarif.py` with `--categories` and `--skip-categories`,
+  and its README and `benchproctor-manifest.json` name the generation and line of every folder.
+
+### Fixed
+
+- **Safe cases a crafted URL could get past.** Some safe open redirect and request forgery cases
+  checked the host with a parser that read a URL differently from the browser or the HTTP client
+  (a backslash in Python and PHP, userinfo in Bash). Their checks now refuse those URLs.
+- **PHP column names on MySQL.** Safe SQL injection cases that quote a column name wrote ANSI
+  double quotes by hand. PostgreSQL and SQLite read those as an identifier, but MySQL and MariaDB
+  in their default mode read them as a string, where a backslash in the value ends it early; ten
+  such cases shipped in 2026.11.19 (Laravel and Symfony). They now quote in the connection's own
+  dialect: in Laravel with the driver's quote character, in Symfony with Doctrine's platform
+  quoting.
+- **Identifiers that named the label.** C and C++ safe cases declared a variable named `safe`, and
+  some Java cases used `safeMapper`, `unsafeYamlOpts` and `validatedName`, so a text search could
+  sort them. They now use neutral names, and the release build refuses any such identifier.
+- **A second weakness in some files**, none of which changed a label: Bash weak cipher passed its
+  key on the command line; JavaScript weak cipher used an all-zero key; Bash request forgery cases
+  let a URL starting with `-` act as a `curl` option; C and C++ redirect and cookie cases let CR
+  and LF split the response; the C and C++ "secure" random tokens were one byte long.
+- **Bash integer-overflow safe cases a large value defeated:** with a 19- or 20-digit request, the
+  bound check errored out or wrapped to a negative number. The safe sides now bound the length
+  first.
+- **Application container files that could not build:** the deploy Dockerfiles created their user
+  with BusyBox's `adduser -D` on Debian and Ubuntu bases, which have no such option. Each now uses
+  the command its base image has.
+- **Application services that did not run.** The Jakarta EE services never started: they declared
+  no injection manager for Jersey, looked for their resources with a package scan that cannot read
+  the packaged service, and declared their resource classes where Jersey could not call them, and a
+  resource reading a JSON body had no JSON provider. The Express and NestJS entry services parsed no
+  form or multipart body, and NestJS no raw or XML body, so a handler reading one received nothing.
+  All of this shipped in 2026.11.19. Before this release, applications of every service graph and
+  generation were built, started and sent a request with Docker (see the README's
+  [How the labels are verified](README.md#how-the-labels-are-verified)).
+- `composer.json` in the PHP folders now lists `phpseclib/phpseclib`, which the weak cipher cases
+  use.
+
+Per-language totals:
+
+| Language | Framework targets | Generation folders | Classes per target | Cases |
+|---|---|---:|---:|---:|
+| Java | Spring, Jakarta EE | 6 | 18 | 1,440 |
+| Python | Flask, Django, FastAPI | 7 | 18 | 2,160 |
+| Go | Gin, net/http | 4 | 15 | 1,200 |
+| Rust | Actix-web, Axum | 4 | 15 | 1,200 |
+| TypeScript | NestJS, Express | 4 | 18 | 1,440 |
+| JavaScript | Express, Koa | 4 | 18 | 1,440 |
+| PHP | Laravel, Symfony | 5 | 18 | 1,440 |
+| Ruby | Rails, Sinatra | 4 | 17 | 1,360 |
+| C++ | cpp-httplib, standalone | 4 | 22 | 2,112 |
+| C | standalone | 2 | 19 | 1,140 |
+| Bash | standalone | 2 | 11 | 440 |
+| **All 11 languages** | **21** | **46** | **25 in union** | **15,372** |
+
+Applications: 368 over six graphs, 5,284 labeled flows (1,460 vulnerable, 3,824 safe).
+
 ## [2026.11.19.1] - 2026-11-19 (C and C++)
 
 A deeper C and C++ draw, published the same day as 2026.11.19. Only `Benchmarks/standalone/c` and

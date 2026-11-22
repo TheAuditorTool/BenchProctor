@@ -2,30 +2,34 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00232(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	relayPrefix := ""
-	if len(forwardedIP) > 0 {
-		relayPrefix = strings.ToLower(forwardedIP[:1])
+	refererValue := c.GetHeader("Referer")
+	segments := strings.Split(refererValue, ",")
+	data := strings.Join(segments, " ")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9_.#\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = forwardedIP
-	case "f":
-		data = forwardedIP
-	default:
-		data = forwardedIP
+	processed := data
+	lookupStmt, err := DB.Prepare("SELECT id, name FROM users WHERE name = '" + processed + "'")
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

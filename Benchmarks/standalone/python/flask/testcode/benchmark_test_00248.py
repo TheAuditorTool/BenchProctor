@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
+import ldap
+import jsonschema
+from dataclasses import dataclass
+from flask import Flask, jsonify
 import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from app_runtime import db
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,12 +28,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00248", methods=["POST"])
 def BenchmarkTest00248():
-    user_id = request.args.get('id', '')
-    pending = list(str(user_id).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    form = FormData(payload=comment_value)
+    data = form.payload
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.#%\\-]+$"})
+    except jsonschema.ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    return jsonify({"result": "success"})

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-import ctypes
+import secrets
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -17,14 +18,13 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00197", methods=["POST"])
-def BenchmarkTest00197():
-    origin_value = request.headers.get('Origin', '')
-    pending = list(str(origin_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return jsonify({'wrapped': wrapped}), 200
+@app.route("/BenchmarkTest00197/<path_param>", methods=["POST"])
+def BenchmarkTest00197(path_param):
+    path_value = path_param
+    if path_value:
+        data = path_value
+    else:
+        data = ''
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

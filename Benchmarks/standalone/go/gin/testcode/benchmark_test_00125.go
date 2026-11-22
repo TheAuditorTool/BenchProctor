@@ -2,30 +2,37 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"os/exec"
+	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00125(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	var data string
-	if uaValue != "" {
-		data = uaValue
-	}
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
+	pathValue := c.Param("id")
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(pathValue)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
+	targetUrl := data
+	upstreamReq, err := http.NewRequest(http.MethodGet, targetUrl, nil)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.Data(200, "text/plain", output)
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		c.String(http.StatusBadGateway, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

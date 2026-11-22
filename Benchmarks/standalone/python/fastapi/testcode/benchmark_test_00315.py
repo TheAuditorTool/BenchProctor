@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
+import random
 from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,7 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00315")
 async def BenchmarkTest00315(request: Request):
-    host_value = request.headers.get('host', '')
-    data = f'{host_value!s}'
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    data = str(upload_name).replace('\x00', '')
+    token = '%032x' % random.Random().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

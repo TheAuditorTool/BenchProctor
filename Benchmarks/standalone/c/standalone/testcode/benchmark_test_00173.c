@@ -7,22 +7,17 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00173(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char *_p = malloc(16);
-    if (_p == NULL) return;
-    strcpy(_p, "pending");
-    printf("%s\n", _p);
-    free(_p);
-    _p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    printf("%s\n", _p);
-    free(_p);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("DB_ROW_VALUE");
+    if (user_input == NULL) user_input = "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    char _dst[32];
+    snprintf(_dst, sizeof(_dst), "user=%s", data);
+    puts(_dst);
 }

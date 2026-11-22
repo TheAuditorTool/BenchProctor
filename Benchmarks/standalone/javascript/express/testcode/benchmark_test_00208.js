@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
 
 async function BenchmarkTest00208(req, res) {
-  const userInput = (await require("./shared").mq.receive("app-events"));
-  const data = String(userInput).replace(/\u0000/g, "");
-  http.get(data);
-  res.json({ done: true });
+  const userInput = req.query.id || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const { quota } = planQuotas.get(String(data));
+  res.json({ quota }); return;
 }
 
 module.exports = { BenchmarkTest00208 };

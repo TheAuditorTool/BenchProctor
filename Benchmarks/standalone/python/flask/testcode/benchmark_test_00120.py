@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
+from pathlib import Path
 from flask import Flask, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -18,9 +17,14 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00120", methods=["POST"])
-def BenchmarkTest00120():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '{}'.format(db_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+@app.route("/BenchmarkTest00120/<path_param>", methods=["POST"])
+def BenchmarkTest00120(path_param):
+    path_value = path_param
+    data, _sep, _rest = str(path_value).partition('\x00')
+    base = Path('/var/app/data').resolve()
+    candidate = (base / data).resolve()
+    if base not in candidate.parents and candidate != base:
+        return jsonify({'error': 'forbidden'}), 403
+    checked_path = str(candidate)
+    Path(checked_path).write_text('data')
     return jsonify({"result": "success"})

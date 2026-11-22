@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
-import json
+import numpy as np
+from urllib.parse import unquote
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,11 +20,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00178", methods=["POST"])
 def BenchmarkTest00178():
-    user_id = request.args.get('id', '')
+    field_value = request.form.get('field', '')
+    data = unquote(field_value)
     try:
-        data = json.loads(user_id).get('value', user_id)
-    except (json.JSONDecodeError, AttributeError):
-        data = user_id
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    quantity = int(processed)
+    total_cents = np.int64(min(quantity, 100000)) * np.int64(1999)
+    return jsonify({'total_cents': int(total_cents)}), 200

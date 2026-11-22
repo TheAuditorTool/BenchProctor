@@ -8,12 +8,13 @@ class BenchmarkTest00013Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $errno = 0; $errstr = '';
-        fsockopen((string)$data, 80, $errno, $errstr, 30);
+        $userInput = $request->getContent();
+        $data = vsprintf('%1$s', [$userInput]);
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $data . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
         return response()->json(['ok' => 1]);
     }
 }

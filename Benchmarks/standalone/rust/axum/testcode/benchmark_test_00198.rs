@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Form;
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
-use std::collections::HashMap;
 
-pub async fn benchmark_test_00198(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let data = if field_value.len() <= 4096 { field_value.clone() } else { field_value.chars().take(4096).collect() };
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    return ([("content-type", "text/html")], format!("<div>{}</div>", processed)).into_response();
+pub async fn benchmark_test_00198(headers: HeaderMap) -> impl IntoResponse {
+    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = referer_value.to_string();
+    let _chunk = format!("<div>{}</div>", data);
+    return ([("content-type", "text/html; charset=utf-8")], axum::body::Body::from_stream(futures_util::stream::once(async move { Ok::<_, std::convert::Infallible>(_chunk) }))).into_response();
 }

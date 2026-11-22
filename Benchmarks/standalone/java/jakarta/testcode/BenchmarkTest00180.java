@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -32,15 +31,18 @@ public class BenchmarkTest00180 {
     }
 
     @GET
-    @Path("/BenchmarkTest00180")
+    @Path("/BenchmarkTest00180/{pathId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00180(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : cookieValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        String setCookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + setCookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+    public Response BenchmarkTest00180(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        java.util.function.Supplier<String> valueSupplier = () -> pathValue.strip();
+        String data = valueSupplier.get();
+        String ticketRef;
+        try (java.util.Scanner ticketScan = new java.util.Scanner(data)) {
+            ticketRef = ticketScan.findInLine("TCK-[0-9]{6}");
+        }
+        String ticketNumber = ticketRef.substring(4);
+        response.setHeader("X-Ticket-Number", ticketNumber);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

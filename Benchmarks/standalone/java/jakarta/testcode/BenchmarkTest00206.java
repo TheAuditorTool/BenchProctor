@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,20 +30,21 @@ public class BenchmarkTest00206 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00206")
+    @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00206(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data;
-        try { data = new String(java.util.Base64.getDecoder().decode(authHeader), java.nio.charset.StandardCharsets.UTF_8); }
-        catch (IllegalArgumentException base64Ex) { data = authHeader; }
-        java.nio.file.Path base = java.nio.file.Paths.get("/var/app/data");
-        java.nio.file.Path resolved = base.resolve(data).normalize();
-        if (!resolved.startsWith(base)) { return Response.status(403).build(); }
-        String checkedPath = resolved.toString();
-        String content = Files.readString(Paths.get(checkedPath), java.nio.charset.StandardCharsets.UTF_8);
-        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+    public Response BenchmarkTest00206(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        java.util.function.Supplier<String> valueSupplier = () -> xmlValue.strip();
+        String data = valueSupplier.get();
+        String ticketRef;
+        try (java.util.Scanner ticketScan = new java.util.Scanner(data)) {
+            ticketRef = ticketScan.findInLine("TCK-[0-9]{6}");
+        }
+        if (ticketRef == null) { return Response.status(400).entity("no ticket reference").build(); }
+        String ticketNumber = ticketRef.substring(4);
+        response.setHeader("X-Ticket-Number", ticketNumber);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const { db } = require("./shared");
 
 async function BenchmarkTest00103(req, res) {
-  const userInput = req.body.field || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ done: true });
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const requested = boundedVal;
+  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
+  const buf = Buffer.alloc(requested + 1);
+  res.json({ allocated: buf.length }); return;
 }
 
 module.exports = { BenchmarkTest00103 };

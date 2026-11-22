@@ -3,25 +3,35 @@
 #include <string>
 #include <cstdlib>
 
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
+struct berval { unsigned long bv_len; char *bv_val; };
+extern "C" int ldap_compare_ext_s(LDAP *, const char *, const char *, struct berval *, void *, void *);
+enum { LDAP_COMPARE_TRUE = 6 };
+
 void benchmark_test_00430(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("USER_COMMENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
     }
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _dn = std::string("uid=") + data + ",ou=people,dc=example,dc=com";
+    struct berval _role = { 5, const_cast<char *>("admin") };
+    int _rc = ldap_compare_ext_s(_ld, _dn.c_str(), "employeeType", &_role, nullptr, nullptr);
+    std::cout << (_rc == LDAP_COMPARE_TRUE ? "admin" : "user") << std::endl;
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
 }

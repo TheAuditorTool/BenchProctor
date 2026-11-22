@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
+import io
+import xml.sax
+import defusedxml.sax
 from flask import Flask, request, jsonify
 
 
@@ -19,7 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00300", methods=["POST"])
 def BenchmarkTest00300():
-    forwarded_ip = request.headers.get('X-Forwarded-For', '')
-    data = '%s' % (forwarded_ip,)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    field_value = request.form.get('field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(field_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return jsonify({"result": "success"})

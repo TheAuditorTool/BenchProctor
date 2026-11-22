@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <cstdio>
+#include <unistd.h>
+#include <functional>
 #include <unordered_map>
 
 namespace httplib {
@@ -12,10 +13,15 @@ struct Request {
     std::unordered_map<std::string, std::string> path_params;
     std::string body;
 };
+struct DataSink {
+    std::function<bool(const char *, size_t)> write;
+    std::function<void()> done;
+};
 struct Response {
     void set_content(const std::string &s, const std::string &type);
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
+    void set_chunked_content_provider(const std::string &content_type, std::function<bool(size_t, DataSink &)> provider) { std::string _chunks; DataSink _sink; _sink.write = [&_chunks](const char *_d, size_t _n) { _chunks.append(_d, _n); return true; }; _sink.done = [] {}; provider(0, _sink); set_content(_chunks, content_type); }
     int status;
 };
 struct Result {};
@@ -25,18 +31,25 @@ struct Client {
 };
 }
 
-void benchmark_test_00006(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00006(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    char _dst[16];
-    size_t _n = data.size();
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_param_value("id");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string arg;
+    for (char _c : data) {
+        if (_c == '&') arg += "&amp;";
+        else if (_c == '<') arg += "&lt;";
+        else if (_c == '>') arg += "&gt;";
+        else if (_c == '"') arg += "&quot;";
+        else if (_c == '\'') arg += "&#39;";
+        else arg.push_back(_c);
+    }
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>";
+    res.set_chunked_content_provider("text/html", [_html](size_t, httplib::DataSink &_sink) {
+        _sink.write(_html.data(), _html.size());
+        _sink.done();
+        return true;
+    });
 }

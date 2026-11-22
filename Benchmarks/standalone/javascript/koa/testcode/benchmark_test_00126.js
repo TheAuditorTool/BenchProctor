@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00126 = async (ctx) => {
-  const userInput = ctx.request.headers["x-forwarded-for"] || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  JSON.parse(data);
+  const userInput = ctx.request.headers["user-agent"] || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  ctx.cookies.set("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
   ctx.body = { ack: true };
 }
 

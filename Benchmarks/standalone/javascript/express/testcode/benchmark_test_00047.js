@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
 
 async function BenchmarkTest00047(req, res) {
   const userInput = req.headers.referer || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  http.get(targetUrl);
+  const data = userInput != null ? userInput : '';
+  const { Sequelize, DataTypes } = require("sequelize");
+  const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
+  const User = _sequelize.define("User", { name: DataTypes.STRING }, { tableName: "users", timestamps: false });
+  await User.findAll({ where: _sequelize.literal("name = '" + data + "'") });
   res.json({ done: true });
 }
 

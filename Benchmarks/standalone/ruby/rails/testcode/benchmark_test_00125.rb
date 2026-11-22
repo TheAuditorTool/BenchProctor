@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00125Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,19 +12,14 @@ class BenchmarkTest00125Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00125
-    user_input = User.first&.name.to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
+    user_input = request.headers["Authorization"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    cookie_value = CGI.escape(data.to_s)
+    response.set_header("Set-Cookie", "session=" + cookie_value + "; Path=/; Secure; HttpOnly; SameSite=Strict")
+    render json: { status: "ok" }
   end
 end

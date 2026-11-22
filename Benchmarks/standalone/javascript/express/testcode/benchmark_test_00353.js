@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00353(req, res) {
-  const userInput = req.cookies.session_token || "";
-  const _input = String(userInput);
-  let data;
-  switch (_input.startsWith('{') ? 'json' : 'text') {
-    case 'json': data = _input.normalize('NFC'); break;
-    default: data = _input; break;
-  }
-  eval(data);
+  const userInput = (await require("./shared").mq.receive("app-events"));
+  const data = String(userInput).replace(/\u0000/g, "");
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const targetUrl = data;
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+  await axios.request(outbound);
   res.json({ done: true });
 }
 

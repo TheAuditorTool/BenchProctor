@@ -2,17 +2,27 @@
 package testcode
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
+	"os/exec"
 	"strings"
 )
 
 func BenchmarkTest00197(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	var data string
-	for _, token := range strings.Split(commentText, ",") {
-		data = token
+	var reqBody struct {
+		Payload string `json:"payload"`
 	}
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	jsonValue := reqBody.Payload
+	data := func(v string) string { return strings.TrimSpace(v) }(jsonValue)
+	cmd := exec.Command("sh", "-c", "echo "+data)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(output)
 }

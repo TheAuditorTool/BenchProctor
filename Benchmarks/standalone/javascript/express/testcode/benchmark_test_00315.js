@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00315(req, res) {
-  const userInput = req.body || "";
-  let data;
-  try { data = JSON.parse(userInput).value || ""; }
-  catch (e) { data = String(userInput); }
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  childProcess.execSync("echo " + processed);
+  const userInput = (await require("./shared").mq.receive("app-events"));
+  const data = nodeUtil.format("%s", userInput);
+  const { drizzle } = require("drizzle-orm/better-sqlite3");
+  const { sql } = require("drizzle-orm");
+  const Database = require("better-sqlite3");
+  const _drizzle = drizzle({ client: new Database(":memory:") });
+  await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
   res.json({ done: true });
 }
 

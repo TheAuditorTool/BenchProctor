@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00226Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->getContent();
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        return redirect($data);
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        return \Illuminate\Support\Facades\Redirect::away((string)$data);
     }
 }

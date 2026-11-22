@@ -2,19 +2,23 @@
 package testcode
 
 import (
-	"bytes"
+	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
-
-	"github.com/yuin/goldmark"
 )
 
 func BenchmarkTest00077(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	data := func(v string) string { return strings.TrimSpace(v) }(uaValue)
-	var mdBuf bytes.Buffer
-	goldmark.New().Convert([]byte(data), &mdBuf)
-	processed := mdBuf.String()
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	jsonValue := reqBody.Payload
+	capture := func() string { return strings.TrimSpace(jsonValue) }
+	data := capture()
+	os.Remove("/var/app/data/" + data)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-import json
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
+from starlette.responses import JSONResponse
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -22,8 +24,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00241")
 async def BenchmarkTest00241(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    data = '{}'.format(graphql_var)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+    xml_value = (await request.body()).decode('utf-8')
+    if xml_value:
+        data = xml_value
+    else:
+        data = ''
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

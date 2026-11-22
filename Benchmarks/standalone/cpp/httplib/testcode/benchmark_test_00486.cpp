@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,19 +24,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct Payload { std::string value; };
 
 void benchmark_test_00486(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
-    Payload _pd{user_input};
-    std::string data = _pd.value;
-    char *_p = new char[16];
-    std::strcpy(_p, "pending");
-    std::cout << _p << std::endl;
-    _p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string user_input = req.body;
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    const char *_sp_argv[] = { "sh", "-c", data.c_str(), nullptr };
+    char *const _sp_env[] = { nullptr };
+    pid_t _pid;
+    if (posix_spawn(&_pid, "/bin/sh", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
     res.set_content("ok", "text/plain");
 }

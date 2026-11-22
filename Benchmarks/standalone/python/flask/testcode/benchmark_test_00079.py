@@ -1,11 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
-from flask import request, jsonify
+import ctypes
+from flask import Flask, request, jsonify
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,7 +26,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00079", methods=["POST"])
 def BenchmarkTest00079():
-    user_id = request.args.get('id', '')
-    data = str(user_id).replace('\x00', '')
-    session['data'] = str(data)
-    return jsonify({"result": "success"})
+    origin_value = request.headers.get('Origin', '')
+    data = RequestPayload(origin_value).value
+    count = int(str(data))
+    records = ctypes.create_string_buffer(ctypes.c_uint32(count * 64).value)
+    return jsonify({'allocated': len(records)}), 200

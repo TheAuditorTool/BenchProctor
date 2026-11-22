@@ -2,19 +2,23 @@
 package testcode
 
 import (
-	"net"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func BenchmarkTest00154(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	var data string
-	if authHeader != "" {
-		data = authHeader
+	originValue := r.Header.Get("Origin")
+	data := originValue
+	if _, after, ok := strings.Cut(originValue, ","); ok {
+		data = after
 	}
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
+	if !allowed[data] {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
 	}
+	checkedPath := "/var/app/data/" + data
+	os.WriteFile(checkedPath, []byte("data"), 0644)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

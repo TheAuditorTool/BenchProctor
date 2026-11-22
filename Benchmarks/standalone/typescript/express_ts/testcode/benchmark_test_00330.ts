@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as crypto from "crypto";
+import * as net from "net";
+import { createClient } from "redis";
 
 export const BenchmarkTest00330 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.referer as string) || "";
-  const parts: string[] = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data: string = parts.join(',');
-  crypto.createHash("md5").update(data).digest("hex");
+  const _cache = createClient({ url: "redis://cache:6379" });
+  await _cache.connect();
+  const userInput = (await _cache.get("user_data")) || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  net.connect(80, new URL(String(data)).hostname);
   res.json({ accepted: true });
 }

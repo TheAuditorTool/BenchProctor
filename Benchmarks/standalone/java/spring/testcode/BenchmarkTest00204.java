@@ -20,17 +20,16 @@ public class BenchmarkTest00204 {
     }
 
     @GetMapping("/BenchmarkTest00204")
-    public void BenchmarkTest00204(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data = String.join(" ", envValue.split("[ \\t]+"));
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+    public void BenchmarkTest00204(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Properties property = new java.util.Properties();
+        property.setProperty("value", cookieValue);
+        String data = property.getProperty("value", "");
+        org.apache.hc.client5.http.classic.methods.HttpGet fetchRequest = new org.apache.hc.client5.http.classic.methods.HttpGet(data);
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient fetchClient = org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            int fetchStatus = fetchClient.execute(fetchRequest, fetchResponse -> fetchResponse.getCode());
+            response.setHeader("X-Fetch-Status", String.valueOf(fetchStatus));
+        }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

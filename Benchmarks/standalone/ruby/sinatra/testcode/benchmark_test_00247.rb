@@ -4,7 +4,6 @@ require "json"
 require "uri"
 require "openssl"
 require "dry/schema"
-require "nokogiri"
 
 class BenchmarkTest00247 < Sinatra::Base
   before do
@@ -20,15 +19,15 @@ class BenchmarkTest00247 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00247" do
-    user_input = params[:q].to_s
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
     data = "#{user_input}"
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%~\-]+\z/) }
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.\-]+\z/) }
     unless schema.call(value: data.to_s).success?
       halt 400, JSON.generate({ error: "invalid" })
       return
     end
     processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    settings.set(:announcement, processed.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

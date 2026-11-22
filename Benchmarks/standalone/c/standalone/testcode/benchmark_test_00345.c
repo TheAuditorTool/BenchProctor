@@ -7,14 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00345(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    size_t _n = strlen(data);
+    char *_p = malloc(_n + 1);
+    if (_p == NULL) return;
+    memcpy(_p, data, _n + 1);
+    printf("%s\n", _p);
+    free(_p);
+    memset(_p, 0, _n + 1);
 }

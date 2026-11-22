@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as nodeSerialize from "node-serialize";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,16 +18,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00084")
-  async BenchmarkTest00084(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
+  async BenchmarkTest00084(@Req() req: Request): Promise<unknown> {
+    const userInput = (req.body as string) || "";
+    const _input = String(userInput);
     let data;
-    try { data = JSON.parse(userInput).value || userInput; }
-    catch (e) { data = userInput; }
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    nodeSerialize.unserialize(data);
+    return { created: true };
   }
 }

@@ -2,9 +2,8 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"encoding/json"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"strings"
 
@@ -12,15 +11,11 @@ import (
 )
 
 func BenchmarkTest00299(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
-	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", graphqlVar)
-	data := relayBuilder.String()
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	uaValue := c.GetHeader("User-Agent")
+	capture := func() string { return strings.TrimSpace(uaValue) }
+	data := capture()
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	c.JSON(http.StatusOK, map[string]string{"token": apiToken})
 }

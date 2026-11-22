@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
+use tokio::process::Command;
 
 #[actix_web::post("/benchmark_test_00237")]
-pub async fn benchmark_test_00237(body: web::Bytes) -> HttpResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let (payload, _origin) = (json_value.clone(), "http");
-    let data = payload;
-    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00237(req: HttpRequest) -> HttpResponse {
+    let header_value = req.headers().get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = String::from_utf8_lossy(&hex::decode(&header_value).unwrap_or_default()).to_string();
+    if !["ls", "cat", "date", "whoami"].contains(&data.as_str()) { return HttpResponse::Forbidden().finish(); }
+    let processed = data.clone();
+    if let Ok(mut _interp) = Command::new("bash").arg("-s").stdin(std::process::Stdio::piped()).spawn() {
+        if let Some(mut _script) = _interp.stdin.take() {
+            use tokio::io::AsyncWriteExt;
+            _script.write_all(format!("echo {}\n", processed).as_bytes()).await.ok();
+        }
+        _interp.wait().await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

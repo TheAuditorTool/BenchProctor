@@ -3,20 +3,19 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
+
+extern "C" int RAND_bytes(unsigned char *buf, int num);
 
 void benchmark_test_00370(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    char *_p = new char[16];
-    std::strcpy(_p, "pending");
-    std::cout << _p << std::endl;
-    _p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    delete[] _p;
+    unsigned char _rnd[16];
+    if (RAND_bytes(_rnd, sizeof(_rnd)) != 1) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
 }

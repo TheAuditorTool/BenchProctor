@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from app_runtime import db
+from flask import Flask, request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -19,14 +19,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00126", methods=["POST"])
 def BenchmarkTest00126():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    def normalize(value):
-        return value.strip()
-    data = normalize(db_value)
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    exec(str(processed))
-    return jsonify({"result": "success"})
+    origin_value = request.headers.get('Origin', '')
+    data, _sep, _rest = str(origin_value).partition('\x00')
+    return '', 302, {'Location': str(data)}

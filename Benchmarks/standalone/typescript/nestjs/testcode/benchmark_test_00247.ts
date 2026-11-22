@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Post } from "@nestjs/common";
+import { Controller, Post, Query, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,11 +17,19 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00247")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00247(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    return "<div>" + data + "</div>";
+  async BenchmarkTest00247(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const _input = String(userInput);
+    let data;
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const requested = boundedVal;
+    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
+    const buf = Buffer.alloc(requested + 1);
+    return { allocated: buf.length };
   }
 }

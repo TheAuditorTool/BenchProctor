@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as net from "net";
+import * as shared from "./shared";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { sql } from "drizzle-orm";
+import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,10 +22,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00215")
-  async BenchmarkTest00215(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const data = `${userInput}`;
-    net.connect(80, new URL(String(data)).hostname);
+  async BenchmarkTest00215(): Promise<unknown> {
+    const userInput = (await shared.mq.receive("app-events"));
+    const data = nodeUtil.format("%s", userInput);
+    const _drizzle = drizzle({ client: new Database(":memory:") });
+    await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
     return { created: true };
   }
 }

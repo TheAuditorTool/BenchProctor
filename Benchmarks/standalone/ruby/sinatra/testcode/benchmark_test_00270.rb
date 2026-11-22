@@ -18,11 +18,11 @@ class BenchmarkTest00270 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00270" do
-    user_input = params[:q].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    response.add_header("set-cookie", Rack::Utils.set_cookie_header("session", { value: data, secure: true, httponly: true, same_site: :strict }))
     content_type :json
     JSON.generate({ status: "ok" })
   end

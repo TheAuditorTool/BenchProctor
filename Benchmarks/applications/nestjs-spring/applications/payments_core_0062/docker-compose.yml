@@ -1,9 +1,8 @@
 services:
-  payout-service:
-    build: ./services/payout-service
+  mandate-registry:
+    build: ./services/mandate-registry
     environment:
-      - SERVICE_NAME=payout-service
-      - DATABASE_URL=postgres://app:app@db:5432/app
+      - SERVICE_NAME=mandate-registry
       - SESSION_SECRET=placeholder-not-a-real-secret-00
     ports:
       - "3000"
@@ -15,15 +14,12 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-      db:
+      payments-api:
         condition: service_healthy
-      fx-service:
-        condition: service_healthy
-  fx-service:
-    build: ./services/fx-service
+  payments-api:
+    build: ./services/payments-api
     environment:
-      - SERVICE_NAME=fx-service
-      - DATABASE_URL=postgres://app:app@db:5432/app
+      - SERVICE_NAME=payments-api
     ports:
       - "8080"
     healthcheck:
@@ -34,30 +30,13 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-      db:
-        condition: service_healthy
   broker:
-    image: rabbitmq:3.13-management
-    command: ["sh", "-c", "(until rabbitmqadmin declare queue name=app-events durable=true >/dev/null 2>&1; do sleep 2; done; rabbitmqadmin publish routing_key=app-events payload=msg-001 >/dev/null && touch /tmp/seeded) & exec docker-entrypoint.sh rabbitmq-server"]
+    image: rabbitmq:4.3.6-management-alpine@sha256:3505b6096cdbc083bcc363e74366f575ecd0c1a55be4dadcbc60fa08e34647e1
+    command: ["sh", "-c", "(until rabbitmqadmin declare queue --name app-events --durable true >/dev/null 2>&1; do sleep 2; done; rabbitmqadmin publish message --routing-key app-events --payload msg-001 >/dev/null && touch /tmp/seeded) & exec docker-entrypoint.sh rabbitmq-server"]
     ports:
       - "5672"
     healthcheck:
       test: ["CMD-SHELL", "test -f /tmp/seeded && rabbitmq-diagnostics -q check_port_connectivity"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
-  db:
-    image: postgres:16-alpine
-    ports:
-      - "5432"
-    environment:
-      POSTGRES_USER: "app"
-      POSTGRES_PASSWORD: "app"
-      POSTGRES_DB: "app"
-    volumes:
-      - ./db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U app"]
       interval: 5s
       timeout: 3s
       retries: 12

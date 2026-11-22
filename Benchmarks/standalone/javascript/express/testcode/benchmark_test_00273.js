@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeUtil = require("util");
-const nodeSerialize = require("node-serialize");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00273(req, res) {
   const userInput = req.headers["user-agent"] || "";
-  const data = nodeUtil.format("%s", userInput);
-  nodeSerialize.unserialize(data);
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  childProcess.exec("echo " + data, (_err, stdout) => console.log(stdout));
   res.json({ done: true });
 }
 

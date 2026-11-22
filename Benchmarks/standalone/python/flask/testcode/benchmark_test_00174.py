@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from app_runtime import db
+from flask import Flask, current_app
+from flask import request, jsonify
 
 
 app = Flask(__name__)
@@ -19,14 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00174", methods=["POST"])
 def BenchmarkTest00174():
-    ua_value = request.headers.get('User-Agent', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(ua_value)
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    field_value = request.form.get('field', '')
+    parts = str(field_value).split(',')
+    data = ' '.join(parts)
+    current_app.config['ACTIVE_TENANT'] = str(data)
     return jsonify({"result": "success"})

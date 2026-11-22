@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 const ldapjs = require("ldapjs");
 
 async function BenchmarkTest00299(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const userInput = req.headers.referer || "";
   const tokens = String(userInput).split(',').filter((t) => t.length > 0);
   const data = tokens.join(' ');
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
   const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
   ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ done: true });
+  const password = String(req.body?.password ?? "");
+  if (!password) { res.status(400).json({ error: "password required" }); return; }
+  const authenticated = await new Promise((resolve) => {
+    ldapClient.bind("uid=" + processed + ",ou=people,dc=example,dc=com", password, (err) => { ldapClient.unbind(); resolve(!err); });
+  });
+  res.json({ authenticated }); return;
 }
 
 module.exports = { BenchmarkTest00299 };

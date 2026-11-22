@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Query } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
 import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
@@ -19,16 +18,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00138")
-  async BenchmarkTest00138(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  async BenchmarkTest00138(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const _input = String(userInput);
+    let data;
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    crypto.createHash("sha256").update(data).digest("hex");
     return { created: true };
   }
 }

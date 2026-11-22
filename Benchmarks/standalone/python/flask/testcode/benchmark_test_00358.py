@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -22,8 +19,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00358", methods=["POST"])
 def BenchmarkTest00358():
-    referer_value = request.headers.get('Referer', '')
-    data = (lambda v: v.strip())(referer_value)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    parts = []
+    for token in str(graphql_var).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return jsonify({'name': str(value)}), 200

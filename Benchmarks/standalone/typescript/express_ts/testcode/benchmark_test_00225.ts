@@ -2,9 +2,9 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00225 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  req.session.data = String(data);
+  const userInput = (req.body?.payload as string) || "";
+  function normalize(value: string): string { return value.normalize("NFC"); }
+  const data: string = normalize(userInput);
+  res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
   res.json({ accepted: true });
 }

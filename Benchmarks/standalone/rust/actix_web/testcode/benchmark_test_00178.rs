@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use base64::Engine;
+use base64::engine::general_purpose;
 
 #[actix_web::post("/benchmark_test_00178")]
-pub async fn benchmark_test_00178(req: HttpRequest) -> HttpResponse {
-    let host_value = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = host_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| host_value.clone());
-    tokio::fs::write(format!("/var/app/data/{}", data), "data").await.ok();
+pub async fn benchmark_test_00178() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&db_value).unwrap_or_default()).to_string();
+    if !["config.json", "index.html", "readme.md"].contains(&data.as_str()) { return HttpResponse::Forbidden().finish(); }
+    let checked_path = format!("/var/app/data/{}", data);
+    tokio::fs::write(&checked_path, "data").await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -30,14 +30,18 @@ public class BenchmarkTest00126 {
         }
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @GET
+    @POST
     @Path("/BenchmarkTest00126")
+    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00126(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String data = normalize(uaValue);
-        return Response.ok("<div>" + data + "</div>", MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00126(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data;
+        if (rawData.length() > 256) { data = rawData.substring(0, 256); }
+        else { data = rawData; }
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

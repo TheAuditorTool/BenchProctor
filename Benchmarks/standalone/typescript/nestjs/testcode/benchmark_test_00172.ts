@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as libxmljs from "libxmljs";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,10 +19,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00172")
-  async BenchmarkTest00172(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const data = userInput != null ? userInput : '';
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-    return { created: true };
+  async BenchmarkTest00172(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const requested = boundedVal;
+    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
+    const buf = Buffer.alloc(requested + 1);
+    return { allocated: buf.length };
   }
 }

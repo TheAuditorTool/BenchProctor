@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, request, jsonify
+from flask import Flask, current_app
 import re
+from flask import request, jsonify
 
 
 app = Flask(__name__)
@@ -20,10 +20,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00309", methods=["POST"])
 def BenchmarkTest00309():
-    header_value = request.headers.get('X-Custom-Header', '')
-    data = '%s' % str(header_value)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+    ua_value = request.headers.get('User-Agent', '')
+    if ua_value:
+        data = ua_value
+    else:
+        data = ''
+    if not re.fullmatch("^[a-zA-Z0-9 _.\\-]+$", data):
         return jsonify({'error': 'forbidden'}), 400
     processed = data
-    os.system('echo ' + str(processed))
+    current_app.config['ACTIVE_TENANT'] = str(processed)
     return jsonify({"result": "success"})

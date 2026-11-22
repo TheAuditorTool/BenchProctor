@@ -9,12 +9,11 @@ import (
 )
 
 func BenchmarkTest00176(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
-		return
+	fieldValue := c.PostForm("field")
+	var data string
+	for _, token := range strings.Split(fieldValue, ",") {
+		data = token
 	}
-	uploadName := header.Filename
-	data := func(v string) string { return strings.TrimSpace(v) }(uploadName)
-	c.Redirect(http.StatusFound, data)
+	c.Header("Location", data)
+	c.Status(http.StatusSeeOther)
 }

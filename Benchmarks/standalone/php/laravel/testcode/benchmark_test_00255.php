@@ -8,10 +8,13 @@ class BenchmarkTest00255Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        if (!in_array((string)$userInput, ['config.json', 'index.html', 'readme.md'], true)) { return response()->json(['error' => 'forbidden'], 403); }
-        $checkedPath = (string)$userInput;
-        file_put_contents((string)$checkedPath, 'data');
+        $userInput = $request->getContent();
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$data);
+        $price = $item->getAttribute('price');
         return response()->json(['ok' => 1]);
     }
 }

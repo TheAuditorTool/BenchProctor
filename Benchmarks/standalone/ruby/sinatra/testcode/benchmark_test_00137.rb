@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00137 < Sinatra::Base
   before do
@@ -21,10 +18,9 @@ class BenchmarkTest00137 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00137" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    DB.fetch("SELECT * FROM users WHERE id = '" + data + "'").all
+    user_input = params[:id].to_s
+    data = user_input.gsub("\u0000", "")
+    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
     content_type :json
     JSON.generate({ status: "ok" })
   end

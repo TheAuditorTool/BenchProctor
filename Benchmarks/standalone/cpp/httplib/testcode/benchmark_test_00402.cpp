@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <ctime>
+#include <random>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,18 +27,10 @@ struct Client {
 
 void benchmark_test_00402(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    struct { int id; int flags; } _rec = { 0, 0 };
-    _rec.id = std::atoi(data.c_str());
-    std::cout << _rec.id << " " << _rec.flags << std::endl;
+    std::string user_input = req.get_param_value("field");
+    std::mt19937 _gen(static_cast<std::mt19937::result_type>(std::time(nullptr)));
+    std::uniform_int_distribution<int> _dist(0, 999999);
+    int _token = _dist(_gen);
+    std::cout << "token for " << user_input << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

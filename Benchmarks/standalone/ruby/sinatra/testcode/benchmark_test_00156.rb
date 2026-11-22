@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 require "sequel"
 
 DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
@@ -24,9 +23,10 @@ class BenchmarkTest00156 < Sinatra::Base
   post "/benchmark_test_00156" do
     user_input = DB[:users].first&.fetch(:name, "").to_s
     data = JSON.parse(user_input)["value"] rescue ""
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
+    alphabet = [*"a".."z", *"A".."Z", *"0".."9"]
+    token = alphabet.sample(24).join
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

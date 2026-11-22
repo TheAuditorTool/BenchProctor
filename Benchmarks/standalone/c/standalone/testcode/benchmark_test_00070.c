@@ -6,19 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <curl/curl.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00070(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    free(_p);
-    char _first = _p[0];
-    printf("%c\n", _first);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = c_passthrough(user_input);
+    CURLU *_u = curl_url();
+    curl_url_set(_u, CURLUPART_URL, data, 0);
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_CURLU, _u);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
+    curl_url_cleanup(_u);
 }

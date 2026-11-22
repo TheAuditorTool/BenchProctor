@@ -11,10 +11,9 @@ class BenchmarkTest00185Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query->get('id', '');
-        $data = sprintf('%s', $userInput);
-        $resp = new JsonResponse(['ok' => 1]);
-        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
-        return $resp;
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        $data = "{$userInput}";
+        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        return new JsonResponse(["committed" => true]);
     }
 }

@@ -8,13 +8,11 @@ class BenchmarkTest00209Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $data, 'data_updated_at' => time()]);
         return response()->json(['ok' => 1]);
     }
 }

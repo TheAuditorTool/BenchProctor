@@ -2,28 +2,31 @@
 package testcode
 
 import (
+	"encoding/json"
 	"net/http"
-	"regexp"
+	"net/url"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00058(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
-	capture := func() string { return strings.TrimSpace(multipartValue) }
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	capture := func() string { return strings.TrimSpace(graphqlVar) }
 	data := capture()
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	if upstream == nil {
+		c.String(http.StatusNotFound, "unknown service")
 		return
 	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
-	c.JSON(200, gin.H{"code": "OK"})
+	upstreamHost := upstream.Host
+	c.JSON(http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

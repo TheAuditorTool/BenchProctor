@@ -24,15 +24,13 @@ struct Client {
 };
 }
 
-void benchmark_test_00302(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00302(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const int _rec_size = 64;
-    int _count = std::atoi(data.c_str());
-    int _bytes = _count * _rec_size;
-    char *_recs = new (std::nothrow) char[(size_t)_bytes];
-    delete[] _recs;
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    const int _unit_cents = 1999;
+    int _qty = std::atoi(user_input.c_str());
+    int _total = _qty * _unit_cents;
+    std::cout << "total=" << _total << std::endl;
     res.set_content("ok", "text/plain");
 }

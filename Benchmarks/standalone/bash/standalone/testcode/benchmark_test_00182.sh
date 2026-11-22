@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00182() {
-  user_input="$(amqp-get --url="${AMQP_URL:-amqp://guest:guest@broker:5672/%2F}" --queue=app-events 2>/dev/null)"
-  data=$(printf "%b" "$user_input")
-  mysql -e "SELECT * FROM users WHERE id = '$data'"
+  user_input="$APP_INPUT"
+  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
+  data=$(normalize "$user_input")
+  eval echo "~$data"
 }
 
 benchmark_test_00182 "$@"

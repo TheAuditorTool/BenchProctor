@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -14,12 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00075 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -37,23 +30,22 @@ public class BenchmarkTest00075 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00075")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00075(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
+    public Response BenchmarkTest00075(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String prefix = userId.length() > 0 ? userId.substring(0, 1).toLowerCase() : "";
         String data;
-        if (jsonValue.length() > 256) { data = jsonValue.substring(0, 256); }
-        else { data = jsonValue; }
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+        switch (prefix) {
+            case "h": data = userId.toLowerCase(); break;
+            case "f": data = userId.toUpperCase(); break;
+            default: data = userId.strip(); break;
+        }
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
+        String targetUrl = data;
+        return Response.status(Response.Status.FOUND).header("Location", targetUrl).build();
     }
 }

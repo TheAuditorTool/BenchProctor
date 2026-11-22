@@ -1,0 +1,49 @@
+services:
+  carrier-gateway:
+    build: ./services/carrier-gateway
+    environment:
+      - SERVICE_NAME=carrier-gateway
+      - DATABASE_URL=postgres://app:app@db:5432/app
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      db:
+        condition: service_healthy
+      manifest-builder:
+        condition: service_healthy
+  manifest-builder:
+    build: ./services/manifest-builder
+    environment:
+      - SERVICE_NAME=manifest-builder
+      - DATABASE_URL=postgres://app:app@db:5432/app
+    ports:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:18.6-alpine3.23@sha256:dec395d8c09c45609d6deb5c2388a07882d64fa59b1d98c1895792e085f57888
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: "app"
+      POSTGRES_PASSWORD: "app"
+      POSTGRES_DB: "app"
+    volumes:
+      - ./db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

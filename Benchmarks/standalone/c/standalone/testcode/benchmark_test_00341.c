@@ -10,21 +10,24 @@
 void benchmark_test_00341(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
-    char *_p = malloc(strlen(data) + 1);
+    const char *user_input = user_input_buf;
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char *_p = malloc(16);
+    if (_p == NULL) return;
+    strcpy(_p, "pending");
+    printf("%s\n", _p);
+    free(_p);
+    _p = malloc(strlen(data) + 1);
     if (_p == NULL) return;
     strcpy(_p, data);
     printf("%s\n", _p);
-    if (strchr(_p, ';') != NULL) free(_p);
     free(_p);
 }

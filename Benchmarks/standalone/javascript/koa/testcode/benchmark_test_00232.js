@@ -4,10 +4,8 @@ const nodeUtil = require("util");
 const BenchmarkTest00232 = async (ctx) => {
   const userInput = ctx.request.headers.referer || "";
   const data = nodeUtil.format("%s", userInput);
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  ctx.respond = false;
+  return ctx.res.writeHead(303, { Location: String(data) }).end();
 }
 
 module.exports = { BenchmarkTest00232 };

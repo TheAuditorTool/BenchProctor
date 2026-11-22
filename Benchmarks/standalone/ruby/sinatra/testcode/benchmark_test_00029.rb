@@ -18,16 +18,16 @@ class BenchmarkTest00029 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00029" do
-    user_input = params[:q].to_s
-    data = user_input.gsub("\u0000", "")
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
+    user_input = request.body.read
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    unless data =~ /\A[a-zA-Z0-9 _.#~\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
       return
     end
-    target_url = data
-    redirect target_url
+    processed = data
+    content = File.read("/var/app/data/" + processed)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

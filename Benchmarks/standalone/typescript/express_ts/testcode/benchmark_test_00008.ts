@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as shared from "./shared";
+const { db } = shared;
+import * as nodeUtil from "util";
+import knex from "knex";
 
 export const BenchmarkTest00008 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.referer as string) || "";
-  const data = String(userInput).slice(0, 200);
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = nodeUtil.format("%s", userInput);
+  const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
+  await _knex.select("id", "name").from("users").whereRaw("name = ?", [data]);
   res.json({ accepted: true });
 }

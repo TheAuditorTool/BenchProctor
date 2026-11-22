@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00288(req, res) {
-  const userInput = req.body.field || "";
-  const data = userInput != null ? userInput : '';
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
+  const userInput = req.cookies.session_token || "";
+  const data = nodeUtil.format("%s", userInput);
+  JSON.parse(data);
   res.json({ done: true });
 }
 

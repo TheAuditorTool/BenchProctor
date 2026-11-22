@@ -3,8 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "bunny"
-require "open-uri"
+require "nokogiri"
 
 class BenchmarkTest00228 < Sinatra::Base
   before do
@@ -20,12 +19,13 @@ class BenchmarkTest00228 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00228" do
-    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    URI.open(data).read
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + data.to_s + "']/role")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ roles: roles.map(&:text) })
   end
 end

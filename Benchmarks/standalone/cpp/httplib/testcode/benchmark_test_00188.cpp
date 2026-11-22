@@ -23,15 +23,18 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00188(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
+    delete[] _p;
+    delete[] _p;
     res.set_content("ok", "text/plain");
 }

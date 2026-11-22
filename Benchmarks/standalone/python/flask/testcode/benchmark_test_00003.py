@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
-from flask import Flask, request, jsonify
-from app_runtime import db
+import json
+import os
+from flask import Flask, jsonify
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -20,13 +25,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00003", methods=["POST"])
 def BenchmarkTest00003():
-    upload_name = request.files['upload'].filename
-    kind = 'json' if str(upload_name).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(upload_name).strip()
-        case _:
-            data = str(upload_name)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    env_value = os.environ.get('APP_INPUT', '')
+    reader = make_reader(env_value)
+    data = reader()
+    parsed = json.loads(data)
+    return jsonify({'parsed': str(parsed)}), 200

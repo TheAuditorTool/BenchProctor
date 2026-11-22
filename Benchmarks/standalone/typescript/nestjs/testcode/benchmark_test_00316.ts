@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, ForbiddenException } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,18 +23,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00316")
-  async BenchmarkTest00316(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    const resolved = path.resolve("/var/app/data", data);
-    if (!resolved.startsWith("/var/app/data/")) { throw new ForbiddenException({error:"forbidden"}); }
-    const checkedPath = resolved;
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  async BenchmarkTest00316(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const _coerced = Math.max(0, Math.min(parseInt(String(userInput), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const recordCount = boundedVal;
+    if (!Number.isInteger(recordCount) || recordCount < 0 || recordCount > 16384) { throw new BadRequestException({ error: "too many records" }); }
+    const table = new ArrayBuffer(recordCount * 64);
+    return { allocated: table.byteLength };
   }
 }

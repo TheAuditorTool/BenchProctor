@@ -18,16 +18,14 @@ class BenchmarkTest00173 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00173" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    data = user_input ? user_input : ''
+    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
     end
-    data = _normalize_local(user_input)
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    processed = data
+    IO.popen(["sh", "-c", "echo " + processed], &:read)
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -3,22 +3,35 @@ package testcode
 
 import (
 	"net/http"
-	"net/url"
-	"regexp"
-	"strings"
+	"os"
 
+	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00009(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := func(v string) string { return strings.TrimSpace(v) }(dbValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	authHeader := c.GetHeader("Authorization")
+	form := submissionForm{payload: authHeader}
+	data := form.payload
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
 		return
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	roleExpr, exprErr := xpath.Compile("//user[@name='" + data + "']/role")
+	if exprErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
+		return
+	}
+	if roleNode := xmlquery.QuerySelector(xmlDoc, roleExpr); roleNode != nil {
+		c.Header("X-User-Role", roleNode.InnerText())
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

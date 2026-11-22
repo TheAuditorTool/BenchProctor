@@ -8,10 +8,8 @@ class BenchmarkTest00189Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('variables.input', '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        eval((string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->input('field', '');
+        $data = sprintf('%s', $userInput);
+        return response(e($data))->header('Content-Type', 'text/html');
     }
 }

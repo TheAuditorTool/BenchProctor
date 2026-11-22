@@ -6,17 +6,23 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+#include <regex.h>
 
 void benchmark_test_00540(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char _dst[16];
-    strcpy(_dst, data);
-    printf("%s\n", _dst);
+    regex_t _re;
+    const char *arg = user_input;
+    if (regcomp(&_re, "^[a-zA-Z0-9#._-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, user_input, 0, NULL, 0) != 0) arg = "config";
+        regfree(&_re);
+    }
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    char _sql[512];
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", arg);
+    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

@@ -3,6 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00171 < Sinatra::Base
   before do
@@ -18,14 +21,10 @@ class BenchmarkTest00171 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00171" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = DB[:comments].first&.fetch(:text, "").to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    response.redirect(data, 303)
     content_type :json
     JSON.generate({ status: "ok" })
   end

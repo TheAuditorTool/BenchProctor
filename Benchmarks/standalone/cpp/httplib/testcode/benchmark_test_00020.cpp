@@ -23,12 +23,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct Payload { std::string value; };
 
 void benchmark_test_00020(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    char *_p = new char[user_input.size() + 1];
-    std::strcpy(_p, user_input.c_str());
-    std::cout << _p << std::endl;
+    std::string user_input = req.body;
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    char *_dst = new char[16];
+    std::strcpy(_dst, data.c_str());
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

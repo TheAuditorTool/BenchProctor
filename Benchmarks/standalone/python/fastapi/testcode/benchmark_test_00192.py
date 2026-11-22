@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import base64
-import pickle
-from fastapi.responses import JSONResponse
+from fastapi import Form
+from starlette.responses import JSONResponse
+import re
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -21,13 +26,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00192")
-async def BenchmarkTest00192(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    kind = 'json' if str(cookie_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(cookie_value).strip()
-        case _:
-            data = str(cookie_value)
-    pickle.loads(base64.b64decode(data))
+async def BenchmarkTest00192(request: Request, field: str = Form('')):
+    field_value = field
+    reader = make_reader(field_value)
+    data = reader()
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    exec(str(processed))
     return {"updated": True}

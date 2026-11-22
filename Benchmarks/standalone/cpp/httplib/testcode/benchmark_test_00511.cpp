@@ -23,16 +23,26 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct pg_conn; typedef struct pg_conn PGconn;
+struct pg_result; typedef struct pg_result PGresult;
+extern "C" PGconn *PQsetdbLogin(const char *, const char *, const char *, const char *, const char *, const char *, const char *);
+extern "C" int PQstatus(const PGconn *);
+extern "C" void PQfinish(PGconn *);
+extern "C" PGresult *PQexec(PGconn *, const char *);
+extern "C" PGresult *PQexecParams(PGconn *, const char *, int, const unsigned int *, const char *const *, const int *, const int *, int);
+extern "C" void PQclear(PGresult *);
 
 void benchmark_test_00511(const httplib::Request &, httplib::Response &res)
 {
     const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    const int _unit_cents = 1999;
-    int _qty = std::atoi(data.c_str());
-    int _total = _qty * _unit_cents;
-    std::cout << "total=" << _total << std::endl;
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    PGconn *_pgc = PQsetdbLogin("db.internal", "5432", nullptr, nullptr, "appdb", "app", "");
+    std::string _pgq = std::string("SELECT * FROM users WHERE name = '") + data + "'";
+    PGresult *_pgr = PQexec(_pgc, _pgq.c_str());
+    PQclear(_pgr);
+    PQfinish(_pgc);
     res.set_content("ok", "text/plain");
 }

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-#include <regex>
+#include <climits>
 
 void benchmark_test_00234(int, char **)
 {
@@ -16,10 +17,10 @@ void benchmark_test_00234(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    std::string _joined = std::string("/var/app/data/") + user_input;
+    char _resolved[PATH_MAX];
+    if (!realpath(_joined.c_str(), _resolved)) return;
+    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) return;
+    std::string arg = _resolved;
+    std::remove(arg.c_str());
 }

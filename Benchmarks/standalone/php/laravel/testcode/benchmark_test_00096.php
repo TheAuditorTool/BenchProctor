@@ -2,21 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 class BenchmarkTest00096Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('User-Agent', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
-        return response()->json(['ok' => 1]);
+        $token = bin2hex(random_bytes(32));
+        return response()->json(['token' => (string)$token], 200);
     }
 }

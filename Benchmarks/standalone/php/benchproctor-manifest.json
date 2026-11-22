@@ -2,33 +2,73 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "laravel",
-    "symfony"
+    "laravel-legacy",
+    "symfony",
+    "symfony-legacy",
+    "symfony-lts"
   ],
   "language": "php",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "laravel": {
       "categories": 18,
-      "csv_sha256": "050de5a36c26dd0bc982538258a5beaf7dd03c03970381070103a4f13402b3f3",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 720,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "909adde53e6143c745584852444d74655767e43d005ecddde04400c5e6c7be87",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Laravel 13, PHP 8.5",
+      "published_files": 360,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "laravel-legacy": {
+      "categories": 18,
+      "csv_sha256": "61cd819a870318ddd638bd91258def01bfe77bd63e6f994e2173d7a84028311d",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Laravel 10, PHP 8.1",
+      "published_files": 360,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     },
     "symfony": {
       "categories": 18,
-      "csv_sha256": "2693946c5abe526e647f2708899f5c3070b0f81da0757f0bec454d3395ae9848",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 720,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "a10e5cc7b2e907febc8d1bf2ec88cc6f79bfe8738117b4add136ea04af081216",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Symfony 8.1",
+      "published_files": 216,
+      "safe": 108,
+      "total": 216,
+      "vulnerable": 108
+    },
+    "symfony-legacy": {
+      "categories": 18,
+      "csv_sha256": "ab84e1d1b5143ee9045e56172a8f707c40da7dc47c20533288b7c6df8b9c8b63",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Symfony 5.4",
+      "published_files": 252,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
+    },
+    "symfony-lts": {
+      "categories": 18,
+      "csv_sha256": "e97a1422886c9219f64095da138a9c122afcf1bf887b35e1211c54c2f2c99abb",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "lts",
+      "line": "Symfony 7.4 LTS",
+      "published_files": 252,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

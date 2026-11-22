@@ -9,15 +9,20 @@
 
 void benchmark_test_00525(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _resolved[1024];
-    char _joined[1024];
-    snprintf(_joined, sizeof(_joined), "/var/app/data/%s", data);
-    if (realpath(_joined, _resolved) == NULL) return;
-    if (strncmp(_resolved, "/var/app/data/", 14) != 0) return;
-    const char *safe = _resolved;
-    FILE *_f = fopen(safe, "r");
-    if (_f) fclose(_f);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char *_dst = malloc(16);
+    if (_dst) { strncpy(_dst, data, 15); _dst[15] = '\0'; printf("%s\n", _dst); free(_dst); }
 }

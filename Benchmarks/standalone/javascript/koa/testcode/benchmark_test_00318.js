@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const crypto = require("crypto");
-const fs = require("fs");
-const nodeUtil = require("util");
+const ldapjs = require("ldapjs");
+const zod = require("zod");
 
 const BenchmarkTest00318 = async (ctx) => {
-  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-  const data = nodeUtil.format("%s", userInput);
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  const userInput = ctx.request.headers.origin || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.#%\-]+$/).safeParse(data);
+  if (!_parsed.success) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = _parsed.data;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
   ctx.body = { ack: true };
 }
 

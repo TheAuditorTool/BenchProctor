@@ -5,7 +5,8 @@ use axum::response::Json;
 
 pub async fn benchmark_test_00090(headers: HeaderMap) -> impl IntoResponse {
     let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = if ua_value.len() <= 4096 { ua_value.clone() } else { ua_value.chars().take(4096).collect() };
-    crate::shared::store_session("data", &data);
-    Json(serde_json::json!({"count": 0})).into_response()
+    struct FormData { payload: String }
+    let data = FormData { payload: ua_value.clone() }.payload;
+    let _cookie = cookie::Cookie::build(("session", data.clone())).secure(true).http_only(true).same_site(cookie::SameSite::Strict).build();
+    return (axum::response::AppendHeaders([(axum::http::header::SET_COOKIE, _cookie.to_string())]), Json(serde_json::json!({"count": 0}))).into_response();
 }

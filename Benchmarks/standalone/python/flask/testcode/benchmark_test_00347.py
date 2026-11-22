@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
 from flask import Flask, request, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,11 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00347", methods=["POST"])
 def BenchmarkTest00347():
-    user_id = request.args.get('id', '')
-    parts = []
-    for token in str(user_id).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    data, _sep, _rest = str(xml_value).partition('\x00')
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return jsonify({'name': str(value)}), 200

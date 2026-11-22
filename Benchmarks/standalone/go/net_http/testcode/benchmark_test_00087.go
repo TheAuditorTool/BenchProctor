@@ -2,30 +2,19 @@
 package testcode
 
 import (
-	"context"
 	"net/http"
-	"regexp"
+	"os/exec"
 	"strings"
-
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00087(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
+	uaValue := r.Header.Get("User-Agent")
+	data := strings.ReplaceAll(uaValue, "\x00", "")
+	cmd := exec.Command("sh", "-c", "echo "+data)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	cookieValue := cookieObj.Value
-	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-	processed := data
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, processed))
+	w.Write(output)
 }

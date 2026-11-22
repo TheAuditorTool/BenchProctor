@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00113Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
+        $userInput = $request->getContent();
+        $data = vsprintf('%1$s', [$userInput]);
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $email = $xpath->evaluate("string(//user[@id='" . $data . "']/email)");
         return response()->json(['ok' => 1]);
     }
 }

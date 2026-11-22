@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
-const zod = require("zod");
 
 async function BenchmarkTest00038(req, res) {
-  const userInput = req.body.multipart_field || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.#%\-]+$/).safeParse(data);
-  if (!_parsed.success) { res.status(400).json({error:"invalid"}); return; }
-  const processed = _parsed.data;
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ done: true });
+  const userInput = req.body || "";
+  const data = String(userInput).slice(0, 200);
+  const lodash = require("lodash");
+  const token = lodash.random(1e11, 1e12 - 1).toString(36) + "-" + String(data).slice(0, 8);
+  res.json({ token }); return;
 }
 
 module.exports = { BenchmarkTest00038 };

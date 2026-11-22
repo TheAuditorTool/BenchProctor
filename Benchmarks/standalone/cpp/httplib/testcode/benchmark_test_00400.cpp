@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,19 +23,36 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef struct _xmlTextReader xmlTextReader; typedef xmlTextReader *xmlTextReaderPtr;
+extern "C" xmlTextReaderPtr xmlReaderForMemory(const char *, int, const char *, const char *, int);
+extern "C" int xmlTextReaderRead(xmlTextReaderPtr);
+extern "C" const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr);
+extern "C" void xmlFreeTextReader(xmlTextReaderPtr);
 
-void benchmark_test_00400(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00400(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    const char _buf[16] = "fixedcontent12";
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    std::cout.write(_buf, static_cast<std::streamsize>(_span));
-    std::cout << std::endl;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _xdoc = data;
+    xmlTextReaderPtr _xr = xmlReaderForMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    if (_xr) {
+        while (xmlTextReaderRead(_xr) == 1) {
+            const unsigned char *_xv = xmlTextReaderConstValue(_xr);
+            if (_xv) std::cout << reinterpret_cast<const char *>(_xv);
+        }
+        xmlFreeTextReader(_xr);
+    }
     res.set_content("ok", "text/plain");
 }

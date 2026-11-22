@@ -2,19 +2,37 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+struct env_md_st; typedef struct env_md_st EVP_MD;
+typedef struct evp_md_ctx_st EVP_MD_CTX;
+extern "C" EVP_MD_CTX *EVP_MD_CTX_new(void);
+extern "C" void EVP_MD_CTX_free(EVP_MD_CTX *);
+extern "C" const EVP_MD *EVP_sha256(void);
+extern "C" int EVP_DigestInit_ex(EVP_MD_CTX *, const EVP_MD *, void *);
+extern "C" int EVP_DigestUpdate(EVP_MD_CTX *, const void *, size_t);
+extern "C" int EVP_DigestFinal_ex(EVP_MD_CTX *, unsigned char *, unsigned int *);
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00251(int, char **)
 {
-    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string data = cpp_own(user_input);
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_sha256(), nullptr);
+    EVP_DigestUpdate(_mdctx, data.data(), data.size());
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
     std::cout << "digest " << (int)_digest[0] << std::endl;
 }

@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "open3"
 
 class BenchmarkTest00166Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,14 +12,9 @@ class BenchmarkTest00166Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00166
-    user_input = request.body.read
+    user_input = request.headers["Authorization"].to_s
     data = user_input ? user_input : ''
-    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    Open3.capture2e("echo", data)
     render json: { status: "ok" }
   end
 end

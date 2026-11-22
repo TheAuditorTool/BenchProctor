@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const vm = require("node:vm");
 
 const BenchmarkTest00029 = async (ctx) => {
-  const userInput = ctx.request.headers["x-custom-header"] || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
+  const userInput = process.env.APP_INPUT || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  vm.runInNewContext(String(data), { Math });
   ctx.body = { ack: true };
 }
 

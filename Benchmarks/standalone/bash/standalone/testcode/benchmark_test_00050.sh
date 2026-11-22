@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00050() {
-  user_input="$HTTP_X_CUSTOM_HEADER"
-  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
-  data=$(normalize "$user_input")
-  rm -f "/var/app/data/$data"
+  user_input="$(jq -r '.value // empty' 2>/dev/null)"
+  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
+  data="${_mapped[0]}"
+  echo "$data" | xmllint --nonet - > /dev/null 2>&1
 }
 
 benchmark_test_00050 "$@"

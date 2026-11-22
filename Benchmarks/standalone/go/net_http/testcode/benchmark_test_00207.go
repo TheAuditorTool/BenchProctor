@@ -2,31 +2,13 @@
 package testcode
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00207(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	jsonValue := reqBody.Payload
-	var data string
-	for _, token := range strings.Split(jsonValue, ",") {
-		data = token
-	}
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	headerValue := r.Header.Get("X-Custom-Header")
+	data := strings.ReplaceAll(headerValue, "\x00", "")
+	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
 }

@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "redcarpet"
 
 class BenchmarkTest00096 < Sinatra::Base
   before do
@@ -21,18 +19,12 @@ class BenchmarkTest00096 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00096" do
-    user_input = params[:q].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.body.read
+    data = JSON.parse(user_input)["value"] rescue ""
+    processed = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(filter_html: true, no_styles: true, safe_links_only: true)).render(data)
+    content_type :html
+    stream do |out|
+      out << "<div>" + processed + "</div>"
     end
-    data = _normalize_local(user_input)
-    unless data =~ /\A[a-zA-Z0-9_.#\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    DB.fetch("SELECT * FROM users WHERE id = '" + processed + "'").all
-    content_type :json
-    JSON.generate({ status: "ok" })
   end
 end

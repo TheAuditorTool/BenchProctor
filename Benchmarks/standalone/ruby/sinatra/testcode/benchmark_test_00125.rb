@@ -18,10 +18,10 @@ class BenchmarkTest00125 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00125" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = ENV["APP_INPUT"] || ""
+    data = user_input.gsub("\u0000", "")
+    JSON.parse(data, create_additions: true)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

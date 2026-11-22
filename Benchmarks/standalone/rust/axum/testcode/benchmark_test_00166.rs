@@ -5,12 +5,10 @@ use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00166(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    struct FormData { payload: String }
-    let data = FormData { payload: referer_value.clone() }.payload;
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = if ua_value.len() <= 4096 { ua_value.clone() } else { ua_value.chars().take(4096).collect() };
+    if !["config.json", "index.html", "readme.md"].contains(&data.as_str()) { return (StatusCode::FORBIDDEN, "").into_response(); }
+    let checked_path = format!("/var/app/data/{}", data);
+    tokio::fs::remove_file(&checked_path).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

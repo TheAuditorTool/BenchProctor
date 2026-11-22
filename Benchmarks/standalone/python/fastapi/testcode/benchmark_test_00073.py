@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
-from starlette.responses import JSONResponse
+from starlette.responses import StreamingResponse
+import markdown
+import bleach
+import json
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,10 +24,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00073")
 async def BenchmarkTest00073(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = referer_value if referer_value else 'default'
-    if data not in ('ls', 'cat', 'date', 'whoami'):
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    processed = data
-    subprocess.run('echo ' + str(processed), shell=True)
-    return {"updated": True}
+    raw_body = (await request.body()).decode('utf-8')
+    data = json.loads(raw_body).get('value', '')
+    processed = bleach.clean(markdown.markdown(data))
+    return StreamingResponse(iter(['<div>' + str(processed) + '</div>']), media_type='text/html')

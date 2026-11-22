@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00073")]
-pub async fn benchmark_test_00073(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let user_id = query.get("id").cloned().unwrap_or_default();
-    let mut pending: std::collections::VecDeque<String> = user_id.split(',').map(String::from).collect();
+pub async fn benchmark_test_00073() -> HttpResponse {
+    let profile_value = crate::shared::db_fetch_one("SELECT bio FROM profiles LIMIT 1");
+    let mut pending: std::collections::VecDeque<String> = profile_value.split(',').map(String::from).collect();
     let mut data = String::new();
     while let Some(item) = pending.pop_front() { data = item; }
-    crate::shared::ldap_search(&format!("uid={}", data));
+    let base = std::path::Path::new("/var/app/data");
+    let candidate = tokio::fs::canonicalize(base.join(&data)).await.unwrap_or_default();
+    if !candidate.starts_with(base) { return HttpResponse::Forbidden().finish(); }
+    let checked_path = candidate.to_string_lossy().to_string();
+    tokio::fs::write(&checked_path, "data").await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

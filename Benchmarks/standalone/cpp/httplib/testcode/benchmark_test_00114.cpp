@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 
@@ -25,20 +24,13 @@ struct Client {
 };
 }
 
-void benchmark_test_00114(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00114(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string user_input = req.path_params.at("id");
+    std::string data = !user_input.empty() ? user_input : std::string();
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    _p = nullptr;
     res.set_content("ok", "text/plain");
 }

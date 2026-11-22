@@ -11,12 +11,13 @@ class BenchmarkTest00064Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('X-Custom-Header', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
-        return new JsonResponse(["committed" => true]);
+        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        $_coerced = max(0, min((int)$data, 1048576));
+        $boundedVal = $_coerced;
+        $quantity = (int) $boundedVal;
+        $lineTotal = intval($quantity * 1999);
+        return new JsonResponse(['line_total_cents' => $lineTotal], 200);
     }
 }

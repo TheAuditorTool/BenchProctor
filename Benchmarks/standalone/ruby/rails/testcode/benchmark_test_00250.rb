@@ -11,9 +11,8 @@ class BenchmarkTest00250Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00250
-    user_input = request.query_parameters[:q].to_s
-    data = user_input ? user_input : ''
-    system("echo " + data)
+    user_input = request.host.to_s
+    JSON::Parser.new(user_input, create_additions: false).parse
     render json: { status: "ok" }
   end
 end

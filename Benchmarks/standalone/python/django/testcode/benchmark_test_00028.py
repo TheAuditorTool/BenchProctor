@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import hashlib
+import requests
+import json
 
 
 def BenchmarkTest00028(request):
-    cookie_value = request.COOKIES.get('session_token', '')
-    data = f'{cookie_value!s}'
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return JsonResponse({'digest': str(digest)}, status=200)
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data = json_value if json_value else 'default'
+    requests.get(str(data))
+    return JsonResponse({"saved": True})

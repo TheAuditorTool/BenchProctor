@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "net/http"
 
 class BenchmarkTest00253 < Sinatra::Base
   before do
@@ -19,11 +19,20 @@ class BenchmarkTest00253 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00253" do
-    user_input = params[:id].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    digest = Digest::SHA256.hexdigest(data.to_s)
+    user_input = params[:field].to_s
+    data = format("%<value>s", value: user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    uri = URI.parse(target_url.to_s)
+    outbound = Net::HTTP::Get.new(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    reply = http.request(outbound)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ upstream_status: reply.code.to_i })
   end
 end

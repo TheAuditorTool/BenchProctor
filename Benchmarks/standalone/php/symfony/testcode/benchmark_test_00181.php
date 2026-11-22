@@ -11,14 +11,10 @@ class BenchmarkTest00181Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = ($userInput !== null) ? $userInput : '';
-        if (!preg_match('#^[a-zA-Z0-9 _.%~\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
+        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
+        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
+        catch (\JsonException $e) { $data = $userInput; }
+        $digest = sha1((string)$data);
         return new JsonResponse(["committed" => true]);
     }
 }

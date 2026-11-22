@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Path;
+use axum::body::Bytes;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
 
-pub async fn benchmark_test_00215(Path(path_id): Path<String>) -> impl IntoResponse {
-    let path_value = path_id.clone();
-    let mut pending: std::collections::VecDeque<String> = path_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00215(body: Bytes) -> impl IntoResponse {
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let data = json_value.to_string();
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _doc = _pkg.as_document();
+        let _factory = sxd_xpath::Factory::new();
+        if let Ok(Some(_xpath)) = _factory.build(&format!("//user[@id='{}']/@role", processed)) {
+            let _ = _xpath.evaluate(&sxd_xpath::Context::new(), _doc.root());
+        }
+    }
+    Json(serde_json::json!({"count": 0})).into_response()
 }

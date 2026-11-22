@@ -13,11 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00178 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -35,17 +30,16 @@ public class BenchmarkTest00178 {
         }
     }
 
-    @POST
-    @Path("/BenchmarkTest00178/graphql")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @GET
+    @Path("/BenchmarkTest00178")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00178(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String data = graphqlVar.replace("\u0000", "");
-        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00178(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(cookieValue);
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

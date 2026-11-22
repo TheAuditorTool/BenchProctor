@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-from urllib.parse import urlparse
-from pydantic import BaseModel
+import os
+import jsonschema
 from starlette.responses import JSONResponse
-import re
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -26,11 +21,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00181")
-async def BenchmarkTest00181(request: Request, req: UserInput):
-    json_value = req.payload
-    parsed = urlparse(json_value)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = json_value
-    requests.get(str(target_url))
+async def BenchmarkTest00181(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data = raw_body if raw_body else 'default'
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.%\\-]+$"})
+    except jsonschema.ValidationError:
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
+    processed = data
+    os.system('echo ' + str(processed))
     return {"updated": True}

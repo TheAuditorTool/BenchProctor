@@ -2,23 +2,24 @@
 package testcode
 
 import (
-	"encoding/json"
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00177(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	multipartValue := c.PostForm("multipart_field")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(multipartValue)
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	var data string
-	for _, token := range strings.Split(graphqlVar, ",") {
-		data = token
-	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

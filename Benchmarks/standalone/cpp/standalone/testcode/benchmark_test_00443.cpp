@@ -2,16 +2,18 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
+
+struct Payload { std::string value; };
 
 void benchmark_test_00443(int, char **)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
+    const char *user_input_env = std::getenv("MULTIPART_FIELD");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char _buf[16] = "fixedcontent12";
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    std::cout.write(_buf, static_cast<std::streamsize>(_span));
-    std::cout << std::endl;
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    long _req = std::strtol(data.c_str(), nullptr, 10);
+    if (_req < 0 || _req > 65535) return;
+    long _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
 }

@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00093 < Sinatra::Base
   before do
@@ -21,16 +18,18 @@ class BenchmarkTest00093 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00093" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
       return
     end
-    target_url = data
-    redirect target_url
+    processed = data
+    settings.set(:announcement, processed.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

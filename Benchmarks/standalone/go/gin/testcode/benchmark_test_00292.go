@@ -2,18 +2,21 @@
 package testcode
 
 import (
-	"net"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00292(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
-	data := strings.ReplaceAll(multipartValue, "\x00", "")
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	authHeader := c.GetHeader("Authorization")
+	data := strings.ReplaceAll(authHeader, "\x00", "")
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
+		return
 	}
-	c.JSON(200, gin.H{"code": "OK"})
+	processed := data
+	htmlOut := "<div>" + processed + "</div>"
+	c.Data(200, "text/html", []byte(htmlOut))
 }

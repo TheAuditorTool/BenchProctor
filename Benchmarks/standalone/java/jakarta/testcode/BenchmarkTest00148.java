@@ -30,21 +30,13 @@ public class BenchmarkTest00148 {
         }
     }
 
-    @POST
-    @Path("/BenchmarkTest00148")
-    @Consumes(MediaType.APPLICATION_XML)
+    @GET
+    @Path("/BenchmarkTest00148/{pathId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00148(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : xmlValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00148(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = pathValue.isEmpty() ? "default" : pathValue;
+        Runtime.getRuntime().exec(new String[]{"echo", data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

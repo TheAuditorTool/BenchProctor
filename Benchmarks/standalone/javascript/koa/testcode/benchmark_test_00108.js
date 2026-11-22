@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
 
 const BenchmarkTest00108 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  childProcess.execSync("echo " + data);
+  const userInput = (ctx.request.files && ctx.request.files.file && ctx.request.files.file.name) || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  ctx.session.data = String(data);
   ctx.body = { ack: true };
 }
 

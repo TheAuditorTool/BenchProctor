@@ -11,12 +11,10 @@ class BenchmarkTest00099Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('X-Forwarded-For', '');
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
         $data = "{$userInput}";
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
-        return new JsonResponse(["committed" => true]);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
+        return $resp;
     }
 }

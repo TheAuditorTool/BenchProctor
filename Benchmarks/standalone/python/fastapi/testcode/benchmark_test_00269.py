@@ -1,16 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from jinja2 import Environment
+from starlette.responses import HTMLResponse
 from pydantic import BaseModel
-from app_runtime import db
 from fastapi.responses import JSONResponse
 
 
 class UserInput(BaseModel):
     payload: str = ''
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -30,7 +27,6 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00269")
 async def BenchmarkTest00269(request: Request, req: UserInput):
     json_value = req.payload
-    reader = make_reader(json_value)
-    data = reader()
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return {"updated": True}
+    data, _sep, _rest = str(json_value).partition('\x00')
+    page = Environment(autoescape=True).from_string('<div>{{ value }}</div>').render(value=str(data))
+    return HTMLResponse(page)

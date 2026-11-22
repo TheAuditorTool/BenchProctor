@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Post } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as fs from "fs";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,11 +25,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00243")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00243(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    return "<div>" + data + "</div>";
+  async BenchmarkTest00243(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const data = Buffer.from(userInput, "base64").toString();
+    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    const _siv = crypto.randomBytes(12);
+    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
+    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
+    const _stag = _scipher.getAuthTag();
+    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+    return { created: true };
   }
 }

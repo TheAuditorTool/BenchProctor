@@ -2,29 +2,22 @@
 package testcode
 
 import (
+	"encoding/hex"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	"golang.org/x/crypto/md4"
 )
 
 func BenchmarkTest00051(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
-		return
+	hostValue := c.Request.Host
+	data := hostValue
+	if _, after, ok := strings.Cut(hostValue, ","); ok {
+		data = after
 	}
-	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
-	}
-	processed := data
-	c.Set("data", processed)
+	legacyDigest := md4.New()
+	legacyDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(legacyDigest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

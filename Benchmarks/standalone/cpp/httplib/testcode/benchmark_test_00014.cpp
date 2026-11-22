@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <cstdio>
+#include <unistd.h>
+#include <fstream>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,16 +27,15 @@ struct Client {
 };
 }
 
-void benchmark_test_00014(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00014(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    if (_span > sizeof(_out)) _span = sizeof(_out);
-    std::memcpy(_out, _buf, _span);
-    std::cout << std::string(_out, _span).size() << std::endl;
+    std::string user_input = req.get_header_value("X-Forwarded-For");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string arg = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
+    std::string _path = std::string("/var/app/data/") + arg;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
     res.set_content("ok", "text/plain");
 }

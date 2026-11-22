@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
-import re
+import ldap
+import os
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -23,13 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00274")
 async def BenchmarkTest00274(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    parts = []
-    for token in str(raw_body).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    header_value = request.headers.get('x-custom-header', '')
+    if header_value:
+        data = header_value
+    else:
+        data = ''
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(data) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
+    return {"updated": True}

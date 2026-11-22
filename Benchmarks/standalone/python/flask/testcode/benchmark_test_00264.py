@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-import base64
-import pickle
+from flask import Flask, redirect
+from urllib.parse import urlparse
+from flask import request, jsonify
+import re
 
 
 app = Flask(__name__)
@@ -20,12 +21,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00264", methods=["POST"])
 def BenchmarkTest00264():
-    cookie_value = request.cookies.get('session_token', '')
-    kind = 'json' if str(cookie_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(cookie_value).strip()
-        case _:
-            data = str(cookie_value)
-    pickle.loads(base64.b64decode(data))
-    return jsonify({"result": "success"})
+    field_value = request.form.get('field', '')
+    data = ' '.join(str(field_value).split())
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    return redirect(str(target_url))

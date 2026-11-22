@@ -2,25 +2,26 @@
 package testcode
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
+	"crypto/sha3"
+	"encoding/hex"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00166(c *gin.Context) {
-	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
-	var parsed map[string]interface{}
-	json.Unmarshal([]byte(redisValue), &parsed)
-	data, _ := parsed["value"].(string)
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	rawBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	defer rows.Close()
-	c.JSON(200, gin.H{"code": "OK"})
+	xmlBody := string(rawBytes)
+	segments := strings.Split(xmlBody, ",")
+	data := strings.Join(segments, " ")
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

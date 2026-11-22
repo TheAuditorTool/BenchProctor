@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sanitize"
+require "socket"
 
 class BenchmarkTest00094 < Sinatra::Base
   before do
@@ -20,10 +20,9 @@ class BenchmarkTest00094 < Sinatra::Base
   end
   post "/benchmark_test_00094" do
     user_input = params[:q].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    processed = Sanitize.fragment(data, Sanitize::Config::BASIC)
-    content_type :html
-    "<div>" + processed + "</div>"
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

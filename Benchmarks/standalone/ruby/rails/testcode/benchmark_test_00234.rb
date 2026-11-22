@@ -11,9 +11,12 @@ class BenchmarkTest00234Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00234
-    user_input = params.require(:user).permit(:name)[:name].to_s
+    user_input = request.headers["Authorization"].to_s
     data = user_input.split(/[ \t]+/).join(" ")
-    system("echo " + data)
-    render json: { status: "ok" }
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    return render json: { error: "not found" }, status: 404 if plan.nil?
+    limit = plan.fetch(:requests)
+    render json: { requests: limit }
   end
 end

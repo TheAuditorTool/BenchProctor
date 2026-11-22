@@ -17,12 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00114")
-  async BenchmarkTest00114(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-    return { token };
+  async BenchmarkTest00114(@Headers("user-agent") ua: string): Promise<unknown> {
+    const userInput = ua || "";
+    const data = userInput != null ? userInput : '';
+    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
+    eval(processed);
+    return { created: true };
   }
 }

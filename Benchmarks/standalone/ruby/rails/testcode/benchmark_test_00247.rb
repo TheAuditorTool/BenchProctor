@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open3"
 
 class BenchmarkTest00247Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,8 +13,8 @@ class BenchmarkTest00247Controller < ApplicationController
   end
   def benchmark_test_00247
     user_input = request.body.read
-    data = format("%<value>s", value: user_input)
-    JSON.parse(data)
+    data = sprintf("%s", user_input)
+    Open3.capture2e("echo " + data)
     render json: { status: "ok" }
   end
 end

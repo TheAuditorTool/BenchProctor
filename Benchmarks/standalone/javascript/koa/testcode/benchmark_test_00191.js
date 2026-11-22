@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
+const crypto = require("crypto");
 
 const BenchmarkTest00191 = async (ctx) => {
-  const userInput = ctx.cookies.get("session_token") || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  childProcess.execSync("echo " + processed);
-  ctx.body = { ack: true };
+  const userInput = process.env.APP_INPUT || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const digest = await crypto.subtle.digest("SHA-256", Buffer.from(String(data)));
+  ctx.body = { fingerprint: Buffer.from(digest).toString("hex") }; return;
 }
 
 module.exports = { BenchmarkTest00191 };

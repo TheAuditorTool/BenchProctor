@@ -7,27 +7,23 @@
 #include <stdint.h>
 #include <time.h>
 
-#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
+struct c_plan { const char *name; int limit; };
+static int c_plan_cmp(const void *_key, const void *_entry) { return strcmp((const char *)_key, ((const struct c_plan *)_entry)->name); }
 
 void benchmark_test_00126(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
     const char *user_input = user_input_buf;
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    char *_cleanup_ptr = _p;
-    printf("%s\n", _p);
-    FREE_AND_NULL(_p);
-    _cleanup_ptr = NULL;
-    if (_cleanup_ptr) free(_cleanup_ptr);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    static const struct c_plan _plans[] = { { "basic", 10 }, { "enterprise", 1000 }, { "pro", 100 } };
+    const struct c_plan *_plan = bsearch(data, _plans, sizeof(_plans) / sizeof(_plans[0]), sizeof(_plans[0]), c_plan_cmp);
+    int _limit = _plan != NULL ? _plan->limit : 0;
+    printf("limit %d\n", _limit);
 }

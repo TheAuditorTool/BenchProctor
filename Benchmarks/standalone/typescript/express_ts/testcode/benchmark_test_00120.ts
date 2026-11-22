@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as nunjucks from "nunjucks";
 
 export const BenchmarkTest00120 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.field as string) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
-  res.json({ accepted: true });
+  const userInput = (req.body?.field as string) || "";
+  const data = userInput != null ? userInput : '';
+  const processed = data.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;");
+  const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+  res.send(page);
 }

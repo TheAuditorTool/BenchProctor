@@ -2,23 +2,31 @@
 package testcode
 
 import (
-	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00081(w http.ResponseWriter, r *http.Request) {
-	multipartValue := r.FormValue("multipart_field")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(multipartValue)
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
+	headerValue := r.Header.Get("X-Custom-Header")
+	pending := strings.Split(headerValue, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
+	}
+	upstreamReq, err := http.NewRequest(http.MethodGet, data, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

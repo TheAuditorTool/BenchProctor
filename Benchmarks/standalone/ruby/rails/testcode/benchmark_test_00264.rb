@@ -11,12 +11,9 @@ class BenchmarkTest00264Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00264
-    user_input = cookies[:session_token].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    File.write("/var/uploads/" + data, "data")
+    user_input = (params[:variables] || {})[:input].to_s
+    data = "#{user_input}"
+    Marshal.load(data)
     render json: { status: "ok" }
   end
 end

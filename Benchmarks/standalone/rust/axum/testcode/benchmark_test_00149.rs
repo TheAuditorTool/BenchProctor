@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
-use axum::response::Json;
-use tokio::net::TcpStream;
 
 pub async fn benchmark_test_00149(headers: HeaderMap) -> impl IntoResponse {
-    let auth_header = headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = match auth_header.chars().next() { Some(_) => auth_header.clone(), None => "default".to_string() };
-    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
-    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
-    Json(serde_json::json!({"count": 0})).into_response()
+    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", referer_value).ok();
+    axum::response::Redirect::temporary(data.as_str()).into_response()
 }

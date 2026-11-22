@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
+from flask import Flask, abort
+from flask import redirect
+from urllib.parse import urlparse
+from flask import request, jsonify
 import re
-from flask import Flask, request, jsonify
-import os
 
 
 app = Flask(__name__)
@@ -21,10 +22,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00328", methods=["POST"])
 def BenchmarkTest00328():
-    user_id = request.args.get('id', '')
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", user_id):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = user_id
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    parts = str(upload_name).split(',')
+    data = ' '.join(parts)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    abort(redirect(str(target_url)))

@@ -1,7 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import io
+import defusedxml.ElementTree
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -19,11 +25,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00141")
-async def BenchmarkTest00141(request: Request):
-    origin_value = request.headers.get('origin', '')
-    parts = []
-    for token in str(origin_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    exec(str(data))
+async def BenchmarkTest00141(request: Request, req: UserInput):
+    json_value = req.payload
+    data = (lambda v: v.strip())(json_value)
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(data).encode()), events=('end',)):
+        element.clear()
     return {"updated": True}

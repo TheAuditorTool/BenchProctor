@@ -8,9 +8,11 @@ class BenchmarkTest00342Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        file_put_contents('/var/uploads/' . $data, 'data');
+        $userInput = $request->json('payload', '');
+        $data = json_decode($userInput, true)['value'] ?? '';
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        eval((string)$parsedBool);
         return response()->json(['ok' => 1]);
     }
 }

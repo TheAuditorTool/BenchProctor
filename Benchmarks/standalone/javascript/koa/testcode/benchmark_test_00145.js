@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const { db } = require("./shared");
 
 const BenchmarkTest00145 = async (ctx) => {
-  const userInput = ctx.cookies.get("session_token") || "";
-  const data = Buffer.from(userInput, "base64").toString();
-  const { drizzle } = require("drizzle-orm/better-sqlite3");
-  const { sql } = require("drizzle-orm");
-  const Database = require("better-sqlite3");
-  const _drizzle = drizzle(new Database(":memory:"));
-  await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
+  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+  if (!row) { ctx.status = 404; ctx.body = {error:"not found"}; return; }
+  const value = row.name;
   ctx.body = { ack: true };
 }
 

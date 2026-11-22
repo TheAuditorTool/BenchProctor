@@ -11,12 +11,20 @@ class BenchmarkTest00102Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Authorization', '');
-        $data = "{$userInput}";
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->request->get('field', '');
+        $_prefix = strtolower(substr($userInput, 0, 1));
+        $data = '';
+        switch ($_prefix) {
+            case 'h': $data = strtolower($userInput); break;
+            case 'f': $data = strtoupper($userInput); break;
+            default: $data = trim($userInput); break;
+        }
+        if (!preg_match('#^[a-zA-Z0-9 _.\\#%\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
+        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
+        $entries = ldap_list($ldap, 'ou=people,dc=example,dc=com', '(mail=' . $processed . ')', ['uid', 'cn']);
         return new JsonResponse(["committed" => true]);
     }
 }

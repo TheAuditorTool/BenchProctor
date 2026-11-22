@@ -12,12 +12,13 @@ class BenchmarkTest00097Controller < ApplicationController
   end
   def benchmark_test_00097
     user_input = request.headers["Origin"].to_s
-    data = sprintf("%s", user_input)
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return render json: { error: "not found" }, status: 404 if match.nil?
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

@@ -2,15 +2,11 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00197 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.host as string) || "";
-  const _input = String(userInput);
-  let data;
-  switch (_input.startsWith('{') ? 'json' : 'text') {
-    case 'json': data = _input.normalize('NFC'); break;
-    default: data = _input; break;
-  }
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  req.session.data = String(processed);
-  res.json({ accepted: true });
+  const userInput = (req.query.id as string) || "";
+  const data = `${userInput}`;
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const plan = planQuotas.get(String(data));
+  if (!plan) { res.status(404).json({ error: "unknown plan" }); return; }
+  const { quota } = plan;
+  res.json({ quota }); return;
 }

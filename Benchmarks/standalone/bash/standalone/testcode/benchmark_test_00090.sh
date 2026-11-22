@@ -2,17 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00090() {
-  user_input="$(jq -r '.variables.input // empty' 2>/dev/null)"
-  data="${user_input//$'\x00'/}"
-  _host=$(echo "$data" | sed -E "s#^[a-zA-Z]+://##; s#[/:].*##")
-  case "$_host" in "["*|"") echo "private range blocked"; exit 1;; esac
-  _ip=$(getent ahosts "$_host" 2>/dev/null | head -n1 | cut -d" " -f1)
-  _ip="${_ip:-$_host}"
-  if ! echo "$_ip" | grep -qE "^[0-9]{1,3}(\.[0-9]{1,3}){3}$"; then echo "non-ipv4 host blocked" >&2; exit 1; fi
-  if echo "$_ip" | grep -qE "^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)"; then echo "private range blocked"; exit 1; fi
-  target_url="$data"
-  _rest="${target_url#*://}"
-  exec 3<>"/dev/tcp/${_rest%%[/:]*}/80"
+  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  if [ -n "$user_input" ]; then data="$user_input"; else data=""; fi
+  _schema_re='^[a-zA-Z0-9 #%._-]+$'
+  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
+  processed="$data"
+  ldapcompare -x "uid=$processed,ou=people,dc=example,dc=com" "accountStatus:active"
 }
 
 benchmark_test_00090 "$@"

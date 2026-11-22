@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+import json
 from flask import Flask, request, jsonify
 
 
@@ -18,12 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00148", methods=["POST"])
 def BenchmarkTest00148():
-    auth_header = request.headers.get('Authorization', '')
-    kind = 'json' if str(auth_header).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(auth_header).strip()
-        case _:
-            data = str(auth_header)
-    exec(str(data))
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    parsed = json.JSONDecoder().decode(str(data))
+    return jsonify({'parsed': str(parsed)}), 200

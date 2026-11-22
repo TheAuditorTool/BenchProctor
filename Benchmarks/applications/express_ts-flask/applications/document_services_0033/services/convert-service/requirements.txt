@@ -1,0 +1,5 @@
+Markdown==3.11.2
+bleach==6.4.0
+flask==2.3.3
+pyyaml==6.0.3
+requests==2.34.2

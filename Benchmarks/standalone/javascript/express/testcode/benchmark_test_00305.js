@@ -2,9 +2,9 @@
 const crypto = require("crypto");
 
 async function BenchmarkTest00305(req, res) {
-  const userInput = req.headers["x-custom-header"] || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
+  const userInput = req.headers.referer || "";
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
   crypto.createHash("md5").update(data).digest("hex");
   res.json({ done: true });
 }

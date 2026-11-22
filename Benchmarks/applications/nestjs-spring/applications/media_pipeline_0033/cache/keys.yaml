@@ -1,6 +1,0 @@
-channels:
-  - name: media:inbound:0033
-    payload: json
-keys:
-  - pattern: media:record:{id}
-    ttl_seconds: 300

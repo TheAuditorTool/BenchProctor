@@ -2,21 +2,30 @@
 package testcode
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00163(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	cookieValue := cookieObj.Value
-	var data string
-	if len(cookieValue) > 0 {
-		data = cookieValue
-	} else {
-		data = "default"
+	jsonValue := reqBody.Payload
+	data := strings.Join(strings.FieldsFunc(jsonValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
 	}
-	http.Redirect(w, r, data, http.StatusFound)
+	if result == nil {
+		http.Error(w, "not found", 404)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
 }

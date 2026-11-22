@@ -12,7 +12,9 @@ class BenchmarkTest00034Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->headers->get('X-Forwarded-For', '');
-        $ciphertext = openssl_encrypt((string)$userInput, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $hashCtx = hash_init('md4');
+        hash_update($hashCtx, (string)$userInput);
+        $digest = hash_final($hashCtx);
         return new JsonResponse(["committed" => true]);
     }
 }

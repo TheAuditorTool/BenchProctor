@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import yaml
 from flask import Flask, request, jsonify
-import json
 
 
 app = Flask(__name__)
@@ -19,10 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00249", methods=["POST"])
 def BenchmarkTest00249():
-    header_value = request.headers.get('X-Custom-Header', '')
-    parts = []
-    for token in str(header_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    parsed = json.loads(data)
+    multipart_value = request.form.get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    parsed = yaml.safe_load(data)
     return jsonify({'parsed': str(parsed)}), 200

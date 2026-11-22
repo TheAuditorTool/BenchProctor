@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
+import { Controller, Headers, Post, Req, BadRequestException } from "@nestjs/common";
 import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
@@ -17,12 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00045")
-  async BenchmarkTest00045(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const data = String(userInput).slice(0, 200);
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    req.session.data = String(parsedNum);
+  async BenchmarkTest00045(@Headers("origin") origin: string, @Req() req: Request): Promise<unknown> {
+    const userInput = origin || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    if (!/^[a-zA-Z0-9 _.\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
     return { created: true };
   }
 }

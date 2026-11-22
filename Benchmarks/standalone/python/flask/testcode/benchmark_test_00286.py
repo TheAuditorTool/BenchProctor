@@ -1,7 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+import os
+import pika
+import importlib
 
+
+def _amqp_receive(queue):
+    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
+        channel = connection.channel()
+        channel.queue_declare(queue=queue, durable=True)
+        return channel.basic_get(queue=queue, auto_ack=True)[2]
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 app = Flask(__name__)
 
@@ -19,6 +34,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00286", methods=["POST"])
 def BenchmarkTest00286():
-    cookie_value = request.cookies.get('session_token', '')
-    parsed = json.loads(cookie_value)
+    msg_value = (_amqp_receive('app-events') or b'').decode()
+    data = ' '.join(str(msg_value).split())
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
     return jsonify({'parsed': str(parsed)}), 200

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
+import * as nodeUtil from "util";
 
 export const BenchmarkTest00288 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req as any).file?.originalname as string) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  res.json({ allocated: buf.length }); return;
+  const userInput = (req.cookies?.session_token as string) || "";
+  const data = nodeUtil.format("%s", userInput);
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  req.session.data = String(parsedNum);
+  res.json({ accepted: true });
 }

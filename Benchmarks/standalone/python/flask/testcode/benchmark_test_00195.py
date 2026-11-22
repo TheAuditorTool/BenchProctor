@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-import os
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,7 +18,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00195", methods=["POST"])
 def BenchmarkTest00195():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = (lambda v: v.strip())(env_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return jsonify({"result": "success"})
+    cookie_value = request.cookies.get('session_token', '')
+    data = bytes.fromhex(cookie_value).decode('utf-8', 'ignore')
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return jsonify({'allocated': allocated}), 200

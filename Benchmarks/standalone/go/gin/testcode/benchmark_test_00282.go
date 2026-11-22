@@ -2,22 +2,25 @@
 package testcode
 
 import (
+	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/md4"
 )
 
 func BenchmarkTest00282(c *gin.Context) {
-	userID := c.Query("id")
-	data := strings.ReplaceAll(userID, "\x00", "")
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	rawBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	defer rows.Close()
-	c.JSON(200, gin.H{"code": "OK"})
+	rawBody := string(rawBytes)
+	data := fmt.Sprintf("%s", rawBody)
+	legacyDigest := md4.New()
+	legacyDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(legacyDigest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

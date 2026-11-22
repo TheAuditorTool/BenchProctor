@@ -7,24 +7,18 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_payload { const char *value; };
+
 void benchmark_test_00260(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    char *_dst = malloc(16);
-    if (_dst == NULL) return;
-    size_t _n = strlen(data);
-    memcpy(_dst, data, _n + 1);
-    printf("%s\n", _dst);
-    free(_dst);
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

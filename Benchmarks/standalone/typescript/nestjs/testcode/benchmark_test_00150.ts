@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Req, BadRequestException } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,14 +20,9 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00150")
-  async BenchmarkTest00150(@Headers("x-forwarded-for") xff: string, @Req() req: Request): Promise<unknown> {
-    const userInput = xff || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    if (!/^[a-zA-Z0-9 _.\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    req.session.data = String(processed);
-    return { created: true };
+  async BenchmarkTest00150(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const token = crypto.randomBytes(16).toString("hex");
+    return { token, label: String(userInput) };
   }
 }

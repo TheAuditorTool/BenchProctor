@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from app_runtime import db
+from lxml import etree
 from fastapi.responses import JSONResponse
 
 
@@ -21,11 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00014")
 async def BenchmarkTest00014(request: Request):
-    with open('/etc/app/config.json', 'r') as fh:
-        config_value = fh.read()
-    if config_value:
-        data = config_value
-    else:
-        data = ''
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    raw_body = (await request.body()).decode('utf-8')
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(raw_body).encode(), _parser)
     return {"updated": True}

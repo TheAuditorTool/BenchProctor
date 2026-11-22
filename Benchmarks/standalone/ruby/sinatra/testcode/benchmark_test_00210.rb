@@ -3,7 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redcarpet"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00210 < Sinatra::Base
   before do
@@ -19,10 +21,17 @@ class BenchmarkTest00210 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00210" do
-    user_input = params[:field].to_s
-    data = sprintf("%s", user_input)
-    processed = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(filter_html: true, no_styles: true, safe_links_only: true)).render(data)
-    content_type :html
-    "<div>" + processed + "</div>"
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    redirect target_url
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

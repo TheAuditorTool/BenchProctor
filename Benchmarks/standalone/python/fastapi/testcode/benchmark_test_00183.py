@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import os
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from lxml import etree
+from starlette.responses import JSONResponse
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -28,9 +21,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00183")
 async def BenchmarkTest00183(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    reader = make_reader(comment_value)
-    data = reader()
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    origin_value = request.headers.get('origin', '')
+    data = '%s' % (origin_value,)
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(processed) + '"]')
     return {"updated": True}

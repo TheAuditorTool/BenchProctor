@@ -1,21 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import requests
-from urllib.parse import urlparse
-import re
-import os
-import redis
+import json
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 def BenchmarkTest00111(request):
-    redis_value = redis_client.get('user_data')
-    parts = str(redis_value).split(',')
-    data = ' '.join(parts)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JsonResponse({'error': 'forbidden host'}, status=403)
-    target_url = data
-    requests.get(str(target_url))
+    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
+    data = '%s' % str(graphql_var)
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'invalid number'}, status=400)
+    processed = _coerced
+    eval(str(processed))
     return JsonResponse({"saved": True})

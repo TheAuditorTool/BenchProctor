@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, abort
+from flask import redirect
+from urllib.parse import urlparse
+from dataclasses import dataclass
+from flask import jsonify
+import re
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,10 +26,13 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00273", methods=["POST"])
-def BenchmarkTest00273():
-    host_value = request.headers.get('Host', '')
-    data = (lambda v: v.strip())(host_value)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+@app.route("/BenchmarkTest00273/<path_param>", methods=["POST"])
+def BenchmarkTest00273(path_param):
+    path_value = path_param
+    form = FormData(payload=path_value)
+    data = form.payload
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    abort(redirect(str(target_url)))

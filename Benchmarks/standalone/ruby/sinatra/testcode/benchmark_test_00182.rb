@@ -19,9 +19,9 @@ class BenchmarkTest00182 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00182" do
-    user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    TCPSocket.new(data, 80).close
+    user_input = request.cookies["session_token"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const nodeUtil = require("util");
+const libxmljs = require("libxmljs");
 
 const BenchmarkTest00053 = async (ctx) => {
-  const userInput = ctx.params.id || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
+  const data = nodeUtil.format("%s", userInput);
+  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
   ctx.body = { ack: true };
 }
 

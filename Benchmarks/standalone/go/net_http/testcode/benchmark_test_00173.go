@@ -2,19 +2,18 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00173(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	var data string
-	for _, token := range strings.Split(headerValue, ",") {
-		data = token
+	_, header, err := r.FormFile("upload")
+	if err != nil {
+		http.Error(w, "bad upload", http.StatusBadRequest)
+		return
 	}
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	uploadName := header.Filename
+	data := strings.ReplaceAll(uploadName, "\x00", "")
+	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

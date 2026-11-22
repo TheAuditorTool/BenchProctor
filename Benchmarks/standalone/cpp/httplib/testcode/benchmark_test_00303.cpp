@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
-#include <unistd.h>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,25 +23,32 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef struct _xmlParserCtxt xmlParserCtxt; typedef xmlParserCtxt *xmlParserCtxtPtr;
+extern "C" xmlParserCtxtPtr xmlNewParserCtxt(void);
+extern "C" xmlDocPtr xmlCtxtReadMemory(xmlParserCtxtPtr, const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeParserCtxt(xmlParserCtxtPtr);
 
 void benchmark_test_00303(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    char _first = _p[0];
-    delete[] _p;
-    std::cout << _first << std::endl;
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    std::string _xdoc = data;
+    xmlParserCtxtPtr _xpc = xmlNewParserCtxt();
+    xmlDocPtr _xd = xmlCtxtReadMemory(_xpc, _xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    if (_xd) xmlFreeDoc(_xd);
+    xmlFreeParserCtxt(_xpc);
     res.set_content("ok", "text/plain");
 }

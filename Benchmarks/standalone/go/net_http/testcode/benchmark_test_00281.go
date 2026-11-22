@@ -2,24 +2,32 @@
 package testcode
 
 import (
-	"encoding/json"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
-	"strings"
 )
 
 func BenchmarkTest00281(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(jsonValue)
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	rawBody := string(rawBytes)
+	var data string
+	if rawBody != "" {
+		data = rawBody
+	}
+	proc, err := os.StartProcess("/bin/sh", []string{"sh", "-c", "echo " + data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	procState, err := proc.Wait()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

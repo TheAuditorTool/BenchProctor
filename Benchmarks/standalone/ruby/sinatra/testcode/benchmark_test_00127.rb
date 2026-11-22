@@ -18,14 +18,11 @@ class BenchmarkTest00127 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00127" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = "#{user_input}"
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = params[:multipart_field].to_s
+    data = user_input ? user_input : ''
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ envelope: envelope.to_pem })
   end
 end

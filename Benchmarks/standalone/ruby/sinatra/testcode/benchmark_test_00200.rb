@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "open3"
 
 class BenchmarkTest00200 < Sinatra::Base
   before do
@@ -21,9 +19,13 @@ class BenchmarkTest00200 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00200" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = "%s" % user_input
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = request.cookies["session_token"].to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    Open3.capture2e("echo " + data)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

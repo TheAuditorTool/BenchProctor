@@ -30,15 +30,22 @@ public class BenchmarkTest00052 {
         }
     }
 
+    record FormData(String payload) {}
+
     @GET
     @Path("/BenchmarkTest00052")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00052(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        String data = String.format("%s", cookieValue);
+    public Response BenchmarkTest00052(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        FormData payload = new FormData(userId);
+        String data = payload.payload();
         if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        Object codeResult = new jakarta.el.ELProcessor().eval(data);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+        java.util.Map<String, Object> sessionProfile = (java.util.Map<String, Object>) request.getSession().getAttribute("profile");
+        if (sessionProfile == null) {
+            sessionProfile = new java.util.concurrent.ConcurrentHashMap<>();
+            request.getSession().setAttribute("profile", sessionProfile);
+        }
+        sessionProfile.putAll(java.util.Map.of("displayName", data));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

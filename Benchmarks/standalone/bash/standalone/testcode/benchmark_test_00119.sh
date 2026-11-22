@@ -2,16 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00119() {
-  user_input="$PATH_INFO"
-  data="${user_input:-default}"
-  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "invalid"; exit 1; fi
-  bounded_val="$data"
-  if [ "$bounded_val" -lt 0 ] || [ "$bounded_val" -gt 2147483647 ]; then echo "overflow"; exit 1; fi
-  if [[ ! "$bounded_val" =~ ^-?[0-9]+$ ]]; then echo "invalid" >&2; exit 1; fi
-  requested=$bounded_val
-  if [ "$requested" -lt 0 ] || [ "$requested" -gt 2147483646 ]; then echo "overflow" >&2; exit 1; fi
-  alloc_size=$((requested + 1))
-  echo "alloc:$alloc_size"
+  user_input="$(sed -n '/^\r*$/{n;s/\r$//;p;q}')"
+  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
+  data=$(normalize "$user_input")
+  printf '%s' "$data" | xmllint --stream --noent --nonet -
 }
 
 benchmark_test_00119 "$@"

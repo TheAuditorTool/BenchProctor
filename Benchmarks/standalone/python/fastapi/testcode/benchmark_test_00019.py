@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from app_runtime import db
+from starlette.responses import RedirectResponse
+import os
 from fastapi.responses import JSONResponse
 
 
@@ -21,7 +22,5 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00019")
 async def BenchmarkTest00019(request: Request):
-    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
-    data = '%s' % (profile_value,)
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
-    return {"updated": True}
+    env_value = os.environ.get('APP_INPUT', '')
+    return RedirectResponse(url=str(env_value))

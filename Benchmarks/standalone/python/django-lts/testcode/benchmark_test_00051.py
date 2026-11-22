@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+from django.http import JsonResponse
+import io
+import xml.sax
+import defusedxml.sax
+from app_runtime import db
+
+
+def BenchmarkTest00051(request):
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = '%s' % str(db_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return JsonResponse({"saved": True})

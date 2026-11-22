@@ -5,7 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.yaml.snakeyaml.Yaml;
+import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,20 +31,28 @@ public class BenchmarkTest00124 {
         }
     }
 
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+
     @GET
     @Path("/BenchmarkTest00124")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00124(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(cookieValue.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        org.yaml.snakeyaml.LoaderOptions unsafeYamlOpts = new org.yaml.snakeyaml.LoaderOptions();
-        unsafeYamlOpts.setTagInspector(tag -> true);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(unsafeYamlOpts));
-        Object obj = yaml.load(data);
-        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+    public Response BenchmarkTest00124(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String apiBody = java.util.Optional.ofNullable(new java.io.BufferedReader(new java.io.InputStreamReader(java.net.URI.create("https://api.svc.local/data").toURL().openStream())).readLine()).orElse("");
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : apiBody.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeQuery("SELECT * FROM users WHERE id = '" + data + "'");
+        }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

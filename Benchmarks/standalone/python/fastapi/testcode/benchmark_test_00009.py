@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from app_runtime import db
+from lxml import etree
+import json
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,12 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00009")
 async def BenchmarkTest00009(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = (lambda v: v.strip())(db_value)
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
     try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid number'}, status_code=400)
-    processed = _coerced
-    exec(str(processed))
+        data = json.loads(upload_name).get('value', upload_name)
+    except (json.JSONDecodeError, AttributeError):
+        data = upload_name
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(data) + '"]')
     return {"updated": True}

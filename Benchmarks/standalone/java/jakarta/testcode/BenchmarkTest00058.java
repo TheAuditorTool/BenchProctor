@@ -30,17 +30,17 @@ public class BenchmarkTest00058 {
         }
     }
 
+    record FormData(String payload) {}
+
     @GET
     @Path("/BenchmarkTest00058")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00058(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        String data = String.join(" ", cookieValue.split("[ \\t]+"));
-        java.net.URI parsed = java.net.URI.create(data);
-        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
-        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
-        String targetUrl = data;
-        response.sendRedirect(targetUrl);
-        return Response.ok().build();
+    public Response BenchmarkTest00058(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        FormData payload = new FormData(refererValue);
+        String data = payload.payload();
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha1Hex(data);
+        response.setHeader("X-Hash", digestHex);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

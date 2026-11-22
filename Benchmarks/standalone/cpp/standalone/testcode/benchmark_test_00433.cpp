@@ -2,14 +2,14 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
+#include <cstring>
 
 void benchmark_test_00433(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
+    const char *user_input_env = std::getenv("HTTP_HOST");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    execl("/bin/sh", "sh", "-c", data.c_str(), (char *)nullptr);
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

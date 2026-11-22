@@ -2,30 +2,26 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00006(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	pathValue := c.Param("id")
+	data := strings.ReplaceAll(pathValue, "\x00", "")
+	lookupStmt, err := DB.Prepare("SELECT id, name FROM users WHERE id = $1")
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	rawBody := string(rawBytes)
-	var data string
-	for _, token := range strings.Split(rawBody, ",") {
-		data = token
-	}
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query(data)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	processed := data
-	c.Set("data", processed)
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

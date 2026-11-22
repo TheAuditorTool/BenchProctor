@@ -1,8 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from flask import request
-from flask import jsonify
+from flask import Flask, request, jsonify
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = Flask(__name__)
 
@@ -20,9 +34,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00203", methods=["POST"])
 def BenchmarkTest00203():
-    raw_body = request.get_data(as_text=True)
-    if raw_body:
-        data = raw_body
-    else:
-        data = ''
-    return redirect(str(data))
+    referer_value = request.headers.get('Referer', '')
+    data = referer_value if referer_value else 'default'
+    with Session(_engine) as _session:
+        _session.scalars(select(User).where(User.id == data)).first()
+    return jsonify({"result": "success"})

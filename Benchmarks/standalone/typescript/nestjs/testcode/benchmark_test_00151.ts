@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe, NotFoundException } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import { IsString } from "class-validator";
+import * as libxmljs from "libxmljs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,14 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00151")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00151(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
+  async BenchmarkTest00151(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = String(userInput).slice(0, 200);
+    await libxmljs.parseXmlAsync(String(data), { replaceEntities: true });
     return { created: true };
   }
 }

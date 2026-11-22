@@ -3,37 +3,36 @@ package testcode
 
 import (
 	"fmt"
+	"io"
 	"net/http"
-	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00054(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data := fmt.Sprintf("%s", refererValue)
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		c.String(http.StatusBadRequest, "invalid input")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	processed := data
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	rawBody := string(rawBytes)
+	data := func(v string) string { return strings.TrimSpace(v) }(rawBody)
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const exportRecordSize = 512
+	const maxExportRecords = 10000
+	recordCount, err := strconv.ParseInt(boundedVal, 10, 64)
+	if err != nil || recordCount < 1 || recordCount > maxExportRecords {
+		c.String(http.StatusBadRequest, "invalid record count")
+		return
 	}
+	exportBuf := make([]byte, 0, recordCount*exportRecordSize)
+	c.Header("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
 	c.JSON(200, gin.H{"code": "OK"})
 }

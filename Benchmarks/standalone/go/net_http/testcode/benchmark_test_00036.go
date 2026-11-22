@@ -2,21 +2,22 @@
 package testcode
 
 import (
+	"crypto/rand"
+	"io"
 	"net/http"
-	"net/url"
-	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00036(w http.ResponseWriter, r *http.Request) {
-	hostValue := r.Host
-	capture := func() string { return strings.TrimSpace(hostValue) }
-	data := capture()
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	targetUrl := data
-	http.Redirect(w, r, targetUrl, http.StatusFound)
+	xmlBody := string(rawBytes)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(xmlBody)
+	apiToken := rand.Text()
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": apiToken})
 }

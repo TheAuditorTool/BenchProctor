@@ -2,22 +2,38 @@
 package testcode
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"net/url"
-	"regexp"
-	"strings"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00159(c *gin.Context) {
-	userID := c.Query("id")
-	data := strings.Join(strings.FieldsFunc(userID, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	pathValue := c.Param("id")
+	var data string
+	if len(pathValue) > 0 {
+		data = pathValue
+	} else {
+		data = "default"
+	}
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

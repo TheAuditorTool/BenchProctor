@@ -3,21 +3,31 @@ package testcode
 
 import (
 	"net/http"
-	"os/exec"
+	"regexp"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00158(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	segments := strings.Split(uaValue, ",")
-	data := strings.Join(segments, " ")
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	authHeader := c.GetHeader("Authorization")
+	var data string
+	if len(authHeader) > 0 {
+		data = authHeader
+	} else {
+		data = "default"
+	}
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
 		return
 	}
-	c.Data(200, "text/plain", output)
+	processed := data
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	c.JSON(200, gin.H{"code": "OK"})
 }

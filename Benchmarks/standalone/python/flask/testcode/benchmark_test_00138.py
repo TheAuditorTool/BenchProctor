@@ -1,12 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import re
+import yaml
+from flask import Flask, request, jsonify
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -22,12 +17,11 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00138/<path_param>", methods=["POST"])
-def BenchmarkTest00138(path_param):
-    path_value = path_param
-    reader = make_reader(path_value)
-    data = reader()
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    return '<div>' + str(processed) + '</div>'
+@app.route("/BenchmarkTest00138", methods=["POST"])
+def BenchmarkTest00138():
+    multipart_value = request.form.get('multipart_field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(multipart_value)
+    yaml.load(data, Loader=yaml.UnsafeLoader)
+    return jsonify({"result": "success"})

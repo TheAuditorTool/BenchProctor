@@ -2,9 +2,12 @@
 package testcode
 
 import (
+	"bytes"
 	"context"
-	"net"
+	"io"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -20,10 +23,19 @@ func BenchmarkTest00070(w http.ResponseWriter, r *http.Request) {
 	if _sqsErr == nil && len(_sqsOut.Messages) > 0 {
 		msgValue = aws.ToString(_sqsOut.Messages[0].Body)
 	}
-	data := strings.ReplaceAll(msgValue, "\x00", "")
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	data := string(bytes.TrimSpace([]byte(msgValue)))
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	targetUrl := data
+	resp, err := http.Get(targetUrl)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

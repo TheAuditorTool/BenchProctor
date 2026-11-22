@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::HttpResponse;
-use base64::Engine;
-use base64::engine::general_purpose;
 use tokio::net::TcpStream;
+use url::Url;
 
 #[actix_web::post("/benchmark_test_00219")]
 pub async fn benchmark_test_00219() -> HttpResponse {
-    let msg_value = crate::shared::queue_get_message("app-events");
-    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&msg_value).unwrap_or_default()).to_string();
-    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
+    let api_value = crate::shared::fetch_url("https://api.partner.example.com/v1/records");
+    let parsed = Url::parse(&api_value).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
+    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
+    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
+    let target_url = api_value.clone();
+    let _sock_host = if target_url.contains("://") { url::Url::parse(&target_url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { target_url.clone() };
     TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -3,6 +3,9 @@
 #include <string>
 #include <cstdlib>
 #include <unistd.h>
+#include <unordered_map>
+
+struct RatePlan { int limit; };
 
 void benchmark_test_00528(int, char **)
 {
@@ -15,8 +18,11 @@ void benchmark_test_00528(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    static const RatePlan _basic{10}, _pro{100};
+    std::unordered_map<std::string, const RatePlan *> _plans{{"basic", &_basic}, {"pro", &_pro}};
+    const RatePlan *_plan = _plans[data];
+    int _limit = _plan ? _plan->limit : 0;
+    std::cout << "limit " << _limit << std::endl;
 }

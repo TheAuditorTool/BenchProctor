@@ -1,14 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00010")]
-pub async fn benchmark_test_00010(req: HttpRequest) -> HttpResponse {
-    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut data = String::new();
-    for token in forwarded_ip.split(',') { data = token.to_string(); }
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    tokio::fs::write(format!("/var/app/data/{}", processed), "data").await.ok();
+pub async fn benchmark_test_00010(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
+            }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
+        }
+        _mv
+    };
+    struct FormData { payload: String }
+    let data = FormData { payload: multipart_value.clone() }.payload;
+    let _profile = std::collections::BTreeMap::from([("display_name".to_string(), data.clone()), ("profile_complete".to_string(), "true".to_string())]);
+    if let Ok(mut _session) = crate::shared::SESSION_STORE.lock() {
+        _session.extend(_profile);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

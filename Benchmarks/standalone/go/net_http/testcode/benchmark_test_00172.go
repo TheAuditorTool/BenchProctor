@@ -2,12 +2,32 @@
 package testcode
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00172(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	userID := r.URL.Query().Get("id")
+	data := func(v string) string { return strings.TrimSpace(v) }(userID)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

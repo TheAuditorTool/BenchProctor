@@ -2,21 +2,26 @@
 package testcode
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 func BenchmarkTest00259(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
+	originValue := r.Header.Get("Origin")
+	relayPrefix := ""
+	if len(originValue) > 0 {
+		relayPrefix = strings.ToLower(originValue[:1])
 	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = originValue
+	case "f":
+		data = originValue
+	default:
+		data = originValue
 	}
-	jsonValue := reqBody.Payload
-	data := strings.ReplaceAll(jsonValue, "\x00", "")
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
+	w.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; Secure; HttpOnly; SameSite=Strict")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

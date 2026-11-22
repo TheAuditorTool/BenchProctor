@@ -20,17 +20,13 @@ public class BenchmarkTest00084 {
     }
 
     @GetMapping("/BenchmarkTest00084")
-    public void BenchmarkTest00084(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(forwardedIp.split(",")));
-        java.util.List<String> lowered = new java.util.ArrayList<>();
-        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
-        String data = String.join(",", lowered);
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        String boundedVal = data;
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(boundedVal).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public void BenchmarkTest00084(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.function.Supplier<String> valueSupplier = () -> hostValue.strip();
+        String data = valueSupplier.get();
+        int requested = Integer.parseInt(data);
+        int allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

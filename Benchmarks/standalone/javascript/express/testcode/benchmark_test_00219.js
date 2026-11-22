@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
+const nodeSerialize = require("node-serialize");
 
 async function BenchmarkTest00219(req, res) {
-  const userInput = req.headers["x-custom-header"] || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  http.get(data);
+  const userInput = req.body?.variables?.input || "";
+  nodeSerialize.unserialize(userInput);
   res.json({ done: true });
 }
 

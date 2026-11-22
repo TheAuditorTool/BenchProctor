@@ -2,21 +2,21 @@
 package testcode
 
 import (
-	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func BenchmarkTest00136(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	headerValue := r.Header.Get("X-Custom-Header")
+	data := func(v string) string { return strings.TrimSpace(v) }(headerValue)
+	const exportRecordSize = 512
+	recordCount, err := strconv.ParseInt(data, 10, 32)
+	if err != nil {
+		http.Error(w, "invalid record count", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(jsonValue)
-	htmlOut := "<div>" + data + "</div>"
-	w.Write([]byte(htmlOut))
+	exportBuf := make([]byte, 0, int32(recordCount)*exportRecordSize)
+	w.Header().Set("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

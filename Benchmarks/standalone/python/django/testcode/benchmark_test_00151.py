@@ -1,15 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.utils.safestring import mark_safe
-from django.http import HttpResponse
-import markdown
-import bleach
+from django.http import JsonResponse
+import random
+from app_runtime import db
 
 
 def BenchmarkTest00151(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    parts = []
-    for token in str(ua_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    processed = bleach.clean(markdown.markdown(data))
-    return HttpResponse(mark_safe('<div>' + str(processed) + '</div>'))
+    xml_value = request.body.decode('utf-8')
+    pending = list(str(xml_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    token = '%032x' % random.SystemRandom().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JsonResponse({'token': str(token)}, status=200)

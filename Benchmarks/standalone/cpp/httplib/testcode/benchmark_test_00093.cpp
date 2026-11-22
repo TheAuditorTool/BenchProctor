@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -16,6 +15,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -26,11 +26,18 @@ struct Client {
 
 void benchmark_test_00093(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
+    std::string user_input = req.get_header_value("Referer");
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::string _cmd = std::string("ls ") + data;
-    std::system(_cmd.c_str());
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    std::string _ckval = data;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.insert(std::make_pair(std::string("Set-Cookie"), std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/"));
     res.set_content("ok", "text/plain");
 }

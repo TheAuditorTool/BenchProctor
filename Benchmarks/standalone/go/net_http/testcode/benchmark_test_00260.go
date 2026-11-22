@@ -2,34 +2,17 @@
 package testcode
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
-	"io"
+	"context"
 	"net/http"
-	"os"
+	"os/exec"
+	"time"
 )
 
 func BenchmarkTest00260(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	rawBody := string(rawBytes)
-	var data string
-	if len(rawBody) > 0 {
-		data = rawBody
-	} else {
-		data = "default"
-	}
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := aes.NewCipher(keyHash[:])
-	gcm, _ := cipher.NewGCM(cipherBlock)
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
+	userID := r.URL.Query().Get("id")
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", userID)
+	output, _ := cmd.CombinedOutput()
+	w.Write(output)
 }

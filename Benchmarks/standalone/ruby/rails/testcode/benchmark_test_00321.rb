@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "bunny"
 
 class BenchmarkTest00321Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,12 +12,9 @@ class BenchmarkTest00321Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00321
-    user_input = request.query_parameters[:q].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    system("echo " + data)
+    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
+    data = sprintf("%s", user_input)
+    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
     render json: { status: "ok" }
   end
 end

@@ -5,7 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.xpath.*;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,20 +31,19 @@ public class BenchmarkTest00034 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00034")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00034(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        java.util.Properties property = new java.util.Properties();
-        property.setProperty("value", originValue);
-        String data = property.getProperty("value", "");
-        try { Double.parseDouble(data); }
+    public Response BenchmarkTest00034(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.replace("\u0000", "");
+        try { Integer.parseInt(data); }
         catch (NumberFormatException e) { return Response.status(400).build(); }
-        String boundedVal = data;
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + boundedVal + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        long requested = boundedVal;
+        long allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

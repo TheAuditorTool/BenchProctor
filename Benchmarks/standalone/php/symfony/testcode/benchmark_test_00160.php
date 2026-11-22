@@ -11,14 +11,9 @@ class BenchmarkTest00160Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
-        [$data] = [$userInput, 'http'];
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        $resolved = gethostbyname($host);
-        if (preg_match('#^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)#', $resolved)) { return new JsonResponse(['error' => 'private range blocked'], 403); }
-        $targetUrl = $data;
-        $errno = 0; $errstr = '';
-        fsockopen((string)$targetUrl, 80, $errno, $errstr, 30);
+        $userInput = $request->getContent();
+        $users = simplexml_load_file('/var/app/data/users.xml');
+        $matches = $users->xpath("//user[@name='" . $userInput . "']");
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from app_runtime import db
+import io
+import xml.sax
+import json
 
 
 def BenchmarkTest00099(request):
-    cookie_value = request.COOKIES.get('session_token', '')
-    data = (lambda v: v.strip())(cookie_value)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data = (lambda v: v.strip())(json_value)
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return JsonResponse({"saved": True})

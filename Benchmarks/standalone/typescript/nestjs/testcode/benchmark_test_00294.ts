@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
+import { Controller, Param, Post, Req } from "@nestjs/common";
 import { Request, Response } from "express";
-import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,13 +16,10 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00294")
-  async BenchmarkTest00294(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    childProcess.execSync("echo " + data);
+  @Post("BenchmarkTest00294/:id")
+  async BenchmarkTest00294(@Param("id") pathId: string, @Req() req: Request): Promise<unknown> {
+    const userInput = pathId;
+    req.session.data = String(userInput);
     return { created: true };
   }
 }

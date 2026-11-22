@@ -1,11 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
+from lxml import etree
+import re
 import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, jsonify
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,11 +26,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00228", methods=["POST"])
 def BenchmarkTest00228():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    if json_value:
-        data = json_value
-    else:
-        data = ''
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    env_value = os.environ.get('APP_INPUT', '')
+    reader = make_reader(env_value)
+    data = reader()
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(processed) + '"]')
+    return jsonify({"result": "success"})

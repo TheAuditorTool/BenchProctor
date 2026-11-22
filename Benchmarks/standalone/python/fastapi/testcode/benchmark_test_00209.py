@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import re
-from starlette.responses import JSONResponse
+from lxml import etree
+from dataclasses import dataclass
+from fastapi import Form
+from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -21,13 +27,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00209")
-async def BenchmarkTest00209(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    parts = []
-    for token in str(ua_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+async def BenchmarkTest00209(request: Request, field: str = Form('')):
+    field_value = field
+    form = FormData(payload=field_value)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
+    return {"updated": True}

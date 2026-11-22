@@ -8,32 +8,23 @@
 #include <time.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/hmac.h>
 
 void benchmark_test_00052(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
-    }
-    const char *user_input = user_input_buf;
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    unsigned char _iv[8];
-    RAND_bytes(_iv, sizeof(_iv));
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    const char *_kv = getenv("DATA_ENC_KEY");
+    if (_kv == NULL) return;
+    unsigned char _salt[16], _key[32];
+    if (RAND_bytes(_salt, sizeof(_salt)) != 1) return;
+    HMAC(EVP_sha256(), _kv, (int)strlen(_kv), _salt, sizeof(_salt), _key, NULL);
     EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
     unsigned char _ct[512];
     int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
+    EVP_CipherInit_ex(_ctx, EVP_rc4(), NULL, _key, NULL, 1);
+    EVP_CipherUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strnlen(data, sizeof(_ct)));
     EVP_CIPHER_CTX_free(_ctx);
 }

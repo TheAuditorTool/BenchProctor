@@ -3,22 +3,19 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00153', methods: ['POST'])]
 class BenchmarkTest00153Controller
 {
-    public function __invoke(Request $request, Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Authorization', '');
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        if ($result === false) { return new JsonResponse(["error" => "not found"], 404); }
-        $value = $result['name'];
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('X-Forwarded-For', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $twig = new \Twig\Environment(new \Twig\Loader\ArrayLoader(['comment.html.twig' => '<div class="comment">{{ comment|raw }}</div>']));
+        $html = $twig->render('comment.html.twig', ['comment' => $data]);
+        return new Response($html, 200, ['Content-Type' => 'text/html']);
     }
 }

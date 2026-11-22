@@ -1,12 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from app_runtime import db
+import hashlib
+from flask import Flask, request, jsonify
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -24,11 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00008", methods=["POST"])
 def BenchmarkTest00008():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    reader = make_reader(db_value)
-    data = reader()
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return jsonify({'error': 'not found'}), 404
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = (lambda v: v.strip())(graphql_var)
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

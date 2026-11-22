@@ -2,8 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "open-uri"
 
 class BenchmarkTest00270Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,16 +11,10 @@ class BenchmarkTest00270Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00270
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    URI.open(target_url).read
+    user_input = Comment.first&.text.to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    RubyVM::InstructionSequence.compile(data.to_s).eval
     render json: { status: "ok" }
   end
 end

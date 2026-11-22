@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-import requests
-from starlette.responses import JSONResponse
-import re
+import json
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -24,10 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00018")
 async def BenchmarkTest00018(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = api_value if api_value else 'default'
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = str(graphql_var).replace('\x00', '')
+    request.app.state.active_tenant = str(data)
+    return {"updated": True}

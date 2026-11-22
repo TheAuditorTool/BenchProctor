@@ -8,15 +8,13 @@ class BenchmarkTest00326Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
-        return response()->json(['ok' => 1]);
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return \Illuminate\Support\Facades\Redirect::away((string)$targetUrl);
     }
 }

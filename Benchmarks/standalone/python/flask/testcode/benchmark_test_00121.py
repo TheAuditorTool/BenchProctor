@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from flask import Flask, jsonify
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -16,9 +19,11 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00121", methods=["POST"])
-def BenchmarkTest00121():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    data = '%s' % str(graphql_var)
-    eval(str(data))
-    return jsonify({"result": "success"})
+@app.route("/BenchmarkTest00121/<path_param>", methods=["POST"])
+def BenchmarkTest00121(path_param):
+    path_value = path_param
+    data = path_value if path_value else 'default'
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

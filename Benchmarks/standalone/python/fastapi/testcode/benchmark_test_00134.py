@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from dataclasses import dataclass
-from fastapi.responses import JSONResponse
+import subprocess
+import re
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -26,8 +25,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00134")
-async def BenchmarkTest00134(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    form = FormData(payload=auth_header)
-    data = form.payload
-    return RedirectResponse(url=str(data))
+async def BenchmarkTest00134(request: Request, req: UserInput):
+    json_value = req.payload
+    data = json_value if json_value else 'default'
+    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    subprocess.Popen('echo ' + str(processed), shell=True).wait()
+    return {"updated": True}

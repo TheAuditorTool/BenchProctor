@@ -2,26 +2,14 @@
 package testcode
 
 import (
+	"context"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00056(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
-		return
-	}
-	cookieValue := cookieObj.Value
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(cookieValue)
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	uaValue := r.Header.Get("User-Agent")
+	segments := strings.Split(uaValue, ",")
+	data := strings.Join(segments, " ")
+	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
 }

@@ -30,15 +30,17 @@ public class BenchmarkTest00011 {
         }
     }
 
-    @GET
-    @Path("/BenchmarkTest00011/{pathId}")
+    @POST
+    @Path("/BenchmarkTest00011")
+    @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00011(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        String data = String.join(" ", pathValue.split("[ \\t]+"));
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
+    public Response BenchmarkTest00011(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String data = xmlValue.replace("\u0000", "");
+        StringBuilder xmlText = new StringBuilder();
+        javax.xml.parsers.SAXParser saxParser = javax.xml.parsers.SAXParserFactory.newInstance().newSAXParser();
+        saxParser.parse(new org.xml.sax.InputSource(new java.io.StringReader(data)), new org.xml.sax.helpers.DefaultHandler() { @Override public void characters(char[] ch, int start, int length) { xmlText.append(ch, start, length); } });
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

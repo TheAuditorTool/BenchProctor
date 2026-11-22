@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "yaml"
 
 class BenchmarkTest00175Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,13 +11,11 @@ class BenchmarkTest00175Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00175
-    user_input = request.headers["Origin"].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    YAML.unsafe_load(data)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
+    render json: { digest: digest }
   end
 end

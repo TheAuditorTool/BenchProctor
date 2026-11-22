@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00002 < Sinatra::Base
   before do
@@ -18,10 +19,10 @@ class BenchmarkTest00002 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00002" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    system("echo " + data)
+    user_input = request.body.read
+    payload, _origin = user_input, 'http'
+    data = payload
+    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
     content_type :json
     JSON.generate({ status: "ok" })
   end

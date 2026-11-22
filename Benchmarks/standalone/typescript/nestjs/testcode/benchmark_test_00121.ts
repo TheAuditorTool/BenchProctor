@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
+import * as ldapjs from "ldapjs";
+import { IsString, Matches, validateSync } from "class-validator";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +20,24 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00121")
-  async BenchmarkTest00121(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    crypto.createHash("sha256").update(data).digest("hex");
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00121(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    class PayloadRules {
+      @IsString()
+      @Matches(/^[a-zA-Z0-9 _.#%\-]+$/)
+      value!: string;
+    }
+    const _rules = new PayloadRules();
+    _rules.value = String(data);
+    const _violations = validateSync(_rules);
+    if (_violations.length > 0) { throw new BadRequestException({error:"invalid"}); }
+    const processed = _rules.value;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
     return { created: true };
   }
 }

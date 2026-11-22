@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import os
+from lxml import etree
+from dataclasses import dataclass
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 def BenchmarkTest00043(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    data = '%s' % (ua_value,)
-    base_dir = '/var/app/data'
-    full_path = os.path.realpath(os.path.join(base_dir, data))
-    if not full_path.startswith(base_dir + os.sep):
-        return JsonResponse({'error': 'forbidden'}, status=403)
-    checked_path = full_path
-    os.unlink(checked_path)
+    field_value = request.POST.get('field', '')
+    form = FormData(payload=field_value)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
     return JsonResponse({"saved": True})

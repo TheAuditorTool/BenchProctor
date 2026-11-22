@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
+const crypto = require("crypto");
 
 const BenchmarkTest00238 = async (ctx) => {
-  const userInput = ctx.request.body || "";
-  const data = String(userInput).slice(0, 200);
-  const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
-  if (!allowedFiles.has(data)) { ctx.status = 403; ctx.body = {error:"forbidden"}; return; }
-  const checkedPath = "/var/app/data/" + data;
-  const fileContent = fs.readFileSync(checkedPath, "utf8");
-  ctx.body = fileContent;
+  const userInput = ctx.query.id || "";
+  const _input = String(userInput);
+  let data;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': data = _input.normalize('NFC'); break;
+    default: data = _input; break;
+  }
+  crypto.createHash("sha256").update(data).digest("hex");
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00238 };

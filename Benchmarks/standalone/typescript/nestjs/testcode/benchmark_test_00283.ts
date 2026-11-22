@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Redirect } from "@nestjs/common";
+import { Controller, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,15 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00283")
-  @Redirect()
-  async BenchmarkTest00283(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    return { url: data };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00283(@UploadedFile() file: Express.Multer.File, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = `${userInput}`;
+    res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict");
+    return { created: true };
   }
 }

@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
 
 
 app = Flask(__name__)
@@ -22,11 +18,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00131", methods=["POST"])
 def BenchmarkTest00131():
-    cookie_value = request.cookies.get('session_token', '')
-    if cookie_value:
-        data = cookie_value
-    else:
-        data = ''
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    field_value = request.form.get('field', '')
+    data = '%s' % str(field_value)
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return jsonify({'error': 'unknown plan'}), 404
+    value = label.upper()
+    return jsonify({'plan': value}), 200

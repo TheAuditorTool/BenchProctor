@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,8 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00130", methods=["POST"])
 def BenchmarkTest00130():
-    upload_name = request.files['upload'].filename
-    data, _sep, _rest = str(upload_name).partition('\x00')
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    auth_header = request.headers.get('Authorization', '')
+    data = bytes.fromhex(auth_header).decode('utf-8', 'ignore')
+    os.system('echo ' + str(data))
+    return jsonify({"result": "success"})

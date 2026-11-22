@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as http from "http";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,9 +18,9 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00106")
-  async BenchmarkTest00106(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const data = Buffer.from(userInput, "hex").toString();
+  async BenchmarkTest00106(@Headers("host") host: string): Promise<unknown> {
+    const userInput = host || "";
+    const data = String(userInput).replace(/\u0000/g, "");
     http.get(data);
     return { created: true };
   }

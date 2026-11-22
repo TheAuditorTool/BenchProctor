@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
+const ldapjs = require("ldapjs");
+const joi = require("joi");
 
 const BenchmarkTest00164 = async (ctx) => {
-  const userInput = (await (await fetch("https://api.partner.example/v1/records")).json()).data || "";
-  const [data] = String(userInput).split(',');
-  const { drizzle } = require("drizzle-orm/better-sqlite3");
-  const { sql } = require("drizzle-orm");
-  const Database = require("better-sqlite3");
-  const _drizzle = drizzle(new Database(":memory:"));
-  await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
+  const userInput = ctx.cookies.get("session_token") || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  const _schema = joi.string().pattern(/^[a-zA-Z0-9 _.#%\-]+$/).required();
+  const { error: _schemaErr, value: _schemaVal } = _schema.validate(data);
+  if (_schemaErr) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = _schemaVal;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
   ctx.body = { ack: true };
 }
 

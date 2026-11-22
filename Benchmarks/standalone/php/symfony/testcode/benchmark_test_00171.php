@@ -5,18 +5,19 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00171', methods: ['POST'])]
 class BenchmarkTest00171Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
-        $data = vsprintf('%1$s', [$userInput]);
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        $rng = new \Random\Randomizer(new \Random\Engine\Mt19937());
+        $token = bin2hex($rng->getBytes(16));
+        $conn->executeStatement('UPDATE users SET reset_token = ? WHERE email = ?', [$token, (string)$data]);
+        return new JsonResponse(['reset' => 'sent'], 200);
     }
 }

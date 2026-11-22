@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
 
 const BenchmarkTest00257 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  http.get(data);
+  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const { stringifySetCookie } = require("cookie");
+  ctx.append(
+    "Set-Cookie",
+    stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict", secure: true }),
+  );
   ctx.body = { ack: true };
 }
 

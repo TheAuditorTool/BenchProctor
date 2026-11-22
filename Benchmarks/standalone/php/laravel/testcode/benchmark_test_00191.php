@@ -8,13 +8,9 @@ class BenchmarkTest00191Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return response()->json(['allocated' => $allocated], 200);
+        $userInput = $request->header('Host', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        eval((string)$data);
+        return response()->json(['ok' => 1]);
     }
 }

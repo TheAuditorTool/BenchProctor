@@ -13,6 +13,11 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00060 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -31,18 +36,24 @@ public class BenchmarkTest00060 {
     }
 
     @POST
-    @Path("/BenchmarkTest00060")
-    @Consumes(MediaType.APPLICATION_XML)
+    @Path("/BenchmarkTest00060/graphql")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00060(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        String data = xmlValue.replace("\u0000", "");
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        String boundedVal = data;
-        String validatedName = boundedVal.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? boundedVal.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00060(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : graphqlVar.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.#%\\-]+$") String value) {}
+        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { return Response.status(400).entity("schema invalid").build(); }
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

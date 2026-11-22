@@ -2,29 +2,19 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00075(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	capture := func() string { return strings.TrimSpace(fieldValue) }
-	data := capture()
-	var _num float64
-	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
-		http.Error(w, "invalid number", http.StatusBadRequest)
-		return
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	data := strings.Join(strings.FieldsFunc(pathValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
 	}
-	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+boundedVal+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	upstream := upstreams[data]
+	upstreamHost := upstream.Host
+	RespondJSON(w, http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

@@ -11,10 +11,9 @@ class BenchmarkTest00117Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = "{$userInput}";
-        $resp = new JsonResponse(['ok' => 1]);
-        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
-        return $resp;
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        return new JsonResponse(["committed" => true]);
     }
 }

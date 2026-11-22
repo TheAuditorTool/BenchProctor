@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
+import { Body, Controller, Header, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,14 +22,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00235")
-  async BenchmarkTest00235(@Headers("origin") origin: string): Promise<unknown> {
-    const userInput = origin || "";
-    const data = `${userInput}`;
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+  @UsePipes(new ValidationPipe())
+  @Header("Content-Type", "text/html")
+  async BenchmarkTest00235(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    return "<div>" + data + "</div>";
   }
 }

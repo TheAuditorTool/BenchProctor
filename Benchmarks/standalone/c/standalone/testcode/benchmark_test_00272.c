@@ -6,18 +6,20 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <openssl/rand.h>
 
 void benchmark_test_00272(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    memcpy(_out, _buf, _span);
-    printf("%.*s\n", (int)_span, _out);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    unsigned char _rnd[16];
+    if (RAND_bytes(_rnd, sizeof(_rnd)) != 1) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; _i++) snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    printf("token for %s: %s\n", data, _hex);
 }

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const isoDompurify = require("isomorphic-dompurify");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00201(req, res) {
-  const userInput = req.body.field || "";
-  const data = userInput != null ? userInput : '';
-  const _clean = isoDompurify.sanitize(data);
-  const processed = _clean;
-  res.send("<div>" + processed + "</div>");
+  const userInput = req.cookies.session_token || "";
+  const [data] = String(userInput).split(',');
+  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+  xpath.select("//user[name='" + data + "']", xmlDoc);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00201 };

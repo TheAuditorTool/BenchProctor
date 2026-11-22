@@ -7,18 +7,13 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00518(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    const char *safe = user_input;
-    if (strcmp(user_input, "/bin/echo") != 0 && strcmp(user_input, "/bin/cat") != 0) safe = "/bin/echo";
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = c_passthrough(user_input);
     char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", safe);
-    FILE *_p = popen(_cmd, "r");
-    if (_p) pclose(_p);
+    snprintf(_cmd, sizeof(_cmd), "ls %s", data);
+    system(_cmd);
 }

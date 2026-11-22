@@ -2,19 +2,23 @@
 package testcode
 
 import (
-	"bytes"
-	"strings"
+	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yuin/goldmark"
 )
 
 func BenchmarkTest00190(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	data := func(v string) string { return strings.TrimSpace(v) }(uaValue)
-	var mdBuf bytes.Buffer
-	goldmark.New().Convert([]byte(data), &mdBuf)
-	processed := mdBuf.String()
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(dbValue)
+	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
+	rows, err := DB.Query(query)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

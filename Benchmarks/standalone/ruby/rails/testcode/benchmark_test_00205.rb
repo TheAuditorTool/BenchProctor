@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "yaml"
+require "base64"
 
 class BenchmarkTest00205Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,13 +12,9 @@ class BenchmarkTest00205Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00205
-    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    YAML.unsafe_load(data)
+    user_input = request.headers["Authorization"].to_s
+    data = Base64.decode64(user_input)
+    ActiveRecord::Base.connection.exec_query("SELECT * FROM users WHERE id = '" + data + "'", "SQL", [], prepare: true)
     render json: { status: "ok" }
   end
 end

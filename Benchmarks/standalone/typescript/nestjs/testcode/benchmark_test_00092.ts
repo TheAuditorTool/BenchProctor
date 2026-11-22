@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,10 +24,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00092")
-  async BenchmarkTest00092(@Body("field") field: string, @Req() req: Request): Promise<unknown> {
-    const userInput = field || "";
-    const data = `${userInput}`;
-    req.session.data = String(data);
+  async BenchmarkTest00092(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const _raw = userInput;
+    const data = (_raw && _raw.length > 0) ? _raw : 'default';
+    childProcess.execFile("echo", [String(data)], (_err: Error | null, stdout: string) => console.log(stdout));
     return { created: true };
   }
 }

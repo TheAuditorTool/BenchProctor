@@ -11,11 +11,13 @@ class BenchmarkTest00166Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Host', '');
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        $resp = new JsonResponse(['ok' => 1]);
-        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, true, true, false, 'Strict'));
-        return $resp;
+        $userInput = $request->getContent();
+        $data = vsprintf('%1$s', [$userInput]);
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $data . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
+        return new JsonResponse(["committed" => true]);
     }
 }

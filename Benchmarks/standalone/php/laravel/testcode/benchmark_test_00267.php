@@ -8,9 +8,10 @@ class BenchmarkTest00267Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $data = str_replace("\0", '', $userInput);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        exec('tar -czf /tmp/backup.tgz ' . (string)$data);
         return response()->json(['ok' => 1]);
     }
 }

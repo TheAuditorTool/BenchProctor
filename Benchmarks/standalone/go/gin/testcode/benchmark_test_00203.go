@@ -2,16 +2,23 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00203(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(dbValue)
-	c.Redirect(http.StatusFound, data)
+	userID := c.Query("id")
+	data, _ := url.QueryUnescape(userID)
+	var _num float64
+	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid number")
+		return
+	}
+	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
+	trustedSettings.Store("partner_callback_host", boundedVal)
+	c.JSON(200, gin.H{"code": "OK"})
 }

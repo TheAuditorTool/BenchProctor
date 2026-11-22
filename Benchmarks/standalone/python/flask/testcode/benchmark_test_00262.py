@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
+import subprocess
 from flask import Flask, request, jsonify
 
 
@@ -19,13 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00262", methods=["POST"])
 def BenchmarkTest00262():
-    xml_value = request.get_data(as_text=True)
-    data, _sep, _rest = str(xml_value).partition('\x00')
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    cookie_value = request.cookies.get('session_token', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(cookie_value)
+    subprocess.run('echo ' + str(data), shell=True)
     return jsonify({"result": "success"})

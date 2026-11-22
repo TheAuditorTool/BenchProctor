@@ -2,9 +2,8 @@
 package testcode
 
 import (
-	"fmt"
-	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -12,21 +11,24 @@ import (
 )
 
 func BenchmarkTest00002(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	rawBody := string(rawBytes)
-	segments := strings.Split(rawBody, ",")
-	data := strings.Join(segments, " ")
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	jsonValue := reqBody.Payload
+	data := strings.ReplaceAll(jsonValue, "\x00", "")
+	proc, err := os.StartProcess("/bin/sh", []string{"sh", "-c", "echo " + data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

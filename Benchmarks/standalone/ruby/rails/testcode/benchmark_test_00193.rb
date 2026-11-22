@@ -11,10 +11,10 @@ class BenchmarkTest00193Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00193
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = JSON.parse(user_input)["value"] rescue ""
-    result = User.find_by(name: data)
-    value = result.name
+    user_input = request.headers["X-Custom-Header"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    File.write("/var/uploads/" + data, "data")
     render json: { status: "ok" }
   end
 end

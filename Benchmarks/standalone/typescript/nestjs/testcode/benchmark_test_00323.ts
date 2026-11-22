@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req, BadRequestException } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as childProcess from "child_process";
+import { Controller, Headers, Post, ForbiddenException } from "@nestjs/common";
+import { Response } from "express";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +18,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00323")
-  async BenchmarkTest00323(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const data = String(userInput).split(/[ \t]+/).join(" ");
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    childProcess.execSync("echo " + processed);
+  async BenchmarkTest00323(@Headers("origin") origin: string): Promise<unknown> {
+    const userInput = origin || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
+    if (!allowedFiles.has(data)) { throw new ForbiddenException({error:"forbidden"}); }
+    const checkedPath = "/var/app/data/" + data;
+    fs.writeFileSync(checkedPath, "data");
     return { created: true };
   }
 }

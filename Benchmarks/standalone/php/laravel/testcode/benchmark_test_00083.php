@@ -8,12 +8,11 @@ class BenchmarkTest00083Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
-        $parsedBool = $_coerced;
-        session(['data' => (string) $parsedBool]);
+        $userInput = $request->header('User-Agent', '');
+        $data = sprintf('%s', $userInput);
+        $zones = ['utc' => new \DateTimeZone('UTC'), 'berlin' => new \DateTimeZone('Europe/Berlin'), 'tokyo' => new \DateTimeZone('Asia/Tokyo')];
+        $zone = $zones[(string)$data];
+        $zoneName = $zone->getName();
         return response()->json(['ok' => 1]);
     }
 }

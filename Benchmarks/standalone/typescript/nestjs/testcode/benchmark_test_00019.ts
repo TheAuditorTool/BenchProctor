@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
-import { FileInterceptor } from "@nestjs/platform-express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { DataSource } from "typeorm";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -19,12 +20,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00019")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00019(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(data));
+  async BenchmarkTest00019(): Promise<unknown> {
+    const userInput = (await db.query("SELECT bio FROM profiles WHERE user_id = $1", [1])).rows[0].bio;
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
+    await _dataSource.initialize();
+    await _dataSource.createQueryBuilder().select("u.id").from("users", "u").where("u.name = '" + data + "'").getRawMany();
     return { created: true };
   }
 }

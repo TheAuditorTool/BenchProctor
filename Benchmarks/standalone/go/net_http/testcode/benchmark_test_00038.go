@@ -7,9 +7,8 @@ import (
 )
 
 func BenchmarkTest00038(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	data := strings.ReplaceAll(commentText, "\x00", "")
+	multipartValue := r.FormValue("multipart_field")
+	data := func(v string) string { return strings.TrimSpace(v) }(multipartValue)
 	var result *string
 	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
 	var name string

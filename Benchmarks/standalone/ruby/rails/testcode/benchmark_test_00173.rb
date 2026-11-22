@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00173Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,15 @@ class BenchmarkTest00173Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00173
-    user_input = request.headers["Authorization"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.headers["X-Custom-Header"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    session[:data] = parsed_bool.to_s
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port, auth: { method: :simple, username: ENV.fetch("LDAP_BIND_DN"), password: ENV.fetch("LDAP_BIND_PASSWORD") })
+    ldap.replace_attribute("uid=" + data.to_s + ",ou=people,dc=example,dc=com", :description, "reviewed")
     render json: { status: "ok" }
   end
 end

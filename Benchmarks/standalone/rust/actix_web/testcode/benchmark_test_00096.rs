@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
-use url::Url;
 
-#[actix_web::post("/benchmark_test_00096")]
+#[actix_web::post("/benchmark_test_00096/{id}")]
 pub async fn benchmark_test_00096(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let (payload, _origin) = (referer_value.clone(), "http");
-    let data = payload;
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    reqwest::get(&target_url).await.ok();
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    struct FormData { payload: String }
+    let data = FormData { payload: path_value.clone() }.payload;
+    let requested: u32 = data.parse().unwrap_or(0);
+    let count = (requested * 4096) as usize;
+    let _buf: Vec<u8> = vec![0u8; count];
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

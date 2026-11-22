@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
@@ -17,11 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00128")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00128(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    return "<div>" + data + "</div>";
+  async BenchmarkTest00128(@Body("field") field: string): Promise<unknown> {
+    const userInput = field || "";
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const recordCount = parseInt(String(data), 10);
+    const table = new ArrayBuffer((recordCount * 64) >>> 0);
+    return { allocated: table.byteLength };
   }
 }

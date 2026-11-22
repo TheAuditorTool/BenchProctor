@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
+import re
 from starlette.responses import JSONResponse
-from app_runtime import db
 
 
 app = FastAPI()
@@ -22,7 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00339")
 async def BenchmarkTest00339(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(raw_body), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    host_value = request.headers.get('host', '')
+    match = re.match(r'^[^@]+@([^@]+)$', str(host_value))
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

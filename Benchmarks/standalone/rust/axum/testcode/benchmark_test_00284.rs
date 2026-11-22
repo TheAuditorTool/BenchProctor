@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use base64::Engine;
+use base64::engine::general_purpose;
 
-pub async fn benchmark_test_00284(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = referer_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| referer_value.clone());
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00284(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&raw_body).unwrap_or_default()).to_string();
+    use sha1::Digest;
+    let _ = sha1::Sha1::new().chain_update(data.as_bytes()).finalize();
     Json(serde_json::json!({"count": 0})).into_response()
 }

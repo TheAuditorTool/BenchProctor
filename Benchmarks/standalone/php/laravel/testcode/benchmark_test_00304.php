@@ -8,11 +8,15 @@ class BenchmarkTest00304Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->json('payload', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
+        return response()->json(['ok' => 1]);
     }
 }

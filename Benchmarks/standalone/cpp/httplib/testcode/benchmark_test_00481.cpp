@@ -2,7 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
+#include <unistd.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,14 +26,21 @@ struct Client {
 };
 }
 
-void benchmark_test_00481(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00481(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string user_input = req.get_header_value("Referer");
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    char _dst[32];
-    std::sprintf(_dst, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _path = std::string("/var/app/data/") + arg;
+    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

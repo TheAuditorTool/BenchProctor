@@ -11,14 +11,11 @@ class BenchmarkTest00078Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00078
-    user_input = request.referer.to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    user_input = User.first&.name.to_s
+    data = JSON.parse(user_input)["value"] rescue ""
+    alphabet = [*"a".."z", *"A".."Z", *"0".."9"]
+    token = alphabet.sample(24).join
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

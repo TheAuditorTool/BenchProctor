@@ -2,9 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -29,19 +26,14 @@ struct Client {
 
 void benchmark_test_00307(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Referer");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(data.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
-    }
+    std::string user_input = req.body;
+    std::string _doc = std::string("{\"field\":\"") + user_input + "\"}";
+    std::string::size_type _fs = _doc.find("\"field\":\"") + 9;
+    std::string::size_type _fe = _doc.find('"', _fs);
+    std::string data = _doc.substr(_fs, _fe - _fs);
+    char *_dst = new char[16];
+    std::strncpy(_dst, data.c_str(), 15);
+    _dst[15] = '\0';
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

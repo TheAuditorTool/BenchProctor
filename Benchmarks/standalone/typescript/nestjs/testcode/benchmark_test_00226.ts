@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as libxmljs from "libxmljs";
+import { Controller, Post, Req, UploadedFile, UseInterceptors, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as ldapjs from "ldapjs";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +19,17 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00226")
-  async BenchmarkTest00226(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-    return { created: true };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00226(@UploadedFile() file: Express.Multer.File, @Req() req: Request): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = userInput != null ? userInput : '';
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    const password = String(req.body?.password ?? "");
+    if (!password) { throw new BadRequestException({ error: "password required" }); }
+    const authenticated = await new Promise<boolean>((resolve) => {
+      ldapClient.bind("uid=" + data + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+    });
+    return { authenticated };
   }
 }

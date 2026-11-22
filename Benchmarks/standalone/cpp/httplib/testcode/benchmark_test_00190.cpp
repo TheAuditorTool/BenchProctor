@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
+#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,16 +25,20 @@ struct Client {
 };
 }
 
-void benchmark_test_00190(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00190(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    char _first = _p[0];
-    delete[] _p;
-    std::cout << _first << std::endl;
+    std::string user_input = req.get_header_value("Authorization");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    std::srand((unsigned)std::time(nullptr));
+    int _token = std::rand();
+    std::cout << "token for " << data << ": " << _token << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-import socket
-from starlette.responses import JSONResponse
-import re
+import urllib.request
+from fastapi import Form
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,14 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00279")
-async def BenchmarkTest00279(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    data = ' '.join(str(upload_name).split())
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
-    target_url = data
-    s = socket.create_connection((str(target_url), 80))
-    s.close()
+async def BenchmarkTest00279(request: Request, field: str = Form('')):
+    field_value = field
+    data = '{}'.format(field_value)
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return {"updated": True}

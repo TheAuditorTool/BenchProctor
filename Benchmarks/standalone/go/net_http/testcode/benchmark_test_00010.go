@@ -3,16 +3,19 @@ package testcode
 
 import (
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
-
-	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00010(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := func(v string) string { return strings.TrimSpace(v) }(dbValue)
-	processed := bluemonday.UGCPolicy().Sanitize(data)
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	refererValue := r.Header.Get("Referer")
+	data := strings.Join(strings.FieldsFunc(refererValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
+	}
+	targetUrl := data
+	http.RedirectHandler(targetUrl, http.StatusFound).ServeHTTP(w, r)
 }

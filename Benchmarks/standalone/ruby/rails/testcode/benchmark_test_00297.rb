@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00297Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,8 +11,14 @@ class BenchmarkTest00297Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00297
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + user_input + "']")
+    user_input = request.headers["Authorization"].to_s
+    data = user_input ? user_input : ''
+    unless data =~ /\A(asc|desc|name|created)\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    ActiveRecord::Base.connection.execute("SELECT * FROM users ORDER BY #{processed}")
     render json: { status: "ok" }
   end
 end

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
-const path = require("path");
+const { db } = require("./shared");
+const libxmljs = require("libxmljs");
 
 const BenchmarkTest00178 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const data = Buffer.from(userInput, "base64").toString();
-  const checkedPath = "/var/app/data/" + path.basename(data);
-  fs.unlinkSync(checkedPath);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = String(userInput).slice(0, 200);
+  await libxmljs.parseXmlAsync(String(data), { replaceEntities: true });
   ctx.body = { ack: true };
 }
 

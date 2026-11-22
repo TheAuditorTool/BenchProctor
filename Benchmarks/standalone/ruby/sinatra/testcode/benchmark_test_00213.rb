@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00213 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,10 +19,11 @@ class BenchmarkTest00213 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00213" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    digest = Digest::SHA256.hexdigest(data.to_s)
+    user_input = params[:field].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    session[:data] = data.to_s
     content_type :json
     JSON.generate({ status: "ok" })
   end

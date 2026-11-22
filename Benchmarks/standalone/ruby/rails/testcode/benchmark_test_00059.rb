@@ -11,14 +11,18 @@ class BenchmarkTest00059Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00059
-    user_input = cookies[:session_token].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.user_agent.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    session[:data] = parsed_bool.to_s
+    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    Rails.application.config.x.announcement = processed.to_s
     render json: { status: "ok" }
   end
 end

@@ -1,0 +1,27 @@
+{
+  "name": "comment-service",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "amqplib": "2.2.0",
+    "axios": "1.20.0",
+    "express": "5.3.0",
+    "express-session": "1.19.0",
+    "multer": "2.5.0",
+    "pg": "8.23.1",
+    "pg-hstore": "2.3.4",
+    "redis": "6.3.0",
+    "sequelize": "6.37.8"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "typescript": "7.0.2"
+  }
+}

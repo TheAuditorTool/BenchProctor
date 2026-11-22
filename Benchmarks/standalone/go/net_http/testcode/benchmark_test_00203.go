@@ -2,27 +2,18 @@
 package testcode
 
 import (
+	"context"
 	"net/http"
-	"regexp"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00203(w http.ResponseWriter, r *http.Request) {
-	multipartValue := r.FormValue("multipart_field")
-	capture := func() string { return strings.TrimSpace(multipartValue) }
-	data := capture()
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
+	data := strings.Join(strings.FieldsFunc(redisValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE name = '" + data + "'").Scan(&matched).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

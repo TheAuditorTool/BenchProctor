@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeSerialize = require("node-serialize");
 
 async function BenchmarkTest00115(req, res) {
-  const userInput = (req.body.variables && req.body.variables.input) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  nodeSerialize.unserialize(data);
+  const userInput = req.body || "";
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict; Secure");
   res.json({ done: true });
 }
 

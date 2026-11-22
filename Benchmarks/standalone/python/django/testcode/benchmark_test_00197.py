@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import requests
-from app_runtime import db
+import os
+import json
 
 
 def BenchmarkTest00197(request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = str(comment_value).replace('\x00', '')
-    requests.get(str(data))
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    os.system('echo ' + str(json_value))
     return JsonResponse({"saved": True})

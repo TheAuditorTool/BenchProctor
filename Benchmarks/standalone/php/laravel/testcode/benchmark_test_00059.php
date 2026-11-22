@@ -9,9 +9,8 @@ class BenchmarkTest00059Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->header('Referer', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $processed = (new \HTMLPurifier())->purify($data);
-        return response('<div>' . $processed . '</div>')->header('Content-Type', 'text/html');
+        $data = "{$userInput}";
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $data, 'data_updated_at' => time()]);
+        return response()->json(['ok' => 1]);
     }
 }

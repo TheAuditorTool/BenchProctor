@@ -30,17 +30,17 @@ public class BenchmarkTest00149 {
         }
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
     @GET
     @Path("/BenchmarkTest00149")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00149(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Forwarded-For") String xForwardedFor, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        String data = normalize(forwardedIp);
-        int requested = Integer.parseInt(data);
-        int allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00149(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : hostValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        int recordCount = Integer.parseInt(data);
+        java.nio.ByteBuffer exportBuffer = java.nio.ByteBuffer.allocate(recordCount * 512);
+        response.setHeader("X-Export-Capacity", String.valueOf(exportBuffer.capacity()));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

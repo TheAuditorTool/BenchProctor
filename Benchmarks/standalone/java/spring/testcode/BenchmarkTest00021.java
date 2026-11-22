@@ -20,13 +20,10 @@ public class BenchmarkTest00021 {
     }
 
     @GetMapping("/BenchmarkTest00021")
-    public void BenchmarkTest00021(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        java.util.function.Supplier<String> valueSupplier = () -> envValue.strip();
-        String data = valueSupplier.get();
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
+    public void BenchmarkTest00021(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = String.join(" ", userId.split("[ \\t]+"));
+        request.getServletContext().setAttribute("siteBanner", data);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00015', methods: ['POST'])]
@@ -11,12 +11,8 @@ class BenchmarkTest00015Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $errno = 0; $errstr = '';
-        fsockopen((string)$data, 80, $errno, $errstr, 30);
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->request->get('field', '');
+        $data = sprintf('%s', $userInput);
+        return new Response(htmlspecialchars((string)$data, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 200, ['Content-Type' => 'text/html']);
     }
 }

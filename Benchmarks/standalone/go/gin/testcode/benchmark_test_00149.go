@@ -2,30 +2,34 @@
 package testcode
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00149(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	fieldValue := c.PostForm("field")
+	relayPrefix := ""
+	if len(fieldValue) > 0 {
+		relayPrefix = strings.ToLower(fieldValue[:1])
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = fieldValue
+	case "f":
+		data = fieldValue
+	default:
+		data = fieldValue
+	}
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+graphqlVar+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	c.JSON(200, gin.H{"code": "OK"})
+	targetUrl := data
+	c.Redirect(http.StatusFound, targetUrl)
 }

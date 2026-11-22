@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, request, jsonify
-import json
+import os
+from flask import Flask, make_response
+from flask import jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -20,10 +22,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00189", methods=["POST"])
 def BenchmarkTest00189():
-    upload_name = request.files['upload'].filename
-    try:
-        data = json.loads(upload_name).get('value', upload_name)
-    except (json.JSONDecodeError, AttributeError):
-        data = upload_name
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = ' '.join(str(db_value).split())
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    return resp

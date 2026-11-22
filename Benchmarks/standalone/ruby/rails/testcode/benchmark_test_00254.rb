@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "socket"
 
 class BenchmarkTest00254Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,12 +12,10 @@ class BenchmarkTest00254Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00254
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
+    user_input = request.headers["Authorization"].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
     render json: { status: "ok" }
   end
 end

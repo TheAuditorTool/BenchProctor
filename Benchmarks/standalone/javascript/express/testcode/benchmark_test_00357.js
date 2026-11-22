@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00357(req, res) {
-  const userInput = req.body || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = req.body?.payload || "";
+  const data = String(userInput).slice(0, 200);
+  const { parseXmlString } = require("libxmljs2");
+  parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00357 };

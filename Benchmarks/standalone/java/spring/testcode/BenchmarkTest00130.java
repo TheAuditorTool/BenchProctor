@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,16 +20,19 @@ public class BenchmarkTest00130 {
     }
 
     @GetMapping("/BenchmarkTest00130")
-    public void BenchmarkTest00130(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        java.util.Properties holder = new java.util.Properties();
-        holder.setProperty("value", hostValue);
-        String data = holder.getProperty("value", "");
+    public void BenchmarkTest00130(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = originValue.isEmpty() ? "default" : originValue;
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
         try {
-            java.net.http.HttpRequest httpReq = java.net.http.HttpRequest.newBuilder(java.net.URI.create(data)).GET().build();
-            java.net.http.HttpResponse<String> httpResp = java.net.http.HttpClient.newHttpClient().send(httpReq, java.net.http.HttpResponse.BodyHandlers.ofString());
-            response.setHeader("X-Fetch-Status", String.valueOf(httpResp.statusCode()));
-        } catch (Exception e) { response.sendError(502); }
+            javax.naming.NamingEnumeration<javax.naming.NameClassPair> groupEntries = ctx.list("cn=" + data + ",ou=groups,dc=example,dc=com");
+            int groupSize = 0;
+            while (groupEntries.hasMore()) { groupEntries.next(); groupSize++; }
+            response.setHeader("X-Group-Size", String.valueOf(groupSize));
+        } finally { ctx.close(); }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

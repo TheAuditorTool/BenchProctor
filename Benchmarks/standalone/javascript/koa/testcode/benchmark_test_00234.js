@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 const BenchmarkTest00234 = async (ctx) => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const userInput = (await require("./shared").mq.receive("app-events"));
   const data = String(userInput).replace(/\u0000/g, "");
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  eval(parsedNum);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  const targetUrl = data;
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+  await axios.request(outbound);
   ctx.body = { ack: true };
 }
 

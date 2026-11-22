@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -16,6 +15,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -26,11 +26,9 @@ struct Client {
 
 void benchmark_test_00130(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    long _req = std::strtol(user_input.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    std::string user_input = req.get_param_value("multipart_field");
+    std::string _ckval = user_input;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.insert(std::make_pair(std::string("Set-Cookie"), std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/"));
     res.set_content("ok", "text/plain");
 }

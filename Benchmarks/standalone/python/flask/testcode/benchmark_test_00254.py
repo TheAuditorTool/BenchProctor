@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, jsonify
+import random
+from flask import Flask, request, jsonify
 from app_runtime import db
 
 
@@ -20,11 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00254", methods=["POST"])
 def BenchmarkTest00254():
-    env_value = os.environ.get('APP_INPUT', '')
-    parts = str(env_value).split(',')
-    data = ' '.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return jsonify({'error': 'not found'}), 404
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data, _sep, _rest = str(forwarded_ip).partition('\x00')
+    token = '%032x' % random.getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

@@ -2,23 +2,25 @@
 package testcode
 
 import (
-	"bytes"
+	"crypto/rand"
 	"fmt"
+	"math/big"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yuin/goldmark"
 )
 
 func BenchmarkTest00298(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", commentText)
-	data := relayBuilder.String()
-	var mdBuf bytes.Buffer
-	goldmark.New().Convert([]byte(data), &mdBuf)
-	processed := mdBuf.String()
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	uaValue := c.GetHeader("User-Agent")
+	capture := func() string { return strings.TrimSpace(uaValue) }
+	data := capture()
+	otpValue, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	otpCode := fmt.Sprintf("%06d", otpValue.Int64())
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdio>
 #include <unistd.h>
-#include <regex>
+#include <functional>
 #include <unordered_map>
 
 namespace httplib {
@@ -13,10 +13,15 @@ struct Request {
     std::unordered_map<std::string, std::string> path_params;
     std::string body;
 };
+struct DataSink {
+    std::function<bool(const char *, size_t)> write;
+    std::function<void()> done;
+};
 struct Response {
     void set_content(const std::string &s, const std::string &type);
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
+    void set_chunked_content_provider(const std::string &content_type, std::function<bool(size_t, DataSink &)> provider) { std::string _chunks; DataSink _sink; _sink.write = [&_chunks](const char *_d, size_t _n) { _chunks.append(_d, _n); return true; }; _sink.done = [] {}; provider(0, _sink); set_content(_chunks, content_type); }
     int status;
 };
 struct Result {};
@@ -28,13 +33,14 @@ struct Client {
 
 void benchmark_test_00109(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    static const std::regex _re("^[a-zA-Z0-9 _.#~\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _path = std::string("/var/app/data/") + safe;
-    if (FILE *_f = std::fopen(_path.c_str(), "w")) std::fclose(_f);
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.path_params.at("id");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>";
+    res.set_chunked_content_provider("text/html", [_html](size_t, httplib::DataSink &_sink) {
+        _sink.write(_html.data(), _html.size());
+        _sink.done();
+        return true;
+    });
 }

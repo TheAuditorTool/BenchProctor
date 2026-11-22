@@ -2,23 +2,32 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
+	"os/exec"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00209(w http.ResponseWriter, r *http.Request) {
-	forwardedIP := r.Header.Get("X-Forwarded-For")
-	var data string
-	if forwardedIP != "" {
-		data = forwardedIP
-	}
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	rawBody := string(rawBytes)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(rawBody)
+	allowedBins := map[string]bool{"ls": true, "cat": true, "date": true, "whoami": true}
+	if !allowedBins[data] {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	allowedBin := data
+	cmd := exec.Command("echo", allowedBin)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(output)
 }

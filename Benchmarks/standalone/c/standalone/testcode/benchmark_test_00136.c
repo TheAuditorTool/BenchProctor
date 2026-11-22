@@ -6,24 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00136(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
-    FILE *_f = fopen(_path, "r");
-    if (_f) fclose(_f);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    sqlite3_stmt *_stmt = NULL;
+    sqlite3_prepare_v2(_db, "SELECT name, email FROM users WHERE name = ?1", -1, &_stmt, NULL);
+    sqlite3_bind_text(_stmt, 1, data, -1, SQLITE_TRANSIENT);
+    while (sqlite3_step(_stmt) == SQLITE_ROW) printf("%s\n", (const char *)sqlite3_column_text(_stmt, 1));
+    sqlite3_finalize(_stmt);
+    sqlite3_close(_db);
 }

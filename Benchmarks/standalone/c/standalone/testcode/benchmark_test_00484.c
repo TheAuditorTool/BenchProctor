@@ -12,25 +12,17 @@ void benchmark_test_00484(int argc, char **argv)
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
     const char *user_input = user_input_buf;
     char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    char *_dst = malloc(16);
-    if (_dst == NULL) return;
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char _dst[16];
     size_t _n = strlen(data);
-    memcpy(_dst, data, _n + 1);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, data, _n);
+    _dst[_n] = '\0';
     printf("%s\n", _dst);
-    free(_dst);
 }

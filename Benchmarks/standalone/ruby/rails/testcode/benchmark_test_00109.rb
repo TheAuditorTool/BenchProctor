@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/http"
 
 class BenchmarkTest00109Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,13 +12,20 @@ class BenchmarkTest00109Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00109
-    user_input = request.headers["Authorization"].to_s
-    data = "#{user_input}"
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
+      return
+    end
+    target_url = data
+    uri = URI.parse(target_url.to_s)
+    outbound = Net::HTTP::Get.new(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    reply = http.request(outbound)
+    render json: { upstream_status: reply.code.to_i }
   end
 end

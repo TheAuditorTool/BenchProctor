@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, request, jsonify
+from lxml import etree
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,16 +20,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00095", methods=["POST"])
 def BenchmarkTest00095():
-    field_value = request.form.get('field', '')
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
     parts = []
-    for token in str(field_value).split(','):
+    for token in str(db_value).split(','):
         parts.append(token.strip())
     data = ','.join(parts)
-    base_dir = '/var/app/data'
-    full_path = os.path.realpath(os.path.join(base_dir, data))
-    if not full_path.startswith(base_dir + os.sep):
-        return jsonify({'error': 'forbidden'}), 403
-    checked_path = full_path
-    with open(checked_path, 'w') as fh:
-        fh.write('data')
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(processed) + '"]')
+    find_user(tree)
     return jsonify({"result": "success"})

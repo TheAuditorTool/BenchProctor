@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
 
 async function BenchmarkTest00320(req, res) {
-  const userInput = req.headers["x-forwarded-for"] || "";
-  const data = `${userInput}`;
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = req.headers.referer || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00320 };

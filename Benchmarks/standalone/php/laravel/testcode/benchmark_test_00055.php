@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00055Controller
 {
     public function __invoke(Request $request)
     {
         $userInput = $request->header('Authorization', '');
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        return redirect($data);
+        $data = base64_decode($userInput);
+        $dbh = DB::getPdo();
+        $stmt = $dbh->prepare('SELECT * FROM users WHERE id = \'' . $data . '\'');
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return response()->json(['ok' => 1]);
     }
 }

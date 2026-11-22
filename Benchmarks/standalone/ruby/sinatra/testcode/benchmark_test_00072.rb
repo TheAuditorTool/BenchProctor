@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00072 < Sinatra::Base
   before do
@@ -21,15 +18,9 @@ class BenchmarkTest00072 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00072" do
-    user_input = params[:q].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    unless data =~ /\A(asc|desc|name|created)\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    DB.fetch("SELECT * FROM users ORDER BY #{processed}").all
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    data = user_input.gsub("\u0000", "")
+    response.add_header("set-cookie", Rack::Utils.set_cookie_header("session", { value: data, secure: true, httponly: true, same_site: :strict }))
     content_type :json
     JSON.generate({ status: "ok" })
   end

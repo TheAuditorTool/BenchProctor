@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
-from dataclasses import dataclass
 from starlette.responses import JSONResponse
-from app_runtime import db
+import urllib.parse
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -26,11 +19,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00015/{id}")
-async def BenchmarkTest00015(request: Request, id: str):
-    path_value = id
-    form = FormData(payload=path_value)
-    data = form.payload
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+@app.post("/BenchmarkTest00015")
+async def BenchmarkTest00015(request: Request):
+    xml_value = (await request.body()).decode('utf-8')
+    data = str(xml_value).replace('\x00', '')
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

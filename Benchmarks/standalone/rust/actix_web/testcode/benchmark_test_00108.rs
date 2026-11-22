@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00108")]
-pub async fn benchmark_test_00108(body: web::Bytes) -> HttpResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = match xml_value.chars().next() { Some(_) => xml_value.clone(), None => "default".to_string() };
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
-    let _ = value;
+pub async fn benchmark_test_00108(req: HttpRequest) -> HttpResponse {
+    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let transform = |v: String| v.trim().to_string();
+    let data = transform(ua_value.clone());
+    tokio::fs::write(format!("/var/app/data/{}", data), "data").await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

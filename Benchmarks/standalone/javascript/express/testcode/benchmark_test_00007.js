@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 async function BenchmarkTest00007(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  req.session.data = String(data);
+  const userInput = req.params.id || "";
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
   res.json({ done: true });
 }
 

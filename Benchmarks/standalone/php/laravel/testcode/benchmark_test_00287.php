@@ -8,8 +8,10 @@ class BenchmarkTest00287Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Authorization', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $userInput = $request->input('field', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        \Illuminate\Support\Facades\Cache::forever('tenant:display_name', (string) $data);
+        return response()->json(['ok' => 1]);
     }
 }

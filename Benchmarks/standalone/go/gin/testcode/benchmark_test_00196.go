@@ -2,20 +2,26 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00196(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+	fieldValue := c.PostForm("field")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", fieldValue)
+	data := relayBuilder.String()
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
 		return
 	}
-	uploadName := header.Filename
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(uploadName)
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	requested, _ := strconv.Atoi(boundedVal)
+	allocated := requested + 1
+	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
 }

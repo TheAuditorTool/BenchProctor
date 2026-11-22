@@ -1,0 +1,6 @@
+channels:
+  - name: workspace:inbound:0035
+    payload: json
+keys:
+  - pattern: workspace:record:{id}
+    ttl_seconds: 300

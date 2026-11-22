@@ -2,18 +2,14 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00293(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data := strings.ReplaceAll(refererValue, "\x00", "")
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	uaValue := c.GetHeader("User-Agent")
+	segments := strings.Split(uaValue, ",")
+	data := strings.Join(segments, " ")
+	c.Set("data", data)
 }

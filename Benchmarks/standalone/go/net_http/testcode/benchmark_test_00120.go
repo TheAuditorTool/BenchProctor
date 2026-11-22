@@ -2,12 +2,21 @@
 package testcode
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
+	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00120(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	multipartValue := r.FormValue("multipart_field")
+	capture := func() string { return strings.TrimSpace(multipartValue) }
+	data := capture()
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

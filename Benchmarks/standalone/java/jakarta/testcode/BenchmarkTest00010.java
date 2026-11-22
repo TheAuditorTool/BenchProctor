@@ -33,10 +33,16 @@ public class BenchmarkTest00010 {
     @GET
     @Path("/BenchmarkTest00010")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00010(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        String data = String.join(" ", refererValue.split("[ \\t]+"));
-        response.sendRedirect(data);
-        return Response.ok().build();
+    public Response BenchmarkTest00010(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.function.Supplier<String> valueSupplier = () -> cookieValue.strip();
+        String data = valueSupplier.get();
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        String boundedVal = data;
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        Double matchingUsers = xpath.evaluateExpression("count(/users/user[@name='" + boundedVal + "'])", new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")), Double.class);
+        response.setHeader("X-User-Count", String.valueOf(matchingUsers));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

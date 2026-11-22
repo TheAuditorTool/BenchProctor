@@ -1,20 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from cryptography.fernet import Fernet
 import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from app_runtime import db
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 def BenchmarkTest00036(request):
-    origin_value = request.META.get('HTTP_ORIGIN', '')
-    reader = make_reader(origin_value)
-    data = reader()
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = RequestPayload(db_value).value
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
     return JsonResponse({'length': len(ciphertext)}, status=200)

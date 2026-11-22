@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const joi = require("joi");
 
 const BenchmarkTest00085 = async (ctx) => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  const _schema = joi.string().pattern(/^[a-zA-Z0-9 _.\-]+$/).required();
-  const { error: _schemaErr, value: _schemaVal } = _schema.validate(data);
-  if (_schemaErr) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = _schemaVal;
-  ctx.session.data = String(processed);
+  const userInput = ctx.request.headers["x-custom-header"] || "";
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  if (!/^[a-zA-Z0-9_.#\-]+$/.test(data)) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = data;
+  const { Sequelize, DataTypes } = require("sequelize");
+  const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
+  const User = _sequelize.define("User", { name: DataTypes.STRING }, { tableName: "users", timestamps: false });
+  await User.findAll({ where: _sequelize.literal("name = '" + processed + "'") });
   ctx.body = { ack: true };
 }
 

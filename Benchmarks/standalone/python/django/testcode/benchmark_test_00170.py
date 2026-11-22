@@ -1,15 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import socket
-import os
-import redis
+from lxml import etree
 
 
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
-
-def BenchmarkTest00170(request):
-    redis_value = redis_client.get('user_data')
-    data = f'{redis_value!s}'
-    s = socket.create_connection((str(data), 80))
-    s.close()
+def BenchmarkTest00170(request, path_param):
+    path_value = path_param
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(path_value) + '"]')
     return JsonResponse({"saved": True})

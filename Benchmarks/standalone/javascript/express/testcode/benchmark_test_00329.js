@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00329(req, res) {
   const userInput = process.env.APP_INPUT || "";
   const capture = (v) => () => String(v).trim();
   const readInput = capture(userInput);
   const data = readInput();
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = row.name;
+  if (!/^[a-zA-Z0-9 _.%~\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + processed + "']").select({ node: usersDoc });
   res.json({ done: true });
 }
 

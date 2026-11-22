@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import json
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,7 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00120")
 async def BenchmarkTest00120(request: Request):
-    host_value = request.headers.get('host', '')
-    data, _sep, _rest = str(host_value).partition('\x00')
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    parts = []
+    for token in str(graphql_var).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

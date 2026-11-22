@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Post, Query } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import isoDompurify from "isomorphic-dompurify";
-import * as marked from "marked";
+import * as libxmljs from "libxmljs";
+import * as nodeUtil from "util";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,12 +24,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00210")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00210(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    const processed = isoDompurify.sanitize(marked.parse(data) as string);
-    return "<div>" + processed + "</div>";
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00210(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const data = nodeUtil.format("%s", userInput);
+    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
+    return { created: true };
   }
 }

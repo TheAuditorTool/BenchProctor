@@ -1,16 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-import base64
-from flask import Flask, jsonify
-import os
-import pika
+import io
+from lxml import etree
+from flask import Flask, request, jsonify
 
-
-def _amqp_receive(queue):
-    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
-        channel = connection.channel()
-        channel.queue_declare(queue=queue, durable=True)
-        return channel.basic_get(queue=queue, auto_ack=True)[2]
 
 app = Flask(__name__)
 
@@ -28,7 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00107", methods=["POST"])
 def BenchmarkTest00107():
-    msg_value = (_amqp_receive('app-events') or b'').decode()
-    data = base64.b64decode(msg_value).decode('utf-8', 'ignore')
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    multipart_value = request.form.get('multipart_field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(multipart_value)
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
     return jsonify({"result": "success"})

@@ -11,10 +11,8 @@ class BenchmarkTest00274Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00274
-    user_input = request.host.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    token = rand(1000000)
-    render json: { status: "ok" }
+    user_input = request.headers["X-Forwarded-For"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    render inline: "<p><%= raw comment %></p>", locals: { comment: data }
   end
 end

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
-from flask import Flask, jsonify
-from app_runtime import db
+from flask import Flask, request, jsonify
+import base64
+import pickle
 
 
 app = Flask(__name__)
@@ -20,8 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00317", methods=["POST"])
 def BenchmarkTest00317():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = ' '.join(str(comment_value).split())
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    ua_value = request.headers.get('User-Agent', '')
+    parts = []
+    for token in str(ua_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    pickle.loads(base64.b64decode(data))
+    return jsonify({"result": "success"})

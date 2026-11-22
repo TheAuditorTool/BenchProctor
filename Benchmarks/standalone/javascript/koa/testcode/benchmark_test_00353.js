@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeUtil = require("util");
+const http = require("http");
 
 const BenchmarkTest00353 = async (ctx) => {
-  const userInput = ctx.request.headers["x-custom-header"] || "";
-  const data = nodeUtil.format("%s", userInput);
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  ctx.body = { token };
+  const userInput = ctx.request.headers.authorization || "";
+  let _host = "";
+  try { _host = new URL(String(userInput)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  const targetUrl = userInput;
+  http.get(targetUrl);
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00353 };

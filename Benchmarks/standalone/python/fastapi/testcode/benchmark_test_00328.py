@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
-from fastapi import Form
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,9 +19,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00328")
-async def BenchmarkTest00328(request: Request, field: str = Form('')):
-    field_value = field
-    parts = str(field_value).split(',')
-    data = ' '.join(parts)
-    os.system('echo ' + str(data))
-    return {"updated": True}
+async def BenchmarkTest00328(request: Request):
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    pending = list(str(upload_name).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    return resp

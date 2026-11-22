@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const crypto = require("crypto");
 
 async function BenchmarkTest00301(req, res) {
-  const userInput = req.params.id || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ done: true });
+  const userInput = process.env.APP_INPUT || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const digest = await crypto.subtle.digest("SHA-256", Buffer.from(String(data)));
+  res.json({ fingerprint: Buffer.from(digest).toString("hex") }); return;
 }
 
 module.exports = { BenchmarkTest00301 };

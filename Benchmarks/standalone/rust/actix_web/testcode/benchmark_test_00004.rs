@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00004")]
-pub async fn benchmark_test_00004() -> HttpResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data = match db_value.chars().next() { Some(_) => db_value.clone(), None => "default".to_string() };
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+pub async fn benchmark_test_00004(req: HttpRequest) -> HttpResponse {
+    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
+    let mut pending: std::collections::VecDeque<String> = cookie_value.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    let legacy_key = hex::decode(std::env::var("LEGACY_BLOWFISH_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 8] = rand::random();
+    if let Ok(_blowfish) = cbc::Encryptor::<blowfish::Blowfish>::new_from_slices(&legacy_key, &iv) {
+        let _sealed = _blowfish.encrypt_padded_vec::<Pkcs7>(data.as_bytes());
+        let mut _ciphertext = iv.to_vec();
+        _ciphertext.extend_from_slice(&_sealed);
+        tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

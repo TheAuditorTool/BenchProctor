@@ -2,24 +2,20 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00015(c *gin.Context) {
 	multipartValue := c.PostForm("multipart_field")
-	data := fmt.Sprintf("%s", multipartValue)
+	data := func(v string) string { return strings.TrimSpace(v) }(multipartValue)
 	var result *string
 	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
 	var name string
 	if scanErr := row.Scan(&name); scanErr == nil {
 		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
-		return
 	}
 	c.JSON(http.StatusOK, map[string]string{"name": *result})
 }

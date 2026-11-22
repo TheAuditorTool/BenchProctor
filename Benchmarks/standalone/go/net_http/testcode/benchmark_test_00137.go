@@ -2,28 +2,33 @@
 package testcode
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00137(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	var data string
+	if len(pathValue) > 0 {
+		data = pathValue
+	} else {
+		data = "default"
 	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		http.Error(w, "invalid integer", http.StatusBadRequest)
 		return
 	}
-	jsonValue := reqBody.Payload
-	data := strings.Join(strings.FieldsFunc(jsonValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(boundedVal, 10, 32)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "invalid quantity", http.StatusBadRequest)
 		return
 	}
-	defer rows.Close()
+	lineTotal := int64(quantity) * int64(unitPriceCents)
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

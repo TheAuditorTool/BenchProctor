@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -21,16 +20,13 @@ public class BenchmarkTest00158 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00158")
-    public void BenchmarkTest00158(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(originValue)); }
-        catch (NumberFormatException e) { data = originValue; }
-        java.util.Set<String> allowed = java.util.Set.of("config.json", "index.html");
-        if (!allowed.contains(data)) { response.sendError(403); return; }
-        String checkedPath = "/var/app/data/" + data;
-        Files.write(Paths.get(checkedPath), "data".getBytes());
+    @PostMapping(path="/BenchmarkTest00158", consumes="multipart/form-data")
+    public void BenchmarkTest00158(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadName = file != null ? file.getOriginalFilename() : "";
+        String data = String.format("%s", uploadName);
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        org.springframework.http.ResponseCookie sessionCookie = org.springframework.http.ResponseCookie.from("session", cookieValue).path("/").secure(true).httpOnly(true).sameSite("Strict").build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, sessionCookie.toString());
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

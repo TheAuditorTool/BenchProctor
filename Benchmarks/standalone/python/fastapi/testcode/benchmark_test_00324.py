@@ -1,7 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
+import subprocess
+from fastapi import Form
+from fastapi.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -19,9 +26,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00324")
-async def BenchmarkTest00324(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    data = (lambda v: v.strip())(ua_value)
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+async def BenchmarkTest00324(request: Request, field: str = Form('')):
+    field_value = field
+    reader = make_reader(field_value)
+    data = reader()
+    subprocess.Popen('echo ' + str(data), shell=True).wait()
+    return {"updated": True}

@@ -33,16 +33,14 @@ public class BenchmarkTest00113 {
     @GET
     @Path("/BenchmarkTest00113")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00113(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        byte[] hexBytes = new byte[authHeader.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(authHeader.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        int requested = Integer.parseInt(data);
-        int allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00113(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : cookieValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        String processed = data.matches("^(plain|markdown|html|text)$") ? data : "plain";
+        String streamedHtml = "<div class=\"comment\">" + processed + "</div>";
+        jakarta.ws.rs.core.StreamingOutput htmlStream = htmlOut -> htmlOut.write(streamedHtml.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return Response.ok(htmlStream, MediaType.TEXT_HTML).build();
     }
 }

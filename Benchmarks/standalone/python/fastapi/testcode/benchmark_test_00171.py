@@ -1,7 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from starlette.responses import StreamingResponse
+import re
 from starlette.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -20,12 +27,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00171")
 async def BenchmarkTest00171(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = '%s' % (user_id,)
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid number'}, status_code=400)
-    processed = _coerced
-    eval(str(processed))
-    return {"updated": True}
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    reader = make_reader(forwarded_ip)
+    data = reader()
+    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    return StreamingResponse(iter(['<div>' + str(processed) + '</div>']), media_type='text/html')

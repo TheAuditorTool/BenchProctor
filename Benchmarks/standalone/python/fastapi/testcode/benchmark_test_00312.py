@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,11 +20,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00312")
 async def BenchmarkTest00312(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    pending = list(str(raw_body).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    requests.get(str(data))
-    return {"updated": True}
+    auth_header = request.headers.get('authorization', '')
+    data = (lambda v: v.strip())(auth_header)
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
+    return resp

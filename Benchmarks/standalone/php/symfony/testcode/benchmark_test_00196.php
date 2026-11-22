@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00196', methods: ['POST'])]
 class BenchmarkTest00196Controller
 {
-    public function __invoke()
+    public function __invoke(Connection $conn)
     {
-        $userInput = getenv('APP_INPUT') ?: '';
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return new JsonResponse(['token' => (string)$token], 200);
+        $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        return new Response('', 302, ['Location' => (string)$data]);
     }
 }

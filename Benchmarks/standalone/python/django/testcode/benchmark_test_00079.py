@@ -1,14 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import base64
-import re
+from cryptography.fernet import Fernet
+import os
 
 
-def BenchmarkTest00079(request):
-    cookie_value = request.COOKIES.get('session_token', '')
-    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JsonResponse({'error': 'forbidden'}, status=400)
-    processed = data
-    exec(str(processed))
-    return JsonResponse({"saved": True})
+def BenchmarkTest00079(request, path_param):
+    path_value = path_param
+    data = '%s' % str(path_value)
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return JsonResponse({'length': len(ciphertext)}, status=200)

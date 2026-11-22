@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Req, BadRequestException } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as zod from "zod";
+import { Controller, Headers, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,14 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00096")
-  async BenchmarkTest00096(@Body("multipart_field") mf: string, @Req() req: Request): Promise<unknown> {
-    const userInput = mf || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.\-]+$/).safeParse(String(data));
-    if (!_parsed.success) { throw new BadRequestException({error:"invalid"}); }
-    const processed = _parsed.data;
-    req.session.data = String(processed);
+  async BenchmarkTest00096(@Headers("host") host: string): Promise<unknown> {
+    const userInput = host || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    fs.writeFileSync("/var/uploads/" + data, "data");
     return { created: true };
   }
 }

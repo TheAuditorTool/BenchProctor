@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "erb"
+require "nokogiri"
 
 class BenchmarkTest00055 < Sinatra::Base
   before do
@@ -19,10 +19,10 @@ class BenchmarkTest00055 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00055" do
-    user_input = request.cookies["session_token"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    content_type :html
-    ERB::Util.html_escape(data)
+    user_input = params[:field].to_s
+    data = "%s" % user_input
+    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

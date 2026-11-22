@@ -4,10 +4,8 @@ import * as shared from "./shared";
 const { db } = shared;
 
 export const BenchmarkTest00177 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = (row as any).name;
+  const userInput = (await shared.mq.receive("app-events"));
+  const data = String(userInput).replace(/\u0000/g, "");
+  await db.query("SELECT * FROM users WHERE id = $1", [data]);
   res.json({ accepted: true });
 }

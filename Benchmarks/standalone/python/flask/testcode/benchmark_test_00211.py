@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
+import secrets
 from flask import Flask, request, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,7 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00211", methods=["POST"])
 def BenchmarkTest00211():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = '%s' % str(json_value)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    cookie_value = request.cookies.get('session_token', '')
+    data = (lambda v: v.strip())(cookie_value)
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

@@ -11,8 +11,10 @@ class BenchmarkTest00209Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00209
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = "%s" % user_input
-    redirect_to data, allow_other_host: true
+    user_input = request.referer.to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
+    render json: { status: "ok" }
   end
 end

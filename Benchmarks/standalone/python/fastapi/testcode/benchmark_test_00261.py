@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from fastapi import Form
+import ldap3
+import os
 from fastapi.responses import JSONResponse
 
 
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
+
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,10 +28,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00261")
-async def BenchmarkTest00261(request: Request, field: str = Form('')):
-    field_value = field
-    def normalize(value):
-        return value.strip()
-    data = normalize(field_value)
-    request.session['data'] = str(data)
+async def BenchmarkTest00261(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    data = RequestPayload(auth_header).value
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(data) + ')', attributes=['cn'])
     return {"updated": True}

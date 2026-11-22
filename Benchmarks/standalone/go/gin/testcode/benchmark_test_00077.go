@@ -3,31 +3,30 @@ package testcode
 
 import (
 	"net/http"
-	"strconv"
+	"os"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00077(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+	_fileBytes, _ := os.ReadFile("/var/app/data.txt")
+	fileValue := string(_fileBytes)
+	var data string
+	if len(fileValue) > 0 {
+		data = fileValue
+	} else {
+		data = "default"
+	}
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
 		return
 	}
-	uploadName := header.Filename
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(uploadName)
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	processed := data
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users ORDER BY " + processed).Scan(&matched).Error; err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
-	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
 	}
 	c.JSON(200, gin.H{"code": "OK"})
 }

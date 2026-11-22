@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
 from flask import Flask, request, jsonify
-from app_runtime import db
+from pathlib import Path
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -20,9 +26,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00091", methods=["POST"])
 def BenchmarkTest00091():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    parts = str(json_value).split(',')
-    data = ' '.join(parts)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    header_value = request.headers.get('X-Custom-Header', '')
+    data = RequestPayload(header_value).value
+    Path('/var/app/data/' + str(data)).write_text('data')
+    return jsonify({"result": "success"})

@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from http.cookies import SimpleCookie
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,8 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00257")
 async def BenchmarkTest00257(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return {"updated": True}
+    auth_header = request.headers.get('authorization', '')
+    data, _sep, _rest = str(auth_header).partition('\x00')
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

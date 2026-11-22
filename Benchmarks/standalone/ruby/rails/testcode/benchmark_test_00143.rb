@@ -11,14 +11,8 @@ class BenchmarkTest00143Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00143
-    user_input = request.query_parameters[:q].to_s
-    data = user_input.gsub("\u0000", "")
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    user_input = request.headers["X-Custom-Header"].to_s
+    JSON.parse(user_input)
+    render json: { status: "ok" }
   end
 end

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-import hashlib
+from django.http import HttpResponse
+import json
 
 
 def BenchmarkTest00012(request):
-    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    data = '%s' % (forwarded_ip,)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return JsonResponse({'digest': str(digest)}, status=200)
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    with open('/var/app/data/' + str(json_value), 'r') as fh:
+        content = fh.read()
+    return HttpResponse(content)

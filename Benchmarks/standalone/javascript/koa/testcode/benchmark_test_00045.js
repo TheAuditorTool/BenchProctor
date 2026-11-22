@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00045 = async (ctx) => {
-  const userInput = (ctx.request.files && ctx.request.files.file && ctx.request.files.file.name) || "";
-  const data = userInput != null ? userInput : '';
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  const userInput = ctx.request.headers["user-agent"] || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  new Function("return (" + String(data) + ");")();
   ctx.body = { ack: true };
 }
 

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
-use axum::http::StatusCode;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
 
-pub async fn benchmark_test_00142(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut data = String::new();
-    for token in referer_value.split(',') { data = token.to_string(); }
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00142(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = String::from_utf8_lossy(raw_body.as_bytes()).to_string();
+    if let Ok(_conn) = rusqlite::Connection::open(crate::shared::seeded_database_path()) {
+        if let Ok(mut _stmt) = _conn.prepare(&format!("SELECT * FROM users WHERE name = '{}'", data)) {
+            let _ = _stmt.exists([]);
+        }
+    }
+    Json(serde_json::json!({"count": 0})).into_response()
 }

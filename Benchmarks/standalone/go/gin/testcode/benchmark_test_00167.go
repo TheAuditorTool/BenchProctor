@@ -2,29 +2,38 @@
 package testcode
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
-	"encoding/hex"
-	"io"
+	"crypto/rc4"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"strconv"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00167(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	header, err := c.FormFile("upload")
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, "bad upload")
 		return
 	}
-	rawBody := string(rawBytes)
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(rawBody)
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	uploadName := header.Filename
+	data := strings.ReplaceAll(uploadName, "\x00", "")
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	salt := make([]byte, 16)
+	rand.Read(salt)
+	messageKey := hmac.New(sha256.New, keyHash[:])
+	messageKey.Write(salt)
+	streamCipher, err := rc4.NewCipher(messageKey.Sum(nil)[:16])
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	cipherOut := make([]byte, len(data))
+	streamCipher.XORKeyStream(cipherOut, []byte(data))
+	cipherOut = append(salt, cipherOut...)
+	c.JSON(http.StatusOK, map[string]string{"alg": "rc4", "out": fmt.Sprintf("%x", cipherOut)})
 }

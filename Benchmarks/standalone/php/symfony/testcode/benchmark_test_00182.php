@@ -3,16 +3,19 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00182', methods: ['POST'])]
 class BenchmarkTest00182Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
-        $data = str_replace("\0", '', $userInput);
-        return new RedirectResponse($data);
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $conn->executeQuery('SELECT * FROM users WHERE id = \'' . $data . '\'');
+        return new JsonResponse(["committed" => true]);
     }
 }

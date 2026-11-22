@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from dataclasses import dataclass
 
 
-def BenchmarkTest00098(request, path_param):
-    path_value = path_param
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    request.session['data'] = str(processed)
-    return JsonResponse({"saved": True})
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
+
+def BenchmarkTest00098(request):
+    cookie_value = request.COOKIES.get('session_token', '')
+    form = FormData(payload=cookie_value)
+    data = form.payload
+    resp = JsonResponse({'status': 'ok'})
+    resp.cookies['session'] = str(data)
+    resp.cookies['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    return resp

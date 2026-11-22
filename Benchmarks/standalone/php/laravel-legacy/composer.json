@@ -1,0 +1,23 @@
+{
+  "name": "benchproctor/laravel",
+  "type": "project",
+  "require": {
+    "php": "^8.1",
+    "ezyang/htmlpurifier": "4.19.1",
+    "guzzlehttp/guzzle": "7.16.0",
+    "laravel/framework": "10.50.3",
+    "phpseclib/phpseclib": "3.0.57",
+    "symfony/yaml": "6.4.49"
+  },
+  "config": {
+    "audit": {
+      "ignore": {
+        "GHSA-5vg9-5847-vvmq": "Legacy line (Laravel 10, ruling G4): 10.50.3 is the newest Laravel 10 release published on or before the 2026-10-22 cutoff; Laravel 10 is out of upstream support and these advisories are properties of the line, recorded rather than refused.",
+        "GHSA-63hm-g96r-2m2q": "Legacy line (Laravel 10, ruling G4): 10.50.3 is the newest Laravel 10 release published on or before the 2026-10-22 cutoff; Laravel 10 is out of upstream support and these advisories are properties of the line, recorded rather than refused.",
+        "GHSA-crmm-hgp2-wgrp": "Legacy line (Laravel 10, ruling G4): 10.50.3 is the newest Laravel 10 release published on or before the 2026-10-22 cutoff; Laravel 10 is out of upstream support and these advisories are properties of the line, recorded rather than refused.",
+        "GHSA-f9x3-7vq9-cph6": "Legacy line (Laravel 10, ruling G4): 10.50.3 is the newest Laravel 10 release published on or before the 2026-10-22 cutoff; Laravel 10 is out of upstream support and these advisories are properties of the line, recorded rather than refused.",
+        "GHSA-jh5r-qr3c-85q8": "Legacy line (Laravel 10, ruling G4): 10.50.3 is the newest Laravel 10 release published on or before the 2026-10-22 cutoff; Laravel 10 is out of upstream support and these advisories are properties of the line, recorded rather than refused."
+      }
+    }
+  }
+}

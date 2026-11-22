@@ -3,18 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00118Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $_coerced = (int)$data;
-        $parsedId = $_coerced;
-        DB::select('SELECT * FROM users WHERE id = \'' . $parsedId . '\'');
-        return response()->json(['ok' => 1]);
+        $userInput = $request->cookie('session_token', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $records = (int) $data;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return response()->json(['frame_bytes' => strlen($frame)], 200);
     }
 }

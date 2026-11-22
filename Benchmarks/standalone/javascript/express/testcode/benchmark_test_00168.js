@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const libxmljs = require("libxmljs");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00168(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
-  res.json({ done: true });
+  const userInput = req.query.id || "";
+  const data = nodeUtil.format("%s", userInput);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const targetUrl = data;
+  res.location(String(targetUrl)).sendStatus(303); return;
 }
 
 module.exports = { BenchmarkTest00168 };

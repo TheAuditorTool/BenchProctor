@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+import secrets
 from flask import Flask, request, jsonify
 from app_runtime import db
 
@@ -19,7 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00103", methods=["POST"])
 def BenchmarkTest00103():
-    user_id = request.args.get('id', '')
-    data = (lambda v: v.strip())(user_id)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return jsonify({"result": "success"})
+    host_value = request.headers.get('Host', '')
+    data = '{}'.format(host_value)
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

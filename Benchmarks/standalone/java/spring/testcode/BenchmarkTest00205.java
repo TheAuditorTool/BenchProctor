@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.*;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00205 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -20,18 +26,16 @@ public class BenchmarkTest00205 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00205", consumes="application/xml")
-    public void BenchmarkTest00205(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        String prefix = xmlValue.length() > 0 ? xmlValue.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = xmlValue.toLowerCase(); break;
-            case "f": data = xmlValue.toUpperCase(); break;
-            default: data = xmlValue.strip(); break;
+    @PostMapping("/BenchmarkTest00205")
+    public void BenchmarkTest00205(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.Properties holder = new java.util.Properties();
+        holder.setProperty("value", jsonValue);
+        String data = holder.getProperty("value", "");
+        try (jdk.jshell.JShell snippetShell = jdk.jshell.JShell.builder().executionEngine("local").build()) {
+            java.util.List<jdk.jshell.SnippetEvent> snippetEvents = snippetShell.eval(data);
+            response.setHeader("X-Code-Result", snippetEvents.isEmpty() ? "" : String.valueOf(snippetEvents.get(0).value()));
         }
-        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

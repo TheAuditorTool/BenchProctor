@@ -8,9 +8,10 @@ class BenchmarkTest00203Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $data = ($userInput !== null) ? $userInput : '';
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = $request->getContent();
+        $data = base64_decode($userInput);
+        $quotedArg = escapeshellarg((string)$data);
+        system('gzip -f /var/app/reports/' . (string)$quotedArg);
         return response()->json(['ok' => 1]);
     }
 }

@@ -9,11 +9,8 @@ class BenchmarkTest00264Controller
     public function __invoke(Request $request)
     {
         $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        $resolved = realpath('/var/app/data/' . $data);
-        if ($resolved === false || strpos($resolved, '/var/app/data/') !== 0) { return response()->json(['error'=>'forbidden'], 403); }
-        $checkedPath = $resolved;
-        file_put_contents((string)$checkedPath, 'data');
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        $content = file_get_contents('/var/app/data/' . (string)$data);
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 app = Flask(__name__)
@@ -18,10 +22,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00241", methods=["POST"])
 def BenchmarkTest00241():
-    cookie_value = request.cookies.get('session_token', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(cookie_value)
-    with open('/var/app/data/' + str(data), 'w') as fh:
-        fh.write('data')
-    return jsonify({"result": "success"})
+    referer_value = request.headers.get('Referer', '')
+    data = str(referer_value).replace('\x00', '')
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return jsonify({'length': len(ciphertext)}), 200

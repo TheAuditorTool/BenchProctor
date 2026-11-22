@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as childProcess from "child_process";
-import * as zod from "zod";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 
 export const BenchmarkTest00184 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.field as string) || "";
-  const data = userInput != null ? userInput : '';
-  const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.%\-]+$/).safeParse(data);
-  if (!_parsed.success) { res.status(400).json({error:"invalid"}); return; }
-  const processed = _parsed.data;
-  childProcess.execSync("echo " + processed);
+  const userInput = ((req as any).files?.[0]?.originalname as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.evaluate("//user[name='" + data + "']", usersDoc, null, xpath.XPathResult.ANY_TYPE, null);
   res.json({ accepted: true });
 }

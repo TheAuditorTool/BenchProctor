@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00105() {
-  user_input="$(cat /dev/stdin)"
-  if [ -n "$user_input" ]; then data="$user_input"; else data=""; fi
-  case $data in /bin/echo|/bin/cat|/usr/bin/id) allowed_bin=$data;; *) echo "forbidden binary" >&2; exit 1;; esac
-  eval "$allowed_bin"
+  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  data=""
+  IFS="," read -ra _tokens <<< "${user_input}"
+  for token in "${_tokens[@]}"; do data="$token"; done
+  printf '%s' "$data" | xmllint --nonet --dropdtd - | xsltproc --nonet /etc/app/order_summary.xsl -
 }
 
 benchmark_test_00105 "$@"

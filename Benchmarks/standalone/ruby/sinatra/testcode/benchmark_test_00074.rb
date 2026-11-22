@@ -18,13 +18,15 @@ class BenchmarkTest00074 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00074" do
-    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(user_input.to_s) + _cipher.final
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = "%s" % user_input
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    headers["Location"] = target_url
+    halt 302
   end
 end

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as net from "net";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { createClient } from "redis";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,11 +19,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00159")
-  async BenchmarkTest00159(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
+  async BenchmarkTest00159(): Promise<unknown> {
+    const _cache = createClient({ url: "redis://cache:6379" });
+    await _cache.connect();
+    const userInput = (await _cache.get("user_data")) || "";
     const payload = { get value() { return userInput; } };
     const data = payload.value;
-    req.session.data = String(data);
+    net.connect(80, new URL(String(data)).hostname);
     return { created: true };
   }
 }

@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import os
+from sqlalchemy import create_engine
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -21,6 +24,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00187")
 async def BenchmarkTest00187(request: Request):
-    host_value = request.headers.get('host', '')
-    data = host_value if host_value else 'default'
-    return RedirectResponse(url=str(data))
+    with open('/tmp/data', 'r') as fh:
+        file_value = fh.read()
+    data = bytes.fromhex(file_value).decode('utf-8', 'ignore')
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _coerced
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = ' + str(processed))
+    return {"updated": True}

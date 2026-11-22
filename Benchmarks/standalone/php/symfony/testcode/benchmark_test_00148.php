@@ -11,8 +11,10 @@ class BenchmarkTest00148Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('X-Forwarded-For', '');
-        file_put_contents('/var/uploads/' . $userInput, 'data');
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        file_put_contents('/var/uploads/' . $data, 'data');
         return new JsonResponse(["committed" => true]);
     }
 }

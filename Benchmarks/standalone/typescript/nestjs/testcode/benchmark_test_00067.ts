@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
-import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,10 +17,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00067")
-  async BenchmarkTest00067(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const data = nodeUtil.format("%s", userInput);
-    crypto.createHash("sha256").update(data).digest("hex");
-    return { created: true };
+  async BenchmarkTest00067(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const _input = String(userInput);
+    let data;
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    const domain = String(data).match(/@([A-Za-z0-9.-]+)$/)![1];
+    return { domain };
   }
 }

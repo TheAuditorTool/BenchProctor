@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
 
 async function BenchmarkTest00338(req, res) {
-  const userInput = req.headers.authorization || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
-  res.json({ done: true });
+  const userInput = req.body?.multipart_field || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  return res.status(302).set("Location", String(data)).end();
 }
 
 module.exports = { BenchmarkTest00338 };

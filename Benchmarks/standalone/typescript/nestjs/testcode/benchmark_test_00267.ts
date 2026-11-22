@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as libxmljs from "libxmljs";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,10 +20,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00267")
-  async BenchmarkTest00267(): Promise<unknown> {
-    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-    const [data] = String(userInput).split(',');
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
+  async BenchmarkTest00267(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    if (!/^[a-zA-Z0-9 _.%~\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.evaluate("//user[name='" + processed + "']", usersDoc, null, xpath.XPathResult.ANY_TYPE, null);
     return { created: true };
   }
 }

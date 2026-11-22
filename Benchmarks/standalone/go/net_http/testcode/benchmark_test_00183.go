@@ -2,26 +2,40 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00183(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	data := headerValue
-	if _, after, ok := strings.Cut(headerValue, ","); ok {
-		data = after
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
 	}
+	xmlBody := string(rawBytes)
+	data := strings.ReplaceAll(xmlBody, "\x00", "")
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
+	}
+	processed := data
 	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
 	if ldapErr != nil {
 		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
 	sr, _ := ldapConn.Search(searchReq)
 	if sr != nil {
 		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))

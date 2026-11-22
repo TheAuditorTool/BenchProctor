@@ -4,23 +4,19 @@ use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00012")]
 pub async fn benchmark_test_00012(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Some(Ok(mut _field)) = payload.next().await {
-            let mut _buf: Vec<u8> = Vec::new();
-            while let Some(Ok(_chunk)) = _field.next().await {
-                _buf.extend_from_slice(&_chunk);
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Some(Ok(_field)) = payload.next().await {
+            if let Some(_cd) = _field.content_disposition() {
+                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
             }
-            _mv = String::from_utf8_lossy(&_buf).to_string();
         }
-        _mv
+        _fname
     };
-    let mut data = String::new();
-    for token in multipart_value.split(',') { data = token.to_string(); }
-    use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
-    let iv: [u8; 8] = rand::random();
-    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec_mut::<Pkcs7>(data.as_bytes())).unwrap_or_default();
-    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+    let (payload, _origin) = (upload_name.clone(), "http");
+    let data = payload;
+    let Some(at) = data.find('@') else { return HttpResponse::BadRequest().finish(); };
+    let mail_domain = &data[at + 1..];
+    let _ = mail_domain;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

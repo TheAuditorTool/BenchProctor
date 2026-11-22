@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::http::HeaderMap;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use rand::rngs::OsRng;
 
-pub async fn benchmark_test_00287() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+pub async fn benchmark_test_00287(headers: HeaderMap) -> impl IntoResponse {
+    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    use std::fmt::Write;
     let mut data = String::new();
-    for token in comment_value.split(',') { data = token.to_string(); }
-    use rand::Rng;
-    let _token: u64 = OsRng.gen();
-    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
+    write!(&mut data, "{}", forwarded_ip).ok();
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let Some(seat_limit) = plan_limits.get(data.as_str()).copied() else { return (StatusCode::NOT_FOUND, "").into_response(); };
+    let _ = seat_limit;
     Json(serde_json::json!({"count": 0})).into_response()
 }

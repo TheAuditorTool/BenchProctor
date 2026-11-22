@@ -8,9 +8,12 @@ class BenchmarkTest00317Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
+        $userInput = $request->header('Referer', '');
+        $data = "{$userInput}";
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        return response()->json(['ok' => 1]);
     }
 }

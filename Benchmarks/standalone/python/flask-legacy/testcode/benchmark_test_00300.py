@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+import io
+from lxml import etree
+from flask import Flask, jsonify
+import json
+from app_runtime import db
+
+
+app = Flask(__name__)
+
+
+@app.after_request
+def _apply_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@app.errorhandler(Exception)
+def _handle_unexpected(exc):
+    return jsonify({"error": "internal"}), 500
+
+
+@app.route("/BenchmarkTest00300", methods=["POST"])
+def BenchmarkTest00300():
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    try:
+        data = json.loads(db_value).get('value', db_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = db_value
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
+    return jsonify({"result": "success"})

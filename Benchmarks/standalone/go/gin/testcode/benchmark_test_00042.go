@@ -2,21 +2,15 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00042(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	xmlBody := string(rawBytes)
-	form := submissionForm{payload: xmlBody}
-	data := form.payload
+	pathValue := c.Param("id")
+	data := func(v string) string { return strings.TrimSpace(v) }(pathValue)
 	var result *string
 	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
 	var name string

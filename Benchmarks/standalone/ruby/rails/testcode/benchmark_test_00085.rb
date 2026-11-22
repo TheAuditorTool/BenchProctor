@@ -11,9 +11,13 @@ class BenchmarkTest00085Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00085
-    user_input = request.query_parameters[:q].to_s
-    data = user_input.gsub("\u0000", "")
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
+    user_input = request.body.read
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    JSON::Parser.new(data, create_additions: false).parse
     render json: { status: "ok" }
   end
 end

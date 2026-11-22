@@ -2,18 +2,28 @@
 package testcode
 
 import (
+	"crypto/md5"
+	"fmt"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00234(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	var data string
-	if len(pathValue) > 0 {
-		data = pathValue
-	} else {
-		data = "default"
+	userID := r.URL.Query().Get("id")
+	relayPrefix := ""
+	if len(userID) > 0 {
+		relayPrefix = strings.ToLower(userID[:1])
 	}
-	htmlOut := "<div>" + data + "</div>"
-	w.Write([]byte(htmlOut))
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = userID
+	case "f":
+		data = userID
+	default:
+		data = userID
+	}
+	hash := md5.Sum([]byte(data))
+	hashStr := fmt.Sprintf("%x", hash)
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

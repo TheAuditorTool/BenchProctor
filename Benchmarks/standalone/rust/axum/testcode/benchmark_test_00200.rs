@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00200(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let captured = referer_value.clone();
+pub async fn benchmark_test_00200() -> impl IntoResponse {
+    let file_value = tokio::fs::read_to_string("/tmp/data").await.unwrap_or_default();
+    let captured = file_value.clone();
     let reader = move || captured.trim().to_string();
     let data = reader();
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query(format!("SELECT id, name FROM users WHERE name = '{}'", data)).execute(&mut _conn);
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -12,12 +12,10 @@ class BenchmarkTest00292Controller < ApplicationController
   end
   def benchmark_test_00292
     user_input = params[:id].to_s
-    data = user_input ? user_input : ''
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
     render json: { status: "ok" }
   end
 end

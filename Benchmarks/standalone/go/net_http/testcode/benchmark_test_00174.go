@@ -2,21 +2,23 @@
 package testcode
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"os"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00174(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	capture := func() string { return strings.TrimSpace(originValue) }
-	data := capture()
-	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
-	if !allowed[data] {
-		http.Error(w, "forbidden", http.StatusForbidden)
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	checkedPath := "/var/app/data/" + data
-	os.Remove(checkedPath)
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	jsonValue := reqBody.Payload
+	data := fmt.Sprintf("%s", jsonValue)
+	requested, _ := strconv.Atoi(data)
+	wrapped := int32(requested + 1)
+	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
 }

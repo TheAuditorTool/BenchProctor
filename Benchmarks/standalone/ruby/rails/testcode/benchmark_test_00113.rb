@@ -11,9 +11,10 @@ class BenchmarkTest00113Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00113
-    user_input = request.user_agent.to_s
-    data = format("%<value>s", value: user_input)
-    File.write("/var/uploads/" + data, "data")
-    render json: { status: "ok" }
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    data = user_input ? user_input : ''
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

@@ -1,0 +1,16 @@
+{
+  "name": "sla-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "2.2.0",
+    "axios": "1.20.0",
+    "express": "5.3.0",
+    "express-session": "1.19.0",
+    "pg": "8.23.1"
+  }
+}

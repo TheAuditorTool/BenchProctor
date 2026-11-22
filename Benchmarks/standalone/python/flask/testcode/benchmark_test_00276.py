@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import defusedxml.ElementTree
-from app_runtime import db
+import ldap3
+import re
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
+import os
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -20,6 +27,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00276", methods=["POST"])
 def BenchmarkTest00276():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    defusedxml.ElementTree.fromstring(str(db_value))
+    xml_value = request.get_data(as_text=True)
+    form = FormData(payload=xml_value)
+    data = form.payload
+    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(processed) + ')', attributes=['cn'])
     return jsonify({"result": "success"})

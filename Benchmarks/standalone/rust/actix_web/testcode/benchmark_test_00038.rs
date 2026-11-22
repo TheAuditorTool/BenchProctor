@@ -2,13 +2,10 @@
 use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00038")]
-pub async fn benchmark_test_00038(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let user_id = query.get("id").cloned().unwrap_or_default();
-    let captured = user_id.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", processed));
+pub async fn benchmark_test_00038(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let data: String = field_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| field_value.clone());
+    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

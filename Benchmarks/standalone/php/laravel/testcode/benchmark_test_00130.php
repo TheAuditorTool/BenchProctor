@@ -2,12 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 
 class BenchmarkTest00130Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $token = bin2hex(random_bytes(32));
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->query('id', '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        return response()->json(['ok' => 1]);
     }
 }

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from starlette.responses import JSONResponse
-from app_runtime import db
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -22,13 +24,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00262")
 async def BenchmarkTest00262(request: Request):
     ua_value = request.headers.get('user-agent', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(ua_value)
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
-    return {"updated": True}
+    if ua_value:
+        data = ua_value
+    else:
+        data = ''
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

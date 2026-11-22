@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
 
 class BenchmarkTest00038 < Sinatra::Base
   before do
@@ -19,10 +18,12 @@ class BenchmarkTest00038 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00038" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = format("%<value>s", value: user_input)
-    JSON.parse(data)
+    user_input = params[:multipart_field].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

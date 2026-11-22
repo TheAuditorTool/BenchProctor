@@ -2,6 +2,7 @@
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
+import org.yaml.snakeyaml.Yaml;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -19,12 +20,21 @@ public class BenchmarkTest00132 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00132", consumes="text/plain")
-    public void BenchmarkTest00132(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        String data = String.format("%s", rawData);
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    @PostMapping(path="/BenchmarkTest00132", consumes="multipart/form-data")
+    public void BenchmarkTest00132(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String prefix = multipartValue.length() > 0 ? multipartValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = multipartValue.toLowerCase(); break;
+            case "f": data = multipartValue.toUpperCase(); break;
+            default: data = multipartValue.strip(); break;
+        }
+        org.yaml.snakeyaml.LoaderOptions loaderOptions = new org.yaml.snakeyaml.LoaderOptions();
+        loaderOptions.setTagInspector(tag -> true);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(loaderOptions));
+        Object obj = yaml.load(data);
+        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

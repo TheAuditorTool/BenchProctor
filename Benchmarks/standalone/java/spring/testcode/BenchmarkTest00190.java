@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,12 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00190 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -26,17 +19,16 @@ public class BenchmarkTest00190 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00190")
-    public void BenchmarkTest00190(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String data;
-        if (jsonValue.length() > 256) { data = jsonValue.substring(0, 256); }
-        else { data = jsonValue; }
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
-        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
-        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+    @GetMapping("/BenchmarkTest00190")
+    public void BenchmarkTest00190(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.%~\\-]+$") String value) {}
+        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        if (!schemaValidator.validate(new SchemaInput(headerValue)).isEmpty()) { response.sendError(400, "schema invalid"); return; }
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        javax.xml.xpath.XPathExpression roleQuery = xpath.compile("/users/user[@name='" + headerValue + "']/@role");
+        String userRole = roleQuery.evaluate(new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")));
+        response.setHeader("X-User-Role", userRole);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

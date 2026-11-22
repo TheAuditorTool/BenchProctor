@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
+import ctypes
 
 
 app = Flask(__name__)
@@ -18,7 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00162", methods=["POST"])
 def BenchmarkTest00162():
-    forwarded_ip = request.headers.get('X-Forwarded-For', '')
-    with open('/var/app/data/' + str(forwarded_ip), 'w') as fh:
-        fh.write('data')
-    return jsonify({"result": "success"})
+    auth_header = request.headers.get('Authorization', '')
+    data = bytes.fromhex(auth_header).decode('utf-8', 'ignore')
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return jsonify({'wrapped': wrapped}), 200

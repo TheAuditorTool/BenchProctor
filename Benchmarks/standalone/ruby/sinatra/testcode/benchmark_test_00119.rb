@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
-require "nokogiri"
 
 class BenchmarkTest00119 < Sinatra::Base
   before do
@@ -21,13 +19,8 @@ class BenchmarkTest00119 < Sinatra::Base
   end
   post "/benchmark_test_00119" do
     user_input = ENV["APP_INPUT"] || ""
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%~\-]+\z/) }
-    unless schema.call(value: user_input.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = user_input
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    data = format("%<value>s", value: user_input)
+    response.add_header("set-cookie", Rack::Utils.set_cookie_header("session", { value: data, httponly: true, same_site: :strict }))
     content_type :json
     JSON.generate({ status: "ok" })
   end

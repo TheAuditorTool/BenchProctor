@@ -11,12 +11,9 @@ class BenchmarkTest00043Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00043
-    user_input = Comment.first&.text.to_s
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
-    render json: { status: "ok" }
+    user_input = cookies[:session_token].to_s
+    token = rand(1000000)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", user_input.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

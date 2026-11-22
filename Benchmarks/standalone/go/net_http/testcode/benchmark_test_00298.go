@@ -2,21 +2,32 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00298(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	pending := strings.Split(uaValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	fieldValue := r.FormValue("field")
+	relayPrefix := ""
+	if len(fieldValue) > 0 {
+		relayPrefix = strings.ToLower(fieldValue[:1])
 	}
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = fieldValue
+	case "f":
+		data = fieldValue
+	default:
+		data = fieldValue
+	}
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
+	}
+	targetUrl := data
+	http.Redirect(w, r, targetUrl, http.StatusFound)
 }

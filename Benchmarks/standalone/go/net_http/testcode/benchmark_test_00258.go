@@ -2,14 +2,24 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00258(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	form := submissionForm{payload: pathValue}
-	data := form.payload
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	fieldValue := r.FormValue("field")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", fieldValue)
+	data := relayBuilder.String()
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		http.Error(w, "invalid integer", http.StatusBadRequest)
+		return
+	}
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	requested, _ := strconv.Atoi(boundedVal)
+	allocated := requested + 1
+	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
 }

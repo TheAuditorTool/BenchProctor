@@ -2,25 +2,21 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00300(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	headerValue := r.Header.Get("X-Custom-Header")
+	data := strings.ReplaceAll(headerValue, "\x00", "")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#~\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := strings.ReplaceAll(xmlBody, "\x00", "")
-	resp, err := http.Get(data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	processed := data
+	os.WriteFile("/var/app/data/"+processed, []byte("data"), 0644)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

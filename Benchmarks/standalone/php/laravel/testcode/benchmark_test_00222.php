@@ -9,10 +9,13 @@ class BenchmarkTest00222Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Authorization', '');
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        DB::select('SELECT * FROM users WHERE id = \'' . $data . '\'');
-        return response()->json(['ok' => 1]);
+        $userInput = $request->getContent();
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        $rng = new \Random\Randomizer(new \Random\Engine\Secure());
+        $token = bin2hex($rng->getBytes(16));
+        DB::statement('UPDATE users SET reset_token = ? WHERE email = ?', [$token, (string)$data]);
+        return response()->json(['reset' => 'sent'], 200);
     }
 }

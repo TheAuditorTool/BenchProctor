@@ -1,24 +1,38 @@
 {
   "benchmark": "benchproctor",
   "frameworks": [
-    "standalone"
+    "standalone",
+    "standalone-legacy"
   ],
   "language": "bash",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "standalone": {
       "categories": 11,
-      "csv_sha256": "8077aad6677f1332762d4d9db00a3e26e1dd3981e13bcb6323b20f4afeeff1f2",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 440,
-      "safe": 220,
-      "total": 440,
-      "vulnerable": 220
+      "csv_sha256": "58f949957ed9825be3423133deaee61c44c322cdf23cbabf3e52c659e6ed8383",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "bash 5 ([[ ]], $(( )), mapfile)",
+      "published_files": 220,
+      "safe": 110,
+      "total": 220,
+      "vulnerable": 110
+    },
+    "standalone-legacy": {
+      "categories": 11,
+      "csv_sha256": "459a21fcda0801ae7d93d5a4720ec41c308a9a2d3c03dce1dbf460ebf9f879d6",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "POSIX sh and bash 3.2 idioms (backticks, [ ], expr)",
+      "published_files": 220,
+      "safe": 110,
+      "total": 220,
+      "vulnerable": 110
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

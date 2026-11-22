@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,11 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00313")
-  async BenchmarkTest00313(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const data = Buffer.from(userInput, "base64").toString();
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    const value = (row as any).name;
+  async BenchmarkTest00313(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
+    const userInput = xff || "";
+    const data = `${userInput}`;
+    const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+    crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
     return { created: true };
   }
 }

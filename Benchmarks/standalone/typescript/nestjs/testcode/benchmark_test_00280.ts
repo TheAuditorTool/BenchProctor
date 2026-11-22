@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,14 +22,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00280")
-  async BenchmarkTest00280(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    if (!/^[a-zA-Z0-9 _.%~\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + processed + "']", xmlDoc);
-    return { created: true };
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00280(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const payload = { get value() { return userInput; } };
+    const data = payload.value;
+    const minstd = { state: (Date.now() % 2147483646) + 1, next() { this.state = (this.state * 48271) % 2147483647; return this.state; } };
+    const token = minstd.next().toString(36) + minstd.next().toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

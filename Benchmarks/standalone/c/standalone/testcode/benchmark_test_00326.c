@@ -6,24 +6,17 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <sqlite3.h>
-#include <regex.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00326(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = c_passthrough(user_input);
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^[a-zA-Z0-9#._-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
-        regfree(&_re);
-    }
-    sqlite3 *_db = NULL;
-    sqlite3_open("/var/app/app.db", &_db);
-    char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
-    sqlite3_exec(_db, _sql, NULL, NULL, NULL);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    char *_parts[2];
+    _parts[0] = malloc(strlen(data) + 1);
+    if (_parts[0] == NULL) return;
+    strcpy(_parts[0], data);
+    _parts[1] = _parts[0];
+    printf("%s\n", _parts[0]);
+    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
 }

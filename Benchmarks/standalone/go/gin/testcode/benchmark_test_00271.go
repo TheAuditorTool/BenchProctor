@@ -2,9 +2,8 @@
 package testcode
 
 import (
-	"io"
+	"context"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -12,18 +11,18 @@ import (
 )
 
 func BenchmarkTest00271(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	cookieValue, err := c.Cookie("session_token")
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(xmlBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
 		return
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	processed := data
+	redisClient.HSet(context.Background(), "session:"+c.GetString("user"), map[string]any{"display_name": processed, "locale": "en"})
+	c.JSON(200, gin.H{"code": "OK"})
 }

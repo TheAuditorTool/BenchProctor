@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00239Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,14 +11,11 @@ class BenchmarkTest00239Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00239
-    user_input = User.first&.name.to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
-    render json: { status: "ok" }
+    user_input = request.headers["Authorization"].to_s
+    data = sprintf("%s", user_input)
+    hasher = OpenSSL::Digest.new("SHA256")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
+    render json: { digest: digest }
   end
 end

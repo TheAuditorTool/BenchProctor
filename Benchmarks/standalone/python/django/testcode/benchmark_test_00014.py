@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from cryptography.fernet import Fernet
-import os
+import re
 
 
 def BenchmarkTest00014(request):
-    env_value = os.environ.get('APP_INPUT', '')
-    if env_value:
-        data = env_value
-    else:
-        data = ''
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    user_id = request.GET.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    if match is None:
+        return JsonResponse({'error': 'not an email address'}, status=400)
+    domain = match.group(1)
+    return JsonResponse({'domain': domain}, status=200)

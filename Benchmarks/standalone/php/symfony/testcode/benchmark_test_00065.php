@@ -2,22 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00065', methods: ['POST'])]
 class BenchmarkTest00065Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $userInput = $request->headers->get('User-Agent', '');
+        $data = "{$userInput}";
+        if (!preg_match('#^[a-zA-Z0-9 _.\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $request->getSession()->set('data', (string) $processed);
         return new JsonResponse(["committed" => true]);
     }
 }

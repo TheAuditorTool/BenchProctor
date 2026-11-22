@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
+from starlette.responses import JSONResponse
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -19,9 +22,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00232")
-async def BenchmarkTest00232(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = '{}'.format(multipart_value)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+@app.post("/BenchmarkTest00232/{id}")
+async def BenchmarkTest00232(request: Request, id: str):
+    path_value = id
+    data = ' '.join(str(path_value).split())
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

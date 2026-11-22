@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,12 +25,14 @@ struct Client {
 
 void benchmark_test_00082(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    struct { int id; int flags; } _rec;
-    _rec.id = std::atoi(data.c_str());
-    std::cout << _rec.id << " " << _rec.flags << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_param_value("field");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    std::string _page = "<section class=\"profile\" title=\"{{name}}\"><h2>{{name}}</h2></section>";
+    std::string::size_type _at = 0;
+    while ((_at = _page.find("{{name}}", _at)) != std::string::npos) {
+        _page.replace(_at, 8, data);
+        _at += data.size();
+    }
+    res.set_content(_page, "text/html");
 }

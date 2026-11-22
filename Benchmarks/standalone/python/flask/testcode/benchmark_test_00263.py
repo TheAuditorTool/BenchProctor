@@ -20,12 +20,9 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00263", methods=["POST"])
 def BenchmarkTest00263():
     user_id = request.args.get('id', '')
-    if user_id:
-        data = user_id
-    else:
-        data = ''
+    data = '{}'.format(user_id)
     if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
         return jsonify({'error': 'forbidden'}), 400
     processed = data
-    eval(str(processed))
+    exec(str(processed))
     return jsonify({"result": "success"})

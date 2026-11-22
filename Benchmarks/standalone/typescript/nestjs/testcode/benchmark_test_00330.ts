@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Header, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { parseXmlString } from "libxmljs2";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,12 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00330")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00330(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const processed = data.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;");
-    return "<div>" + processed + "</div>";
+  async BenchmarkTest00330(@Req() req: Request): Promise<unknown> {
+    const userInput = (req.body as string) || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
+    return { created: true };
   }
 }

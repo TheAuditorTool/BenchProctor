@@ -9,11 +9,10 @@
 
 void benchmark_test_00386(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    char *_dst = malloc(32);
-    if (_dst == NULL) return;
-    snprintf(_dst, 32, "user=%s", data);
-    puts(_dst);
-    free(_dst);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    const char *_sep = strstr(data, "://");
+    if (_sep != NULL) putchar(_sep[3]);
+    putchar('\n');
 }

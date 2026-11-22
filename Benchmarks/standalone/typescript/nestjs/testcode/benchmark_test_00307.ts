@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Header, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import * as libxmljs from "libxmljs";
-import * as nodeUtil from "util";
+import isoDompurify from "isomorphic-dompurify";
+import * as nunjucks from "nunjucks";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -21,10 +21,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00307")
+  @Header("Content-Type", "text/html")
   async BenchmarkTest00307(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const data = nodeUtil.format("%s", userInput);
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-    return { created: true };
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    const data = `${userInput}`;
+    const _clean = isoDompurify.sanitize(data);
+    const processed = _clean;
+    const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+    return page;
   }
 }

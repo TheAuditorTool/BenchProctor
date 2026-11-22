@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00015 < Sinatra::Base
   before do
@@ -18,10 +19,11 @@ class BenchmarkTest00015 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00015" do
-    user_input = request.env["HTTP_USER_AGENT"].to_s
-    data = format("%<value>s", value: user_input)
-    File.write("/var/uploads/" + data, "data")
+    user_input = request.body.read
+    data = user_input.force_encoding("UTF-8")
+    reader = Nokogiri::XML::Reader(data) { |config| config.dtdload.noent }
+    values = reader.map { |node| node.value if node.value? }.compact
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ values: values })
   end
 end

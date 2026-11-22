@@ -3,6 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00106 < Sinatra::Base
   before do
@@ -19,9 +22,9 @@ class BenchmarkTest00106 < Sinatra::Base
   end
   post "/benchmark_test_00106" do
     user_input = params[:upload][:filename].to_s rescue ""
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    DB.fetch("SELECT * FROM users WHERE id = ?", data).all
     content_type :json
     JSON.generate({ status: "ok" })
   end

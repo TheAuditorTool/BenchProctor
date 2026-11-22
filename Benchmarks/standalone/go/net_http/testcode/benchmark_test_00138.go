@@ -2,28 +2,33 @@
 package testcode
 
 import (
-	"bytes"
+	"crypto/aes"
 	"crypto/cipher"
-	"crypto/des"
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 )
 
 func BenchmarkTest00138(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	capture := func() string { return strings.TrimSpace(headerValue) }
-	data := capture()
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	xmlBody := string(rawBytes)
+	var data string
+	for _, token := range strings.Split(xmlBody, ",") {
+		data = token
+	}
 	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	cipherBlock, _ := aes.NewCipher(keyHash[:])
+	gcm, _ := cipher.NewGCM(cipherBlock)
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

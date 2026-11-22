@@ -1,0 +1,43 @@
+services:
+  payout-service:
+    build: ./services/payout-service
+    environment:
+      - SERVICE_NAME=payout-service
+      - SESSION_SECRET=placeholder-not-a-real-secret-00
+    ports:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      cache:
+        condition: service_healthy
+      reconcile-service:
+        condition: service_healthy
+  reconcile-service:
+    build: ./services/reconcile-service
+    environment:
+      - SERVICE_NAME=reconcile-service
+      - APP_SECRET_KEY=placeholder-not-a-real-secret-00
+    ports:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      cache:
+        condition: service_healthy
+  cache:
+    image: redis:8.8.2-alpine3.23@sha256:f4ded511357f7c60551133fbceb0d07874a2240bfe3d1baaa49769a70ff83465
+    command: ["sh", "-c", "(until redis-cli SET user_data cached_value >/dev/null 2>&1; do sleep 1; done) & exec docker-entrypoint.sh redis-server"]
+    ports:
+      - "6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli GET user_data | grep -q ."]
+      interval: 5s
+      timeout: 3s
+      retries: 12

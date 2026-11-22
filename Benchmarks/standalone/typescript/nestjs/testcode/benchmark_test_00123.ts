@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Headers, Post } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,11 +19,14 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00123")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00123(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const data = Buffer.from(userInput, "hex").toString();
-    return "<div>" + data + "</div>";
+  @Post("BenchmarkTest00123/:id")
+  async BenchmarkTest00123(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const data = String(userInput).replace(/\u0000/g, "");
+    const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    const streamIv = crypto.randomBytes(12);
+    const sealer = crypto.createCipheriv("aes-256-gcm", streamKey, streamIv);
+    stream.pipeline(stream.Readable.from([String(data)]), sealer, fs.createWriteStream("/var/data/cipher.bin"), (err: Error | null) => { if (!err) fs.writeFileSync("/var/data/cipher.meta", Buffer.concat([streamIv, sealer.getAuthTag()])); });
+    return { created: true };
   }
 }

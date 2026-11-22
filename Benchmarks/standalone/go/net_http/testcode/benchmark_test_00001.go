@@ -2,34 +2,35 @@
 package testcode
 
 import (
-	"encoding/json"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
-
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00001(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", commentText)
+	data := relayBuilder.String()
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	jsonValue := reqBody.Payload
-	data := func(v string) string { return strings.TrimSpace(v) }(jsonValue)
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

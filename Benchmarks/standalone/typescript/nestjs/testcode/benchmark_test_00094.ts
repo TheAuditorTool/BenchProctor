@@ -2,6 +2,7 @@
 import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { parseXmlString } from "libxmljs2";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,12 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00094")
-  async BenchmarkTest00094(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    const requested = parseInt(data, 10);
-    const wrapped = (requested + 1) | 0;
-    const buf = Buffer.alloc(wrapped);
-    return { allocated: buf.length };
+  async BenchmarkTest00094(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const _raw = userInput;
+    const data = (_raw && _raw.length > 0) ? _raw : 'default';
+    parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
+    return { created: true };
   }
 }

@@ -1,24 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
+#include <regex>
+
+typedef struct ldap LDAP; typedef struct ldapmsg LDAPMessage;
+extern "C" int ldap_initialize(LDAP **, const char *);
+extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, LDAPMessage **);
+extern "C" int ldap_msgfree(LDAPMessage *);
+extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
+enum { LDAP_SCOPE_SUBTREE = 2 };
+struct berval { unsigned long bv_len; char *bv_val; };
+extern "C" int ldap_compare_ext_s(LDAP *, const char *, const char *, struct berval *, void *, void *);
+enum { LDAP_COMPARE_TRUE = 6 };
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00426(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    static const char *_allowed[] = { "report.pdf", "invoice.csv", "summary.txt" };
-    std::string _picked = "report.pdf";
-    for (const char *_a : _allowed) if (user_input == _a) { _picked = _a; break; }
-    std::string safe = std::string("/var/app/data/") + _picked;
-    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
+    const char *user_input_env = std::getenv("PATH_INFO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data = cpp_own(user_input);
+    std::string arg = std::regex_match(data, std::regex("^(admin|user|guest|service)$")) ? data : std::string("admin");
+    LDAP *_ld = nullptr;
+    const char *_ldap_url = std::getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
+    std::string _dn = std::string("uid=") + arg + ",ou=people,dc=example,dc=com";
+    struct berval _role = { 5, const_cast<char *>("admin") };
+    int _rc = ldap_compare_ext_s(_ld, _dn.c_str(), "employeeType", &_role, nullptr, nullptr);
+    std::cout << (_rc == LDAP_COMPARE_TRUE ? "admin" : "user") << std::endl;
+    ldap_unbind_ext_s(_ld, nullptr, nullptr);
 }

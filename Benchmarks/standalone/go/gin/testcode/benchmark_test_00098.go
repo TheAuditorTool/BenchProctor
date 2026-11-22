@@ -2,24 +2,34 @@
 package testcode
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00098(c *gin.Context) {
-	header, err := c.FormFile("upload")
+	hostValue := c.Request.Host
+	data := hostValue
+	if _, after, ok := strings.Cut(hostValue, ","); ok {
+		data = after
+	}
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	uploadName := header.Filename
-	var data string
-	if len(uploadName) > 0 {
-		data = uploadName
-	} else {
-		data = "default"
+	padLen := aes.BlockSize - len(data)%aes.BlockSize
+	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
+	cipherOut := make([]byte, len(ptext))
+	for off := 0; off < len(ptext); off += aes.BlockSize {
+		blockCipher.Encrypt(cipherOut[off:off+aes.BlockSize], ptext[off:off+aes.BlockSize])
 	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	c.JSON(http.StatusOK, map[string]string{"alg": "aes-ecb", "out": fmt.Sprintf("%x", cipherOut)})
 }

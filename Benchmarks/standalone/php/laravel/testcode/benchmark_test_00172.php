@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00172Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
-        $data = sprintf('%s', $userInput);
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = $request->header('Authorization', '');
+        [$data] = [$userInput, 'http'];
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        session(['data' => (string) $processed]);
+        return response()->json(['ok' => 1]);
     }
 }

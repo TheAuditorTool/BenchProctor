@@ -33,10 +33,12 @@ public class BenchmarkTest00083 {
     @GET
     @Path("/BenchmarkTest00083")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00083(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String processed = userId.matches("^(status|info|list|show)$") ? userId : "status";
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + processed}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00083(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        try (jdk.jshell.JShell snippetShell = jdk.jshell.JShell.builder().executionEngine("local").build()) {
+            java.util.List<jdk.jshell.SnippetEvent> snippetEvents = snippetShell.eval(refererValue);
+            response.setHeader("X-Code-Result", snippetEvents.isEmpty() ? "" : String.valueOf(snippetEvents.get(0).value()));
+        }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

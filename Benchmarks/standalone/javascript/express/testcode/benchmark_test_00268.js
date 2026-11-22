@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 const nodeUtil = require("util");
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00268(req, res) {
-  const userInput = req.query.id || "";
+  const userInput = process.env.APP_INPUT || "";
   const data = nodeUtil.format("%s", userInput);
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
+  new Function("return (" + String(data) + ");")();
   res.json({ done: true });
 }
 

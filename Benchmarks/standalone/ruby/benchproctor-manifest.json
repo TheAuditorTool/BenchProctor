@@ -2,33 +2,61 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "rails",
-    "sinatra"
+    "rails-legacy",
+    "sinatra",
+    "sinatra-legacy"
   ],
   "language": "ruby",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "rails": {
       "categories": 17,
-      "csv_sha256": "9f64e5fe2f277c0a3d941aaaaa20489eb8147466f5f0aecd54fdba10467f2ed9",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 680,
-      "safe": 340,
-      "total": 680,
-      "vulnerable": 340
+      "csv_sha256": "efa825b0468aaf0ca1b78efa8dd65d3b590889ea07c332cb1f39518b6798c1fc",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Rails 8.1, Ruby 4.0",
+      "published_files": 340,
+      "safe": 170,
+      "total": 340,
+      "vulnerable": 170
+    },
+    "rails-legacy": {
+      "categories": 17,
+      "csv_sha256": "057e1b35fdffdfbbfd0600ef42c2cc2c7b940aa67748652211693eba9870a107",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Rails 7.1, Ruby 3.2",
+      "published_files": 340,
+      "safe": 170,
+      "total": 340,
+      "vulnerable": 170
     },
     "sinatra": {
       "categories": 17,
-      "csv_sha256": "d3add9823fb7c84bc56b1aa2494ec157b3bb45ea9394caa39354619b1d08d67d",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 680,
-      "safe": 340,
-      "total": 680,
-      "vulnerable": 340
+      "csv_sha256": "7ebb2ca1e5469a19ece57a7acd1a377970f53655db13d7844aebefdda47ab793",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Sinatra 4, Rack 3",
+      "published_files": 340,
+      "safe": 170,
+      "total": 340,
+      "vulnerable": 170
+    },
+    "sinatra-legacy": {
+      "categories": 17,
+      "csv_sha256": "1caad491f056fbd7dc43e84ed201f475630dbaf1d61a5578448872565190da6a",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Sinatra 3, Rack 2",
+      "published_files": 340,
+      "safe": 170,
+      "total": 340,
+      "vulnerable": 170
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

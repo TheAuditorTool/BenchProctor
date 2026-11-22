@@ -2,10 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00127() {
-  user_input="$(cat /dev/stdin)"
-  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
-  data="${_mapped[0]}"
-  eval "echo $data"
+  user_input="$HTTP_X_CUSTOM_HEADER"
+  data=""
+  IFS="," read -ra _tokens <<< "${user_input}"
+  for token in "${_tokens[@]}"; do data="$token"; done
+  _enum_re='^(asc|desc|name|created)$'
+  if [[ ! "$data" =~ $_enum_re ]]; then echo "invalid"; exit 1; fi
+  processed="$data"
+  xmllint --xpath "//user[name='$processed']" /var/data/users.xml
 }
 
 benchmark_test_00127 "$@"

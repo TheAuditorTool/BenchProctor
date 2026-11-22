@@ -3,7 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00162 < Sinatra::Base
   before do
@@ -19,9 +21,9 @@ class BenchmarkTest00162 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00162" do
-    user_input = request.cookies["session_token"].to_s
-    data = format("%<value>s", value: user_input)
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    Object.new.instance_eval(data.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "redis"
 
 class BenchmarkTest00265Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +11,12 @@ class BenchmarkTest00265Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00265
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = user_input.gsub("\u0000", "")
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
-    render json: { status: "ok" }
+    user_input = request.referer.to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    response.set_header("Location", data)
+    head :found
   end
 end

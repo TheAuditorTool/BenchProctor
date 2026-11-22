@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdio>
+#include <unistd.h>
+#include <fcntl.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,20 +28,18 @@ struct Client {
 
 void benchmark_test_00240(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string user_input = req.get_header_value("Host");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd < 0) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    ssize_t _got = read(_fd, _rnd, sizeof(_rnd));
+    close(_fd);
+    if (_got != static_cast<ssize_t>(sizeof(_rnd))) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
     res.set_content("ok", "text/plain");
 }

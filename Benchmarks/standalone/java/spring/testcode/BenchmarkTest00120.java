@@ -19,15 +19,17 @@ public class BenchmarkTest00120 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00120")
-    public void BenchmarkTest00120(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(refererValue)); }
-        catch (NumberFormatException e) { data = refererValue; }
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    private static String normalize(String v) { return v.strip(); }
+
+    @PostMapping("/BenchmarkTest00120")
+    public void BenchmarkTest00120(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        String data = normalize(commentValue);
+        javax.xml.stream.XMLInputFactory staxFactory = javax.xml.stream.XMLInputFactory.newInstance();
+        javax.xml.stream.XMLStreamReader staxReader = staxFactory.createXMLStreamReader(new java.io.StringReader(data));
+        StringBuilder xmlText = new StringBuilder();
+        while (staxReader.hasNext()) { if (staxReader.next() == javax.xml.stream.XMLStreamConstants.CHARACTERS) { xmlText.append(staxReader.getText()); } }
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

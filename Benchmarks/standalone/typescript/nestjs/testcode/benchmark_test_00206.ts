@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { stringifySetCookie } from "cookie";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,12 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00206")
-  async BenchmarkTest00206(@Cookies("session_token") cookieToken: string, @Req() req: Request): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const data = Buffer.from(userInput, "hex").toString();
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    req.session.data = String(parsedNum);
+  async BenchmarkTest00206(@Body("field") field: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = field || "";
+    const data = String(userInput).slice(0, 200);
+    res.append(
+      "Set-Cookie",
+      stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict", secure: true }),
+    );
     return { created: true };
   }
 }

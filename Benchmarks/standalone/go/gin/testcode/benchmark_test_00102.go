@@ -2,22 +2,22 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00102(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	data := func(v string) string { return strings.TrimSpace(v) }(authHeader)
-	var _num float64
-	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid number")
+	refererValue := c.GetHeader("Referer")
+	data := strings.Join(strings.FieldsFunc(refererValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
-	c.Set("data", boundedVal)
+	targetUrl := data
+	http.RedirectHandler(targetUrl, http.StatusFound).ServeHTTP(c.Writer, c.Request)
 }

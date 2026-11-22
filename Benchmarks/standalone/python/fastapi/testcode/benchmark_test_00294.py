@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import os
-from fastapi.responses import JSONResponse
+from lxml import etree
+import re
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,8 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00294")
 async def BenchmarkTest00294(request: Request):
-    host_value = request.headers.get('host', '')
-    data, _sep, _rest = str(host_value).partition('\x00')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    data = (lambda v: v.strip())(upload_name)
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(processed) + '"]')
     return {"updated": True}

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeSerialize = require("node-serialize");
+const nodeUtil = require("util");
+const vm = require("node:vm");
 
 async function BenchmarkTest00183(req, res) {
-  const userInput = req.headers.authorization || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  nodeSerialize.unserialize(data);
+  const userInput = req.headers.origin || "";
+  const data = nodeUtil.format("%s", userInput);
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  vm.runInNewContext(String(parsedNum), { Math });
   res.json({ done: true });
 }
 

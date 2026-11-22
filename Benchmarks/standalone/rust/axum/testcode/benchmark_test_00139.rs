@@ -2,10 +2,15 @@
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00139() -> impl IntoResponse {
-    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
-    let data = if env_value.len() <= 4096 { env_value.clone() } else { env_value.chars().take(4096).collect() };
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+pub async fn benchmark_test_00139(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Ok(Some(_field)) = multipart.next_field().await {
+            _mv = _field.text().await.unwrap_or_default();
+        }
+        _mv
+    };
+    let data = multipart_value.to_string();
+    tokio::fs::remove_file(format!("/var/app/data/{}", data)).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -10,9 +10,16 @@ import (
 )
 
 func BenchmarkTest00095(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	data := strings.Join(strings.FieldsFunc(uaValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	query := fmt.Sprintf(`SELECT * FROM "%s"`, strings.ReplaceAll(data, `"`, `""`))
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
+	}
+	jsonValue := reqBody.Payload
+	data := func(v string) string { return strings.TrimSpace(v) }(jsonValue)
+	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
 	rows, err := DB.Query(query)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())

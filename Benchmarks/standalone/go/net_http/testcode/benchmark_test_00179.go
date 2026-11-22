@@ -2,27 +2,20 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 )
 
 func BenchmarkTest00179(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	relayPrefix := ""
-	if len(pathValue) > 0 {
-		relayPrefix = strings.ToLower(pathValue[:1])
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = pathValue
-	case "f":
-		data = pathValue
-	default:
-		data = pathValue
-	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	xmlBody := string(rawBytes)
+	data := strings.Join(strings.FieldsFunc(xmlBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	os.Remove("/var/app/data/" + data)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

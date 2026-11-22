@@ -6,20 +6,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/sha.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 void benchmark_test_00194(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    snprintf(data, sizeof(data), "%s", user_input);
+    struct addrinfo _hints;
+    struct addrinfo *_ai = NULL;
+    memset(&_hints, 0, sizeof(_hints));
+    _hints.ai_family = AF_UNSPEC;
+    _hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(data, "80", &_hints, &_ai) == 0 && _ai) {
+        int _sock = socket(_ai->ai_family, _ai->ai_socktype, _ai->ai_protocol);
+        if (_sock >= 0) { connect(_sock, _ai->ai_addr, _ai->ai_addrlen); close(_sock); }
+        freeaddrinfo(_ai);
     }
-    unsigned char _digest[32];
-    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

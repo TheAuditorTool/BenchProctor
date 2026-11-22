@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+const { db } = require("./shared");
 
 async function BenchmarkTest00257(req, res) {
-  const userInput = (req.file && req.file.originalname) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
-  const buf = Buffer.alloc(requested + 1);
-  res.json({ allocated: buf.length }); return;
+  const userInput = req.headers.origin || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+  if (!row) { res.status(404).json({error:"not found"}); return; }
+  const value = row.name;
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00257 };

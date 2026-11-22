@@ -18,17 +18,12 @@ class BenchmarkTest00032 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00032" do
-    user_input = request.body.read
+    user_input = request.env["HTTP_REFERER"].to_s
     def _normalize_local(v)
       v.to_s.strip
     end
     data = _normalize_local(user_input)
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    content_type :json
-    JSON.generate({ status: "ok" })
+    headers["Location"] = data
+    halt 302
   end
 end

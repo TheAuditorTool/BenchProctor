@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const isoDompurify = require("isomorphic-dompurify");
+const jsYaml = require("js-yaml");
 
 async function BenchmarkTest00008(req, res) {
-  const userInput = req.cookies.session_token || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const _clean = isoDompurify.sanitize(data);
-  const processed = _clean;
-  res.send("<div>" + processed + "</div>");
+  const userInput = req.headers["user-agent"] || "";
+  const parts = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data = parts.join(',');
+  const reportSpec = jsYaml.load(String(data), { schema: jsYaml.JSON_SCHEMA });
+  res.json({ title: String(reportSpec?.title ?? "") }); return;
 }
 
 module.exports = { BenchmarkTest00008 };

@@ -10,15 +10,19 @@
 void benchmark_test_00099(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_out)) _span = sizeof(_out);
-    memcpy(_out, _buf, _span);
-    printf("%.*s\n", (int)_span, _out);
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    const long _unit_cents = 1999;
+    long _qty = strtol(data, NULL, 10);
+    if (_qty < 0 || _qty > 100000) return;
+    long _total = _qty * _unit_cents;
+    printf("total=%ld\n", _total);
 }

@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from app_runtime import db
+from pathlib import Path
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 def BenchmarkTest00058(request):
-    host_value = request.META.get('HTTP_HOST', '')
-    data = '{}'.format(host_value)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
+    data = RequestPayload(header_value).value
+    Path('/var/app/data/' + str(data)).write_text('data')
+    return JsonResponse({"saved": True})

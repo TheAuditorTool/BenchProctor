@@ -2,40 +2,27 @@
 package testcode
 
 import (
-	"context"
-	"fmt"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 func BenchmarkTest00064(w http.ResponseWriter, r *http.Request) {
-	var msgValue string
-	_sqsOut, _sqsErr := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String("https://sqs.us-east-1.amazonaws.com/123456789012/app-events"),
-		MaxNumberOfMessages: 1,
-	})
-	if _sqsErr == nil && len(_sqsOut.Messages) > 0 {
-		msgValue = aws.ToString(_sqsOut.Messages[0].Body)
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	var data string
-	for _, token := range strings.Split(msgValue, ",") {
-		data = token
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	capture := func() string { return strings.TrimSpace(graphqlVar) }
+	data := capture()
+	tokenLen, _ := strconv.Atoi(data)
+	if tokenLen < 16 || tokenLen > 64 {
+		tokenLen = 32
 	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-	parsedId := strconv.Itoa(_num)
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", parsedId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	buf := make([]byte, tokenLen)
+	rand.Read(buf)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
 }

@@ -2,13 +2,12 @@
 package testcode
 
 import (
+	"fmt"
+	"math/rand"
 	"net/http"
 )
 
 func BenchmarkTest00008(w http.ResponseWriter, r *http.Request) {
-	multipartValue := r.FormValue("multipart_field")
-	form := submissionForm{payload: multipartValue}
-	data := form.payload
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	val := rand.Intn(1000000)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
 }

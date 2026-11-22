@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00011(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", referer_value).ok();
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00011(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let data = urlencoding::decode(&field_value).unwrap_or_default().to_string();
+    use sha1::Digest;
+    let _ = sha1::Sha1::new().chain_update(data.as_bytes()).finalize();
     Json(serde_json::json!({"count": 0})).into_response()
 }

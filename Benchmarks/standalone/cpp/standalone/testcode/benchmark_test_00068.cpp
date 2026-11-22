@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00068(int, char **)
@@ -15,8 +16,11 @@ void benchmark_test_00068(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>") << std::endl;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    char *_dst = new char[16];
+    size_t _n = data.size();
+    std::memcpy(_dst, data.c_str(), _n + 1);
+    std::cout << _dst << std::endl;
+    delete[] _dst;
 }

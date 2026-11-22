@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from lxml import etree
-from app_runtime import db
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from flask import Flask, request, jsonify
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -20,11 +21,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00279", methods=["POST"])
 def BenchmarkTest00279():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    parts = []
-    for token in str(db_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    user_id = request.args.get('id', '')
+    data = '%s' % str(user_id)
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + AESGCM(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

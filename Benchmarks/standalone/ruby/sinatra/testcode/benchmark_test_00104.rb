@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "base64"
 
 class BenchmarkTest00104 < Sinatra::Base
   before do
@@ -21,10 +19,14 @@ class BenchmarkTest00104 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00104" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = user_input.split(/[ \t]+/).join(" ")
-    DB.execute("SELECT * FROM " + (data =~ /\A\w+\z/ ? data : "users"))
+    user_input = params[:q].to_s
+    data = user_input.gsub("\u0000", "")
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

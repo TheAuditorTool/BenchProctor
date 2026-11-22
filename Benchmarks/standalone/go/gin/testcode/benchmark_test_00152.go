@@ -2,21 +2,14 @@
 package testcode
 
 import (
-	"io"
+	"fmt"
+	"math/rand"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00152(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	rawBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(rawBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	htmlOut := "<div>" + data + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	val := rand.Intn(1000000)
+	c.JSON(http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
 }

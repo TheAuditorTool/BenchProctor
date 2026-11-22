@@ -20,17 +20,15 @@ public class BenchmarkTest00150 {
     }
 
     @GetMapping("/BenchmarkTest00150")
-    public void BenchmarkTest00150(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data;
-        if (authHeader.length() > 256) { data = authHeader.substring(0, 256); }
-        else { data = authHeader; }
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
-        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
-        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    public void BenchmarkTest00150(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", hostValue);
+        String data = sw.toString();
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
+        String targetUrl = data;
+        new org.springframework.web.servlet.view.RedirectView(targetUrl).render(java.util.Map.of(), request, response);
     }
 }

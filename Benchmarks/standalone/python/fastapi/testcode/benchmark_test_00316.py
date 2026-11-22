@@ -1,16 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
 from starlette.responses import JSONResponse
-import ctypes
+from app_runtime import db
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -29,8 +21,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00316")
 async def BenchmarkTest00316(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = RequestPayload(env_value).value
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JSONResponse({'wrapped': wrapped}, status_code=200)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    pending = list(str(comment_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return JSONResponse({'error': 'not found'}, status_code=404)
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

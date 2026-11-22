@@ -3,6 +3,9 @@
 #include <string>
 #include <cstdlib>
 #include <unistd.h>
+#include <fstream>
+
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00156(int, char **)
 {
@@ -15,10 +18,8 @@ void benchmark_test_00156(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    const char _buf[16] = "fixedcontent12";
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    std::cout.write(_buf, static_cast<std::streamsize>(_span));
-    std::cout << std::endl;
+    std::string data = cpp_own(user_input);
+    std::string _path = std::string("/var/app/data/") + data;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
 }

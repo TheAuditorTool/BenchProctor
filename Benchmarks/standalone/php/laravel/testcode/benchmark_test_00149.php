@@ -2,15 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00149Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $data = "{$userInput}";
-        $processed = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-        return response('<div>' . $processed . '</div>')->header('Content-Type', 'text/html');
+        $userInput = $request->getContent();
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        $iv = random_bytes(12);
+        $tag = '';
+        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
+        $ciphertext = base64_encode($iv . $tag . $_ct);
+        return response()->json(['ok' => 1]);
     }
 }

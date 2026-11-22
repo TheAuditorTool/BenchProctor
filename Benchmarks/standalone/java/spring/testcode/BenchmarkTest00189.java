@@ -19,18 +19,12 @@ public class BenchmarkTest00189 {
         return ResponseEntity.status(500).body("request failed");
     }
 
+    private static String normalize(String v) { return v.strip(); }
+
     @GetMapping("/BenchmarkTest00189")
-    public void BenchmarkTest00189(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        byte[] hexBytes = new byte[headerValue.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
-        pb.redirectErrorStream(true);
-        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    public void BenchmarkTest00189(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refererValue = referer != null ? referer : "";
+        String data = normalize(refererValue);
+        response.sendRedirect(data);
     }
 }

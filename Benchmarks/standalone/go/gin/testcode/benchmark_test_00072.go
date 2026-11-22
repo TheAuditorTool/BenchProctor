@@ -2,6 +2,8 @@
 package testcode
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
 	"io"
 	"net/http"
 	"strings"
@@ -10,16 +12,10 @@ import (
 )
 
 func BenchmarkTest00072(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	rawBody := string(rawBytes)
-	var data string
-	for _, token := range strings.Split(rawBody, ",") {
-		data = token
-	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	authHeader := c.GetHeader("Authorization")
+	data := strings.Join(strings.FieldsFunc(authHeader, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

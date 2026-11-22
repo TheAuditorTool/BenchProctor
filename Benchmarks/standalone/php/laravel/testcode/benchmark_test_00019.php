@@ -3,16 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00019Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        if (!preg_match('#^[a-zA-Z0-9 _.\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        session(['data' => (string) $processed]);
+        $userInput = $request->header('Referer', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $_coerced = (int)$data;
+        $parsedId = $_coerced;
+        $dbh = DB::getPdo();
+        $stmt = $dbh->prepare('SELECT * FROM users WHERE id = \'' . $parsedId . '\'');
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return response()->json(['ok' => 1]);
     }
 }

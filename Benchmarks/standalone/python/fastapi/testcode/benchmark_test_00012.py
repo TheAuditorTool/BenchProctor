@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+import io
+import xml.sax
+import defusedxml.sax
+from urllib.parse import unquote
 from fastapi.responses import JSONResponse
 
 
@@ -21,13 +24,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00012")
 async def BenchmarkTest00012(request: Request):
-    user_id = request.query_params.get('id', '')
-    kind = 'json' if str(user_id).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(user_id).strip()
-        case _:
-            data = str(user_id)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = unquote(multipart_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
     return {"updated": True}

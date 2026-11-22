@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00064 < Sinatra::Base
   before do
@@ -18,14 +19,17 @@ class BenchmarkTest00064 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00064" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    data = "#{user_input}"
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    aes = OpenSSL::Cipher::AES.new(256, :ECB)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    ciphertext = aes.update(data.to_s) + aes.final
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

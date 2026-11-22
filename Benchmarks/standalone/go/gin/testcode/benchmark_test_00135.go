@@ -2,24 +2,34 @@
 package testcode
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00135(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	data := strings.ReplaceAll(headerValue, "\x00", "")
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	forwardedIP := c.GetHeader("X-Forwarded-For")
+	form := submissionForm{payload: forwardedIP}
+	data := form.payload
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

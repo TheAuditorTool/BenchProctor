@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,17 +19,19 @@ public class BenchmarkTest00093 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @PostMapping("/BenchmarkTest00093")
-    public void BenchmarkTest00093(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = normalize(fieldValue);
-        try {
-            java.net.http.HttpRequest httpReq = java.net.http.HttpRequest.newBuilder(java.net.URI.create(data)).GET().build();
-            java.net.http.HttpResponse<String> httpResp = java.net.http.HttpClient.newHttpClient().send(httpReq, java.net.http.HttpResponse.BodyHandlers.ofString());
-            response.setHeader("X-Fetch-Status", String.valueOf(httpResp.statusCode()));
-        } catch (Exception e) { response.sendError(502); }
+    @PostMapping(path="/BenchmarkTest00093", consumes="text/plain")
+    public void BenchmarkTest00093(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Map.Entry<String,String> kv = java.util.Map.entry(rawData, "cookie");
+        String data = kv.getKey();
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher blockMode = new org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher(org.bouncycastle.crypto.engines.AESEngine.newInstance());
+        blockMode.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[blockMode.getOutputSize(plain.length)];
+        int sealedLen = blockMode.processBytes(plain, 0, plain.length, sealed, 0);
+        sealedLen += blockMode.doFinal(sealed, sealedLen);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(java.util.Arrays.copyOf(sealed, sealedLen)));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import org.yaml.snakeyaml.Yaml;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00046 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -21,16 +27,17 @@ public class BenchmarkTest00046 {
     }
 
     @PostMapping("/BenchmarkTest00046")
-    public void BenchmarkTest00046(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : fieldValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        org.yaml.snakeyaml.LoaderOptions unsafeYamlOpts = new org.yaml.snakeyaml.LoaderOptions();
-        unsafeYamlOpts.setTagInspector(tag -> true);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(unsafeYamlOpts));
-        Object obj = yaml.load(data);
-        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+    public void BenchmarkTest00046(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", jsonValue);
+        String data = sw.toString();
+        StringBuilder xmlText = new StringBuilder();
+        javax.xml.parsers.SAXParserFactory saxFactory = javax.xml.parsers.SAXParserFactory.newInstance();
+        saxFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        javax.xml.parsers.SAXParser saxParser = saxFactory.newSAXParser();
+        saxParser.parse(new org.xml.sax.InputSource(new java.io.StringReader(data)), new org.xml.sax.helpers.DefaultHandler() { @Override public void characters(char[] ch, int start, int length) { xmlText.append(ch, start, length); } });
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

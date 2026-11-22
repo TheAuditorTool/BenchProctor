@@ -2,19 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00001', methods: ['POST'])]
 class BenchmarkTest00001Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
+        $userInput = $request->headers->get('X-Forwarded-For', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $iv = random_bytes(12);
+        $tag = '';
+        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
+        $ciphertext = base64_encode($iv . $tag . $_ct);
         return new JsonResponse(["committed" => true]);
     }
 }

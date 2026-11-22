@@ -2,32 +2,33 @@
 package testcode
 
 import (
-	"net"
+	"bytes"
+	"crypto/cipher"
+	"crypto/des"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
+	"io"
 	"net/http"
-	"net/url"
-	"regexp"
-	"strings"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00217(c *gin.Context) {
-	userID := c.Query("id")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(userID)
-	parsedURL, _ := url.Parse(data)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
-	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		c.String(http.StatusForbidden, "private range blocked")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	targetUrl := data
-	conn, err := net.Dial("tcp", targetUrl)
-	if err == nil {
-		defer conn.Close()
-	}
-	c.JSON(200, gin.H{"code": "OK"})
+	rawBody := string(rawBytes)
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
+	iv := make([]byte, des.BlockSize)
+	rand.Read(iv)
+	padLen := des.BlockSize - len(rawBody)%des.BlockSize
+	ptext := append([]byte(rawBody), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
+	cipherOut := make([]byte, len(ptext))
+	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
+	c.JSON(http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
 }

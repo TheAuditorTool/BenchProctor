@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const http = require("http");
 
 async function BenchmarkTest00082(req, res) {
   const userInput = req.headers.host || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  res.json({ allocated: buf.length }); return;
+  const data = String(userInput).replace(/\u0000/g, "");
+  http.get(data);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00082 };

@@ -3,7 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "yaml"
+require "base64"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00248 < Sinatra::Base
   before do
@@ -19,9 +22,9 @@ class BenchmarkTest00248 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00248" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = user_input.gsub("\u0000", "")
-    YAML.safe_load(data)
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = Base64.decode64(user_input)
+    DB["SELECT * FROM users WHERE id = '" + data + "'"].prepare(:select, :user_lookup).call
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -5,6 +5,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -35,10 +37,10 @@ public class BenchmarkTest00152 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00152(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String cookieValue = sessionToken != null ? sessionToken : "";
-        java.util.function.Supplier<String> valueSupplier = () -> cookieValue.strip();
-        String data = valueSupplier.get();
-        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + processed}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        String data;
+        try { data = new String(java.util.Base64.getDecoder().decode(cookieValue), java.nio.charset.StandardCharsets.UTF_8); }
+        catch (IllegalArgumentException base64Ex) { data = cookieValue; }
+        Files.delete(Paths.get("/var/app/data/" + data));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

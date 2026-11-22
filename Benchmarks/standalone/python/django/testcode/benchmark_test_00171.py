@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import secrets
-import json
-from app_runtime import db
+import yaml
 
 
 def BenchmarkTest00171(request):
-    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
-    parts = str(graphql_var).split(',')
-    data = ' '.join(parts)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JsonResponse({'token': str(token)}, status=200)
+    multipart_value = request.POST.get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    parsed = yaml.safe_load(data)
+    return JsonResponse({'parsed': str(parsed)}, status=200)

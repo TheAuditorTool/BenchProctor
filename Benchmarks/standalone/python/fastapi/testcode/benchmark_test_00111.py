@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
-import json
+import urllib.parse
 
 
 app = FastAPI()
@@ -21,11 +21,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00111")
 async def BenchmarkTest00111(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    if graphql_var:
-        data = graphql_var
+    auth_header = request.headers.get('authorization', '')
+    if auth_header:
+        data = auth_header
     else:
         data = ''
+    encoded_session = urllib.parse.quote(str(data), safe='')
     resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
     return resp

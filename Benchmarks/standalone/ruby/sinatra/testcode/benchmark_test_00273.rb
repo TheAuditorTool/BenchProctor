@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "socket"
 
 class BenchmarkTest00273 < Sinatra::Base
   before do
@@ -19,12 +18,13 @@ class BenchmarkTest00273 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00273" do
-    user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.env["HTTP_HOST"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    TCPSocket.new(data, 80).close
+    eval(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

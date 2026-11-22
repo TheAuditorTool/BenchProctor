@@ -2,28 +2,20 @@
 package testcode
 
 import (
-	"context"
-	"fmt"
+	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
+	"os/exec"
 )
 
 func BenchmarkTest00150(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
+	userID := r.URL.Query().Get("id")
+	hexBytes, _ := hex.DecodeString(userID)
+	data := string(hexBytes)
+	cmd := exec.Command("sh", "-c", "echo "+data)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	uploadName := header.Filename
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", uploadName)
-	data := relayBuilder.String()
-	var _num float64
-	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
-		http.Error(w, "invalid number", http.StatusBadRequest)
-		return
-	}
-	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, boundedVal))
+	w.Write(output)
 }

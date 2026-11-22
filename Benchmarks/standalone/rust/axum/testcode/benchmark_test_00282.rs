@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00282(headers: HeaderMap) -> impl IntoResponse {
-    let header_value = headers.get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = header_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| header_value.clone());
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::store_session("data", &processed);
+pub async fn benchmark_test_00282() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = db_value.to_string();
+    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
+    let processed = _bounded.to_string();
+    let quantity: u32 = processed.parse().unwrap_or(0);
+    let Some(total_cents) = quantity.checked_mul(1299) else { return (StatusCode::BAD_REQUEST, "").into_response(); };
+    crate::shared::db_exec_bind("INSERT INTO logs (data) VALUES ($1)", &total_cents.to_string());
     Json(serde_json::json!({"count": 0})).into_response()
 }

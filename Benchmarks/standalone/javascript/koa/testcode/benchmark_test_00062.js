@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00062 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  JSON.parse(data);
+  const userInput = ctx.request.headers.referer || "";
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(userInput), timeout: 5000 };
+  await axios.request(outbound);
   ctx.body = { ack: true };
 }
 

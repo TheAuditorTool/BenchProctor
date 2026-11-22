@@ -13,6 +13,11 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00021 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -30,15 +35,18 @@ public class BenchmarkTest00021 {
         }
     }
 
-    @GET
-    @Path("/BenchmarkTest00021")
+    @POST
+    @Path("/BenchmarkTest00021/graphql")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00021(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        String data = cookieValue.isEmpty() ? "default" : cookieValue;
-        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
-        pb.redirectErrorStream(true);
-        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00021(GraphQLRequest req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        String data;
+        if (graphqlVar.length() > 256) { data = graphqlVar.substring(0, 256); }
+        else { data = graphqlVar; }
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        Double matchingUsers = xpath.evaluateExpression("count(/users/user[@name='" + data + "'])", new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")), Double.class);
+        response.setHeader("X-User-Count", String.valueOf(matchingUsers));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

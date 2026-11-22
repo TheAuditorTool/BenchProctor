@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+import json
+from starlette.responses import JSONResponse
+import importlib
 
+
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,12 +29,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00050")
 async def BenchmarkTest00050(request: Request):
-    host_value = request.headers.get('host', '')
-    kind = 'json' if str(host_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(host_value).strip()
-        case _:
-            data = str(host_value)
-    request.session['data'] = str(data)
-    return {"updated": True}
+    ua_value = request.headers.get('user-agent', '')
+    parts = str(ua_value).split(',')
+    data = ' '.join(parts)
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

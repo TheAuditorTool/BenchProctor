@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00103(headers: HeaderMap) -> impl IntoResponse {
-    let origin_value = headers.get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = match origin_value.chars().next() { Some(_) => origin_value.clone(), None => "default".to_string() };
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00103(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let captured = raw_body.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    let _q = format!("SELECT * FROM users WHERE id = '{}'", data);
+    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
+        let _ = sqlx::query(sqlx::AssertSqlSafe(_q)).execute(&_pool).await;
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

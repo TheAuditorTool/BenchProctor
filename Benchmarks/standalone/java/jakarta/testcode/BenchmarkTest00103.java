@@ -30,16 +30,14 @@ public class BenchmarkTest00103 {
         }
     }
 
-    @POST
-    @Path("/BenchmarkTest00103/comments")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @GET
+    @Path("/BenchmarkTest00103")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00103(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
-        String data = String.join(" ", commentValue.split("[ \\t]+"));
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00103(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Properties box = new java.util.Properties();
+        box.setProperty("value", originValue);
+        String data = box.getProperty("value", "");
+        return Response.status(Response.Status.FOUND).header("Location", data).build();
     }
 }

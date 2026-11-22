@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00105(body: Bytes) -> impl IntoResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data: String = xml_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| xml_value.clone());
-    if !["config.json", "index.html", "readme.md"].contains(&data.as_str()) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let checked_path = format!("/var/app/data/{}", data);
-    tokio::fs::write(&checked_path, "data").await.ok();
+pub async fn benchmark_test_00105() -> impl IntoResponse {
+    let file_value = tokio::fs::read_to_string("/tmp/data").await.unwrap_or_default();
+    let data = String::from_utf8_lossy(file_value.as_bytes()).to_string();
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query(format!("SELECT id, name FROM users WHERE name = '{}'", data)).execute(&mut _conn);
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

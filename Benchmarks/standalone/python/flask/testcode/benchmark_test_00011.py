@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -18,13 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00011", methods=["POST"])
 def BenchmarkTest00011():
-    referer_value = request.headers.get('Referer', '')
-    data, _sep, _rest = str(referer_value).partition('\x00')
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return jsonify({'allocated': allocated}), 200
+    with open('/etc/app/config.json', 'r') as fh:
+        config_value = fh.read()
+    data = '%s' % (config_value,)
+    db.execute('SELECT * FROM users WHERE id = :id', {'id': data})
+    return jsonify({"result": "success"})

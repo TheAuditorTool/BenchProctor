@@ -2,15 +2,18 @@
 package testcode
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
+	"io"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00017(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	capture := func() string { return strings.TrimSpace(dbValue) }
-	data := capture()
-	htmlOut := "<div>" + data + "</div>"
-	w.Write([]byte(htmlOut))
+	authHeader := r.Header.Get("Authorization")
+	data := strings.Join(strings.FieldsFunc(authHeader, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

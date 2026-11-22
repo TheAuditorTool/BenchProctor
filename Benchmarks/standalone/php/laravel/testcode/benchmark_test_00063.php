@@ -8,9 +8,10 @@ class BenchmarkTest00063Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        [$data] = [$userInput, 'http'];
-        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        $userInput = $request->header('Authorization', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        $pipes = [];
+        proc_open(['echo', (string)$data], [], $pipes);
         return response()->json(['ok' => 1]);
     }
 }

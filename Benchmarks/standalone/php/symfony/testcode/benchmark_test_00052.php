@@ -2,17 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00052', methods: ['POST'])]
 class BenchmarkTest00052Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = getenv('APP_INPUT') ?: '';
-        $data = "{$userInput}";
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        $content = file_get_contents('/var/app/data/' . (string)$data);
         return new JsonResponse(["committed" => true]);
     }
 }

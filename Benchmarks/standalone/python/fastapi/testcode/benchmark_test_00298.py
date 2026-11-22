@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+from starlette.responses import StreamingResponse
+import json
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,17 +25,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00298")
-async def BenchmarkTest00298(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    pending = list(str(multipart_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    request.session['data'] = str(processed)
-    return {"updated": True}
+async def BenchmarkTest00298(request: Request, req: UserInput):
+    json_value = req.payload
+    data = json.loads(json_value).get('value', '')
+    return StreamingResponse(iter(['<div>' + str(data) + '</div>']), media_type='text/html')

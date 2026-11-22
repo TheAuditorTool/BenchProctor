@@ -18,14 +18,15 @@ class BenchmarkTest00058 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00058" do
-    user_input = params[:q].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    def _normalize_local(v)
+      v.to_s.strip
     end
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    data = _normalize_local(user_input)
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return halt 404, JSON.generate({ error: "not found" }) if match.nil?
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

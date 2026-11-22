@@ -1,6 +1,0 @@
-channels:
-  - name: documents:inbound:0004
-    payload: json
-keys:
-  - pattern: documents:record:{id}
-    ttl_seconds: 300

@@ -11,14 +11,12 @@ class BenchmarkTest00092Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00092
-    user_input = request.headers["X-Custom-Header"].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    user_input = request.headers["Authorization"].to_s
+    data = "%s" % user_input
+    unless %w[ls cat date whoami].include?(data.to_s)
+      render json: { error: "forbidden" }, status: 400
+      return
+    end
+    IO.popen(["sh", "-c", data.to_s], &:read)
   end
 end

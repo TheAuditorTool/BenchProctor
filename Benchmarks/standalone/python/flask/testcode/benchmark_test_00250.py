@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import html
-from flask import Flask, request
-from flask import jsonify
+import os
+import re
+from flask import Flask, jsonify
 
 
 app = Flask(__name__)
@@ -18,9 +18,12 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00250", methods=["POST"])
-def BenchmarkTest00250():
-    cookie_value = request.cookies.get('session_token', '')
-    data = (lambda v: v.strip())(cookie_value)
-    processed = html.escape(data)
-    return '<div>' + str(processed) + '</div>'
+@app.route("/BenchmarkTest00250/<path_param>", methods=["POST"])
+def BenchmarkTest00250(path_param):
+    path_value = path_param
+    data = '{}'.format(path_value)
+    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    os.system('echo ' + str(processed))
+    return jsonify({"result": "success"})

@@ -1,18 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 
 void benchmark_test_00332(int, char **)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char *_p = new char[16];
-    std::strcpy(_p, "pending");
-    std::cout << _p << std::endl;
-    _p = new char[user_input.size() + 1];
-    std::strcpy(_p, user_input.c_str());
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    unsigned char _rnd[16];
+    int _fd = open("/dev/urandom", O_RDONLY);
+    if (_fd < 0) return;
+    ssize_t _got = read(_fd, _rnd, sizeof(_rnd));
+    close(_fd);
+    if (_got != static_cast<ssize_t>(sizeof(_rnd))) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
 }

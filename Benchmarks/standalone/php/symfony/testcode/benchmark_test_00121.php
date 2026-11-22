@@ -12,10 +12,14 @@ class BenchmarkTest00121Controller
     public function __invoke(Request $request)
     {
         $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return new JsonResponse(['token' => (string)$token], 200);
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
+        return new JsonResponse(["committed" => true]);
     }
 }

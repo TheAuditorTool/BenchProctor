@@ -2,30 +2,29 @@
 package testcode
 
 import (
-	"fmt"
+	"io"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00181(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", authHeader)
-	data := relayBuilder.String()
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	rawBody := string(rawBytes)
+	data := func(v string) string { return strings.TrimSpace(v) }(rawBody)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
+		return
 	}
-	c.JSON(200, gin.H{"code": "OK"})
+	targetUrl := data
+	c.Header("Location", targetUrl)
+	c.Status(http.StatusSeeOther)
 }

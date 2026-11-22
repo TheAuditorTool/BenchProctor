@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Request, Response } from "express";
+import * as shared from "./shared";
+import * as net from "net";
+
+export const BenchmarkTest00333 = async (req: Request, res: Response): Promise<void> => {
+  const userInput = (await shared.mq.receive("app-events"));
+  const pending: string[] = String(userInput).split(',');
+  const collected: string[] = [];
+  while (pending.length) { collected.push(pending.shift() ?? ""); }
+  const data: string = collected.join(',');
+  net.connect(80, new URL(String(data)).hostname);
+  res.json({ accepted: true });
+}

@@ -11,8 +11,8 @@ class BenchmarkTest00016Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('field', '');
-        [$data] = [$userInput, 'http'];
+        $userInput = $request->getContent();
+        $data = vsprintf('%1$s', [$userInput]);
         shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
         return new JsonResponse(["committed" => true]);
     }

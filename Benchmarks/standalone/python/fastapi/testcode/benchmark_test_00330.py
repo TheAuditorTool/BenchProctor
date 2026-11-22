@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
-from starlette.responses import JSONResponse
+import base64
+import os
+from sqlalchemy import create_engine
+from fastapi.responses import JSONResponse
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -26,13 +25,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00330")
 async def BenchmarkTest00330(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    form = FormData(payload=xml_value)
-    data = form.payload
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid number'}, status_code=400)
-    processed = _coerced
-    eval(str(processed))
+    auth_header = request.headers.get('authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    with _engine.connect() as conn:
+        conn.exec_driver_sql("SELECT * FROM users WHERE name = '" + str(data) + "'")
     return {"updated": True}

@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
 
-#[actix_web::post("/benchmark_test_00191")]
+#[actix_web::post("/benchmark_test_00191/{id}")]
 pub async fn benchmark_test_00191(req: HttpRequest) -> HttpResponse {
-    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let (payload, _origin) = (ua_value.clone(), "http");
-    let data = payload;
-    use rand::{Rng, SeedableRng};
-    let _seed: u64 = data.bytes().fold(0u64, |a, b| a.wrapping_add(b as u64));
-    let mut _rng = rand::rngs::StdRng::seed_from_u64(_seed);
-    let _token: u64 = _rng.gen();
-    crate::shared::store_session("csrf_token", &_token.to_string());
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    let captured = path_value.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    let _coerced = data.parse::<i64>().unwrap_or(0);
+    let processed = _coerced.to_string();
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query(format!("SELECT id, name FROM users WHERE id = {}", processed)).execute(&mut _conn);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

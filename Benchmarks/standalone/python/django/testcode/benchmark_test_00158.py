@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import HttpResponse
+from django.http import JsonResponse
 
 
 def BenchmarkTest00158(request):
-    cookie_value = request.COOKIES.get('session_token', '')
-    data = ' '.join(str(cookie_value).split())
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return HttpResponse(content)
+    xml_value = request.body.decode('utf-8')
+    code = compile(str(xml_value), '<rule>', 'exec')
+    exec(code)
+    return JsonResponse({"saved": True})

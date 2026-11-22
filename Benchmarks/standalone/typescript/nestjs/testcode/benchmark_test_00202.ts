@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,15 +20,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00202")
-  async BenchmarkTest00202(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    const requested = parseInt(data, 10);
-    const wrapped = (requested + 1) | 0;
-    const buf = Buffer.alloc(wrapped);
-    return { allocated: buf.length };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00202(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    await db.query({ name: "user-by-id", text: "SELECT * FROM users WHERE id = $1", values: [data] });
+    return { created: true };
   }
 }

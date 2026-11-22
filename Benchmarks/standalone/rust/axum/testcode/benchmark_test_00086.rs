@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Path;
 use axum::response::IntoResponse;
-use axum::response::Json;
 
-pub async fn benchmark_test_00086(headers: HeaderMap) -> impl IntoResponse {
-    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = host_value.to_string();
-    let _ = tokio::fs::read_to_string(format!("/var/app/data/{}", data)).await;
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00086(Path(path_id): Path<String>) -> impl IntoResponse {
+    let path_value = path_id.clone();
+    let mut data = String::new();
+    for token in path_value.split(',') { data = token.to_string(); }
+    let _chunk = format!("<div>{}</div>", data);
+    return ([("content-type", "text/html; charset=utf-8")], axum::body::Body::from_stream(futures_util::stream::once(async move { Ok::<_, std::convert::Infallible>(_chunk) }))).into_response();
 }

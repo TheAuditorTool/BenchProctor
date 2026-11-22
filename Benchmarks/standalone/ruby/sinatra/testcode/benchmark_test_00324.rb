@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "erb"
 
 class BenchmarkTest00324 < Sinatra::Base
   before do
@@ -18,15 +19,9 @@ class BenchmarkTest00324 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00324" do
-    user_input = request.body.read
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = params[:field].to_s
+    data = "%s" % user_input
+    content_type :html
+    ERB::Util.html_escape(data)
   end
 end

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
@@ -10,11 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00175 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -25,14 +19,16 @@ public class BenchmarkTest00175 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00175", consumes="application/json")
-    public void BenchmarkTest00175(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String data;
-        try { data = String.valueOf(Integer.parseInt(graphqlVar)); }
-        catch (NumberFormatException e) { data = graphqlVar; }
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+    @PostMapping(path="/BenchmarkTest00175", consumes="multipart/form-data")
+    public void BenchmarkTest00175(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.replace("\u0000", "");
+        try { Integer.parseInt(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
+        long requested = boundedVal;
+        long allocSize = requested + 1;
+        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

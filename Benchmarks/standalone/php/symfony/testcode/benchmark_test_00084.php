@@ -2,21 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00084', methods: ['POST'])]
 class BenchmarkTest00084Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = str_replace("\0", '', $userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return new JsonResponse(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return new RedirectResponse($targetUrl);
+        $userInput = $request->cookies->get('session_token', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $records = (int) $data;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return new JsonResponse(['frame_bytes' => strlen($frame)], 200);
     }
 }

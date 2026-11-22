@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Res, UsePipes, ValidationPipe } from "@nestjs/common";
-import { Response } from "express";
-import { IsString } from "class-validator";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,10 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00204")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00204(@Body() dto: UserInputDto, @Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = dto.payload;
-    res.cookie("session", userInput, { httpOnly: true, sameSite: "strict" });
+  async BenchmarkTest00204(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const data = String(userInput).slice(0, 200);
+    const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+    crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
     return { created: true };
   }
 }

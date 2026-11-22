@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -18,6 +15,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -28,13 +26,10 @@ struct Client {
 
 void benchmark_test_00181(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    static const std::regex _re("^[a-zA-Z0-9 _.%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    std::string _cmd = std::string("ls ") + safe;
-    std::system(_cmd.c_str());
+    std::string user_input = req.get_header_value("Origin");
+    std::string data = !user_input.empty() ? user_input : std::string();
+    std::string _ckval = data;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.emplace("Set-Cookie", std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/");
     res.set_content("ok", "text/plain");
 }

@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "yaml"
 
 class BenchmarkTest00060 < Sinatra::Base
   before do
@@ -19,13 +19,9 @@ class BenchmarkTest00060 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00060" do
-    user_input = request.body.read
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = ENV["APP_INPUT"] || ""
+    data = user_input.gsub("\u0000", "")
+    YAML.unsafe_load(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

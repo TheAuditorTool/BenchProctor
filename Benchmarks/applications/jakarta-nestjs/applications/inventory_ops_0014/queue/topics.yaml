@@ -1,0 +1,6 @@
+topics:
+  - name: inventory.events.v0014
+    partitions: 3
+    retention_hours: 24
+    producers:
+    consumers:

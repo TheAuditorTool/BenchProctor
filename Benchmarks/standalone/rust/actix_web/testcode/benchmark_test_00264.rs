@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
-use tokio::net::TcpStream;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00264")]
-pub async fn benchmark_test_00264(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let captured = field_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
-    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
+pub async fn benchmark_test_00264(req: HttpRequest) -> HttpResponse {
+    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = forwarded_ip.to_string();
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 8] = rand::random();
+    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec::<Pkcs7>(data.as_bytes())).unwrap_or_default();
+    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

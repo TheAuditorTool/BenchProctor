@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00300")]
-pub async fn benchmark_test_00300(body: web::Bytes) -> HttpResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = match xml_value.chars().next() { Some(_) => xml_value.clone(), None => "default".to_string() };
-    use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
-    let iv: [u8; 8] = rand::random();
-    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec_mut::<Pkcs7>(data.as_bytes())).unwrap_or_default();
-    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00300(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Some(Ok(_field)) = payload.next().await {
+            if let Some(_cd) = _field.content_disposition() {
+                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
+            }
+        }
+        _fname
+    };
+    let data = if upload_name.len() <= 4096 { upload_name.clone() } else { upload_name.chars().take(4096).collect() };
+    let _cookie = actix_web::cookie::Cookie::build("session", data.clone()).secure(true).http_only(true).same_site(actix_web::cookie::SameSite::Strict).finish();
+    return HttpResponse::Ok().cookie(_cookie).json(serde_json::json!({"stored": true}));
 }

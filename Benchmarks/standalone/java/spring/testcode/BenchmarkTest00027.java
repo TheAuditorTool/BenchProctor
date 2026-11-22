@@ -20,14 +20,18 @@ public class BenchmarkTest00027 {
     }
 
     @GetMapping("/BenchmarkTest00027")
-    public void BenchmarkTest00027(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        java.util.Map.Entry<String,String> entry = java.util.Map.entry(originValue, "query");
-        String data = entry.getKey();
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    public void BenchmarkTest00027(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        byte[] hexBytes = new byte[headerValue.length() / 2];
+        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
+            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        }
+        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
+        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + processed});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

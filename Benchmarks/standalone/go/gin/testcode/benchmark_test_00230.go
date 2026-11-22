@@ -2,8 +2,9 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,13 +12,15 @@ import (
 func BenchmarkTest00230(c *gin.Context) {
 	var dbValue string
 	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	var parsed map[string]interface{}
-	json.Unmarshal([]byte(dbValue), &parsed)
-	data, _ := parsed["value"].(string)
-	var u User
-	if err := gormDB.Where("id = ?", data).First(&u).Error; err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	form := submissionForm{payload: dbValue}
+	data := form.payload
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
 		return
 	}
-	c.JSON(200, gin.H{"code": "OK"})
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	requested, _ := strconv.Atoi(boundedVal)
+	allocated := requested + 1
+	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
 }

@@ -3,16 +3,15 @@
 #include <string>
 #include <cstdlib>
 
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
-
 void benchmark_test_00437(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_X_CUSTOM_HEADER");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    const size_t _rec_size = 64;
+    long _count = std::strtol(data.c_str(), nullptr, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = new (std::nothrow) char[_bytes];
+    delete[] _recs;
 }

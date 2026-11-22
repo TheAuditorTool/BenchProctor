@@ -11,9 +11,9 @@ class BenchmarkTest00066Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00066
-    user_input = request.query_parameters[:q].to_s
-    data = user_input.gsub("\u0000", "")
-    session[:data] = data.to_s
+    user_input = request.referer.to_s
+    data = "#{user_input}"
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
     render json: { status: "ok" }
   end
 end

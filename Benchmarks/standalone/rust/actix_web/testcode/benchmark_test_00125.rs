@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
 
-#[actix_web::post("/benchmark_test_00125/{id}")]
+#[actix_web::post("/benchmark_test_00125")]
 pub async fn benchmark_test_00125(req: HttpRequest) -> HttpResponse {
-    let path_value = req.match_info().get("id").unwrap_or("").to_string();
-    let (payload, _origin) = (path_value.clone(), "http");
-    let data = payload;
-    reqwest::get(&data).await.ok();
+    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = ua_value.replace("\t", " ");
+    use sha2::Digest;
+    let _ = sha2::Sha256::new().chain_update(data.as_bytes()).finalize();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

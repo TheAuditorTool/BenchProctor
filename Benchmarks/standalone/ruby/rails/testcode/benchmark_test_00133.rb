@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "rexml/document"
 
 class BenchmarkTest00133Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,9 @@ class BenchmarkTest00133Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00133
-    user_input = request.user_agent.to_s
-    data = sprintf("%s", user_input)
-    token = rand(1000000)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    directory = REXML::Document.new(File.read("/var/app/data/users.xml"))
+    account = REXML::XPath.first(directory, "//user[@name='" + user_input.to_s + "']")
+    render json: { found: !account.nil? }
   end
 end

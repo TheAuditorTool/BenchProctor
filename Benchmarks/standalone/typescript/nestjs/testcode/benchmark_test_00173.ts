@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as http from "http";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00173")
-  async BenchmarkTest00173(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const formData = Object.freeze({ payload: userInput });
-    const data = formData.payload;
-    http.get(data);
+  async BenchmarkTest00173(@Body("variables") vars: { input?: string }): Promise<unknown> {
+    const userInput = (vars?.input as string) || "";
+    const payload = { get value() { return userInput; } };
+    const data = payload.value;
+    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
+    new Function("return (" + String(processed) + ");")();
     return { created: true };
   }
 }

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00154 = async (ctx) => {
   const userInput = (ctx.request.body && ctx.request.body.field) || "";
   const data = decodeURIComponent(userInput);
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + data + "']").select({ node: usersDoc });
   ctx.body = { ack: true };
 }
 

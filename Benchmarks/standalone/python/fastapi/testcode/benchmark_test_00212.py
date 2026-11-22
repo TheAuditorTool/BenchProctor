@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -20,8 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00212")
 async def BenchmarkTest00212(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    data = '{}'.format(xml_value)
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = (lambda v: v.strip())(multipart_value)
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return JSONResponse({'error': 'not found'}, status_code=404)
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

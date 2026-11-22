@@ -2,16 +2,15 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <regex>
 
 void benchmark_test_00133(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
+    const char *user_input_env = std::getenv("HTTP_REFERER");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    long _req = std::strtol(data.c_str(), nullptr, 10);
-    if (_req < 0 || _req > 65535) return;
-    long _alloc = _req + 1;
-    char *_buf = new (std::nothrow) char[(size_t)_alloc];
-    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>") << std::endl;
 }

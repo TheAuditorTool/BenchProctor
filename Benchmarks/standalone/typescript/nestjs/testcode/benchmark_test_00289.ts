@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, BadRequestException } from "@nestjs/common";
+import { Controller, Post, Res, UploadedFile, UseInterceptors, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,18 +18,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00289")
-  async BenchmarkTest00289(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    if (!/^[a-zA-Z0-9 _.%~\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + processed + "']", xmlDoc);
-    return { created: true };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00289(@UploadedFile() file: Express.Multer.File, @Res() res: Response): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    let _host = "";
+    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
+    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
+    const targetUrl = data;
+    return res.status(302).set("Location", String(targetUrl)).end();
   }
 }

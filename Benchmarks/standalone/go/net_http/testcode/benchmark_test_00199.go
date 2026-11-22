@@ -2,18 +2,22 @@
 package testcode
 
 import (
-	"net"
 	"net/http"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00199(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	capture := func() string { return strings.TrimSpace(originValue) }
-	data := capture()
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(dbValue)
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
 	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

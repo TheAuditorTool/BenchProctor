@@ -2,11 +2,11 @@
 const { db } = require("./shared");
 
 const BenchmarkTest00223 = async (ctx) => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
   const data = String(userInput).replace(/\u0000/g, "");
-  if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  ctx.body = "<div>" + processed + "</div>";
+  const { parseXmlString } = require("libxmljs2");
+  parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00223 };

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Redirect } from "@nestjs/common";
+import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
@@ -17,11 +17,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00224")
-  @Redirect()
-  async BenchmarkTest00224(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    return { url: data };
+  async BenchmarkTest00224(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const data = Buffer.from(userInput, "base64").toString();
+    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const quantity = boundedVal;
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) { throw new BadRequestException({ error: "quantity out of range" }); }
+    const totalCents = Math.imul(quantity, 1999);
+    return { quantity, totalCents };
   }
 }

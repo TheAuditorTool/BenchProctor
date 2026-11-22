@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
-from lxml import etree
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import re
+from pathlib import Path
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -25,11 +20,17 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00267")
-async def BenchmarkTest00267(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    form = FormData(payload=multipart_value)
-    data = form.payload
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+@app.post("/BenchmarkTest00267/{id}")
+async def BenchmarkTest00267(request: Request, id: str):
+    path_value = id
+    kind = 'json' if str(path_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(path_value).strip()
+        case _:
+            data = str(path_value)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    Path('/var/app/data/' + str(processed)).write_text('data')
     return {"updated": True}

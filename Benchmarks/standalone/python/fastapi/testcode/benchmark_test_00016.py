@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
+import hashlib
+from starlette.responses import JSONResponse
 import json
-from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,9 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00016")
 async def BenchmarkTest00016(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    try:
-        data = json.loads(raw_body).get('value', raw_body)
-    except (json.JSONDecodeError, AttributeError):
-        data = raw_body
-    return RedirectResponse(url=str(data))
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    if graphql_var:
+        data = graphql_var
+    else:
+        data = ''
+    digest = hashlib.sha1(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

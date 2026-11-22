@@ -2,10 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00125() {
-  user_input="$APP_INPUT"
-  printf -v data "%s" "${user_input}"
-  coerced_float=$(printf "%.6f" "$data" 2>/dev/null) || { echo "invalid float" >&2; exit 1; }
-  xmllint --xpath "//user[name='$coerced_float']" /var/data/users.xml
+  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  printf '%s' "$user_input" | sha512sum
 }
 
 benchmark_test_00125 "$@"

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,7 +27,7 @@ struct Client {
 
 void benchmark_test_00226(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
+    std::string user_input = req.path_params.at("id");
     std::string data;
     for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
         if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
@@ -34,14 +35,8 @@ void benchmark_test_00226(const httplib::Request &req, httplib::Response &res)
             _i += 2;
         } else { data.push_back(user_input[_i]); }
     }
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::cout << _p << std::endl;
+    res.set_content("ok", "text/plain");
 }

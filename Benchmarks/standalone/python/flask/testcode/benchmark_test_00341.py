@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import random
 from flask import Flask, request, jsonify
-import ctypes
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -20,10 +21,7 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00341", methods=["POST"])
 def BenchmarkTest00341():
     upload_name = request.files['upload'].filename
-    parts = []
-    for token in str(upload_name).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return jsonify({'wrapped': wrapped}), 200
+    data = str(upload_name).replace('\x00', '')
+    token = '%032x' % random.Random().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

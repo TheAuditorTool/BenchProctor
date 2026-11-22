@@ -2,24 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 
 class BenchmarkTest00005Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = \Illuminate\Support\Facades\Redis::get('user_data');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        $errno = 0; $errstr = '';
-        fsockopen((string)$targetUrl, 80, $errno, $errstr, 30);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->input('field', '');
+        $data = sprintf('%s', $userInput);
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $html = \Illuminate\Support\Facades\Blade::render('<div class="comment">{!! $comment !!}</div>', ['comment' => $processed]);
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

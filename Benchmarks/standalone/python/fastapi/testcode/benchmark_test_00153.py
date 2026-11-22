@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import bleach
-from fastapi.responses import JSONResponse
+import ctypes
+import os
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,7 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00153")
 async def BenchmarkTest00153(request: Request):
-    forwarded_ip = request.headers.get('x-forwarded-for', '')
-    data = '%s' % str(forwarded_ip)
-    processed = bleach.clean(data)
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+    env_value = os.environ.get('APP_INPUT', '')
+    data = str(env_value).replace('\x00', '')
+    count = int(str(data))
+    records = ctypes.create_string_buffer(ctypes.c_uint32(count * 64).value)
+    return JSONResponse({'allocated': len(records)}, status_code=200)

@@ -11,11 +11,10 @@ class BenchmarkTest00138Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00138
-    user_input = request.query_parameters[:q].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = sprintf("%s", user_input)
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("des-ede3-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

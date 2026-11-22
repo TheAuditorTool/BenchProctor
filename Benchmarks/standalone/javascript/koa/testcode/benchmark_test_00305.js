@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const libxmljs = require("libxmljs");
 
 const BenchmarkTest00305 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  ctx.body = "<div>" + processed + "</div>";
+  const userInput = ctx.request.rawBody || "";
+  let data;
+  try { data = JSON.parse(userInput).value || ""; }
+  catch (e) { data = String(userInput); }
+  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00305 };

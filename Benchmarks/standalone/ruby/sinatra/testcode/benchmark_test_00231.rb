@@ -3,9 +3,12 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00231 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,14 +22,11 @@ class BenchmarkTest00231 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00231" do
-    user_input = request.body.read
-    data = user_input ? user_input : ''
-    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    user_input = DB[:comments].first&.fetch(:text, "").to_s
+    data = format("%<value>s", value: user_input)
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    session.update(display_name: parsed_num.to_s, updated_at: Time.now.to_i)
     content_type :json
     JSON.generate({ status: "ok" })
   end

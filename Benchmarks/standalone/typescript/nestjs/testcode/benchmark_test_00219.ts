@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Post, Res } from "@nestjs/common";
 import { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,13 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00219")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00219(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    eval(data);
-    return { created: true };
+  async BenchmarkTest00219(@Body("multipart_field") mf: string, @Res() res: Response): Promise<unknown> {
+    const userInput = mf || "";
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    return res.status(302).set("Location", String(data)).end();
   }
 }

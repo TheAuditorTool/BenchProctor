@@ -6,9 +6,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <fcntl.h>
-
-struct c_payload { const char *value; };
 
 void benchmark_test_00231(int argc, char **argv)
 {
@@ -24,11 +21,12 @@ void benchmark_test_00231(int argc, char **argv)
         user_input_buf[_got] = '\0';
     }
     const char *user_input = user_input_buf;
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    unsigned char _rnd[16];
-    int _fd = open("/dev/urandom", O_RDONLY);
-    if (_fd >= 0) { if (read(_fd, _rnd, sizeof(_rnd)) < 0) _rnd[0] = 0; close(_fd); }
-    printf("token for %s: %02x\n", data, _rnd[0]);
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    unsigned int _sum = 0;
+    for (size_t _k = 0; _k < _span; _k++) _sum += (unsigned char)_buf[_k];
+    printf("%u\n", _sum);
 }

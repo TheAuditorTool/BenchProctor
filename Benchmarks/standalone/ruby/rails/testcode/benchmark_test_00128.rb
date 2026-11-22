@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00128Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,11 +12,10 @@ class BenchmarkTest00128Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00128
-    user_input = request.headers["Origin"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    checked_path = "/var/app/data/" + File.basename(data)
-    File.delete(checked_path)
+    user_input = request.headers["X-Custom-Header"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    cookie_value = CGI.escape(data.to_s)
+    response.set_header("Set-Cookie", "session=" + cookie_value + "; Path=/; HttpOnly; SameSite=Strict")
     render json: { status: "ok" }
   end
 end

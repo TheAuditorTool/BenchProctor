@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
+import org.yaml.snakeyaml.Yaml;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -21,17 +20,15 @@ public class BenchmarkTest00079 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00079")
-    public void BenchmarkTest00079(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        String data;
-        if (originValue.length() > 256) { data = originValue.substring(0, 256); }
-        else { data = originValue; }
-        java.nio.file.Path base = java.nio.file.Paths.get("/var/app/data");
-        java.nio.file.Path resolved = base.resolve(data).normalize();
-        if (!resolved.startsWith(base)) { response.sendError(403); return; }
-        String checkedPath = resolved.toString();
-        Files.write(Paths.get(checkedPath), "data".getBytes());
+    @GetMapping("/BenchmarkTest00079/{pathId}")
+    public void BenchmarkTest00079(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", pathValue);
+        String data = sw.toString();
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(new org.yaml.snakeyaml.LoaderOptions()));
+        Object obj = yaml.load(data);
+        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

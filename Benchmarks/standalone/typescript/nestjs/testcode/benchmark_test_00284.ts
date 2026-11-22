@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Post, Query, Res, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { sql } from "drizzle-orm";
-import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,11 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00284")
-  async BenchmarkTest00284(): Promise<unknown> {
-    const userInput = ((await (await fetch("https://api.partner.example/v1/records")).json()) as { data?: string }).data || "";
-    const [data] = String(userInput).split(',');
-    const _drizzle = drizzle(new Database(":memory:"));
-    await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
-    return { created: true };
+  async BenchmarkTest00284(@Query("id") id: string, @Res() res: Response): Promise<unknown> {
+    const userInput = id || "";
+    const data = nodeUtil.format("%s", userInput);
+    let _host = "";
+    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
+    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
+    const targetUrl = data;
+    return res.redirect(303, String(targetUrl));
   }
 }

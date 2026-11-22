@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
+require "digest"
 
 class BenchmarkTest00113 < Sinatra::Base
   before do
@@ -19,11 +19,11 @@ class BenchmarkTest00113 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00113" do
-    user_input = request.body.read
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    token = SecureRandom.hex(32)
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    digest = Digest::SHA256.hexdigest(data.to_s)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

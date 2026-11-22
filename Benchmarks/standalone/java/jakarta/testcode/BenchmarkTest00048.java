@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.security.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,14 +30,18 @@ public class BenchmarkTest00048 {
         }
     }
 
+    private static String normalize(String v) { return v.strip(); }
+
     @GET
     @Path("/BenchmarkTest00048")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00048(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data = String.format("%s", authHeader);
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    public Response BenchmarkTest00048(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = normalize(cookieValue);
+        java.util.Map<String, String> regionEndpoints = java.util.Map.of("us-east", "https://us-east.api.svc.local", "eu-west", "https://eu-west.api.svc.local");
+        String regionEndpoint = regionEndpoints.get(data);
+        boolean secureEndpoint = regionEndpoint.startsWith("https://");
+        response.setHeader("X-Region-Secure", String.valueOf(secureEndpoint));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

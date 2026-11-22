@@ -3,8 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "socket"
+require "nokogiri"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00195 < Sinatra::Base
   before do
@@ -20,10 +22,15 @@ class BenchmarkTest00195 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00195" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = format("%<value>s", value: user_input)
-    TCPSocket.new(data, 80).close
+    user_input = DB[:comments].first&.fetch(:text, "").to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + parsed_bool.to_s + "']/role")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ roles: roles.map(&:text) })
   end
 end

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
 
-pub async fn benchmark_test_00135() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let data = comment_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00135(headers: HeaderMap) -> impl IntoResponse {
+    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
+    let captured = cookie_value.clone();
+    let reader = move || captured.trim().to_string();
+    let data = reader();
+    use sha2::Digest;
+    let _ = sha2::Sha256::new().chain_update(data.as_bytes()).finalize();
+    Json(serde_json::json!({"count": 0})).into_response()
 }

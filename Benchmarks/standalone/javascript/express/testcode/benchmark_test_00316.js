@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
-const nodeUtil = require("util");
 
 async function BenchmarkTest00316(req, res) {
-  const userInput = (req.file && req.file.originalname) || "";
-  const data = nodeUtil.format("%s", userInput);
+  const userInput = req.headers.referer || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
   let _host = "";
   try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
   if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
   const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+  await axios.request(outbound);
   res.json({ done: true });
 }
 

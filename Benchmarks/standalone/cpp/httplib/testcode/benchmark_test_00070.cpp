@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,20 +22,28 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct env_md_st; typedef struct env_md_st EVP_MD;
+typedef struct evp_md_ctx_st EVP_MD_CTX;
+extern "C" EVP_MD_CTX *EVP_MD_CTX_new(void);
+extern "C" void EVP_MD_CTX_free(EVP_MD_CTX *);
+extern "C" const EVP_MD *EVP_sha256(void);
+extern "C" int EVP_DigestInit_ex(EVP_MD_CTX *, const EVP_MD *, void *);
+extern "C" int EVP_DigestUpdate(EVP_MD_CTX *, const void *, size_t);
+extern "C" int EVP_DigestFinal_ex(EVP_MD_CTX *, unsigned char *, unsigned int *);
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00070(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00070(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(user_input.c_str());
-    std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.body;
+    std::string data = cpp_own(user_input);
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_sha256(), nullptr);
+    EVP_DigestUpdate(_mdctx, data.data(), data.size());
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

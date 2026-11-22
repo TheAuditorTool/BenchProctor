@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,12 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00167 {
-    private static class UserInput {
-        @jakarta.validation.constraints.NotNull
-        public String payload;
-        public UserInput() {}
-        public UserInput(String payload) { this.payload = payload; }
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -26,15 +19,11 @@ public class BenchmarkTest00167 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @PostMapping("/BenchmarkTest00167")
-    public void BenchmarkTest00167(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String jsonValue = req.payload;
-        String data = normalize(jsonValue);
-        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
-        pb.redirectErrorStream(true);
-        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    @GetMapping("/BenchmarkTest00167/{pathId}")
+    public void BenchmarkTest00167(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = pathValue.isEmpty() ? "default" : pathValue;
+        Runtime.getRuntime().exec(new String[]{"echo", data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

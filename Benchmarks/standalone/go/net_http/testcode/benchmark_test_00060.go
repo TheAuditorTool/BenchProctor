@@ -4,29 +4,28 @@ package testcode
 import (
 	"io"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
+	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00060(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	var data string
-	for _, token := range strings.Split(originValue, ",") {
-		data = token
-	}
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
+	rawBody := string(rawBytes)
+	data := strings.Join(strings.FieldsFunc(rawBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	procState, err := proc.Wait()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

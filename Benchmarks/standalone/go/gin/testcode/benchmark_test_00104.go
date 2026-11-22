@@ -2,22 +2,40 @@
 package testcode
 
 import (
-	"encoding/json"
+	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00104(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	form := submissionForm{payload: dbValue}
+	data := form.payload
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	var data string
-	if len(graphqlVar) > 0 {
-		data = graphqlVar
-	} else {
-		data = "default"
+	processed := data
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
+		return
 	}
-	c.Set("data", data)
+	defer ldapConn.Close()
+	isAdmin, cmpErr := ldapConn.Compare("uid="+processed+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		c.String(http.StatusInternalServerError, cmpErr.Error())
+		return
+	}
+	c.Header("X-Directory-Admin", strconv.FormatBool(isAdmin))
+	c.JSON(200, gin.H{"code": "OK"})
 }

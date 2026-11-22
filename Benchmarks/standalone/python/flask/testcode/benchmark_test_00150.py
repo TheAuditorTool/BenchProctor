@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import html
 from flask import Flask, request
+from flask import render_template_string
 from flask import jsonify
 
 
@@ -19,6 +21,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00150", methods=["POST"])
 def BenchmarkTest00150():
-    raw_body = request.get_data(as_text=True)
-    data = raw_body if raw_body else 'default'
-    return '<div>' + str(data) + '</div>'
+    header_value = request.headers.get('X-Custom-Header', '')
+    data = '{}'.format(header_value)
+    processed = html.escape(data)
+    return render_template_string('<div>{{ value|safe }}</div>', value=str(processed))

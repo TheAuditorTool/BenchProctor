@@ -9,8 +9,11 @@ class BenchmarkTest00033Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->getContent();
-        $data = (!empty($userInput)) ? $userInput : '';
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
+        catch (\JsonException $e) { $data = $userInput; }
+        $_coerced = (float)$data;
+        $processed = $_coerced;
+        \Illuminate\Support\Facades\Cache::forever('tenant:display_name', (string) $processed);
         return response()->json(['ok' => 1]);
     }
 }

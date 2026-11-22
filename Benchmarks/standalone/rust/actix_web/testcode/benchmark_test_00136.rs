@@ -1,22 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::HttpResponse;
-use futures_util::StreamExt;
+use base64::Engine;
+use base64::engine::general_purpose;
 
 #[actix_web::post("/benchmark_test_00136")]
-pub async fn benchmark_test_00136(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Some(Ok(_field)) = payload.next().await {
-            if let Some(_cd) = _field.content_disposition() {
-                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
-            }
-        }
-        _fname
-    };
-    let data = upload_name.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+pub async fn benchmark_test_00136() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&db_value).unwrap_or_default()).to_string();
+    let _coerced = matches!(data.to_lowercase().as_str(), "true" | "1" | "yes" | "on");
+    let processed = _coerced.to_string();
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _ = sxd_xpath::evaluate_xpath(&_pkg.as_document(), &format!("count(//user[@role='{}'])", processed));
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

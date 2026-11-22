@@ -2,23 +2,16 @@
 package testcode
 
 import (
+	"crypto/md5"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00050(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
-		return
-	}
-	cookieValue := cookieObj.Value
-	data := fmt.Sprintf("%s", cookieValue)
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := strings.ReplaceAll(forwardedIP, "\x00", "")
+	hash := md5.Sum([]byte(data))
+	hashStr := fmt.Sprintf("%x", hash)
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

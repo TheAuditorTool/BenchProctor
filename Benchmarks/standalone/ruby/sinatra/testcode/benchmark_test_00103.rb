@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00103 < Sinatra::Base
   before do
@@ -18,10 +19,17 @@ class BenchmarkTest00103 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00103" do
-    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    Marshal.load(data)
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = true }
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ text: handler.text })
   end
 end

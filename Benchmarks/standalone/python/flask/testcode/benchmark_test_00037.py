@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import hashlib
 from flask import Flask, request, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,13 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00037", methods=["POST"])
 def BenchmarkTest00037():
-    auth_header = request.headers.get('Authorization', '')
-    parts = str(auth_header).split(',')
-    data = ' '.join(parts)
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    if upload_name:
+        data = upload_name
+    else:
+        data = ''
+    digest = hashlib.sha3_256(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

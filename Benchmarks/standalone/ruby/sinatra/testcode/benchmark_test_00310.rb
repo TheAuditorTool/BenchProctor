@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00310 < Sinatra::Base
   before do
@@ -18,10 +19,15 @@ class BenchmarkTest00310 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00310" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = user_input ? user_input : ''
-    Marshal.load(data)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.body.read
+    data = Base64.decode64(user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    headers["Location"] = target_url
+    halt 302
   end
 end

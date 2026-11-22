@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Query } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import knex from "knex";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,12 +17,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00314")
-  async BenchmarkTest00314(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-    await _knex.raw("SELECT * FROM users WHERE id = '" + data + "'");
-    return { created: true };
+  async BenchmarkTest00314(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const data = userInput != null ? userInput : '';
+    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+    return { token };
   }
 }

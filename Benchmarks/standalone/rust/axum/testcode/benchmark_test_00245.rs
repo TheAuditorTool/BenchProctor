@@ -4,12 +4,12 @@ use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00245(headers: HeaderMap) -> impl IntoResponse {
-    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = host_value.replace("\t", " ");
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = forwarded_ip.to_string();
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 8] = rand::random();
+    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec::<Pkcs7>(data.as_bytes())).unwrap_or_default();
+    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.parsers.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,12 +19,12 @@ public class BenchmarkTest00207 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00207", consumes="application/xml")
-    public void BenchmarkTest00207(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
-        String data = transform.apply(xmlValue);
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    @PostMapping(path="/BenchmarkTest00207", consumes="multipart/form-data")
+    public void BenchmarkTest00207(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = java.net.URLDecoder.decode(multipartValue, java.nio.charset.StandardCharsets.UTF_8);
+        long randValue = new java.util.SplittableRandom().nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

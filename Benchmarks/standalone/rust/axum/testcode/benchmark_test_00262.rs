@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
-use axum::http::StatusCode;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00262(headers: HeaderMap) -> impl IntoResponse {
-    let origin_value = headers.get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut pending: std::collections::VecDeque<String> = origin_value.split(',').map(String::from).collect();
+pub async fn benchmark_test_00262(body: Bytes) -> impl IntoResponse {
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    use std::fmt::Write;
     let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    tokio::fs::remove_file(format!("/var/app/data/{}", processed)).await.ok();
+    write!(&mut data, "{}", json_value).ok();
+    let _ciphertext = crate::shared::encrypt(&data);
+    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

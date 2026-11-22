@@ -2,21 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00294Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $userInput = $request->input('multipart_field', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$data);
+        $price = $item->getAttribute('price');
         return response()->json(['ok' => 1]);
     }
 }

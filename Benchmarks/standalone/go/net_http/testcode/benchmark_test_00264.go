@@ -2,18 +2,23 @@
 package testcode
 
 import (
-	"fmt"
+	"crypto/sha512"
+	"encoding/hex"
+	"io"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00264(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	data := fmt.Sprintf("%s", originValue)
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
+		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	cookieValue := cookieObj.Value
+	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Redirect, Req, ForbiddenException } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as nodeUtil from "util";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,16 +23,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00185")
-  @Redirect()
-  async BenchmarkTest00185(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
-    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
-    const targetUrl = data;
-    return { url: targetUrl };
+  async BenchmarkTest00185(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = nodeUtil.format("%s", userInput);
+    const blockKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+    stream.Readable.from([String(data)]).pipe(crypto.createCipheriv("aes-256-ecb", blockKey, null)).pipe(fs.createWriteStream("/var/data/cipher.bin"));
+    return { created: true };
   }
 }

@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
-import json
-import re
+from starlette.responses import StreamingResponse
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -23,14 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00185")
-async def BenchmarkTest00185(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    try:
-        data = json.loads(cookie_value).get('value', cookie_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = cookie_value
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+async def BenchmarkTest00185(request: Request, req: UserInput):
+    json_value = req.payload
+    parts = str(json_value).split(',')
+    data = ' '.join(parts)
+    return StreamingResponse(iter(['<div>' + str(data) + '</div>']), media_type='text/html')

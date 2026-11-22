@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+
+const BenchmarkTest00021 = async (ctx) => {
+  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  Object.assign(ctx.session, { data: String(data), expiresAt: Date.now() + 900000 });
+  ctx.body = { ack: true };
+}
+
+module.exports = { BenchmarkTest00021 };

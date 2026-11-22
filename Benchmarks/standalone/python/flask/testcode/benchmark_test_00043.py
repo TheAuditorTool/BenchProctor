@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import json
-import requests
-from flask import Flask, jsonify
+from flask import Flask, abort
+from flask import redirect
+from dataclasses import dataclass
+from flask import request
+from flask import jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -20,7 +27,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00043", methods=["POST"])
 def BenchmarkTest00043():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = api_value if api_value else 'default'
-    parsed = json.loads(data)
-    return jsonify({'parsed': str(parsed)}), 200
+    upload_name = request.files['upload'].filename
+    form = FormData(payload=upload_name)
+    data = form.payload
+    abort(redirect(str(data)))

@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
-from app_runtime import db
-from fastapi.responses import JSONResponse
+import yaml
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,8 +24,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00191")
-async def BenchmarkTest00191(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '{}'.format(db_value)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+async def BenchmarkTest00191(request: Request, req: UserInput):
+    json_value = req.payload
+    def normalize(value):
+        return value.strip()
+    data = normalize(json_value)
+    parsed = yaml.safe_load(data)
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

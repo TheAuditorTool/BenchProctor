@@ -9,16 +9,16 @@
 
 void benchmark_test_00560(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
+    const char *user_input = (argc > 1) ? argv[1] : "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char *_parts[2];
-    _parts[0] = malloc(strlen(data) + 1);
-    if (_parts[0] == NULL) return;
-    strcpy(_parts[0], data);
-    _parts[1] = NULL;
-    printf("%s\n", _parts[0]);
-    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    char _resolved[1024];
+    char _joined[1024];
+    snprintf(_joined, sizeof(_joined), "/var/app/data/%s", data);
+    if (realpath(_joined, _resolved) == NULL) return;
+    if (strncmp(_resolved, "/var/app/data/", 14) != 0) return;
+    const char *arg = _resolved;
+    remove(arg);
 }

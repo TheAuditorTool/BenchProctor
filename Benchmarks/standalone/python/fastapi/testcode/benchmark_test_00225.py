@@ -1,10 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import re
-from starlette.responses import JSONResponse
+import requests
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from fastapi.responses import JSONResponse
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = FastAPI()
 
@@ -23,11 +37,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00225")
 async def BenchmarkTest00225(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = (lambda v: v.strip())(multipart_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    parts = []
+    for token in str(api_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    with Session(_engine) as _session:
+        _session.scalars(select(User).where(User.id == data)).first()
     return {"updated": True}

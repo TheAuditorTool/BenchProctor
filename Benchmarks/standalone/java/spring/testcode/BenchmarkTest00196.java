@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.parsers.*;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00196 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -20,13 +26,17 @@ public class BenchmarkTest00196 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00196", consumes="multipart/form-data")
-    public void BenchmarkTest00196(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(multipartValue)); }
-        catch (NumberFormatException e) { data = multipartValue; }
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    @PostMapping("/BenchmarkTest00196")
+    public void BenchmarkTest00196(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        java.util.function.Supplier<String> valueSupplier = () -> jsonValue.strip();
+        String data = valueSupplier.get();
+        String ticketRef;
+        try (java.util.Scanner ticketScan = new java.util.Scanner(data)) {
+            ticketRef = ticketScan.findInLine("TCK-[0-9]{6}");
+        }
+        String ticketNumber = ticketRef.substring(4);
+        response.setHeader("X-Ticket-Number", ticketNumber);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

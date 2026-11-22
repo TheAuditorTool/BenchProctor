@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -19,11 +21,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00255")
-  async BenchmarkTest00255(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const data = String(userInput).slice(0, 200);
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    const value = (row as any).name;
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00255(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const appDb = ((globalThis as unknown as { _appDb?: InstanceType<typeof Database> })._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+    appDb.prepare("SELECT id, name FROM users WHERE name = '" + data + "'").all();
     return { created: true };
   }
 }

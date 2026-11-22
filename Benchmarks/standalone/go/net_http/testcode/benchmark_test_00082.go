@@ -2,30 +2,17 @@
 package testcode
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"os"
 	"strings"
 )
 
 func BenchmarkTest00082(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
-	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
-		return
-	}
-	uploadName := header.Filename
-	segments := strings.Split(uploadName, ",")
-	data := strings.Join(segments, " ")
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := aes.NewCipher(keyHash[:])
-	gcm, _ := cipher.NewGCM(cipherBlock)
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := strings.Join(strings.FieldsFunc(forwardedIP, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	otpValue := rand.Int32N(1000000)
+	otpCode := fmt.Sprintf("%06d", otpValue)
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

@@ -19,12 +19,13 @@ public class BenchmarkTest00001 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00001")
-    public void BenchmarkTest00001(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String processed = userId.matches("^(status|info|list|show)$") ? userId : "status";
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + processed}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    @PostMapping("/BenchmarkTest00001")
+    public void BenchmarkTest00001(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(commentValue);
+        request.getSession().setAttribute("displayName", data);
+        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
+        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
     }
 }

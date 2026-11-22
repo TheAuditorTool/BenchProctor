@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -19,21 +21,16 @@ public class BenchmarkTest00081 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00081/{pathId}")
-    public void BenchmarkTest00081(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(pathValue.split(",")));
+    @PostMapping(path="/BenchmarkTest00081", consumes="multipart/form-data")
+    public void BenchmarkTest00081(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadName = file != null ? file.getOriginalFilename() : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(uploadName.split(",")));
         java.util.List<String> lowered = new java.util.ArrayList<>();
         while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
         String data = String.join(",", lowered);
-        if (!data.matches("^[a-zA-Z0-9 _.#%\\-]+$")) { response.sendError(400); return; }
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+        String socketRaw = String.valueOf(data);
+        String socketHost = socketRaw.contains("://") ? java.net.URI.create(socketRaw).getHost() : socketRaw;
+        new Socket(socketHost, 80).close();
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

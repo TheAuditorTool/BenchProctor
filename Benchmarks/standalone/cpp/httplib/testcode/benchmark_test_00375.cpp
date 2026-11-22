@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,18 +22,29 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct env_md_st; typedef struct env_md_st EVP_MD;
+typedef struct evp_md_ctx_st EVP_MD_CTX;
+extern "C" EVP_MD_CTX *EVP_MD_CTX_new(void);
+extern "C" void EVP_MD_CTX_free(EVP_MD_CTX *);
+extern "C" const EVP_MD *EVP_md4(void);
+extern "C" const EVP_MD *EVP_sha256(void);
+extern "C" int EVP_DigestInit_ex(EVP_MD_CTX *, const EVP_MD *, void *);
+extern "C" int EVP_DigestUpdate(EVP_MD_CTX *, const void *, size_t);
+extern "C" int EVP_DigestFinal_ex(EVP_MD_CTX *, unsigned char *, unsigned int *);
 
 void benchmark_test_00375(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char _dst[16];
-    size_t _n = data.size();
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_md4(), nullptr);
+    EVP_DigestUpdate(_mdctx, data.data(), data.size());
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

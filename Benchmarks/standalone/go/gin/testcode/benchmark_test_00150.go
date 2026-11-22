@@ -2,33 +2,28 @@
 package testcode
 
 import (
+	"bytes"
+	"html/template"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00150(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
 		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	jsonValue := reqBody.Payload
-	var data string
-	if jsonValue != "" {
-		data = jsonValue
-	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
+	rawBody := string(rawBytes)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(rawBody)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(data)); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	c.Data(200, "text/html", bioPage.Bytes())
 }

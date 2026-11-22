@@ -2,21 +2,24 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
+	"encoding/base64"
 	"net/http"
-	"strconv"
+	"net/url"
 )
 
 func BenchmarkTest00170(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	data := fmt.Sprintf("%s", fieldValue)
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	authHeader := r.Header.Get("Authorization")
+	decodedBytes, _ := base64.StdEncoding.DecodeString(authHeader)
+	data := string(decodedBytes)
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	upstream := upstreams[data]
+	if upstream == nil {
+		http.Error(w, "unknown service", http.StatusNotFound)
+		return
+	}
+	upstreamHost := upstream.Host
+	RespondJSON(w, http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

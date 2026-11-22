@@ -6,21 +6,26 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
 
 void benchmark_test_00467(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "asc";
-        regfree(&_re);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
     }
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "%s", safe);
-    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
+    const char *user_input = user_input_buf;
+    char *_p = malloc(strlen(user_input) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, user_input);
+    char *_cleanup_ptr = _p;
+    printf("%s\n", _p);
+    free(_p);
+    free(_cleanup_ptr);
 }

@@ -11,9 +11,9 @@ class BenchmarkTest00071Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00071
-    user_input = User.first&.name.to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
-    render json: { status: "ok" }
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    data = format("%<value>s", value: user_input)
+    content = File.read("/var/app/data/" + data)
+    render json: { content: content }
   end
 end

@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
-from urllib.parse import urlparse
-import socket
-from flask import Flask, request, jsonify
-import re
+import os
+from http.cookies import SimpleCookie
+from flask import Flask, make_response
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,15 +22,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00112", methods=["POST"])
 def BenchmarkTest00112():
-    upload_name = request.files['upload'].filename
-    if upload_name:
-        data = upload_name
-    else:
-        data = ''
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return jsonify({'error': 'private range blocked'}), 403
-    target_url = data
-    requests.get(str(target_url))
-    return jsonify({"result": "success"})
+    auth_header = request.headers.get('Authorization', '')
+    data, _sep, _rest = str(auth_header).partition('\x00')
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers.add('Set-Cookie', cookie['session'].OutputString())
+    return resp

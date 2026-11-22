@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import json
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import re
+from pathlib import Path
 
 
 app = FastAPI()
@@ -23,8 +22,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00264")
 async def BenchmarkTest00264(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    data = ' '.join(str(graphql_var).split())
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    cookie_value = request.cookies.get('session_token', '')
+    if not re.fullmatch("^(asc|desc|name|created)$", str(cookie_value)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = cookie_value
+    Path('/var/app/data/' + str(processed)).write_text('data')
     return {"updated": True}

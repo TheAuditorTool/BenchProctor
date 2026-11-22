@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: Apache-2.0
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+@Path("/")
+@Produces(MediaType.APPLICATION_JSON)
+public class BenchmarkTest00087 {
+
+    @Provider
+    public static class BindingRestrictionFilter implements ContainerRequestFilter {
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            requestContext.getHeaders().remove("X-Internal-Bind");
+        }
+    }
+
+    @Provider
+    public static class FailureMapper implements ExceptionMapper<Exception> {
+        @Override
+        public Response toResponse(Exception ex) {
+            return Response.status(500).entity("request failed").build();
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest00087")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00087(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data;
+        try { data = String.valueOf(Integer.parseInt(envValue)); }
+        catch (NumberFormatException e) { data = envValue; }
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

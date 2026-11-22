@@ -2,14 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00151() {
-  user_input="$HTTP_AUTHORIZATION"
-  data=""
-  while IFS= read -r line || [ -n "$line" ]; do data+="$line"$'\n'; done <<< "$user_input"
-  data="${data%$'\n'}"
-  _schema_re='^[A-Za-z0-9_][A-Za-z0-9_ @-]*$'
-  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  xmllint --xpath "//user[name='$processed']" /var/data/users.xml
+  user_input="$(jq -r '.value // empty' 2>/dev/null)"
+  if [ -n "$user_input" ]; then data="$user_input"; else data=""; fi
+  printf '%s' "$data" | sha512sum
 }
 
 benchmark_test_00151 "$@"

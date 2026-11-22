@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const crypto = require("crypto");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00052(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const token = crypto.randomBytes(16).toString("hex");
-  res.json({ token, label: String(data) });
+  const userInput = req.body?.field || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00052 };

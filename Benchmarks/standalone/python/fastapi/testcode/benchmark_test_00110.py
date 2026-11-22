@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
 from urllib.parse import urlparse
-import socket
-from fastapi import Form
 from starlette.responses import JSONResponse
+import socket
+import urllib.parse
 import re
 
 
@@ -24,16 +23,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00110")
-async def BenchmarkTest00110(request: Request, field: str = Form('')):
-    field_value = field
-    parts = []
-    for token in str(field_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
+async def BenchmarkTest00110(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    data = '%s' % str(auth_header)
     parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
     target_url = data
-    requests.get(str(target_url))
+    s = socket.create_connection((urllib.parse.urlparse(str(target_url)).hostname, 80))
+    s.close()
     return {"updated": True}

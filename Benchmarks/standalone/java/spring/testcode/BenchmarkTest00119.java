@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +19,16 @@ public class BenchmarkTest00119 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00119", consumes="text/plain")
-    public void BenchmarkTest00119(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawData);
-        String data = root.path("value").asText();
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+    @GetMapping("/BenchmarkTest00119")
+    public void BenchmarkTest00119(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Map.Entry<String,String> edge = java.util.Map.entry(originValue, "request");
+        String data = edge.getKey();
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        String boundedVal = data;
+        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(boundedVal).getValue();
+        response.setHeader("X-Code-Result", String.valueOf(codeResult));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

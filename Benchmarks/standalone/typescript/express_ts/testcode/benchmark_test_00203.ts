@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import { DataSource } from "typeorm";
 
 export const BenchmarkTest00203 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body as string) || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  const userInput = (req.cookies?.session_token as string) || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
+  await _dataSource.initialize();
+  await _dataSource.createQueryBuilder().select("u.id").from("users", "u").where("u.name = '" + data + "'").getRawMany();
   res.json({ accepted: true });
 }

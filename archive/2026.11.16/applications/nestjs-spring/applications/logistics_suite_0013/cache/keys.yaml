@@ -1,6 +1,0 @@
-channels:
-  - name: shipping:inbound:0013
-    payload: json
-keys:
-  - pattern: shipping:record:{id}
-    ttl_seconds: 300

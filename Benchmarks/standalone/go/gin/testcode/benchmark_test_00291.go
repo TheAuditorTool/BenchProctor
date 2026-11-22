@@ -2,24 +2,16 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"net/http"
-	"strconv"
+	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00291(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	hexBytes, _ := hex.DecodeString(dbValue)
-	data := string(hexBytes)
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	headerValue := c.GetHeader("X-Custom-Header")
+	segments := strings.Split(headerValue, ",")
+	data := strings.Join(segments, " ")
+	c.Writer.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; Secure; HttpOnly; SameSite=Strict")
+	c.JSON(200, gin.H{"code": "OK"})
 }

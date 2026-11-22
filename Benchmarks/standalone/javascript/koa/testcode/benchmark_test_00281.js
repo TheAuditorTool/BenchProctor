@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const childProcess = require("child_process");
 
 const BenchmarkTest00281 = async (ctx) => {
-  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
+  const userInput = ctx.request.headers["user-agent"] || "";
+  const data = `${userInput}`;
+  if (!["ls", "cat", "date", "whoami"].includes(data)) { ctx.status = 403; ctx.body = {error:'forbidden'}; return; }
+  const allowedBin = data;
+  childProcess.exec("echo " + allowedBin, (_err, stdout) => console.log(stdout));
   ctx.body = { ack: true };
 }
 

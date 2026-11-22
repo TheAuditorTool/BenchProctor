@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from jinja2 import Environment
+import subprocess
 from fastapi.responses import JSONResponse
 
 
@@ -22,6 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00317")
 async def BenchmarkTest00317(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = '%s' % str(referer_value)
-    return HTMLResponse(Environment(autoescape=True).from_string('{{ value }}').render(value=data))
+    cookie_value = request.cookies.get('session_token', '')
+    data = '%s' % (cookie_value,)
+    subprocess.run('echo ' + str(data), shell=True)
+    return {"updated": True}

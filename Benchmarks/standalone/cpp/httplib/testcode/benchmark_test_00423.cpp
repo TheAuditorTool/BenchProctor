@@ -26,14 +26,13 @@ struct Client {
 
 void benchmark_test_00423(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
+    std::string user_input = req.body;
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
-    if (std::strchr(_p, ';') != nullptr) return;
-    std::cout << _p << std::endl;
+    delete[] _p;
     delete[] _p;
     res.set_content("ok", "text/plain");
 }

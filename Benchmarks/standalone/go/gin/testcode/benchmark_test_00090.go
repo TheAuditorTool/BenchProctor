@@ -2,31 +2,30 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00090(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	authHeader := c.GetHeader("Authorization")
+	data := fmt.Sprintf("%s", authHeader)
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
+		return
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	relayPrefix := ""
-	if len(graphqlVar) > 0 {
-		relayPrefix = strings.ToLower(graphqlVar[:1])
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const exportRecordSize = 512
+	const maxExportRecords = 10000
+	recordCount, err := strconv.ParseInt(boundedVal, 10, 64)
+	if err != nil || recordCount < 1 || recordCount > maxExportRecords {
+		c.String(http.StatusBadRequest, "invalid record count")
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = graphqlVar
-	case "f":
-		data = graphqlVar
-	default:
-		data = graphqlVar
-	}
-	c.Redirect(http.StatusFound, data)
+	exportBuf := make([]byte, 0, recordCount*exportRecordSize)
+	c.Header("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
+	c.JSON(200, gin.H{"code": "OK"})
 }

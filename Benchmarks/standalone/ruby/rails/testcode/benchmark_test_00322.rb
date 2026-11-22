@@ -11,9 +11,12 @@ class BenchmarkTest00322Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00322
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    redirect_to data, allow_other_host: true
+    user_input = request.query_parameters[:q].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    session[:data] = parsed_bool.to_s
+    render json: { status: "ok" }
   end
 end

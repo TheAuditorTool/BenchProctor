@@ -30,17 +30,17 @@ public class BenchmarkTest00177 {
         }
     }
 
+    record FormData(String payload) {}
+
     @GET
     @Path("/BenchmarkTest00177")
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00177(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        String data = String.join(" ", headerValue.split("[ \\t]+"));
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
-        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
-        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        FormData payload = new FormData(headerValue);
+        String data = payload.payload();
+        long randValue = java.util.random.RandomGenerator.of("SecureRandom").nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

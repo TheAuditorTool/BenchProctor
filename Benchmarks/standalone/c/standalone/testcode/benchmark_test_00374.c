@@ -6,15 +6,18 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+#include <curl/curl.h>
 
 void benchmark_test_00374(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    const char *data = c_passthrough(user_input);
-    char *_found = strchr(data, '=');
-    if (_found != NULL) printf("%c\n", *_found);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, data);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

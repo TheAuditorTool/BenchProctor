@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
-import re
+import defusedxml.ElementTree
+from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -23,14 +22,6 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00216")
 async def BenchmarkTest00216(request: Request):
-    referer_value = request.headers.get('referer', '')
-    pending = list(str(referer_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    defusedxml.ElementTree.fromstring(str(comment_value))
+    return {"updated": True}

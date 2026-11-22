@@ -18,9 +18,15 @@ class BenchmarkTest00331 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00331" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = user_input ? user_input : ''
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    cookie_value = Rack::Utils.escape(data.to_s)
+    headers["Set-Cookie"] = "session=" + cookie_value + "; Path=/; HttpOnly; SameSite=Strict"
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

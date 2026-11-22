@@ -6,26 +6,24 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-
-#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
+#include <openssl/sha.h>
 
 void benchmark_test_00459(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
     const char *user_input = user_input_buf;
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    char *_cleanup_ptr = _p;
-    printf("%s\n", _p);
-    FREE_AND_NULL(_p);
-    _cleanup_ptr = NULL;
-    if (_cleanup_ptr) free(_cleanup_ptr);
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    unsigned char _digest[20];
+    SHA1((const unsigned char *)data, strlen(data), _digest);
 }

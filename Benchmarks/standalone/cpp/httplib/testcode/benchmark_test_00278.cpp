@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstring>
 #include <unordered_map>
 
@@ -26,14 +27,14 @@ struct Client {
 
 void benchmark_test_00278(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    size_t _n = data.size();
-    char *_p = new char[_n + 1];
-    std::memcpy(_p, data.c_str(), _n + 1);
-    std::cout << _p << std::endl;
+    std::string user_input = req.get_param_value("field");
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    std::string _out(_p);
     delete[] _p;
-    std::memset(_p, 0, _n + 1);
+    std::cout << _out << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00312(req, res) {
-  const userInput = req.body.payload || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const fileContent = fs.readFileSync("/var/app/data/" + data, "utf8");
-  res.send(fileContent);
+  const userInput = req.body?.field || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  childProcess.execSync("echo " + data);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00312 };

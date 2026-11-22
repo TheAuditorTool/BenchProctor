@@ -2,21 +2,26 @@
 package testcode
 
 import (
-	"encoding/json"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00030(w http.ResponseWriter, r *http.Request) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
+		return
 	}
-	json.NewDecoder(r.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	data := graphqlVar
-	if _, after, ok := strings.Cut(graphqlVar, ","); ok {
-		data = after
+	cookieValue := cookieObj.Value
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(cookieValue)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	targetUrl := data
+	http.RedirectHandler(targetUrl, http.StatusFound).ServeHTTP(w, r)
 }

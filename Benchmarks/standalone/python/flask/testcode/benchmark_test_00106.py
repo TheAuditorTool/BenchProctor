@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import requests
 from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -16,13 +18,9 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00106/<path_param>", methods=["POST"])
-def BenchmarkTest00106(path_param):
-    path_value = path_param
-    pending = list(str(path_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    exec(str(data))
+@app.route("/BenchmarkTest00106", methods=["POST"])
+def BenchmarkTest00106():
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = '{}'.format(comment_value)
+    requests.get(str(data))
     return jsonify({"result": "success"})

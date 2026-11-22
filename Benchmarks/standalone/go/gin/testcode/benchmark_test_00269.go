@@ -3,28 +3,35 @@ package testcode
 
 import (
 	"net/http"
-	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00269(c *gin.Context) {
-	fieldValue := c.PostForm("field")
-	data, _ := url.QueryUnescape(fieldValue)
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$")
+	multipartValue := c.PostForm("multipart_field")
+	data := strings.ReplaceAll(multipartValue, "\x00", "")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
 	if !validPattern.MatchString(data) {
 		c.String(http.StatusBadRequest, "invalid input")
 		return
 	}
 	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	defer ldapConn.Close()
+	directoryFilter := "(&(objectClass=inetOrgPerson)(mail=" + processed + "))"
+	pagedResult, searchErr := ldapConn.SearchWithPaging(ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, directoryFilter, []string{"cn", "mail"}, nil), 50)
+	if searchErr != nil {
+		c.String(http.StatusInternalServerError, searchErr.Error())
+		return
+	}
+	c.Header("X-Directory-Matches", strconv.Itoa(len(pagedResult.Entries)))
 	c.JSON(200, gin.H{"code": "OK"})
 }

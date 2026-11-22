@@ -3,8 +3,12 @@
 
 benchmark_test_00116() {
   user_input="$(cat /dev/stdin)"
-  data=$(printf "%s" "${user_input}" | tr -s " ")
-  echo "data" > "/var/uploads/$data"
+  if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
+    data="$_parsed"
+  else
+    data="${user_input}"
+  fi
+  printf '%s' "$data" | openssl dgst -sha3-256
 }
 
 benchmark_test_00116 "$@"

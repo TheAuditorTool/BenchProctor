@@ -20,10 +20,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00343")
 async def BenchmarkTest00343(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(ua_value)
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data, _sep, _rest = str(forwarded_ip).partition('\x00')
     try:
         _bounded = max(0, min(int(data), 2147483647))
     except (TypeError, ValueError):

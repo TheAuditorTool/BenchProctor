@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
+from lxml import etree
+import re
 from flask import Flask, request, jsonify
-from app_runtime import db
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -19,7 +27,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00308", methods=["POST"])
 def BenchmarkTest00308():
-    field_value = request.form.get('field', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(field_value),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = RequestPayload(graphql_var).value
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    return jsonify({"result": "success"})

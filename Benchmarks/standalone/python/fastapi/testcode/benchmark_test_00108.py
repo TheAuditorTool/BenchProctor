@@ -1,12 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-from lxml import etree
+import ldap
+import os
 from fastapi.responses import JSONResponse
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -24,14 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00108")
-async def BenchmarkTest00108(request: Request, req: UserInput):
-    json_value = req.payload
-    kind = 'json' if str(json_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(json_value).strip()
-        case _:
-            data = str(json_value)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+async def BenchmarkTest00108(request: Request):
+    header_value = request.headers.get('x-custom-header', '')
+    data = ' '.join(str(header_value).split())
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(data) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
     return {"updated": True}

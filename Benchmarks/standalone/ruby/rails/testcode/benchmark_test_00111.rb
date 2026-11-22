@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open3"
 
 class BenchmarkTest00111Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,10 @@ class BenchmarkTest00111Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00111
-    user_input = request.headers["X-Forwarded-For"].to_s
+    user_input = request.user_agent.to_s
     transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
     data = transform.call(user_input)
-    token = rand(1000000)
+    Open3.capture2e("echo " + data)
     render json: { status: "ok" }
   end
 end

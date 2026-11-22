@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "net/ldap"
 
 class BenchmarkTest00056Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +12,12 @@ class BenchmarkTest00056Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00056
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = sprintf("%s", user_input)
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = ENV["APP_INPUT"] || ""
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
     render json: { status: "ok" }
   end
 end

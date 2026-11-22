@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00261Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,10 @@ class BenchmarkTest00261Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00261
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
-    render json: { status: "ok" }
+    user_input = Comment.first&.text.to_s
+    data = format("%<value>s", value: user_input)
+    reader = Nokogiri::XML::Reader(data) { |config| config.nonet.nodtdload }
+    values = reader.map { |node| node.value if node.value? }.compact
+    render json: { values: values }
   end
 end

@@ -2,22 +2,18 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00021(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	var data string
-	if fieldValue != "" {
-		data = fieldValue
+	authHeader := r.Header.Get("Authorization")
+	data := strings.Join(strings.FieldsFunc(authHeader, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
 	}
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
 }

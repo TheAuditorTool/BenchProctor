@@ -18,14 +18,10 @@ class BenchmarkTest00202 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00202" do
-    user_input = request.body.read
+    user_input = params[:upload][:filename].to_s rescue ""
     tokens = user_input.split(',')
     data = tokens.join(' ')
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    settings.set(:announcement, data.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

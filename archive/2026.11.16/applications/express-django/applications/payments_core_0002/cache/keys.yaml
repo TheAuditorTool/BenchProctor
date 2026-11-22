@@ -1,6 +1,0 @@
-channels:
-  - name: payments:inbound:0002
-    payload: json
-keys:
-  - pattern: payments:record:{id}
-    ttl_seconds: 300

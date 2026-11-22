@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from fastapi.responses import JSONResponse
+import os
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,10 +21,16 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00340")
 async def BenchmarkTest00340(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    pending = list(str(multipart_value).split(','))
+    env_value = os.environ.get('APP_INPUT', '')
+    pending = list(str(env_value).split(','))
     collected = []
     while pending:
         collected.append(pending.pop(0).strip())
     data = ','.join(collected)
-    return RedirectResponse(url=str(data))
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    request.app.state.active_tenant = str(processed)
+    return {"updated": True}

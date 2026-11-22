@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
-from starlette.responses import JSONResponse
+import io
+import xml.sax
+import defusedxml.sax
+from fastapi import Form
+from fastapi.responses import JSONResponse
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -25,15 +23,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00147")
-async def BenchmarkTest00147(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    form = FormData(payload=raw_body)
-    data = form.payload
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+async def BenchmarkTest00147(request: Request, field: str = Form('')):
+    field_value = field
+    data = '%s' % str(field_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return {"updated": True}

@@ -1,0 +1,4 @@
+Markdown==3.11.2
+bleach==6.4.0
+flask==2.3.3
+sqlalchemy==1.4.54

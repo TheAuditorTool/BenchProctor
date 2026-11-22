@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as nodeSerialize from "node-serialize";
+import * as nodeUtil from "util";
 
 export const BenchmarkTest00297 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
-  nodeSerialize.unserialize(userInput);
+  const userInput = (req.headers["user-agent"] as string) || "";
+  const data = nodeUtil.format("%s", userInput);
+  req.app.locals.announcement = String(data);
   res.json({ accepted: true });
 }

@@ -8,10 +8,11 @@ class BenchmarkTest00187Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        json_decode($data, true);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('User-Agent', '');
+        $data = "{$userInput}";
+        $stream = function () use ($data) {
+            echo '<div class="comment">' . $data . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

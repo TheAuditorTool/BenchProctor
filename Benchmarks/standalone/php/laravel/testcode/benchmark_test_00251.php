@@ -8,11 +8,10 @@ class BenchmarkTest00251Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $checkedPath = '/var/app/data/' . basename($data);
-        unlink((string)$checkedPath);
+        $userInput = $request->getContent();
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        unserialize($data);
         return response()->json(['ok' => 1]);
     }
 }

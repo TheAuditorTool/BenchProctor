@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.utils.safestring import mark_safe
-from django.http import HttpResponse
-import bleach
+from django.http import JsonResponse
+import urllib.parse
 
 
 def BenchmarkTest00184(request):
-    referer_value = request.META.get('HTTP_REFERER', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(referer_value)
-    processed = bleach.clean(data)
-    return HttpResponse(mark_safe('<div>' + str(processed) + '</div>'))
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    encoded_session = urllib.parse.quote(str(ua_value), safe='')
+    resp = JsonResponse({'status': 'ok'})
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

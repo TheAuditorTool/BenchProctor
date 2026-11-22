@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, request, jsonify
+import defusedxml.ElementTree
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,8 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00271", methods=["POST"])
 def BenchmarkTest00271():
-    referer_value = request.headers.get('Referer', '')
-    data, _sep, _rest = str(referer_value).partition('\x00')
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    field_value = request.form.get('field', '')
+    if field_value:
+        data = field_value
+    else:
+        data = ''
+    defusedxml.ElementTree.fromstring(str(data))
+    return jsonify({"result": "success"})

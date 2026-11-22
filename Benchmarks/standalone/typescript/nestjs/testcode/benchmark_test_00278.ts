@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Res } from "@nestjs/common";
+import { Controller, Post, Query } from "@nestjs/common";
 import { Response } from "express";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,11 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00278")
-  async BenchmarkTest00278(@Headers("authorization") auth: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = auth || "";
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
+  async BenchmarkTest00278(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const data = decodeURIComponent(userInput);
+    fs.writeFileSync("/var/uploads/" + data, "data");
     return { created: true };
   }
 }

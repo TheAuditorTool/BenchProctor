@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const { db } = require("./shared");
+const crypto = require("crypto");
 
 const BenchmarkTest00334 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  ctx.session.data = String(parsedNum);
-  ctx.body = { ack: true };
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const token = crypto.randomBytes(16).toString("hex");
+  ctx.body = { token, label: String(userInput) };
 }
 
 module.exports = { BenchmarkTest00334 };

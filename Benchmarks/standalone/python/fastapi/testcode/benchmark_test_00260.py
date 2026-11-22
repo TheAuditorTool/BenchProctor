@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from pydantic import BaseModel
+import secrets
 from starlette.responses import JSONResponse
-import json
-import re
+from app_runtime import db
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -26,15 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00260")
-async def BenchmarkTest00260(request: Request, req: UserInput):
-    json_value = req.payload
-    try:
-        data = json.loads(json_value).get('value', json_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = json_value
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return {"updated": True}
+async def BenchmarkTest00260(request: Request):
+    host_value = request.headers.get('host', '')
+    data = '{}'.format(host_value)
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

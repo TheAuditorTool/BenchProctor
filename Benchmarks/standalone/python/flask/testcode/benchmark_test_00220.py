@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
+import io
+import defusedxml.ElementTree
 from flask import Flask, jsonify
 from app_runtime import db
 
@@ -20,7 +21,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00220", methods=["POST"])
 def BenchmarkTest00220():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = (lambda v: v.strip())(api_value)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(comment_value).encode()), events=('end',)):
+        element.clear()
     return jsonify({"result": "success"})

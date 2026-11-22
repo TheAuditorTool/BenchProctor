@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00274(req, res) {
-  const userInput = req.params.id || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = req.cookies.session_token || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  childProcess.execSync("echo " + data);
   res.json({ done: true });
 }
 

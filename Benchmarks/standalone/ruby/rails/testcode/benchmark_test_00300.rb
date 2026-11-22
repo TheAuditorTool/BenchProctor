@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/http"
 
 class BenchmarkTest00300Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,12 @@ class BenchmarkTest00300Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00300
-    user_input = request.body.read
-    data = format("%<value>s", value: user_input)
-    content = File.read("/var/app/data/" + data)
-    render json: { status: "ok" }
+    user_input = request.referer.to_s
+    uri = URI.parse(user_input.to_s)
+    outbound = Net::HTTP::Get.new(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    reply = http.request(outbound)
+    render json: { upstream_status: reply.code.to_i }
   end
 end

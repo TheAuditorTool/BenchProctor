@@ -1,6 +1,0 @@
-channels:
-  - name: billing:inbound:0051
-    payload: json
-keys:
-  - pattern: billing:record:{id}
-    ttl_seconds: 300

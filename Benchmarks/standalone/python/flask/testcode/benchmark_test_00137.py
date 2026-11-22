@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+import re
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,8 +25,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00137", methods=["POST"])
 def BenchmarkTest00137():
-    user_id = request.args.get('id', '')
-    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    raw_body = request.get_data(as_text=True)
+    form = FormData(payload=raw_body)
+    data = form.payload
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    domain = match.group(1)
+    return jsonify({'domain': domain}), 200

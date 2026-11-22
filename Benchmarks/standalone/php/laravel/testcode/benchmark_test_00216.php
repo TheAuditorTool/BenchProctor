@@ -8,10 +8,14 @@ class BenchmarkTest00216Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Host', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = $request->getContent();
+        $data = ($userInput !== null) ? $userInput : '';
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
         return response()->json(['ok' => 1]);
     }
 }

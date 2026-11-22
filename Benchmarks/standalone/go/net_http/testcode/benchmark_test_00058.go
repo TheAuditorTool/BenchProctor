@@ -2,22 +2,23 @@
 package testcode
 
 import (
+	"net"
 	"net/http"
 	"net/url"
-	"regexp"
 )
 
 func BenchmarkTest00058(w http.ResponseWriter, r *http.Request) {
-	hostValue := r.Host
-	var data string
-	if hostValue != "" {
-		data = hostValue
-	}
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
+	headerValue := r.Header.Get("X-Custom-Header")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(headerValue)
+	dialURL, dialErr := url.Parse(data)
+	if dialErr != nil {
+		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
-	targetUrl := data
-	http.Redirect(w, r, targetUrl, http.StatusFound)
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
+	if err == nil {
+		defer conn.Close()
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

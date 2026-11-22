@@ -2,51 +2,37 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <regex>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef struct _xmlTextReader xmlTextReader; typedef xmlTextReader *xmlTextReaderPtr;
+extern "C" xmlTextReaderPtr xmlReaderForMemory(const char *, int, const char *, const char *, int);
+extern "C" int xmlTextReaderRead(xmlTextReaderPtr);
+extern "C" const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr);
+extern "C" void xmlFreeTextReader(xmlTextReaderPtr);
 
 void benchmark_test_00337(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_COOKIE");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    char _resolved[INET6_ADDRSTRLEN] = {0};
-    struct addrinfo _rhints;
-    std::memset(&_rhints, 0, sizeof(_rhints));
-    _rhints.ai_family = AF_UNSPEC;
-    _rhints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_rres = nullptr;
-    if (getaddrinfo(_authority.c_str(), nullptr, &_rhints, &_rres) == 0 && _rres) {
-        if (_rres->ai_family == AF_INET)
-            inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(_rres->ai_addr)->sin_addr, _resolved, sizeof(_resolved));
-        else
-            inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(_rres->ai_addr)->sin6_addr, _resolved, sizeof(_resolved));
-        freeaddrinfo(_rres);
-    }
-    static const std::regex _pr("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)");
-    if (std::regex_search(std::string(_resolved), _pr)) return;
-    std::string safe = data;
-    struct addrinfo _hints;
-    std::memset(&_hints, 0, sizeof(_hints));
-    _hints.ai_family = AF_UNSPEC;
-    _hints.ai_socktype = SOCK_STREAM;
-    struct addrinfo *_res = nullptr;
-    if (getaddrinfo(safe.c_str(), "80", &_hints, &_res) == 0 && _res) {
-        int _sock = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-        if (_sock >= 0) { connect(_sock, _res->ai_addr, _res->ai_addrlen); close(_sock); }
-        freeaddrinfo(_res);
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    std::string _xdoc = data;
+    xmlTextReaderPtr _xr = xmlReaderForMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NONET);
+    if (_xr) {
+        while (xmlTextReaderRead(_xr) == 1) {
+            const unsigned char *_xv = xmlTextReaderConstValue(_xr);
+            if (_xv) std::cout << reinterpret_cast<const char *>(_xv);
+        }
+        xmlFreeTextReader(_xr);
     }
 }

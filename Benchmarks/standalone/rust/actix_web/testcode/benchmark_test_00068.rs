@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
-use url::Url;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00068")]
-pub async fn benchmark_test_00068(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+pub async fn benchmark_test_00068(req: HttpRequest) -> HttpResponse {
+    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = auth_header.to_string();
+    tokio::fs::write(format!("/var/app/data/{}", data), "data").await.ok();
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

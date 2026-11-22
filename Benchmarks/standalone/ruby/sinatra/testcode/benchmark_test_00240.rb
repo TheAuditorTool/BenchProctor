@@ -4,9 +4,6 @@ require "json"
 require "uri"
 require "openssl"
 require "nokogiri"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00240 < Sinatra::Base
   before do
@@ -22,16 +19,12 @@ class BenchmarkTest00240 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00240" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    unless data =~ /\A(asc|desc|name|created)\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    user_input = request.body.read
+    data = sprintf("%s", user_input)
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + data.to_s + "']/role")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ roles: roles.map(&:text) })
   end
 end

@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
+const stream = require("node:stream");
+const { escapeHtml } = require("./shared");
 
 const BenchmarkTest00030 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  fs.unlinkSync("/var/app/data/" + processed);
-  ctx.body = { ack: true };
+  const userInput = ctx.request.headers.referer || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  ctx.type = "html";
+  ctx.body = stream.Readable.from(["<section>" + escapeHtml(data) + "</section>"]);
 }
 
 module.exports = { BenchmarkTest00030 };

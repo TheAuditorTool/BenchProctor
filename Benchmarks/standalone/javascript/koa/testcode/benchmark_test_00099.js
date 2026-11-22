@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
+const { db } = require("./shared");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00099 = async (ctx) => {
-  const userInput = ctx.params.id || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  eval(data);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.evaluate("//user[name='" + parsedNum + "']", usersDoc, null, xpath.XPathResult.ANY_TYPE, null);
   ctx.body = { ack: true };
 }
 

@@ -19,12 +19,13 @@ public class BenchmarkTest00073 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00073")
-    public void BenchmarkTest00073(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = String.format("%s", fieldValue);
-        org.owasp.html.PolicyFactory policy = new org.owasp.html.HtmlPolicyBuilder().allowCommonInlineFormattingElements().toFactory();
-        String processed = policy.sanitize(data);
-        response.getWriter().print("<div>" + processed + "</div>");
+    @GetMapping("/BenchmarkTest00073")
+    public void BenchmarkTest00073(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Properties box = new java.util.Properties();
+        box.setProperty("value", originValue);
+        String data = box.getProperty("value", "");
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.setHeader("Location", data);
     }
 }

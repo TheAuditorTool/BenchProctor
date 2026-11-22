@@ -1,20 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from rest_framework import serializers
+import os
+from django.http import HttpResponse
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 def BenchmarkTest00042(request):
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    pending = list(str(auth_header).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    class _InputSerializer(serializers.Serializer):
-        value = serializers.RegexField("^[a-zA-Z0-9 _.\\-]+$")
-    _ser = _InputSerializer(data={'value': str(data)})
-    if not _ser.is_valid():
-        return JsonResponse({'error': 'invalid input'}, status=400)
-    processed = data
-    request.session['data'] = str(processed)
-    return JsonResponse({"saved": True})
+    origin_value = request.META.get('HTTP_ORIGIN', '')
+    data = RequestPayload(origin_value).value
+    base_dir = '/var/app/data'
+    full_path = os.path.realpath(os.path.join(base_dir, data))
+    if not full_path.startswith(base_dir + os.sep):
+        return JsonResponse({'error': 'forbidden'}, status=403)
+    checked_path = full_path
+    with open(checked_path, 'r') as fh:
+        content = fh.read()
+    return HttpResponse(content)

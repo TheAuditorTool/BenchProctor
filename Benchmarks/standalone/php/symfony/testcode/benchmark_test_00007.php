@@ -11,12 +11,12 @@ class BenchmarkTest00007Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        if (!preg_match('#^[a-zA-Z0-9 _.\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $request->getSession()->set('data', (string) $processed);
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $hashCtx = hash_init('md4');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
         return new JsonResponse(["committed" => true]);
     }
 }

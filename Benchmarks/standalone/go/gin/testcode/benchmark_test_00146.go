@@ -2,6 +2,8 @@
 package testcode
 
 import (
+	"crypto/md5"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -9,9 +11,12 @@ import (
 )
 
 func BenchmarkTest00146(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	segments := strings.Split(refererValue, ",")
-	data := strings.Join(segments, " ")
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	originValue := c.GetHeader("Origin")
+	var data string
+	for _, token := range strings.Split(originValue, ",") {
+		data = token
+	}
+	hash := md5.Sum([]byte(data))
+	hashStr := fmt.Sprintf("%x", hash)
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

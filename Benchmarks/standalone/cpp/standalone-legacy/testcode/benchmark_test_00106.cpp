@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: Apache-2.0
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+
+void benchmark_test_00106(int, char **)
+{
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
+}

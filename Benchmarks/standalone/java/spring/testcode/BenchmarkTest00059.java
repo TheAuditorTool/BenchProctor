@@ -20,11 +20,9 @@ public class BenchmarkTest00059 {
     }
 
     @GetMapping("/BenchmarkTest00059")
-    public void BenchmarkTest00059(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public void BenchmarkTest00059(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + userId}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

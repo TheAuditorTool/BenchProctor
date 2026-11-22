@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
 
 const BenchmarkTest00347 = async (ctx) => {
-  const userInput = ctx.cookies.get("session_token") || "";
-  const [data] = String(userInput).split(',');
-  http.get(data);
+  const userInput = ctx.request.rawBody || "";
+  ctx.cookies.set("session", userInput, { secure: true, httpOnly: true, sameSite: "strict" });
   ctx.body = { ack: true };
 }
 

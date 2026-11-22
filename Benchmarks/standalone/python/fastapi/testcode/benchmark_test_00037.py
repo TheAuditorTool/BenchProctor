@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from app_runtime import db
+import socket
+import urllib.parse
 from fastapi.responses import JSONResponse
 
 
@@ -22,8 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00037")
 async def BenchmarkTest00037(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '%s' % str(db_value)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    cookie_value = request.cookies.get('session_token', '')
+    data = ' '.join(str(cookie_value).split())
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
     return {"updated": True}

@@ -26,8 +26,9 @@ struct Client {
 
 void benchmark_test_00089(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    const char *_found = std::strchr(user_input.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string user_input = req.get_header_value("Cookie");
+    char *_dst = new char[16];
+    std::strcpy(_dst, user_input.c_str());
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

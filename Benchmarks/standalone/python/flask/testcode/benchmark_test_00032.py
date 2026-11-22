@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
-import socket
 
 
 app = Flask(__name__)
@@ -19,12 +18,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00032", methods=["POST"])
 def BenchmarkTest00032():
-    raw_body = request.get_data(as_text=True)
-    pending = list(str(raw_body).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    s = socket.create_connection((str(data), 80))
-    s.close()
+    referer_value = request.headers.get('Referer', '')
+    parts = []
+    for token in str(referer_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    code = compile(str(data), '<rule>', 'exec')
+    exec(code)
     return jsonify({"result": "success"})

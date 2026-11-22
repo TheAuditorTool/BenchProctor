@@ -33,15 +33,19 @@ public class BenchmarkTest00051 {
     @GET
     @Path("/BenchmarkTest00051")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00051(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String data = java.net.URLDecoder.decode(userId, java.nio.charset.StandardCharsets.UTF_8);
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00051(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = originValue.isEmpty() ? "default" : originValue;
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            javax.naming.NamingEnumeration<javax.naming.NameClassPair> groupEntries = ctx.list("cn=" + data + ",ou=groups,dc=example,dc=com");
+            int groupSize = 0;
+            while (groupEntries.hasMore()) { groupEntries.next(); groupSize++; }
+            response.setHeader("X-Group-Size", String.valueOf(groupSize));
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

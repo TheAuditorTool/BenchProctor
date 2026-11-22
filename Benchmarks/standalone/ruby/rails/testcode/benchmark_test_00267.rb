@@ -11,13 +11,11 @@ class BenchmarkTest00267Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00267
-    user_input = request.host.to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    content = File.read("/var/app/data/" + data)
-    render json: { status: "ok" }
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    data = "%s" % user_input
+    result = User.find_by(name: data)
+    return render json: { error: "not found" }, status: 404 if result.nil?
+    value = result.name
+    render json: { name: value }
   end
 end

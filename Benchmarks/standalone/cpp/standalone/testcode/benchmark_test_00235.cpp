@@ -2,16 +2,18 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
 void benchmark_test_00235(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_ORIGIN");
+    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    const int _rec_size = 64;
-    int _count = std::atoi(data.c_str());
-    int _bytes = _count * _rec_size;
-    char *_recs = new (std::nothrow) char[(size_t)_bytes];
-    delete[] _recs;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    size_t _n = data.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, data.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    delete[] _p;
+    std::memset(_p, 0, _n + 1);
 }

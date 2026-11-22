@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00184() {
-  user_input="$(tr '&' '\n' | grep '^field=' | cut -d= -f2-)"
-  data=$(printf "%s" "${user_input}" | tr -s " ")
-  echo -n "$data" | md5sum
+  user_input="$HTTP_X_CUSTOM_HEADER"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  wget -q -O - -T 10 --max-redirect=0 -- "$data"
 }
 
 benchmark_test_00184 "$@"

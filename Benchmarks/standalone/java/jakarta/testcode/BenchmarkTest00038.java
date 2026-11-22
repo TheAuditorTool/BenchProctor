@@ -30,20 +30,20 @@ public class BenchmarkTest00038 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00038")
-    @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00038(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : xmlValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        String boundedVal = data;
-        Object codeResult = new jakarta.el.ELProcessor().eval(boundedVal);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public Response BenchmarkTest00038(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", originValue);
+        String data = sw.toString();
+        org.bouncycastle.crypto.Digest contentDigest = new org.bouncycastle.crypto.digests.SHA256Digest();
+        byte[] digestInput = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        contentDigest.update(digestInput, 0, digestInput.length);
+        byte[] digest = new byte[contentDigest.getDigestSize()];
+        contentDigest.doFinal(digest, 0);
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -2,28 +2,29 @@
 package testcode
 
 import (
-	"io"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00239(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	rawBody := string(rawBytes)
-	segments := strings.Split(rawBody, ",")
-	data := strings.Join(segments, " ")
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
-		return
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	capture := func() string { return strings.TrimSpace(graphqlVar) }
+	data := capture()
+	tokenLen, _ := strconv.Atoi(data)
+	if tokenLen < 16 || tokenLen > 64 {
+		tokenLen = 32
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	c.JSON(200, gin.H{"code": "OK"})
+	buf := make([]byte, tokenLen)
+	rand.Read(buf)
+	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
 }

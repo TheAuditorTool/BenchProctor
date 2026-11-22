@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,25 +24,35 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
-struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
+extern "C" const EVP_CIPHER *EVP_des_ecb(void);
+extern "C" const EVP_CIPHER *EVP_rc4(void);
+extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
+extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
+extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
+extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
+extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
+extern "C" int RAND_bytes(unsigned char *buf, int num);
+extern "C" int EVP_EncryptInit_ex2(EVP_CIPHER_CTX *, const EVP_CIPHER *, const unsigned char *, const unsigned char *, const void *);
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
-void benchmark_test_00300(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00300(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
-    }
-    HeldValue _held(user_input);
-    const ValueSource &_vs = _held;
-    std::string data = _vs.get();
-    int _x;
-    if (!data.empty()) _x = (int)data[0];
-    std::cout << (_x + (int)data.size()) << std::endl;
+    std::string user_input = req.get_header_value("Origin");
+    std::string data = cpp_own(user_input);
+    const char *_kv = std::getenv("APP_ENC_KEY");
+    unsigned char _ckey[32] = {0};
+    if (_kv) std::strncpy(reinterpret_cast<char *>(_ckey), _kv, sizeof(_ckey) - 1);
+    int _clen = data.size() > 512 ? 512 : static_cast<int>(data.size());
+    unsigned char _civ[12];
+    RAND_bytes(_civ, sizeof(_civ));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    EVP_EncryptInit_ex2(_ctx, EVP_aes_256_gcm(), _ckey, _civ, nullptr);
+    unsigned char _cout[528]; int _coutl = 0;
+    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), _clen);
+    EVP_CIPHER_CTX_free(_ctx);
     res.set_content("ok", "text/plain");
 }

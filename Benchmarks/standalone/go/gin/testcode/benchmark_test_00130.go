@@ -5,19 +5,31 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00130(c *gin.Context) {
-	hostValue := c.Request.Host
-	capture := func() string { return strings.TrimSpace(hostValue) }
-	data := capture()
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	jsonValue := reqBody.Payload
+	relayPrefix := ""
+	if len(jsonValue) > 0 {
+		relayPrefix = strings.ToLower(jsonValue[:1])
+	}
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = jsonValue
+	case "f":
+		data = jsonValue
+	default:
+		data = jsonValue
+	}
+	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	c.JSON(200, gin.H{"code": "OK"})
 }

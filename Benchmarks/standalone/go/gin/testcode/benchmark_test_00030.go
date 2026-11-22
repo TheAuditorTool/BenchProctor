@@ -2,23 +2,32 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00030(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(graphqlVar)
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		c.String(http.StatusBadRequest, "malformed order")
 		return
 	}
-	uploadName := header.Filename
-	data := strings.ReplaceAll(uploadName, "\x00", "")
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	if totalNode == nil {
+		c.String(http.StatusBadRequest, "order total missing")
+		return
+	}
+	orderTotal := totalNode.InnerText()
+	c.JSON(http.StatusOK, map[string]string{"total": orderTotal})
 }

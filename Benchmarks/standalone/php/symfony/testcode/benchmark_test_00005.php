@@ -2,20 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00005', methods: ['POST'])]
 class BenchmarkTest00005Controller
 {
-    public function __invoke(Request $request, Connection $conn)
+    public function __invoke()
     {
-        $userInput = $request->getContent();
-        $data = str_replace("\0", '', $userInput);
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        $value = $result['name'];
+        $userInput = getenv('APP_INPUT') ?: '';
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        if (!preg_match('#^[a-zA-Z0-9 _.%~\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $users = simplexml_load_file('/var/app/data/users.xml');
+        $matches = $users->xpath("//user[@name='" . $processed . "']");
         return new JsonResponse(["committed" => true]);
     }
 }

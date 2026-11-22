@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import knex from "knex";
+import { DataTypes, Sequelize } from "sequelize";
 
 export const BenchmarkTest00108 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((await (await fetch("https://api.partner.example/v1/records")).json()) as { data?: string }).data || "";
-  const data = `${userInput}`;
-  const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-  await _knex.raw("SELECT * FROM users WHERE id = '" + data + "'");
+  const userInput = (req.headers["x-custom-header"] as string) || "";
+  const capture = (v: string) => (): string => v.trim();
+  const readInput = capture(userInput);
+  const data: string = readInput();
+  if (!/^[a-zA-Z0-9_.#\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
+  const User = _sequelize.define("User", { name: DataTypes.STRING }, { tableName: "users", timestamps: false });
+  await User.findAll({ where: _sequelize.literal("name = '" + processed + "'") });
   res.json({ accepted: true });
 }

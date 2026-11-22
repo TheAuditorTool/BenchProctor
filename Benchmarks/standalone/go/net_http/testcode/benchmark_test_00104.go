@@ -7,19 +7,13 @@ import (
 )
 
 func BenchmarkTest00104(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	capture := func() string { return strings.TrimSpace(commentText) }
-	data := capture()
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	authHeader := r.Header.Get("Authorization")
+	pending := strings.Split(authHeader, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
 	}
-	if result == nil {
-		http.Error(w, "not found", 404)
-		return
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	trustedSettings.Store("partner_callback_host", data)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

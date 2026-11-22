@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -10,6 +10,12 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00117 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -20,11 +26,15 @@ public class BenchmarkTest00117 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00117")
-    public void BenchmarkTest00117(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String cookieValue = java.net.URLEncoder.encode(uaValue, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+    @PostMapping("/BenchmarkTest00117")
+    public void BenchmarkTest00117(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
+        String data = String.format("%s", jsonValue);
+        java.util.Map<String, String> regionEndpoints = java.util.Map.of("us-east", "https://us-east.api.svc.local", "eu-west", "https://eu-west.api.svc.local");
+        String regionEndpoint = regionEndpoints.get(data);
+        if (regionEndpoint == null) { response.sendError(404, "unknown region"); return; }
+        boolean secureEndpoint = regionEndpoint.startsWith("https://");
+        response.setHeader("X-Region-Secure", String.valueOf(secureEndpoint));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

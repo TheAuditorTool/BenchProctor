@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-from starlette.responses import JSONResponse
+import subprocess
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,9 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00280")
 async def BenchmarkTest00280(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    def normalize(value):
-        return value.strip()
-    data = normalize(raw_body)
-    parsed = yaml.safe_load(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    ua_value = request.headers.get('user-agent', '')
+    data = (lambda v: v.strip())(ua_value)
+    subprocess.run('echo ' + str(data), shell=True)
+    return {"updated": True}

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-from starlette.responses import JSONResponse
-import json
+import io
+from lxml import etree
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,7 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00282")
 async def BenchmarkTest00282(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = api_value if api_value else 'default'
-    parsed = json.loads(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    multipart_value = (await request.form()).get('multipart_field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(multipart_value)
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
+    return {"updated": True}

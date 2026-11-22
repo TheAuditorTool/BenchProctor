@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::HttpResponse;
+use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00161")]
-pub async fn benchmark_test_00161() -> HttpResponse {
-    let profile_value = crate::shared::db_fetch_one("SELECT bio FROM profiles LIMIT 1");
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", profile_value).ok();
-    crate::shared::db_query(&format!("SELECT * FROM users WHERE id = '{}'", data));
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00161(mut payload: actix_multipart::Multipart) -> HttpResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Some(Ok(_field)) = payload.next().await {
+            if let Some(_cd) = _field.content_disposition() {
+                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
+            }
+        }
+        _fname
+    };
+    let data = if upload_name.len() <= 4096 { upload_name.clone() } else { upload_name.chars().take(4096).collect() };
+    HttpResponse::Found().append_header(("Location", data.as_str())).finish()
 }

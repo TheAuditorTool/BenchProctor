@@ -2,20 +2,24 @@
 package testcode
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
 	"net/http"
-	"os/exec"
-	"strings"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00118(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(fieldValue)
-	cmd := exec.Command("echo", data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	data := fmt.Sprintf("%s", commentText)
+	processed := bluemonday.UGCPolicy().Sanitize(data)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(processed)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write(output)
+	w.Write(bioPage.Bytes())
 }

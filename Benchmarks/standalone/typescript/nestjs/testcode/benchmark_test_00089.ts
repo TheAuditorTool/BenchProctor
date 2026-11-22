@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,15 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00089")
-  async BenchmarkTest00089(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    const token = crypto.randomBytes(16).toString("hex");
-    return { token, label: String(data) };
+  async BenchmarkTest00089(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    const recordCount = parseInt(String(data), 10);
+    const table = new ArrayBuffer((recordCount * 64) >>> 0);
+    return { allocated: table.byteLength };
   }
 }

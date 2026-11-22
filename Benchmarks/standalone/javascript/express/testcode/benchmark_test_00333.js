@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
 
 async function BenchmarkTest00333(req, res) {
-  const userInput = req.params.id || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(data));
+  const userInput = req.headers.referer || "";
+  const axios = require("axios");
+  const outbound = { method: "get", url: String(userInput), timeout: 5000 };
+  await axios.request(outbound);
   res.json({ done: true });
 }
 

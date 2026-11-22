@@ -3,20 +3,18 @@ package testcode
 
 import (
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00004(w http.ResponseWriter, r *http.Request) {
-	multipartValue := r.FormValue("multipart_field")
-	var data string
-	for _, token := range strings.Split(multipartValue, ",") {
-		data = token
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	parsedURL, parseErr := url.Parse(pathValue)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(pathValue, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
 	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	targetUrl := pathValue
+	http.Redirect(w, r, targetUrl, http.StatusFound)
 }

@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00332Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,19 @@ class BenchmarkTest00332Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00332
-    user_input = ENV["APP_INPUT"] || ""
-    data = "%s" % user_input
-    unless data =~ /\A[a-zA-Z0-9_.#\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    def _normalize_local(v)
+      v.to_s.strip
     end
-    processed = data
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + processed + "'")
-    render json: { status: "ok" }
+    data = _normalize_local(user_input)
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = false }
+    render json: { text: handler.text }
   end
 end

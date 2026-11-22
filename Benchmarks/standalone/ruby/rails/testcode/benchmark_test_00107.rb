@@ -11,9 +11,13 @@ class BenchmarkTest00107Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00107
-    user_input = (params[:variables] || {})[:input].to_s
-    data = "%s" % user_input
-    eval(data)
+    user_input = Comment.first&.text.to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    JSON.parse(data)
     render json: { status: "ok" }
   end
 end

@@ -11,9 +11,12 @@ class BenchmarkTest00117Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00117
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = user_input ? user_input : ''
-    system("echo " + data)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    payload, _origin = user_input, 'http'
+    data = payload
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return render json: { error: "not found" }, status: 404 if match.nil?
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

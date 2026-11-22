@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,10 +21,12 @@ public class BenchmarkTest00054 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00054/{pathId}")
-    public void BenchmarkTest00054(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        String data = pathValue.isEmpty() ? "default" : pathValue;
-        response.getWriter().print("<div>" + data + "</div>");
+    @PostMapping(path="/BenchmarkTest00054", consumes="multipart/form-data")
+    public void BenchmarkTest00054(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = multipartValue.replace("\u0000", "");
+        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

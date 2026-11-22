@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00258Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $data = vsprintf('%1$s', [$userInput]);
-        $result = DB::table('users')->where('id', $data)->first();
-        if ($result === null) { return response()->json(["error" => "not found"], 404); }
-        $value = $result->name;
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Referer', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        $_coerced = max(0, min((int)$data, 1048576));
+        $boundedVal = $_coerced;
+        $records = (int) $boundedVal;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return response()->json(['frame_bytes' => strlen($frame)], 200);
     }
 }

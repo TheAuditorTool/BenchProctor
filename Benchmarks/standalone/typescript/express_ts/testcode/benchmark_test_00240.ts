@@ -2,10 +2,11 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00240 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.referer as string) || "";
-  const data = userInput != null ? userInput : '';
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  res.json({ allocated: buf.length }); return;
+  const userInput = (req.headers.origin as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  if (!/^[a-zA-Z0-9 _.\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
+  res.json({ accepted: true });
 }

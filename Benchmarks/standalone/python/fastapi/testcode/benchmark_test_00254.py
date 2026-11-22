@@ -1,16 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-from fastapi.responses import JSONResponse
+import re
+from starlette.responses import JSONResponse
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -26,8 +20,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00254")
-async def BenchmarkTest00254(request: Request, req: UserInput):
-    json_value = req.payload
-    data = (lambda v: v.strip())(json_value)
-    request.session['data'] = str(data)
-    return {"updated": True}
+async def BenchmarkTest00254(request: Request):
+    origin_value = request.headers.get('origin', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(origin_value)
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    if match is None:
+        return JSONResponse({'error': 'not an email address'}, status_code=400)
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

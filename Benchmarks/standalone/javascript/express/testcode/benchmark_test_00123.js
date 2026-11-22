@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
+const fs = require("fs");
+const stream = require("node:stream");
 
 async function BenchmarkTest00123(req, res) {
-  const userInput = req.cookies.session_token || "";
-  const data = decodeURIComponent(userInput);
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = req.params.id || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const streamIv = crypto.randomBytes(12);
+  const sealer = crypto.createCipheriv("aes-256-gcm", streamKey, streamIv);
+  stream.pipeline(stream.Readable.from([String(data)]), sealer, fs.createWriteStream("/var/data/cipher.bin"), (err) => { if (!err) fs.writeFileSync("/var/data/cipher.meta", Buffer.concat([streamIv, sealer.getAuthTag()])); });
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00123 };

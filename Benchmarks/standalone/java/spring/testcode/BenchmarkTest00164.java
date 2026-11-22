@@ -9,11 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00164 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -34,26 +29,17 @@ public class BenchmarkTest00164 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
+    private static final class EntityManagers {
+        static final jakarta.persistence.EntityManagerFactory FACTORY = jakarta.persistence.Persistence.createEntityManagerFactory("appPU");
+    }
 
-    @PostMapping(path="/BenchmarkTest00164", consumes="application/json")
-    public void BenchmarkTest00164(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String prefix = graphqlVar.length() > 0 ? graphqlVar.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = graphqlVar.toLowerCase(); break;
-            case "f": data = graphqlVar.toUpperCase(); break;
-            default: data = graphqlVar.strip(); break;
-        }
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
-        }
-        if (fetched == null) { response.sendError(404); return; }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+    @GetMapping("/BenchmarkTest00164")
+    public void BenchmarkTest00164(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String fileValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/var/app/data.txt")))).orElse("");
+        java.util.function.Supplier<String> valueSupplier = () -> fileValue.strip();
+        String data = valueSupplier.get();
+        jakarta.persistence.EntityManager em = EntityManagers.FACTORY.createEntityManager();
+        em.createNativeQuery("SELECT id, name FROM users WHERE name = '" + data + "'").getResultList();
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

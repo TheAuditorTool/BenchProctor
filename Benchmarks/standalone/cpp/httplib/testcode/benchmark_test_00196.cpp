@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,14 +27,14 @@ struct Client {
 
 void benchmark_test_00196(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
+    std::string user_input = req.get_header_value("Cookie");
     char _fmt_buf[512];
     std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
     std::string data = _fmt_buf;
-    size_t _n = data.size();
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    std::cout << _mode << std::endl;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    delete[] _p;
+    char _first = _p[0];
+    std::cout << _first << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -19,18 +19,15 @@ public class BenchmarkTest00003 {
         return ResponseEntity.status(500).body("request failed");
     }
 
+    record FormData(String payload) {}
+
     @GetMapping("/BenchmarkTest00003")
-    public void BenchmarkTest00003(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        java.util.Properties box = new java.util.Properties();
-        box.setProperty("value", hostValue);
-        String data = box.getProperty("value", "");
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public void BenchmarkTest00003(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        FormData payload = new FormData(headerValue);
+        String data = payload.payload();
+        long randValue = java.util.random.RandomGenerator.of("SecureRandom").nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

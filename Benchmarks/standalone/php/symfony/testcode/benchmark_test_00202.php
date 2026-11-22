@@ -2,15 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00202', methods: ['POST'])]
 class BenchmarkTest00202Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $token = bin2hex(random_bytes(32));
-        return new JsonResponse(['token' => (string)$token], 200);
+        $userInput = $request->headers->get('Origin', '');
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        if (!in_array((string)$data, ['config.json', 'index.html', 'readme.md'], true)) { return new JsonResponse(['error' => 'forbidden'], 403); }
+        $checkedPath = (string)$data;
+        file_put_contents((string)$checkedPath, 'data');
+        return new JsonResponse(["committed" => true]);
     }
 }

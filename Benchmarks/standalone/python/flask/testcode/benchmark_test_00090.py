@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
 from urllib.parse import urlparse
-import socket
-from flask import Flask, jsonify
+import base64
+from flask import Flask, request, jsonify
 import re
 
 
@@ -22,12 +21,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00090", methods=["POST"])
 def BenchmarkTest00090():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = ' '.join(str(api_value).split())
+    raw_body = request.get_data(as_text=True)
+    data = base64.b64decode(raw_body).decode('utf-8', 'ignore')
     parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return jsonify({'error': 'private range blocked'}), 403
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
     target_url = data
-    requests.get(str(target_url))
-    return jsonify({"result": "success"})
+    return '', 302, {'Location': str(target_url)}

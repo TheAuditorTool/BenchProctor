@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const isoDompurify = require("isomorphic-dompurify");
+const { db } = require("./shared");
+const libxmljs = require("libxmljs");
 
 const BenchmarkTest00084 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  const [data] = String(userInput).split(',');
-  const _clean = isoDompurify.sanitize(data);
-  const processed = _clean;
-  ctx.body = "<div>" + processed + "</div>";
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  await libxmljs.parseXmlAsync(String(data), { replaceEntities: false });
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00084 };

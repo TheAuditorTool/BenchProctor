@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import { parseXmlString } from "libxmljs2";
 
 export const BenchmarkTest00071 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  const pending: string[] = String(userInput).split(',');
-  const collected: string[] = [];
-  while (pending.length) { collected.push(pending.shift() ?? ""); }
-  const data: string = collected.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = (row as any).name;
+  const userInput = (req.body as string) || "";
+  const parts: string[] = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data: string = parts.join(',');
+  parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
   res.json({ accepted: true });
 }

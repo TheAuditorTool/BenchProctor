@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
 
 const BenchmarkTest00047 = async (ctx) => {
-  const userInput = ctx.request.headers["x-custom-header"] || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  crypto.createHash("md5").update(data).digest("hex");
+  const userInput = (ctx.request.body && ctx.request.body.field) || "";
+  const data = String(userInput).slice(0, 200);
+  const { stringifySetCookie } = require("cookie");
+  ctx.append(
+    "Set-Cookie",
+    stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict", secure: true }),
+  );
   ctx.body = { ack: true };
 }
 

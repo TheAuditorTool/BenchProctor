@@ -18,12 +18,10 @@ void benchmark_test_00303(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    const char *arg = data;
+    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) arg = "/bin/echo";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "ls %s", arg);
+    system(_cmd);
 }

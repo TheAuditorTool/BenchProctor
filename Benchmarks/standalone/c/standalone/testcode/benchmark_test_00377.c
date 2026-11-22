@@ -9,12 +9,7 @@
 
 void benchmark_test_00377(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
+    const char *user_input = (argc > 1) ? argv[1] : "";
     char data[512];
     switch (user_input[0]) {
         case '\0':
@@ -24,7 +19,8 @@ void benchmark_test_00377(int argc, char **argv)
             snprintf(data, sizeof(data), "%s", user_input);
             break;
     }
-    char _dst[32];
-    snprintf(_dst, sizeof(_dst), "user=%s", data);
-    puts(_dst);
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

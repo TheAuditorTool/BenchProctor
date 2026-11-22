@@ -3,9 +3,11 @@
 
 benchmark_test_00066() {
   user_input="$PATH_INFO"
-  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
-  data=$(normalize "$user_input")
-  eval "echo $data"
+  data="${user_input:-default}"
+  _enum_re='^(asc|desc|name|created)$'
+  if [[ ! "$data" =~ $_enum_re ]]; then echo "invalid"; exit 1; fi
+  processed="$data"
+  eval echo "~$processed"
 }
 
 benchmark_test_00066 "$@"

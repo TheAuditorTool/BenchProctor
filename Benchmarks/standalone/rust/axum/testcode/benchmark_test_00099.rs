@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::http::HeaderMap;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::response::Json;
-use url::Url;
 
-pub async fn benchmark_test_00099() -> impl IntoResponse {
-    let api_value = crate::shared::fetch_url("https://api.partner.example.com/v1/records");
-    let data = api_value.replace("\t", " ");
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    reqwest::get(&target_url).await.ok();
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00099(headers: HeaderMap) -> impl IntoResponse {
+    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = host_value.replace("\t", " ");
+    (StatusCode::FOUND, [(axum::http::header::LOCATION, data.clone())]).into_response()
 }

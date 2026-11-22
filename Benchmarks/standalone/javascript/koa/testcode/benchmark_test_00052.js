@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const crypto = require("crypto");
 
 const BenchmarkTest00052 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
+  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const data = `${userInput}`;
+  const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
   ctx.body = { ack: true };
 }
 

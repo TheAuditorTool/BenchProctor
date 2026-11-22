@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "nokogiri"
 
 class BenchmarkTest00224 < Sinatra::Base
   before do
@@ -20,15 +18,12 @@ class BenchmarkTest00224 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00224" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = CGI.unescape(user_input)
-    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    user_input = params[:q].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    hasher = OpenSSL::Digest.new("SHA256")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

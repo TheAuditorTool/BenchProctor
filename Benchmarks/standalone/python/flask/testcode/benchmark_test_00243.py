@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from lxml import etree
-from app_runtime import db
+import re
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,11 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00243", methods=["POST"])
 def BenchmarkTest00243():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    if db_value:
-        data = db_value
-    else:
-        data = ''
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    user_id = request.args.get('id', '')
+    match = re.match(r'^[^@]+@([^@]+)$', str(user_id))
+    if match is None:
+        return jsonify({'error': 'not an email address'}), 400
+    domain = match.group(1)
+    return jsonify({'domain': domain}), 200

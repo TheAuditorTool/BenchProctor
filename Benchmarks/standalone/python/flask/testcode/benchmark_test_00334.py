@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
+import os
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -16,14 +17,13 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00334/<path_param>", methods=["POST"])
-def BenchmarkTest00334(path_param):
-    path_value = path_param
-    data = ' '.join(str(path_value).split())
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    eval(str(processed))
+@app.route("/BenchmarkTest00334", methods=["POST"])
+def BenchmarkTest00334():
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = f'{graphql_var!s}'
+    allowed = {'config.json', 'index.html', 'readme.md'}
+    if data not in allowed:
+        return jsonify({'error': 'forbidden'}), 403
+    checked_path = '/var/app/data/' + data
+    os.unlink(checked_path)
     return jsonify({"result": "success"})

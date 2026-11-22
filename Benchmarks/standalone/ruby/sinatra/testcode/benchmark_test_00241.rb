@@ -3,8 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "open-uri"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00241 < Sinatra::Base
   before do
@@ -20,14 +21,12 @@ class BenchmarkTest00241 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00241" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    URI.open(data).read
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("des-ede3-cbc"), OpenSSL::PKCS7::BINARY)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ envelope: envelope.to_pem })
   end
 end

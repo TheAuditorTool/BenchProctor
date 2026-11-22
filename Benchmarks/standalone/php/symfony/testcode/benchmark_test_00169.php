@@ -12,9 +12,8 @@ class BenchmarkTest00169Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->headers->get('Origin', '');
-        $data = sprintf('%s', $userInput);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return new JsonResponse(['token' => (string)$token], 200);
+        $data = str_replace("\0", '', $userInput);
+        $digest = hash('sha256', (string)$data);
+        return new JsonResponse(["committed" => true]);
     }
 }

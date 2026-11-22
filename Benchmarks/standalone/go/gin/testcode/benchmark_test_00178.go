@@ -2,21 +2,34 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00178(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
-	capture := func() string { return strings.TrimSpace(multipartValue) }
-	data := capture()
-	content, err := os.ReadFile("/var/app/data/" + data)
+	rawBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusNotFound, "not found")
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	c.Data(200, "text/plain", content)
+	rawBody := string(rawBytes)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(rawBody)
+	allowedBins := map[string]bool{"ls": true, "cat": true, "date": true, "whoami": true}
+	if !allowedBins[data] {
+		c.String(http.StatusForbidden, "forbidden")
+		return
+	}
+	allowedBin := data
+	cmd := exec.Command("echo", allowedBin)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Data(200, "text/plain", output)
 }

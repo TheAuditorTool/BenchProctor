@@ -18,13 +18,12 @@ class BenchmarkTest00090 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00090" do
-    user_input = request.body.read
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = sprintf("%s", user_input)
+    hasher = OpenSSL::Digest.new("SHA256")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

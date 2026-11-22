@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::extract::Query;
 use axum::response::IntoResponse;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00195() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let captured = comment_value.clone();
+pub async fn benchmark_test_00195(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let user_id = params.get("id").cloned().unwrap_or_default();
+    let captured = user_id.clone();
     let reader = move || captured.trim().to_string();
     let data = reader();
-    axum::response::Redirect::to(data.as_str()).into_response()
+    return ([("content-type", "text/html")], format!("<div>{}</div>", data)).into_response();
 }

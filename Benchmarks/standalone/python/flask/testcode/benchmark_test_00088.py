@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import defusedxml.ElementTree
-from app_runtime import db
+from flask import Flask, current_app
+from flask import request, jsonify
 
 
 app = Flask(__name__)
@@ -20,7 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00088", methods=["POST"])
 def BenchmarkTest00088():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '{}'.format(db_value)
-    defusedxml.ElementTree.fromstring(str(data))
+    upload_name = request.files['upload'].filename
+    parts = str(upload_name).split(',')
+    data = ' '.join(parts)
+    current_app.config['ACTIVE_TENANT'] = str(data)
     return jsonify({"result": "success"})

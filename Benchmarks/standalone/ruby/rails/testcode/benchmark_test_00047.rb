@@ -11,15 +11,13 @@ class BenchmarkTest00047Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00047
-    user_input = request.body.read
+    user_input = Comment.first&.text.to_s
+    pending = user_input.split(',')
     data = ''
-    user_input.split(',').each { |token| data = token }
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    data = pending.shift until pending.empty?
+    result = User.find_by(name: data)
+    return render json: { error: "not found" }, status: 404 if result.nil?
+    value = result.name
+    render json: { name: value }
   end
 end

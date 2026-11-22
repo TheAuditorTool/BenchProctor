@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi import Form
-from starlette.responses import JSONResponse
-import re
+from starlette.responses import HTMLResponse
+import html
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,12 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00263")
-async def BenchmarkTest00263(request: Request, field: str = Form('')):
-    field_value = field
-    data = '%s' % str(field_value)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    with open('/var/app/data/' + str(processed), 'w') as fh:
-        fh.write('data')
-    return {"updated": True}
+async def BenchmarkTest00263(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    data = (lambda v: v.strip())(auth_header)
+    processed = html.escape(data)
+    return HTMLResponse('<div>' + str(processed) + '</div>')

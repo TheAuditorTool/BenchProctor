@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00283(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Ok(Some(_field)) = multipart.next_field().await {
-            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Ok(Some(_field)) = multipart.next_field().await {
+            _mv = _field.text().await.unwrap_or_default();
         }
-        _fname
+        _mv
     };
-    let data = if upload_name.len() <= 4096 { upload_name.clone() } else { upload_name.chars().take(4096).collect() };
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+    let mut pending: std::collections::VecDeque<String> = multipart_value.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    let _profile = std::collections::BTreeMap::from([("display_name".to_string(), data.clone()), ("profile_complete".to_string(), "true".to_string())]);
+    if let Ok(mut _session) = crate::shared::SESSION_STORE.lock() {
+        _session.extend(_profile);
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

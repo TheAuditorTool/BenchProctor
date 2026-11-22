@@ -2,13 +2,22 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00242(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	form := submissionForm{payload: refererValue}
-	data := form.payload
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	xmlBody := string(rawBytes)
+	data := xmlBody
+	if _, after, ok := strings.Cut(xmlBody, ","); ok {
+		data = after
+	}
 	var result *string
 	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
 	var name string

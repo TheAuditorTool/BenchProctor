@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
-require "nokogiri"
 
 class BenchmarkTest00036 < Sinatra::Base
   before do
@@ -20,16 +18,8 @@ class BenchmarkTest00036 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00036" do
-    user_input = request.env["HTTP_USER_AGENT"].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%~\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    system("echo " + user_input)
     content_type :json
     JSON.generate({ status: "ok" })
   end

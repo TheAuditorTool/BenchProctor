@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::extract::Form;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
+use rand::rngs::SysRng;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00052() -> impl IntoResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", db_value).ok();
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00052(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    use rand::Rng;
+    let mut _rng: rand::rngs::StdRng = rand::make_rng();
+    let _token = _rng.next_u64();
+    crate::shared::store_session(&format!("csrf_token:{}", field_value), &_token.to_string());
+    Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
-from flask import Flask, request, jsonify
-from app_runtime import db
+import os
+from flask import Flask, make_response
+from flask import request, jsonify
+import json
+import urllib.parse
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -20,8 +23,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00354", methods=["POST"])
 def BenchmarkTest00354():
-    user_id = request.args.get('id', '')
-    data = ' '.join(str(user_id).split())
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    try:
+        data = json.loads(forwarded_ip).get('value', forwarded_ip)
+    except (json.JSONDecodeError, AttributeError):
+        data = forwarded_ip
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

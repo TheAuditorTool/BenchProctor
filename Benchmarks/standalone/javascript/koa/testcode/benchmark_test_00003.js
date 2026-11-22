@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const ldapjs = require("ldapjs");
+const joi = require("joi");
 
 const BenchmarkTest00003 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  net.connect(80, new URL(String(data)).hostname);
+  const userInput = (ctx.request.files && ctx.request.files.file && ctx.request.files.file.name) || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  const _schema = joi.string().pattern(/^[a-zA-Z0-9 _.#%\-]+$/).required();
+  const { error: _schemaErr, value: _schemaVal } = _schema.validate(data);
+  if (_schemaErr) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = _schemaVal;
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
   ctx.body = { ack: true };
 }
 

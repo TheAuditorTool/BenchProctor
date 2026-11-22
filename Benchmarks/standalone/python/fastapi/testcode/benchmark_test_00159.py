@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from lxml import etree
-from app_runtime import db
+from fastapi import Form
 from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -21,9 +23,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00159")
-async def BenchmarkTest00159(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = ' '.join(str(comment_value).split())
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+async def BenchmarkTest00159(request: Request, field: str = Form('')):
+    field_value = field
+    pending = list(str(field_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    request.session['data'] = str(data)
     return {"updated": True}

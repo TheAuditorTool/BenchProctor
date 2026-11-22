@@ -2,29 +2,26 @@
 package testcode
 
 import (
-	"fmt"
+	"crypto/sha512"
+	"encoding/hex"
+	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00025(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	pending := strings.Split(forwardedIP, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	xmlBody := string(rawBytes)
+	capture := func() string { return strings.TrimSpace(xmlBody) }
+	data := capture()
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

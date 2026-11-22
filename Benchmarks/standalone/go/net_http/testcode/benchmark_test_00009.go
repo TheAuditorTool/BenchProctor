@@ -2,12 +2,20 @@
 package testcode
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
+	"net/url"
+	"os"
+	"regexp"
 )
 
 func BenchmarkTest00009(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	userID := r.URL.Query().Get("id")
+	data, _ := url.QueryUnescape(userID)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	os.WriteFile("/var/app/data/"+processed, []byte("data"), 0644)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

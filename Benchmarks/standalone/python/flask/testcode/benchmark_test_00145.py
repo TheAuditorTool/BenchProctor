@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-import socket
+import random
+import json
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,8 +21,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00145", methods=["POST"])
 def BenchmarkTest00145():
-    xml_value = request.get_data(as_text=True)
-    data = str(xml_value).replace('\x00', '')
-    s = socket.create_connection((str(data), 80))
-    s.close()
-    return jsonify({"result": "success"})
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = json.loads(db_value).get('value', '')
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

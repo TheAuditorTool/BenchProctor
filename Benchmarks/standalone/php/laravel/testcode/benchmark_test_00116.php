@@ -2,20 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00116Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->cookie('session_token', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $_valid = Validator::make(['value' => (string)$data], ['value' => ['regex:' . '#^[a-zA-Z0-9 _.%\\-]+$#']]);
-        if ($_valid->fails()) { error_log('schema validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = (string)$data;
-        exec('tar -czf /tmp/backup.tgz ' . (string)$processed);
+        $userInput = \Illuminate\Support\Facades\Redis::get('user_data');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $rows = DB::table('users')->whereRaw('id = \'' . $data . '\'')->get();
         return response()->json(['ok' => 1]);
     }
 }

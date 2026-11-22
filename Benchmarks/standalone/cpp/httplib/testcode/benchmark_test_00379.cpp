@@ -2,8 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <unistd.h>
-#include <filesystem>
 #include <unordered_map>
 
 namespace httplib {
@@ -28,10 +26,10 @@ struct Client {
 
 void benchmark_test_00379(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    std::string safe = std::string("/var/app/data/") + std::filesystem::path(data).filename().string();
-    if (FILE *_f = std::fopen(safe.c_str(), "r")) std::fclose(_f);
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string data = !user_input.empty() ? user_input : std::string();
+    char _dst[32];
+    std::snprintf(_dst, sizeof(_dst), "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

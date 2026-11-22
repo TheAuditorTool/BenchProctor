@@ -11,10 +11,9 @@ class BenchmarkTest00192Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Authorization', '');
-        $data = str_replace("\0", '', $userInput);
-        $resp = new JsonResponse(['ok' => 1]);
-        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
-        return $resp;
+        $userInput = $request->request->get('field', '');
+        $data = sprintf('%s', $userInput);
+        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        return new JsonResponse(["committed" => true]);
     }
 }

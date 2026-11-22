@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00099() {
-  user_input="$(jq -r '.value // empty' 2>/dev/null)"
-  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
-  data="${_mapped[0]}"
-  cat "/var/app/data/$data"
+  user_input="$HTTP_AUTHORIZATION"
+  data="${user_input:-default}"
+  ldapsearch -x -b "dc=example,dc=com" "uid=$data"
 }
 
 benchmark_test_00099 "$@"

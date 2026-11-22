@@ -3,18 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00067Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Authorization', '');
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        $result = DB::table('users')->where('id', $data)->first();
-        if ($result === null) { return response()->json(["error" => "not found"], 404); }
-        $value = $result->name;
+        $userInput = $request->header('X-Custom-Header', '');
+        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
+        catch (\JsonException $e) { $data = $userInput; }
+        $claims = openssl_decrypt((string)$data, 'aes-256-ecb', getenv('DATA_ENC_KEY'));
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
-use axum::response::Json;
 
-pub async fn benchmark_test_00075(headers: HeaderMap) -> impl IntoResponse {
-    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
-    let mut data = String::new();
-    for token in cookie_value.split(',') { data = token.to_string(); }
-    crate::shared::ldap_search(&format!("uid={}", data));
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00075(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(raw_body.clone());
+    let processed = ammonia::clean(&data);
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio|safe }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => processed })).unwrap_or_default();
+    return ([("content-type", "text/html")], _page).into_response();
 }

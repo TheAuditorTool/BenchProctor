@@ -2,26 +2,41 @@
 package testcode
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
+	"os"
+	"strconv"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00167(w http.ResponseWriter, r *http.Request) {
-	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9_.#\\-]+$")
-	if !validPattern.MatchString(redisValue) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	processed := redisValue
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", processed)
-	rows, err := DB.Query(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jsonValue := reqBody.Payload
+	data := fmt.Sprintf("%s", jsonValue)
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		http.Error(w, openErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+data+"']")
+	if queryErr != nil {
+		http.Error(w, "invalid user name", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("X-User-Matches", strconv.Itoa(len(userNodes)))
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import socket
-from fastapi.responses import JSONResponse
+from fastapi import Form
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -19,14 +19,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00117/{id}")
-async def BenchmarkTest00117(request: Request, id: str):
-    path_value = id
-    pending = list(str(path_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    s = socket.create_connection((str(data), 80))
-    s.close()
-    return {"updated": True}
+@app.post("/BenchmarkTest00117")
+async def BenchmarkTest00117(request: Request, field: str = Form('')):
+    field_value = field
+    data = '%s' % str(field_value)
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return JSONResponse({'error': 'unknown plan'}, status_code=404)
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

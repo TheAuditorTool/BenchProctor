@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00157Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1')->body;
-        $data = str_replace("\0", '', $userInput);
-        $errno = 0; $errstr = '';
-        fsockopen((string)$data, 80, $errno, $errstr, 30);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->input('multipart_field', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        $quantity = (int) $data;
+        $lineTotal = intval($quantity * 1999);
+        return response()->json(['line_total_cents' => $lineTotal], 200);
     }
 }

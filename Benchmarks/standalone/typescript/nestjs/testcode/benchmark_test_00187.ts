@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post, UploadedFile, UseInterceptors, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import * as ldapjs from "ldapjs";
+import * as zod from "zod";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,14 +19,17 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00187/:id")
-  async BenchmarkTest00187(@Param("id") pathId: string, @Req() req: Request): Promise<unknown> {
-    const userInput = pathId;
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    req.session.data = String(parsedNum);
+  @Post("BenchmarkTest00187")
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00187(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = userInput != null ? userInput : '';
+    const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.#%\-]+$/).safeParse(String(data));
+    if (!_parsed.success) { throw new BadRequestException({error:"invalid"}); }
+    const processed = _parsed.data;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    ldapClient.compare("uid=" + processed + ",ou=people,dc=example,dc=com", "employeeType", "manager", (_err: Error | null, _matched?: boolean) => ldapClient.unbind());
     return { created: true };
   }
 }

@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.shortcuts import redirect
+from django.http import JsonResponse
+import subprocess
 
 
 def BenchmarkTest00101(request):
-    field_value = request.POST.get('field', '')
-    data = '%s' % (field_value,)
-    return redirect(str(data))
+    cookie_value = request.COOKIES.get('session_token', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(cookie_value)
+    subprocess.run('echo ' + str(data), shell=True)
+    return JsonResponse({"saved": True})

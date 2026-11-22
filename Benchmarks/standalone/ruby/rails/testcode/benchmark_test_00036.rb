@@ -2,6 +2,8 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/http"
+require "socket"
 
 class BenchmarkTest00036Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,11 +13,16 @@ class BenchmarkTest00036Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00036
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    unless %w[ls cat date whoami].include?(user_input.to_s)
-      render json: { error: "forbidden" }, status: 400
+    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
       return
     end
-    system(user_input.to_s)
+    target_url = data
+    TCPSocket.new(URI.parse(target_url.to_s).host, 80).close
+    render json: { status: "ok" }
   end
 end

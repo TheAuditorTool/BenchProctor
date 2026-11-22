@@ -12,9 +12,14 @@ class BenchmarkTest00058Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00058
-    user_input = request.body.read
-    data = user_input.force_encoding("UTF-8")
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
-    render json: { status: "ok" }
+    user_input = Comment.first&.text.to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + parsed_bool.to_s + "']/role")
+    render json: { roles: roles.map(&:text) }
   end
 end

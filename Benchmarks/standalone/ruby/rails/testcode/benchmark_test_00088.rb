@@ -11,9 +11,14 @@ class BenchmarkTest00088Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00088
-    user_input = request.body.read
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    render html: ("<div>" + data + "</div>").html_safe
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    token = rand(1000000)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Post, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
-import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import axios from "axios";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,17 +18,16 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00222")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00222(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  async BenchmarkTest00222(): Promise<unknown> {
+    const userInput = ((await (await fetch("https://api.partner.example/v1/records")).json()) as { data?: string }).data || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    let _host = "";
+    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
+    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
+    const targetUrl = data;
+    const outbound = { method: "get", url: String(targetUrl), timeout: 5000 };
+    await axios.request(outbound);
     return { created: true };
   }
 }

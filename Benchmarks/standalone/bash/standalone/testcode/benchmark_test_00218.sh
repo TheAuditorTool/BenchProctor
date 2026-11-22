@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00218() {
-  user_input="$HTTP_USER_AGENT"
-  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
-  data="${_mapped[0]}"
-  checked_path=$(realpath -m "/var/app/data/$data")
-  if [[ ! "$checked_path" == /var/app/data/* ]]; then echo "forbidden"; exit 1; fi
-  rm -f "$checked_path"
+  user_input="$HTTP_COOKIE"
+  data="${user_input//$'\x00'/}"
+  _enum_re='^(asc|desc|name|created)$'
+  if [[ ! "$data" =~ $_enum_re ]]; then echo "invalid"; exit 1; fi
+  processed="$data"
+  ldapcompare -x "uid=$processed,ou=people,dc=example,dc=com" "accountStatus:active"
 }
 
 benchmark_test_00218 "$@"

@@ -2,7 +2,6 @@
 import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import knex from "knex";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,14 +17,19 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00345")
-  async BenchmarkTest00345(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    if (!/^[a-zA-Z0-9_.#\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-    await _knex.raw("SELECT * FROM users WHERE id = '" + processed + "'");
-    return { created: true };
+  async BenchmarkTest00345(@Headers("origin") origin: string): Promise<unknown> {
+    const userInput = origin || "";
+    const _input = String(userInput);
+    let data;
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const quantity = boundedVal;
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) { throw new BadRequestException({ error: "quantity out of range" }); }
+    const totalCents = Math.imul(quantity, 1999);
+    return { quantity, totalCents };
   }
 }

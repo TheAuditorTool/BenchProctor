@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from flask import Flask, jsonify
 import os
-from flask import Flask, session
-from flask import request, jsonify
+from app_runtime import db
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,9 +28,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00256", methods=["POST"])
 def BenchmarkTest00256():
-    header_value = request.headers.get('X-Custom-Header', '')
-    data = '%s' % (header_value,)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    session['data'] = str(processed)
-    return jsonify({"result": "success"})
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = RequestPayload(db_value).value
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return jsonify({'length': len(ciphertext)}), 200

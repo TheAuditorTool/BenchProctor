@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 void benchmark_test_00246(int, char **)
@@ -15,16 +16,10 @@ void benchmark_test_00246(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    std::string safe;
-    for (char _c : data) {
-        if (_c == '&') safe += "&amp;";
-        else if (_c == '<') safe += "&lt;";
-        else if (_c == '>') safe += "&gt;";
-        else if (_c == '"') safe += "&quot;";
-        else if (_c == '\'') safe += "&#39;";
-        else safe.push_back(_c);
-    }
-    std::cout << "Content-Type: text/html\r\n\r\n" << (std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>") << std::endl;
+    size_t _n = user_input.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, user_input.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    delete[] _p;
+    std::memset(_p, 0, _n + 1);
 }

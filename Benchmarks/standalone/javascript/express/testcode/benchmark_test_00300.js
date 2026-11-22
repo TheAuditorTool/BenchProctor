@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-const libxmljs = require("libxmljs");
 
 async function BenchmarkTest00300(req, res) {
-  const userInput = req.body.payload || "";
-  const capture = (v) => () => String(v).trim();
-  const readInput = capture(userInput);
-  const data = readInput();
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
-  res.json({ done: true });
+  const userInput = req.headers.origin || "";
+  const _input = String(userInput);
+  let data;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': data = _input.normalize('NFC'); break;
+    default: data = _input; break;
+  }
+  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const quantity = boundedVal;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) { res.status(400).json({ error: "quantity out of range" }); return; }
+  const totalCents = Math.imul(quantity, 1999);
+  res.json({ quantity, totalCents }); return;
 }
 
 module.exports = { BenchmarkTest00300 };

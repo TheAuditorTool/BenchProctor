@@ -5,7 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.xpath.*;
+import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -41,28 +41,19 @@ public class BenchmarkTest00198 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
-    private static String dbReadColumn(String sql) {
-        try (var stmt = connection.createStatement();
-             var rs = stmt.executeQuery(sql)) {
-            return rs.next() ? rs.getString(1) : "";
-        } catch (java.sql.SQLException e) {
-            return "";
-        }
-    }
 
     @GET
     @Path("/BenchmarkTest00198")
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00198(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
-        byte[] hexBytes = new byte[userName.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(userName.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        String apiBody = java.util.Optional.ofNullable(new java.io.BufferedReader(new java.io.InputStreamReader(java.net.URI.create("https://api.svc.local/data").toURL().openStream())).readLine()).orElse("");
+        String data;
+        if (apiBody.length() > 256) { data = apiBody.substring(0, 256); }
+        else { data = apiBody; }
+        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (ResultSet rs = ps.executeQuery()) { rs.next(); }
         }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

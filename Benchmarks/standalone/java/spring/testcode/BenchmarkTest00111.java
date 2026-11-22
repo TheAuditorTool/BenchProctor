@@ -9,6 +9,11 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00111 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -19,20 +24,15 @@ public class BenchmarkTest00111 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00111")
-    public void BenchmarkTest00111(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        byte[] hexBytes = new byte[headerValue.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    @PostMapping(path="/BenchmarkTest00111", consumes="application/json")
+    public void BenchmarkTest00111(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        String data;
+        if (graphqlVar.length() > 256) { data = graphqlVar.substring(0, 256); }
+        else { data = graphqlVar; }
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        Double matchingUsers = xpath.evaluateExpression("count(/users/user[@name='" + data + "'])", new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")), Double.class);
+        response.setHeader("X-User-Count", String.valueOf(matchingUsers));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

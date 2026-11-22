@@ -18,13 +18,24 @@ extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url,
 extern void xmlFreeDoc(xmlDocPtr _doc);
 extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
 extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+extern xmlXPathObjectPtr xmlXPathEval(const unsigned char *_str, xmlXPathContextPtr _ctx);
+extern void xmlXPathFreeObject(xmlXPathObjectPtr _obj);
+extern void xmlXPathFreeContext(xmlXPathContextPtr _ctxt);
 
 void benchmark_test_00184(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    const char *data = (strlen(user_input) > 0) ? user_input : "";
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
+    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
+    char _expr[512];
+    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", data);
+    xmlXPathObjectPtr _xo = xmlXPathEval((const unsigned char *)_expr, _xpc);
+    if (_xo) xmlXPathFreeObject(_xo);
+    xmlXPathFreeContext(_xpc);
     if (_doc) xmlFreeDoc(_doc);
 }

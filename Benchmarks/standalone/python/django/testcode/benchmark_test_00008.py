@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from app_runtime import db
+from lxml import etree
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 def BenchmarkTest00008(request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = db_value if db_value else 'default'
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    reader = make_reader(ua_value)
+    data = reader()
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(data) + '"]')
+    return JsonResponse({"saved": True})

@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Request, Response } from "express";
+import * as fs from "fs";
+
+export const validateManifest = async (req: Request, res: Response): Promise<void> => {
+  const subject = (req.headers["x-forwarded-for"] as string) || "";
+  const voucher = subject != null ? subject : '';
+  if (!/^[a-zA-Z0-9 _.#~\-]+$/.test(voucher)) { res.status(400).json({error:"invalid"}); return; }
+  const backorder = voucher;
+  fs.writeFileSync("/var/uploads/" + backorder, "data");
+  res.json({ accepted: true });
+}

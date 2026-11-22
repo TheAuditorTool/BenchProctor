@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 from lxml import etree
+from dataclasses import dataclass
 from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -21,8 +27,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00236")
 async def BenchmarkTest00236(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    data = '%s' % (ua_value,)
+    header_value = request.headers.get('x-custom-header', '')
+    form = FormData(payload=header_value)
+    data = form.payload
     tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
     return {"updated": True}

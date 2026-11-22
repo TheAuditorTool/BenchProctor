@@ -18,9 +18,9 @@ class BenchmarkTest00222 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00222" do
-    user_input = request.body.read
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
+    user_input = request.env["HTTP_HOST"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
     response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
     content_type :json
     JSON.generate({ status: "ok" })

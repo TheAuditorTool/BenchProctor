@@ -11,12 +11,10 @@ class BenchmarkTest00055Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('field', '');
-        $data = "{$userInput}";
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $userInput = $request->headers->get('Authorization', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        $pipes = [];
+        proc_open(['echo', (string)$data], [], $pipes);
         return new JsonResponse(["committed" => true]);
     }
 }

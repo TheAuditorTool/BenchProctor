@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
-from flask import Flask, request, jsonify
 import os
+from flask import Flask, request, jsonify
+from pydantic import Field, ValidationError, create_model
 
 
 app = Flask(__name__)
@@ -20,7 +20,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00313", methods=["POST"])
 def BenchmarkTest00313():
-    host_value = request.headers.get('Host', '')
-    data = '{}'.format(host_value)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    raw_body = request.get_data(as_text=True)
+    data = raw_body if raw_body else 'default'
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
+    except ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    os.system('echo ' + str(processed))
+    return jsonify({"result": "success"})

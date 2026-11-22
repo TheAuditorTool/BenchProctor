@@ -8,11 +8,13 @@ class BenchmarkTest00194Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->input('multipart_field', '');
+        $reader = new \XMLReader();
+        $reader->XML((string)$userInput, null, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
+        return response()->json(['ok' => 1]);
     }
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,15 +21,14 @@ public class BenchmarkTest00201 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00201")
-    public void BenchmarkTest00201(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        byte[] hexBytes = new byte[userId.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(userId.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    @PostMapping(path="/BenchmarkTest00201", consumes="multipart/form-data")
+    public void BenchmarkTest00201(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = String.join(" ", multipartValue.split("[ \\t]+"));
+        java.util.Set<String> allowed = java.util.Set.of("config.json", "index.html");
+        if (!allowed.contains(data)) { response.sendError(403); return; }
+        String checkedPath = "/var/app/data/" + data;
+        Files.delete(Paths.get(checkedPath));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

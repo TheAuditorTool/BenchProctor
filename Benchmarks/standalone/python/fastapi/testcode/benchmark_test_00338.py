@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
+import html
+from starlette.responses import HTMLResponse
+from jinja2 import Environment
 from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,11 +23,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00338")
 async def BenchmarkTest00338(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(cookie_value)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    request.session['data'] = str(processed)
-    return {"updated": True}
+    header_value = request.headers.get('x-custom-header', '')
+    data = '{}'.format(header_value)
+    processed = html.escape(data)
+    page = Environment(autoescape=True).from_string('<div>{{ value|safe }}</div>').render(value=str(processed))
+    return HTMLResponse(page)

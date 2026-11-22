@@ -8,15 +8,9 @@ class BenchmarkTest00080Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        if (!preg_match('#^[a-zA-Z0-9 _.\\#%\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
-        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $processed . ')');
+        $userInput = $request->input('field', '');
+        $data = sprintf('%s', $userInput);
+        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
         return response()->json(['ok' => 1]);
     }
 }

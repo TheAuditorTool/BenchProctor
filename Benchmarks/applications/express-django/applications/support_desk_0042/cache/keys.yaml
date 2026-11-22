@@ -1,0 +1,6 @@
+channels:
+  - name: support:inbound:0042
+    payload: json
+keys:
+  - pattern: support:record:{id}
+    ttl_seconds: 300

@@ -2,18 +2,24 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
-
-extern "C" unsigned char *MD5(const unsigned char *d, unsigned long n, unsigned char *md);
+#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00525(int, char **)
 {
-    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    unsigned char _digest[16];
-    MD5(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    size_t _n = user_input.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, user_input.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    std::memset(_p, 0, _n + 1);
+    delete[] _p;
 }

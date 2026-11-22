@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
+const nodeUtil = require("util");
+const vm = require("node:vm");
 
 const BenchmarkTest00322 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  const userInput = ctx.request.headers.origin || "";
+  const data = nodeUtil.format("%s", userInput);
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  vm.runInNewContext(String(parsedNum), { Math });
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00322 };

@@ -2,18 +2,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00128() {
-  user_input="$APP_INPUT"
-  _captured="${user_input}"
-  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
-  data=$(make_reader)
-  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "invalid"; exit 1; fi
-  bounded_val="$data"
-  if [ "$bounded_val" -lt 0 ] || [ "$bounded_val" -gt 2147483647 ]; then echo "overflow"; exit 1; fi
-  if [[ ! "$bounded_val" =~ ^-?[0-9]+$ ]]; then echo "invalid" >&2; exit 1; fi
-  requested=$bounded_val
-  if [ "$requested" -lt 0 ] || [ "$requested" -gt 2147483646 ]; then echo "overflow" >&2; exit 1; fi
-  alloc_size=$((requested + 1))
-  echo "alloc:$alloc_size"
+  user_input="$(cat /dev/stdin)"
+  if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
+    data="$_parsed"
+  else
+    data="${user_input}"
+  fi
+  _url_re='^https?://[^[:space:]\]+$'
+  if [[ ! "$data" =~ $_url_re ]]; then echo "forbidden host" >&2; exit 1; fi
+  _authority=$(printf '%s' "$data" | sed -E 's|^[a-zA-Z]+://||; s|[/?#].*||')
+  _host="${_authority%%:*}"
+  _host_re='^(api\.example\.com|cdn\.example\.com)$'
+  if [[ "$_authority" == *@* || ! "$_host" =~ $_host_re ]]; then echo "forbidden host" >&2; exit 1; fi
+  target_url="$data"
+  wget -q -O - -T 10 --max-redirect=0 -- "$target_url"
 }
 
 benchmark_test_00128 "$@"

@@ -2,19 +2,20 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00109(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	segments := strings.Split(pathValue, ",")
-	data := strings.Join(segments, " ")
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
+	rawBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	defer rows.Close()
+	rawBody := string(rawBytes)
+	segments := strings.Split(rawBody, ",")
+	data := strings.Join(segments, " ")
+	trustedSettings.Store("partner_callback_host", data)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

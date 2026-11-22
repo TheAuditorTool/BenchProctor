@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00231Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,11 @@ class BenchmarkTest00231Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00231
-    user_input = (params[:variables] || {})[:input].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = request.headers["Authorization"].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     render json: { status: "ok" }
   end
 end

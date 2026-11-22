@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00327 < Sinatra::Base
   enable :sessions
@@ -22,12 +19,11 @@ class BenchmarkTest00327 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00327" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
+    user_input = params[:id].to_s
+    pending = user_input.split(',')
     data = ''
-    user_input.split(',').each { |token| data = token }
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    session[:data] = parsed_bool.to_s
+    data = pending.shift until pending.empty?
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
     content_type :json
     JSON.generate({ status: "ok" })
   end

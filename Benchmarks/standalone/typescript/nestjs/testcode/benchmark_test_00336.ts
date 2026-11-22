@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Body, Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,13 +19,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00336")
-  async BenchmarkTest00336(@Cookies("session_token") cookieToken: string, @Req() req: Request): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const formData = Object.freeze({ payload: userInput });
-    const data = formData.payload;
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    req.session.data = String(parsedNum);
+  async BenchmarkTest00336(@Body("variables") vars: { input?: string }): Promise<unknown> {
+    const userInput = (vars?.input as string) || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+    const value = (row as any).name;
     return { created: true };
   }
 }

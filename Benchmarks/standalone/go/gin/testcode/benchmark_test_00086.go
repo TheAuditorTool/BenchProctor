@@ -2,36 +2,50 @@
 package testcode
 
 import (
-	"net"
+	"fmt"
+	"io"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
+	"strconv"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00086(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
+	rawBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	pending := strings.Split(cookieValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	xmlBody := string(rawBytes)
+	data := xmlBody
+	if _, after, ok := strings.Cut(xmlBody, ","); ok {
+		data = after
 	}
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	var _num float64
+	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid number")
 		return
 	}
-	targetUrl := data
-	conn, err := net.Dial("tcp", targetUrl)
-	if err == nil {
-		defer conn.Close()
+	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
+		return
 	}
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+boundedVal+"']")
+	if queryErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
+		return
+	}
+	c.Header("X-User-Matches", strconv.Itoa(len(userNodes)))
 	c.JSON(200, gin.H{"code": "OK"})
 }

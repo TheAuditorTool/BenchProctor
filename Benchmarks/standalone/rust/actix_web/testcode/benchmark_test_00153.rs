@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00153")]
-pub async fn benchmark_test_00153(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let captured = referer_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+pub async fn benchmark_test_00153() -> HttpResponse {
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    use sha2::Digest;
+    let _ = sha2::Sha256::digest(comment_value.as_bytes());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

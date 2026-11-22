@@ -2,9 +2,8 @@
 const fs = require("fs");
 
 async function BenchmarkTest00147(req, res) {
-  const userInput = req.body || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
+  const userInput = req.query.id || "";
+  const data = decodeURIComponent(userInput);
   fs.writeFileSync("/var/uploads/" + data, "data");
   res.json({ done: true });
 }

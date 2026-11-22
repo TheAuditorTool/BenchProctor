@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import ctypes
 from starlette.responses import JSONResponse
 
 
@@ -18,14 +19,20 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00035/{id}")
-async def BenchmarkTest00035(request: Request, id: str):
-    path_value = id
-    data = ' '.join(str(path_value).split())
+@app.post("/BenchmarkTest00035")
+async def BenchmarkTest00035(request: Request):
+    host_value = request.headers.get('host', '')
+    kind = 'json' if str(host_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(host_value).strip()
+        case _:
+            data = str(host_value)
     try:
-        _coerced = float(data)
+        _bounded = max(0, min(int(data), 2147483647))
     except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid number'}, status_code=400)
-    processed = _coerced
-    eval(str(processed))
-    return {"updated": True}
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _bounded
+    count = int(processed)
+    records = ctypes.create_string_buffer(min(count, 65536) * 64)
+    return JSONResponse({'allocated': len(records)}, status_code=200)

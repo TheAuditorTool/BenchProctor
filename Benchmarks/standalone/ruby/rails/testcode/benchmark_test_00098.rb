@@ -11,10 +11,10 @@ class BenchmarkTest00098Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00098
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    File.write("/var/uploads/" + data, "data")
+    user_input = request.host.to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
     render json: { status: "ok" }
   end
 end

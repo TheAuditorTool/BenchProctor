@@ -1,14 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
+import ctypes
 from flask import Flask, request, jsonify
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -26,7 +19,15 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00116", methods=["POST"])
 def BenchmarkTest00116():
-    upload_name = request.files['doc'].filename
-    data = RequestPayload(upload_name).value
-    os.unlink('/var/app/data/' + str(data))
-    return jsonify({"result": "success"})
+    referer_value = request.headers.get('Referer', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(referer_value)
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    count = int(processed)
+    records = ctypes.create_string_buffer(min(count, 65536) * 64)
+    return jsonify({'allocated': len(records)}), 200

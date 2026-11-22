@@ -3,16 +3,20 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00215', methods: ['POST'])]
 class BenchmarkTest00215Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = $request->query->get('id', '');
-        $data = str_replace("\0", '', $userInput);
-        return new Response(htmlspecialchars((string)$data, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 200, ['Content-Type' => 'text/html']);
+        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
+        $value = $result['name'];
+        return new JsonResponse(["committed" => true]);
     }
 }

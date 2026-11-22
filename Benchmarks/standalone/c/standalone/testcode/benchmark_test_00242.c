@@ -6,27 +6,33 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00242(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
+    FILE *_src_fp = fopen("/tmp/data", "r");
     if (_src_fp != NULL) {
         if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    const char *data = c_passthrough(user_input);
+    const char *_kv = getenv("DATA_ENC_KEY");
+    if (_kv == NULL) return;
+    unsigned char _key[32];
+    EVP_Digest(_kv, strlen(_kv), _key, NULL, EVP_sha256(), NULL);
+    unsigned char _iv[12];
+    RAND_bytes(_iv, sizeof(_iv));
+    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
+    unsigned char _ct[528];
+    int _ctl = 0;
+    EVP_EncryptInit_ex2(_ctx, EVP_aes_256_gcm(), _key, _iv, NULL);
+    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strnlen(data, 512));
+    EVP_CIPHER_CTX_free(_ctx);
 }

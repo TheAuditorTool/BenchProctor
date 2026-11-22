@@ -2,21 +2,20 @@
 package testcode
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00005(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	capture := func() string { return strings.TrimSpace(authHeader) }
-	data := capture()
-	query := fmt.Sprintf(`SELECT * FROM "%s"`, strings.ReplaceAll(data, `"`, `""`))
-	rows, err := DB.Query(query)
-	if err != nil {
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := fmt.Sprintf("%s", forwardedIP)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(data)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	w.Write(bioPage.Bytes())
 }

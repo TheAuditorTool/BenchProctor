@@ -2,13 +2,10 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00285 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.origin as string) || "";
-  const _input = String(userInput);
-  let data;
-  switch (_input.startsWith('{') ? 'json' : 'text') {
-    case 'json': data = _input.normalize('NFC'); break;
-    default: data = _input; break;
-  }
-  res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
-  res.json({ accepted: true });
+  const userInput = ((req.body?.variables?.input) as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  const quantity = parseInt(String(data), 10);
+  const totalCents = Math.imul(quantity, 1999);
+  res.json({ quantity, totalCents }); return;
 }

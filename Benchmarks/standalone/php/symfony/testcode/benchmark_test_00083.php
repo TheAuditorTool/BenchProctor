@@ -2,21 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00083', methods: ['POST'])]
 class BenchmarkTest00083Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Connection $conn)
     {
-        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
-        $data = vsprintf('%1$s', [$userInput]);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return new JsonResponse(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return new RedirectResponse($targetUrl);
+        $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
+        $data = sprintf('%s', $userInput);
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NONET);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
+        return new JsonResponse(["committed" => true]);
     }
 }

@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "digest"
 
 class BenchmarkTest00167Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,10 @@ class BenchmarkTest00167Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00167
-    user_input = request.body.read
-    data = user_input.split(/[ \t]+/).join(" ")
-    system("echo " + data)
-    render json: { status: "ok" }
+    user_input = (params[:variables] || {})[:input].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    digest = Digest::MD5.hexdigest(data.to_s)
+    render json: { digest: digest }
   end
 end

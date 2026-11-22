@@ -30,22 +30,19 @@ public class BenchmarkTest00197 {
         }
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @POST
-    @Path("/BenchmarkTest00197")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @GET
+    @Path("/BenchmarkTest00197/{pathId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00197(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = normalize(fieldValue);
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+    public Response BenchmarkTest00197(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = String.join(" ", pathValue.split("[ \\t]+"));
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.StreamCipher rc4 = new org.bouncycastle.crypto.engines.RC4Engine();
+        rc4.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[plain.length];
+        rc4.processBytes(plain, 0, plain.length, sealed, 0);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(sealed));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

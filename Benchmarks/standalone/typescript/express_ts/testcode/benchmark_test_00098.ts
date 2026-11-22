@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import knex from "knex";
+import * as ldapjs from "ldapjs";
 
 export const BenchmarkTest00098 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-custom-header"] as string) || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  if (!/^[a-zA-Z0-9_.#\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const userInput = (req.body as string) || "";
+  const data = Buffer.from(userInput, "utf-8").toString();
+  if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
   const processed = data;
-  const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-  await _knex.raw("SELECT * FROM users WHERE id = '" + processed + "'");
-  res.json({ accepted: true });
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  const password = String(req.body?.password ?? "");
+  if (!password) { res.status(400).json({ error: "password required" }); return; }
+  const authenticated = await new Promise<boolean>((resolve) => {
+    ldapClient.bind("uid=" + processed + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+  });
+  res.json({ authenticated }); return;
 }

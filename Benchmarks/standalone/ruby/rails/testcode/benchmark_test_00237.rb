@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "active_model"
 
 class BenchmarkTest00237Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,20 +11,16 @@ class BenchmarkTest00237Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00237
-    user_input = request.body.read
-    data = sprintf("%s", user_input)
-    validator = Class.new do
-      include ActiveModel::Validations
-      attr_accessor :value
-      validates :value, format: { with: /\A[a-zA-Z0-9 _.%\-]+\z/ }
-    end.new
-    validator.value = data.to_s
-    unless validator.valid?
-      render json: { error: "invalid" }, status: 400
-      return
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    processed = data
-    system("echo " + processed)
-    render json: { status: "ok" }
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    return render json: { error: "not found" }, status: 404 if plan.nil?
+    limit = plan.fetch(:requests)
+    render json: { requests: limit }
   end
 end

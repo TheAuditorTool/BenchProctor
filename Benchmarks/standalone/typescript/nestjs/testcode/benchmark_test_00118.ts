@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import isoDompurify from "isomorphic-dompurify";
+import * as net from "net";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -20,13 +23,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00118")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00118(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    const _clean = isoDompurify.sanitize(data);
-    const processed = _clean;
-    return "<div>" + processed + "</div>";
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00118(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const data = `${userInput}`;
+    net.connect(80, new URL(String(data)).hostname);
+    return { created: true };
   }
 }

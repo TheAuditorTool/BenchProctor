@@ -3,9 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "dry/schema"
+require "net/ldap"
 
 class BenchmarkTest00124 < Sinatra::Base
   before do
@@ -21,9 +20,18 @@ class BenchmarkTest00124 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00124" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
-    redirect data
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
+    unless schema.call(value: data.to_s).success?
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port, auth: { method: :simple, username: ENV.fetch("LDAP_BIND_DN"), password: ENV.fetch("LDAP_BIND_PASSWORD") })
+    ldap.replace_attribute("uid=" + processed.to_s + ",ou=people,dc=example,dc=com", :description, "reviewed")
     content_type :json
     JSON.generate({ status: "ok" })
   end

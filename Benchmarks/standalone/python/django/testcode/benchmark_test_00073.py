@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from lxml import etree
-from app_runtime import db
+import os
+import json
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 def BenchmarkTest00073(request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(comment_value).encode(), _parser)
-    return JsonResponse({"saved": True})
+    env_value = os.environ.get('APP_INPUT', '')
+    try:
+        data = json.loads(env_value).get('value', env_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = env_value
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return JsonResponse({'length': len(ciphertext)}, status=200)

@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const nodeUtil = require("util");
+const net = require("net");
 
 const BenchmarkTest00203 = async (ctx) => {
-  const userInput = ctx.query.id || "";
-  const data = nodeUtil.format("%s", userInput);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { ctx.status = 404; ctx.body = {error:"not found"}; return; }
-  const value = row.name;
+  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
+  const targetUrl = data;
+  net.connect(80, new URL(String(targetUrl)).hostname);
   ctx.body = { ack: true };
 }
 

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,11 +19,16 @@ public class BenchmarkTest00087 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00087")
-    public void BenchmarkTest00087(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Forwarded-For") String xForwardedFor, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String forwardedIp = xForwardedFor != null ? xForwardedFor : "";
-        String data = forwardedIp.replace("\u0000", "");
-        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+    @PostMapping(path="/BenchmarkTest00087", consumes="multipart/form-data")
+    public void BenchmarkTest00087(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data;
+        if (multipartValue.length() > 256) { data = multipartValue.substring(0, 256); }
+        else { data = multipartValue; }
+        StringBuilder xmlText = new StringBuilder();
+        javax.xml.parsers.SAXParser saxParser = javax.xml.parsers.SAXParserFactory.newInstance().newSAXParser();
+        saxParser.parse(new org.xml.sax.InputSource(new java.io.StringReader(data)), new org.xml.sax.helpers.DefaultHandler() { @Override public void characters(char[] ch, int start, int length) { xmlText.append(ch, start, length); } });
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

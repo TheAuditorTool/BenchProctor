@@ -1,17 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-import os
+from django.http import HttpResponse
+from django.template import Template, Context
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 def BenchmarkTest00062(request):
-    upload_name = request.FILES['doc'].name
-    data = RequestPayload(upload_name).value
-    os.unlink('/var/app/data/' + str(data))
-    return JsonResponse({"saved": True})
+    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    data = ' '.join(str(forwarded_ip).split())
+    page = Template('<div>{{ value|safe }}</div>').render(Context({'value': str(data)}))
+    return HttpResponse(page)

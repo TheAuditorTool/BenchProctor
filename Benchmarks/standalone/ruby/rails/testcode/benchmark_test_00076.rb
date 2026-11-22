@@ -11,9 +11,13 @@ class BenchmarkTest00076Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00076
-    user_input = request.query_parameters[:q].to_s
-    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    data = "%s" % user_input
+    unless data =~ /\A(asc|desc|name|created)\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    render inline: "<p><%= raw comment %></p>", locals: { comment: processed }
   end
 end

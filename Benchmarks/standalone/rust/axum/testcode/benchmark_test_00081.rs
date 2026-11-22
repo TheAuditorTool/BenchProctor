@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 use axum::response::IntoResponse;
-use axum::response::Json;
 
 pub async fn benchmark_test_00081() -> impl IntoResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data: String = db_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| db_value.clone());
-    let checked_path = format!("/var/app/data/{}", std::path::Path::new(&data).file_name().and_then(|n| n.to_str()).unwrap_or(""));
-    tokio::fs::write(&checked_path, "data").await.ok();
-    Json(serde_json::json!({"count": 0})).into_response()
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", comment_value).ok();
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => data })).unwrap_or_default();
+    return ([("content-type", "text/html")], _page).into_response();
 }

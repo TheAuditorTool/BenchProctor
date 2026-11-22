@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Header, Post, UsePipes, ValidationPipe, BadRequestException } from "@nestjs/common";
+import { Controller, Headers, Post, Redirect } from "@nestjs/common";
 import { Response } from "express";
-import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,14 +17,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00115")
-  @UsePipes(new ValidationPipe())
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00115(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    return "<div>" + processed + "</div>";
+  @Redirect()
+  async BenchmarkTest00115(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const data = userInput != null ? userInput : '';
+    return { url: data };
   }
 }

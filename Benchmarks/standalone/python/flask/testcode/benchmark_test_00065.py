@@ -1,7 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
-from lxml import etree
+import re
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -19,8 +24,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00065", methods=["POST"])
 def BenchmarkTest00065():
-    raw_body = request.get_data(as_text=True)
-    data = str(raw_body).replace('\x00', '')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    field_value = request.form.get('field', '')
+    reader = make_reader(field_value)
+    data = reader()
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    exec(str(processed))
     return jsonify({"result": "success"})

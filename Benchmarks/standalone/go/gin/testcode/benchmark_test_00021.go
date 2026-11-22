@@ -2,24 +2,25 @@
 package testcode
 
 import (
-	"bytes"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yuin/goldmark"
 )
 
 func BenchmarkTest00021(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	data, _ := url.QueryUnescape(cookieValue)
-	var mdBuf bytes.Buffer
-	goldmark.New().Convert([]byte(data), &mdBuf)
-	processed := mdBuf.String()
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	jsonValue := reqBody.Payload
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(jsonValue)
+	sum := sha256.Sum256([]byte(data))
+	hashStr := fmt.Sprintf("%x", sum)
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

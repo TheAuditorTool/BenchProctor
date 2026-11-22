@@ -9,11 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00186 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -24,16 +19,17 @@ public class BenchmarkTest00186 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    record FormData(String payload) {}
+    private static String normalize(String v) { return v.strip(); }
 
-    @PostMapping(path="/BenchmarkTest00186", consumes="application/json")
-    public void BenchmarkTest00186(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        FormData payload = new FormData(graphqlVar);
-        String data = payload.payload();
-        com.fasterxml.jackson.databind.ObjectMapper safeMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        safeMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        com.fasterxml.jackson.databind.JsonNode node = safeMapper.readTree(data);
-        response.getWriter().print(node.path("name").asText());
+    @PostMapping(path="/BenchmarkTest00186", consumes="text/plain")
+    public void BenchmarkTest00186(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data = normalize(rawData);
+        javax.xml.xpath.XPath xpath = javax.xml.xpath.XPathFactory.newInstance().newXPath();
+        javax.xml.xpath.XPathExpression roleQuery = xpath.compile("/users/user[@name='" + data + "']/@role");
+        String userRole = roleQuery.evaluate(new org.xml.sax.InputSource(new java.io.StringReader("<users><user name=\"alice\" role=\"viewer\"/><user name=\"bob\" role=\"admin\"/></users>")));
+        response.setHeader("X-User-Role", userRole);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

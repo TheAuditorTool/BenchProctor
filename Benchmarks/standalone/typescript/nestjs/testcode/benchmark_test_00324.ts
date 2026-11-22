@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as nodeUtil from "util";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import * as jsYamlJsTypes from "js-yaml-js-types";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,10 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00324")
-  async BenchmarkTest00324(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const data = `${userInput}`;
-    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-    return { token };
+  async BenchmarkTest00324(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const data = nodeUtil.format("%s", userInput);
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.DEFAULT_SCHEMA.extend(jsYamlJsTypes.all) }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

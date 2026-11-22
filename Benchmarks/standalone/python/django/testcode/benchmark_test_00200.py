@@ -4,7 +4,7 @@ import json
 
 
 def BenchmarkTest00200(request):
-    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
-    data = str(graphql_var).replace('\x00', '')
-    request.session['data'] = str(data)
-    return JsonResponse({"saved": True})
+    field_value = request.POST.get('field', '')
+    data = '%s' % str(field_value)
+    parsed = json.loads(data)
+    return JsonResponse({'parsed': str(parsed)}, status=200)

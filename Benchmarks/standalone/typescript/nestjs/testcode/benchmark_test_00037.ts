@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req, BadRequestException } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as childProcess from "child_process";
+import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
+import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,14 +17,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00037")
-  async BenchmarkTest00037(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    let data;
-    try { data = JSON.parse(userInput).value || ""; }
-    catch (e) { data = String(userInput); }
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    childProcess.execSync("echo " + processed);
-    return { created: true };
+  async BenchmarkTest00037(@Headers("user-agent") ua: string): Promise<unknown> {
+    const userInput = ua || "";
+    const payload = { get value() { return userInput; } };
+    const data = payload.value;
+    const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+    const plan = planQuotas.get(String(data));
+    if (!plan) { throw new NotFoundException({ error: "unknown plan" }); }
+    const { quota } = plan;
+    return { quota };
   }
 }

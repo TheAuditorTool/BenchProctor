@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { DataTypes, Sequelize } from "sequelize";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,11 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00088")
-  async BenchmarkTest00088(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    crypto.createHash("sha256").update(data).digest("hex");
+  async BenchmarkTest00088(@Headers("referer") referer: string): Promise<unknown> {
+    const userInput = referer || "";
+    const data = userInput != null ? userInput : '';
+    const _sequelize = new Sequelize("sqlite::memory:", { logging: false });
+    const User = _sequelize.define("User", { name: DataTypes.STRING }, { tableName: "users", timestamps: false });
+    await User.findAll({ where: _sequelize.literal("name = '" + data + "'") });
     return { created: true };
   }
 }

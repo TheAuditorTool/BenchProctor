@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as shared from "./shared";
-import * as nodeSerialize from "node-serialize";
+import { Controller, Post, Req, Res } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,10 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00059")
-  async BenchmarkTest00059(): Promise<unknown> {
-    const userInput = (await shared.mq.receive("app-events"));
-    const data = String(userInput).replace(/\u0000/g, "");
-    nodeSerialize.unserialize(data);
+  async BenchmarkTest00059(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict; Secure");
     return { created: true };
   }
 }

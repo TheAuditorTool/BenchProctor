@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
 
 class BenchmarkTest00225Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,15 @@ class BenchmarkTest00225Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00225
-    user_input = (params[:variables] || {})[:input].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    token = SecureRandom.hex(32)
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    data = "%s" % user_input
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      render json: { error: "forbidden" }, status: 403
+      return
+    end
+    checked_path = resolved
+    content = File.read(checked_path)
+    render json: { content: content }
   end
 end

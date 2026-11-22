@@ -1,23 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Query;
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use std::collections::HashMap;
 
-pub async fn benchmark_test_00250(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
-    let user_id = params.get("id").cloned().unwrap_or_default();
-    let mut data = String::new();
-    for token in user_id.split(',') { data = token.to_string(); }
-    fn _schema_check(v: &str) -> Result<(), validator::ValidationError> {
-        static _RE_SCHEMA: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.\\-]+$").unwrap());
-        if _RE_SCHEMA.is_match(v) { Ok(()) } else { Err(validator::ValidationError::new("schema")) }
-    }
-    #[derive(validator::Validate)]
-    struct _SchemaInput<'a> { #[validate(custom(function = "_schema_check"))] value: &'a str }
-    use validator::Validate;
-    if (_SchemaInput { value: &data }).validate().is_err() { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::store_session("data", &processed);
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00250(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Ok(Some(_field)) = multipart.next_field().await {
+            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+        }
+        _fname
+    };
+    let data = upload_name.to_string();
+    return (axum::response::AppendHeaders([(axum::http::header::SET_COOKIE, format!("session={}; HttpOnly; SameSite=Strict", urlencoding::encode(&data)))]), Json(serde_json::json!({"count": 0}))).into_response();
 }

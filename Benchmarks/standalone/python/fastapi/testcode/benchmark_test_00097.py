@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-import socket
-import requests
 from starlette.responses import JSONResponse
-import re
+from app_runtime import db
 
 
 app = FastAPI()
@@ -24,13 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00097")
 async def BenchmarkTest00097(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = (lambda v: v.strip())(api_value)
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
-    target_url = data
-    s = socket.create_connection((str(target_url), 80))
-    s.close()
-    return {"updated": True}
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = ' '.join(str(db_value).split())
+    resp = JSONResponse({'status': 'ok'})
+    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    return resp

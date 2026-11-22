@@ -2,20 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00141', methods: ['POST'])]
 class BenchmarkTest00141Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = hex2bin($userInput);
-        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $conn->executeQuery('SELECT * FROM users ORDER BY ' . $processed);
+        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
+        unlink('/var/app/data/' . $userInput);
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -11,9 +11,9 @@ class BenchmarkTest00157Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query->get('id', '');
-        $data = str_replace("\0", '', $userInput);
-        $request->getSession()->set('data', (string) $data);
+        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
+        $data = urldecode($userInput);
+        json_decode($data, true);
         return new JsonResponse(["committed" => true]);
     }
 }

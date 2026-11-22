@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00241 = async (ctx) => {
-  const userInput = ctx.request.headers["x-custom-header"] || "";
-  const data = String(userInput).slice(0, 200);
-  const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-  eval(processed);
+  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  const { parseXmlString } = require("libxmljs2");
+  parseXmlString(String(data), { noent: true, dtdload: true, nonet: false });
   ctx.body = { ack: true };
 }
 

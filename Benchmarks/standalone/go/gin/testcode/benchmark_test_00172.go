@@ -2,23 +2,41 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00172(c *gin.Context) {
-	originValue := c.GetHeader("Origin")
-	data := strings.Join(strings.FieldsFunc(originValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	pathValue := c.Param("id")
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(pathValue)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
+		return
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	processed := data
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
+		return
+	}
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+processed+"']")
+	if queryErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
+		return
+	}
+	c.Header("X-User-Matches", strconv.Itoa(len(userNodes)))
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -2,14 +2,19 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"context"
 	"net/http"
+	"regexp"
 )
 
 func BenchmarkTest00165(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	sum := sha256.Sum256([]byte(originValue))
-	hashStr := fmt.Sprintf("%x", sum)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	hostValue := r.Host
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(hostValue)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, processed))
 }

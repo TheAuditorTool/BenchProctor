@@ -1,10 +1,25 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+from sqlalchemy import text
 import re
 from urllib.parse import unquote
 from starlette.responses import JSONResponse
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = FastAPI()
 
@@ -25,9 +40,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 async def BenchmarkTest00070(request: Request):
     referer_value = request.headers.get('referer', '')
     data = unquote(referer_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+    if not re.fullmatch("^[a-zA-Z0-9_.#\\-]+$", data):
         return JSONResponse({'error': 'forbidden'}, status_code=400)
     processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    with Session(_engine) as _session:
+        _session.query(User).from_statement(text("SELECT * FROM users WHERE name = '" + str(processed) + "'")).all()
     return {"updated": True}

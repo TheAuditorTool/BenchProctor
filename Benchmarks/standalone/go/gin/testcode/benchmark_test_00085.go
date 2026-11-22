@@ -2,26 +2,32 @@
 package testcode
 
 import (
+	"context"
 	"net/http"
-	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00085(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
+	cookieValue, err := c.Cookie("session_token")
+	if err != nil {
+		c.String(http.StatusBadRequest, "missing cookie")
+		return
+	}
 	var data string
-	if len(uaValue) > 0 {
-		data = uaValue
+	if len(cookieValue) > 0 {
+		data = cookieValue
 	} else {
 		data = "default"
 	}
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
+	_lower := strings.ToLower(data)
+	if !strings.HasPrefix(_lower, "t") && !strings.HasPrefix(_lower, "f") && _lower != "1" && _lower != "0" {
+		c.String(http.StatusBadRequest, "invalid boolean")
 		return
 	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	parsedBool := strconv.FormatBool(strings.HasPrefix(_lower, "t") || _lower == "1")
+	redisClient.HSet(context.Background(), "session:"+c.GetString("user"), map[string]any{"display_name": parsedBool, "locale": "en"})
+	c.JSON(200, gin.H{"code": "OK"})
 }

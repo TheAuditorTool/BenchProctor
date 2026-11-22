@@ -2,17 +2,19 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00255(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(headerValue)
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	uaValue := r.Header.Get("User-Agent")
+	tokenLen, _ := strconv.Atoi(uaValue)
+	if tokenLen < 16 || tokenLen > 64 {
+		tokenLen = 32
+	}
+	buf := make([]byte, tokenLen)
+	rand.Read(buf)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
 }

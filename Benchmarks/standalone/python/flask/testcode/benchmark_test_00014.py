@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+import defusedxml.ElementTree
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,7 +20,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00014", methods=["POST"])
 def BenchmarkTest00014():
-    ua_value = request.headers.get('User-Agent', '')
-    data = '%s' % str(ua_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    defusedxml.ElementTree.fromstring(str(comment_value))
     return jsonify({"result": "success"})

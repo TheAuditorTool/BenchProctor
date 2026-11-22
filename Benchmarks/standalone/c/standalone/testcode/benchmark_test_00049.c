@@ -7,22 +7,40 @@
 #include <stdint.h>
 #include <time.h>
 
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+typedef struct _xmlParserCtxt *xmlParserCtxtPtr;
+extern xmlParserCtxtPtr xmlNewParserCtxt(void);
+extern xmlDocPtr xmlCtxtReadMemory(xmlParserCtxtPtr _ctxt, const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeParserCtxt(xmlParserCtxtPtr _ctxt);
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+
 void benchmark_test_00049(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char *_p = malloc(16);
-    if (_p == NULL) return;
-    strcpy(_p, "pending");
-    printf("%s\n", _p);
-    free(_p);
-    _p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    printf("%s\n", _p);
-    free(_p);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    xmlParserCtxtPtr _pctx = xmlNewParserCtxt();
+    if (_pctx == NULL) return;
+    xmlDocPtr _doc = xmlCtxtReadMemory(_pctx, data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
+    if (_doc) xmlFreeDoc(_doc);
+    xmlFreeParserCtxt(_pctx);
 }

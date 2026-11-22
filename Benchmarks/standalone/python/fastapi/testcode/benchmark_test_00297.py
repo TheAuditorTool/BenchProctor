@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import os
-from fastapi.responses import JSONResponse
+import hashlib
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,8 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00297")
 async def BenchmarkTest00297(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    data = str(header_value).replace('\x00', '')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return {"updated": True}
+    ua_value = request.headers.get('user-agent', '')
+    data = '%s' % str(ua_value)
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

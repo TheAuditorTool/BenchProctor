@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
-import os
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,10 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00160")
 async def BenchmarkTest00160(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = env_value if env_value else 'default'
-    if data not in ('ls', 'cat', 'date', 'whoami'):
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    processed = data
-    subprocess.Popen('echo ' + str(processed), shell=True).wait()
+    auth_header = request.headers.get('authorization', '')
+    data = (lambda v: v.strip())(auth_header)
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    exec(str(processed))
     return {"updated": True}

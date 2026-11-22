@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import jsonschema
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
-import json
-import os
+from pydantic import BaseModel
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -23,17 +24,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00268")
-async def BenchmarkTest00268(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    try:
-        data = json.loads(xml_value).get('value', xml_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = xml_value
-    try:
-        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.#%\\-]+$"})
-    except jsonschema.ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+async def BenchmarkTest00268(request: Request, req: UserInput):
+    json_value = req.payload
+    data = ' '.join(str(json_value).split())
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

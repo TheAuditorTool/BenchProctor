@@ -3,33 +3,36 @@ package testcode
 
 import (
 	"net/http"
-	"os/exec"
-	"regexp"
+	"os"
+	"strings"
 
+	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00071(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+	multipartValue := c.PostForm("multipart_field")
+	segments := strings.Split(multipartValue, ",")
+	data := strings.Join(segments, " ")
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
 		return
 	}
-	jsonValue := reqBody.Payload
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(jsonValue)
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
 		return
 	}
-	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	roleExpr, exprErr := xpath.Compile("//user[@name='" + data + "']/role")
+	if exprErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
 		return
 	}
-	c.Data(200, "text/plain", output)
+	if roleNode := xmlquery.QuerySelector(xmlDoc, roleExpr); roleNode != nil {
+		c.Header("X-User-Role", roleNode.InnerText())
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

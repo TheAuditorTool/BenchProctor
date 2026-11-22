@@ -1,5 +1,0 @@
-Markdown==3.6
-bleach==6.1.0
-flask==3.0.3
-jsonschema==4.22.0
-pyyaml==6.0.1

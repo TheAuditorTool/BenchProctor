@@ -7,21 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct _xmlDoc *xmlDocPtr;
-typedef struct _xmlXPathContext *xmlXPathContextPtr;
-typedef struct _xmlXPathObject *xmlXPathObjectPtr;
-#define XML_PARSE_NOENT 2
-#define XML_PARSE_DTDVALID 16
-#define XML_PARSE_NONET 2048
-#define XML_PARSE_HUGE 524288
-extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
-extern void xmlFreeDoc(xmlDocPtr _doc);
-extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
-extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
-
 void benchmark_test_00450(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    xmlDocPtr _doc = xmlReadMemory(user_input, (int)strlen(user_input), "noname.xml", NULL, XML_PARSE_NOENT);
-    if (_doc) xmlFreeDoc(_doc);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    char _dst[16];
+    size_t _n = strlen(data);
+    memcpy(_dst, data, _n + 1);
+    printf("%s\n", _dst);
 }

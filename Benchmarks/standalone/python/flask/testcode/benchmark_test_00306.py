@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, request, jsonify
+from flask import Flask, request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -19,10 +19,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00306", methods=["POST"])
 def BenchmarkTest00306():
-    upload_name = request.files['upload'].filename
-    parts = []
-    for token in str(upload_name).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data, _sep, _rest = str(forwarded_ip).partition('\x00')
+    return '<div>' + str(data) + '</div>'

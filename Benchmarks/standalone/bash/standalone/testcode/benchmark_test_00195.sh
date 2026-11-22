@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00195() {
-  user_input="$HTTP_COOKIE"
-  data=$(echo "$user_input" | base64 -d 2>/dev/null || echo "")
+  user_input="$(sed -n '/^\r*$/{n;s/\r$//;p;q}')"
+  if [ -n "$user_input" ]; then data="$user_input"; else data=""; fi
   echo -n "$data" | sha256sum
 }
 

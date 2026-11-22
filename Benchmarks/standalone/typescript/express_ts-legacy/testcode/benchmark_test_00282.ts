@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Request, Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as libxmljs from "libxmljs";
+
+export const BenchmarkTest00282 = async (req: Request, res: Response): Promise<void> => {
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  await libxmljs.parseXmlAsync(String(data), { replaceEntities: false });
+  res.json({ accepted: true });
+}

@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
 import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -24,8 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00326")
 async def BenchmarkTest00326(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    data, _sep, _rest = str(header_value).partition('\x00')
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    env_value = os.environ.get('APP_INPUT', '')
+    data = str(env_value).replace('\x00', '')
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return JSONResponse({'error': 'not found'}, status_code=404)
+    value = result['name']
+    return JSONResponse({'name': str(value)}, status_code=200)

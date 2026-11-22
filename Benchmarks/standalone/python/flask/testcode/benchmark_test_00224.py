@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, request, jsonify
+from flask import Flask, current_app
+from flask import request, jsonify
 
 
 app = Flask(__name__)
@@ -19,7 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00224", methods=["POST"])
 def BenchmarkTest00224():
-    ua_value = request.headers.get('User-Agent', '')
-    data = '%s' % (ua_value,)
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = str(graphql_var).replace('\x00', '')
+    current_app.config['ACTIVE_TENANT'] = str(data)
+    return jsonify({"result": "success"})

@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import jsonify
-from app_runtime import db
+from lxml import etree
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,9 +25,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00222", methods=["POST"])
 def BenchmarkTest00222():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    parts = str(comment_value).split(',')
-    data = ' '.join(parts)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    user_id = request.args.get('id', '')
+    form = FormData(payload=user_id)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    return jsonify({"result": "success"})

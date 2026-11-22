@@ -19,11 +19,18 @@ public class BenchmarkTest00074 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00074")
-    public void BenchmarkTest00074(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        request.getSession().setAttribute("displayName", fieldValue);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    @GetMapping("/BenchmarkTest00074")
+    public void BenchmarkTest00074(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        byte[] hexBytes = new byte[headerValue.length() / 2];
+        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
+            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        }
+        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        org.springframework.http.ResponseCookie sessionCookie = org.springframework.http.ResponseCookie.from("session", cookieValue).path("/").httpOnly(true).sameSite("Strict").build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, sessionCookie.toString());
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

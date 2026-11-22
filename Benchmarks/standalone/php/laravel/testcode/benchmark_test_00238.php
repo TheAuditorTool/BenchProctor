@@ -9,8 +9,11 @@ class BenchmarkTest00238Controller
     public function __invoke()
     {
         $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $stream = function () use ($data) {
+            echo '<div class="comment">' . $data . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

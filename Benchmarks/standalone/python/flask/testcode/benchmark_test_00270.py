@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from urllib.parse import urlparse
-from flask import jsonify
+from flask import Flask, jsonify
 import re
-from app_runtime import db
+from pathlib import Path
 
 
 app = Flask(__name__)
@@ -20,17 +18,17 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00270", methods=["POST"])
-def BenchmarkTest00270():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    kind = 'json' if str(db_value).lstrip().startswith('{') else 'text'
+@app.route("/BenchmarkTest00270/<path_param>", methods=["POST"])
+def BenchmarkTest00270(path_param):
+    path_value = path_param
+    kind = 'json' if str(path_value).lstrip().startswith('{') else 'text'
     match kind:
         case 'json':
-            data = str(db_value).strip()
+            data = str(path_value).strip()
         case _:
-            data = str(db_value)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return jsonify({'error': 'forbidden host'}), 403
-    target_url = data
-    return redirect(str(target_url))
+            data = str(path_value)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    Path('/var/app/data/' + str(processed)).write_text('data')
+    return jsonify({"result": "success"})

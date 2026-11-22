@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "yaml"
 
 class BenchmarkTest00161 < Sinatra::Base
   before do
@@ -18,10 +19,12 @@ class BenchmarkTest00161 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00161" do
-    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
+    user_input = params[:multipart_field].to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    YAML.unsafe_load(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

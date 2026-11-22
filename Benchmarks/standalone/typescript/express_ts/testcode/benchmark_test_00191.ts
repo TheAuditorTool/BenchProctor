@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 
 export const BenchmarkTest00191 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const parts: string[] = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data: string = parts.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = (row as any).name;
+  const userInput = ((req as any).files?.[0]?.originalname as string) || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const streamIv = crypto.randomBytes(12);
+  const sealer = crypto.createCipheriv("aes-256-gcm", streamKey, streamIv);
+  stream.pipeline(stream.Readable.from([String(data)]), sealer, fs.createWriteStream("/var/data/cipher.bin"), (err: Error | null) => { if (!err) fs.writeFileSync("/var/data/cipher.meta", Buffer.concat([streamIv, sealer.getAuthTag()])); });
   res.json({ accepted: true });
 }

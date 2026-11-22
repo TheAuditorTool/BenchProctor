@@ -30,19 +30,21 @@ public class BenchmarkTest00008 {
         }
     }
 
-    record FormData(String payload) {}
-
     @GET
     @Path("/BenchmarkTest00008")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00008(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        FormData payload = new FormData(uaValue);
-        String data = payload.payload();
-        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00008(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(envValue);
+        String processed = data.matches("^(admin|user|guest|service)$") ? data : "admin";
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            ctx.search("ou=people,dc=example,dc=com", "(uid=" + processed + ")", new javax.naming.directory.SearchControls());
+        } finally { ctx.close(); }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

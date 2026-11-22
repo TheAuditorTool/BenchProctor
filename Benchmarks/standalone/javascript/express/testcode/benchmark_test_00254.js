@@ -2,9 +2,10 @@
 const ldapjs = require("ldapjs");
 
 async function BenchmarkTest00254(req, res) {
-  const userInput = (req.file && req.file.originalname) || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
+  const userInput = req.body?.multipart_field || "";
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
   const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
   ldapClient.on("error", () => {});
   ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));

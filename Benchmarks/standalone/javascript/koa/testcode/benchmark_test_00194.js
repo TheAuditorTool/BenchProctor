@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
+const fs = require("fs");
 
 const BenchmarkTest00194 = async (ctx) => {
-  const userInput = ctx.request.headers["x-forwarded-for"] || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  ctx.body = { token };
+  const userInput = ctx.query.id || "";
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = data;
+  fs.writeFileSync("/var/uploads/" + processed, "data");
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00194 };

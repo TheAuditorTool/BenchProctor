@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00225Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $data = ($userInput !== null) ? $userInput : '';
-        $result = DB::table('users')->where('id', $data)->first();
-        $value = $result->name;
+        $userInput = $request->input('field', '');
+        $data = vsprintf('%1$s', [$userInput]);
+        \App\Models\User::where('id', $data)->get();
         return response()->json(['ok' => 1]);
     }
 }

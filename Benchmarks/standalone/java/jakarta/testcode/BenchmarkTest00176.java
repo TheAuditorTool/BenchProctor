@@ -30,25 +30,14 @@ public class BenchmarkTest00176 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00176")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00176(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String prefix = fieldValue.length() > 0 ? fieldValue.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = fieldValue.toLowerCase(); break;
-            case "f": data = fieldValue.toUpperCase(); break;
-            default: data = fieldValue.strip(); break;
-        }
-        try { Double.parseDouble(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        String boundedVal = data;
-        String validatedName = boundedVal.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? boundedVal.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00176(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.util.Map.Entry<String,String> tuple = java.util.Map.entry(envValue, "http");
+        String data = tuple.getKey();
+        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

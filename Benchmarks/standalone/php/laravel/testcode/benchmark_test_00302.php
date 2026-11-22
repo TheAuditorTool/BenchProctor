@@ -8,9 +8,8 @@ class BenchmarkTest00302Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $data = (!empty($userInput)) ? $userInput : '';
-        $processed = (new \HTMLPurifier())->purify($data);
-        return response('<div>' . $processed . '</div>')->header('Content-Type', 'text/html');
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $data = "{$userInput}";
+        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
     }
 }

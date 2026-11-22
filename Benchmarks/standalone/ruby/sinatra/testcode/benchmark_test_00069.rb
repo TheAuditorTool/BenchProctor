@@ -18,15 +18,19 @@ class BenchmarkTest00069 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00069" do
-    user_input = params[:q].to_s
-    data = user_input ? user_input : ''
-    unless data =~ /\A(asc|desc|name|created)\z/
-      halt 400, JSON.generate({ error: "invalid" })
+    user_input = params[:upload][:filename].to_s rescue ""
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
       return
     end
-    processed = data
-    system("echo " + processed)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    target_url = data
+    headers["Location"] = target_url
+    halt 302
   end
 end

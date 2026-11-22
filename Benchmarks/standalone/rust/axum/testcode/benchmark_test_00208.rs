@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use std::collections::HashMap;
-use tokio::process::Command;
 
-pub async fn benchmark_test_00208(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    fn normalize(value: String) -> String { value.trim().to_string() }
-    let data = normalize(field_value.clone());
-    Command::new("sh").arg("-c").arg(format!("grep {} /var/log/app.log", data)).output().await.ok();
+pub async fn benchmark_test_00208() -> impl IntoResponse {
+    let api_value = crate::shared::fetch_url("https://api.partner.example.com/v1/records");
+    let data = if api_value.len() <= 4096 { api_value.clone() } else { api_value.chars().take(4096).collect() };
+    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
+        let _ = sqlx::query("SELECT * FROM users WHERE id = $1").bind(data.parse::<i32>().unwrap_or_default()).execute(&_pool).await;
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

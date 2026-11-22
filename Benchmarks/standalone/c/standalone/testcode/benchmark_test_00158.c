@@ -6,31 +6,50 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <regex.h>
+
+typedef struct _xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject *xmlXPathObjectPtr;
+#define XML_PARSE_NOENT 2
+#define XML_PARSE_DTDVALID 16
+#define XML_PARSE_NONET 2048
+#define XML_PARSE_HUGE 524288
+extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeDoc(xmlDocPtr _doc);
+extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
+extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+extern xmlXPathObjectPtr xmlXPathEval(const unsigned char *_str, xmlXPathContextPtr _ctx);
+extern void xmlXPathFreeObject(xmlXPathObjectPtr _obj);
+extern void xmlXPathFreeContext(xmlXPathContextPtr _ctxt);
+struct c_payload { const char *value; };
 
 void benchmark_test_00158(int argc, char **argv)
 {
     (void)argc; (void)argv;
     char user_input_buf[256];
     user_input_buf[0] = '\0';
-    long _clen = 0;
-    const char *_cl = getenv("CONTENT_LENGTH");
-    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
-    if (_clen > 0) {
-        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
-        size_t _got = fread(user_input_buf, 1, _rn, stdin);
-        user_input_buf[_got] = '\0';
+    FILE *_src_fp = fopen("/etc/app/config", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "asc";
+        regfree(&_re);
     }
-    struct { int id; int flags; } _rec;
-    _rec.id = atoi(data);
-    printf("%d %d\n", _rec.id, _rec.flags);
+    xmlDocPtr _doc = xmlReadMemory("<users/>", 8, NULL, NULL, 0);
+    xmlXPathContextPtr _xpc = xmlXPathNewContext(_doc);
+    char _expr[512];
+    snprintf(_expr, sizeof(_expr), "//user[@name='%s']", arg);
+    xmlXPathObjectPtr _xo = xmlXPathEval((const unsigned char *)_expr, _xpc);
+    if (_xo) xmlXPathFreeObject(_xo);
+    xmlXPathFreeContext(_xpc);
+    if (_doc) xmlFreeDoc(_doc);
 }

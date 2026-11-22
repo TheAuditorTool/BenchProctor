@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from Crypto.Hash import MD4
+import json
 
 
 def BenchmarkTest00026(request):
-    referer_value = request.META.get('HTTP_REFERER', '')
-    data = ' '.join(str(referer_value).split())
-    resp = JsonResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
+    data = '%s' % (graphql_var,)
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

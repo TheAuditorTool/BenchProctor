@@ -2,15 +2,12 @@
 import { Request, Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import * as fs from "fs";
-import * as path from "path";
+import * as libxmljs from "libxmljs";
 
 export const BenchmarkTest00078 = async (req: Request, res: Response): Promise<void> => {
   const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const data = userInput != null ? userInput : '';
-  const resolved = path.resolve("/var/app/data", data);
-  if (!resolved.startsWith("/var/app/data/")) { res.status(403).json({error:"forbidden"}); return; }
-  const checkedPath = resolved;
-  fs.unlinkSync(checkedPath);
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  await libxmljs.parseXmlAsync(String(data), { replaceEntities: false });
   res.json({ accepted: true });
 }

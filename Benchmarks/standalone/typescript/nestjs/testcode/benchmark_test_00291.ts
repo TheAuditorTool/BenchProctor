@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,12 +19,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00291")
-  async BenchmarkTest00291(@Headers("host") host: string, @Req() req: Request): Promise<unknown> {
-    const userInput = host || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    req.session.data = String(data);
-    return { created: true };
+  async BenchmarkTest00291(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = Buffer.from(userInput, "base64").toString();
+    const quantity = parseInt(String(data), 10);
+    const totalCents = Math.imul(quantity, 1999);
+    return { quantity, totalCents };
   }
 }

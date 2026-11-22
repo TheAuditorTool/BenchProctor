@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00220() {
-  user_input="$(cat /dev/stdin)"
-  data=$(echo "$user_input" | base64 -d 2>/dev/null || echo "")
-  printf "%s" "$data" | openssl enc -des-ede3-cbc -K "$DATA_ENC_KEY" -iv "$(openssl rand -hex 8)" -out /var/app/run/record.enc
+  user_input="$APP_INPUT"
+  data=$(printf "%s" "${user_input}" | tr -s " ")
+  awk -v name="$data" 'BEGIN { system("getent group " name) }'
 }
 
 benchmark_test_00220 "$@"

@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import jsonschema
+from Crypto.Hash import SHA256
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
-import os
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -22,17 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00163")
-async def BenchmarkTest00163(request: Request):
-    forwarded_ip = request.headers.get('x-forwarded-for', '')
-    parts = []
-    for token in str(forwarded_ip).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    try:
-        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.#%\\-]+$"})
-    except jsonschema.ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+async def BenchmarkTest00163(request: Request, req: UserInput):
+    json_value = req.payload
+    data = json_value if json_value else 'default'
+    digest = SHA256.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

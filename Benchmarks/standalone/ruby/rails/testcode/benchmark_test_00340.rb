@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "socket"
 
 class BenchmarkTest00340Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,11 +12,11 @@ class BenchmarkTest00340Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00340
-    user_input = Comment.first&.text.to_s
-    data = user_input ? user_input : ''
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = params[:id].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
     render json: { status: "ok" }
   end
 end

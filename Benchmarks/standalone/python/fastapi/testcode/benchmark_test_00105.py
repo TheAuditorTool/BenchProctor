@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
+import urllib.request
 from fastapi.responses import JSONResponse
 
 
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
+
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,7 +28,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00105")
 async def BenchmarkTest00105(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = f'{user_id!s}'
-    request.session['data'] = str(data)
+    referer_value = request.headers.get('referer', '')
+    data = RequestPayload(referer_value).value
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return {"updated": True}

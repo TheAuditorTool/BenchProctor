@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "digest"
 
 class BenchmarkTest00234 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,13 +19,14 @@ class BenchmarkTest00234 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00234" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = params[:upload][:filename].to_s rescue ""
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    data = _normalize_local(user_input)
-    session[:data] = data.to_s
+    digest = Digest::SHA256.base64digest(data.to_s)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

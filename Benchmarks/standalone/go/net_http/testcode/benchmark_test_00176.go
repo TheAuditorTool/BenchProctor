@@ -2,12 +2,16 @@
 package testcode
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
 )
 
 func BenchmarkTest00176(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE id = ?", dbValue).Scan(&matched).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -33,13 +33,17 @@ public class BenchmarkTest00210 {
     @GET
     @Path("/BenchmarkTest00210")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00210(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String data = java.net.URLDecoder.decode(userId, java.nio.charset.StandardCharsets.UTF_8);
-        String processed = data.matches("^(active|idle|expired|revoked)$") ? data : "active";
-        String validatedName = processed.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? processed.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00210(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(hostValue);
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.StreamCipher rc4 = new org.bouncycastle.crypto.engines.RC4Engine();
+        rc4.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[plain.length];
+        rc4.processBytes(plain, 0, plain.length, sealed, 0);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(sealed));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

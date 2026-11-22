@@ -11,10 +11,11 @@ class BenchmarkTest00051Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00051
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
     reader = -> { user_input.to_s.strip }
     data = reader.call
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
-    render json: { status: "ok" }
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

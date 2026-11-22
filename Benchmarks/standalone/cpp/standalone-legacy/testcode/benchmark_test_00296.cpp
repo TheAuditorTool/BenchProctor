@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <cstring>
+
+void benchmark_test_00296(int, char **)
+{
+    const char *user_input_env = std::getenv("APP_INPUT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    size_t _n = user_input.size();
+    char *_p = new char[_n + 1];
+    std::memcpy(_p, user_input.c_str(), _n + 1);
+    std::cout << _p << std::endl;
+    std::memset(_p, 0, _n + 1);
+    delete[] _p;
+}

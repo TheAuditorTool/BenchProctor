@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
+use url::Url;
 
 #[actix_web::post("/benchmark_test_00164")]
 pub async fn benchmark_test_00164(req: HttpRequest) -> HttpResponse {
-    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
-    let data: String = cookie_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| cookie_value.clone());
-    use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
-    let iv: [u8; 8] = rand::random();
-    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec_mut::<Pkcs7>(data.as_bytes())).unwrap_or_default();
-    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+    let host_value = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = if host_value.len() <= 4096 { host_value.clone() } else { host_value.chars().take(4096).collect() };
+    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
+    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
+    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
+    let target_url = data.clone();
+    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
 }

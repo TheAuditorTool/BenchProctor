@@ -22,17 +22,17 @@ public class BenchmarkTest00094 {
     record FormData(String payload) {}
 
     @GetMapping("/BenchmarkTest00094")
-    public void BenchmarkTest00094(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        FormData payload = new FormData(hostValue);
+    public void BenchmarkTest00094(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        FormData payload = new FormData(userId);
         String data = payload.payload();
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
+        java.util.Map<String, Object> sessionProfile = (java.util.Map<String, Object>) request.getSession().getAttribute("profile");
+        if (sessionProfile == null) {
+            sessionProfile = new java.util.concurrent.ConcurrentHashMap<>();
+            request.getSession().setAttribute("profile", sessionProfile);
+        }
+        sessionProfile.putAll(java.util.Map.of("displayName", data));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

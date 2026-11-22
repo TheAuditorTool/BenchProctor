@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ldap
-import os
-import re
+import socket
+import urllib.parse
 
 
-def BenchmarkTest00091(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    data = f'{ua_value!s}'
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JsonResponse({'error': 'forbidden'}, status=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+def BenchmarkTest00091(request, path_param):
+    path_value = path_param
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
     return JsonResponse({"saved": True})

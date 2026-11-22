@@ -2,21 +2,32 @@
 package testcode
 
 import (
-	"strconv"
+	"net/http"
+	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00133(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	pending := strings.Split(uaValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	refererValue := c.GetHeader("Referer")
+	data := strings.Join(strings.FieldsFunc(refererValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
 	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	processed := data
+	cmd := exec.Command("sh", "-c", "echo "+processed)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Data(200, "text/plain", output)
 }

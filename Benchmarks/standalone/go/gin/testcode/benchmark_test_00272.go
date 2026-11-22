@@ -3,12 +3,10 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
-	"strconv"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00272(c *gin.Context) {
@@ -18,23 +16,12 @@ func BenchmarkTest00272(c *gin.Context) {
 		return
 	}
 	uploadName := header.Filename
-	data := strings.ReplaceAll(uploadName, "\x00", "")
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
+	pending := strings.Split(uploadName, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
 	}
-	processed := data
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
-		return
-	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
+	os.WriteFile("/var/app/data/"+data, []byte("data"), 0644)
 	c.JSON(200, gin.H{"code": "OK"})
 }

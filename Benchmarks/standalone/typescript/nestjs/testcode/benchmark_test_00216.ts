@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Post } from "@nestjs/common";
+import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import isoDompurify from "isomorphic-dompurify";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,12 +20,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00216")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00216(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const data = `${userInput}`;
-    const _clean = isoDompurify.sanitize(data);
-    const processed = _clean;
-    return "<div>" + processed + "</div>";
+  async BenchmarkTest00216(@Headers("x-custom-header") hdr: string): Promise<unknown> {
+    const userInput = hdr || "";
+    const data = nodeUtil.format("%s", userInput);
+    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+    if (!row) { throw new NotFoundException({error:"not found"}); }
+    const value = (row as any).name;
+    return { created: true };
   }
 }

@@ -8,13 +8,10 @@ class BenchmarkTest00269Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $pending = explode(',', $userInput);
         $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
-        return response()->json(['ok' => 1]);
+        while (count($pending)) { $data = array_shift($pending); }
+        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
     }
 }

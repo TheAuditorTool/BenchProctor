@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -9,10 +10,11 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00198 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
     }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
@@ -24,24 +26,20 @@ public class BenchmarkTest00198 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00198", consumes="application/json")
-    public void BenchmarkTest00198(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String prefix = graphqlVar.length() > 0 ? graphqlVar.substring(0, 1).toLowerCase() : "";
+    @PostMapping("/BenchmarkTest00198")
+    public void BenchmarkTest00198(@Valid @RequestBody UserInput req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
         String data;
-        switch (prefix) {
-            case "h": data = graphqlVar.toLowerCase(); break;
-            case "f": data = graphqlVar.toUpperCase(); break;
-            default: data = graphqlVar.strip(); break;
-        }
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        try { data = String.valueOf(Integer.parseInt(jsonValue)); }
+        catch (NumberFormatException e) { data = jsonValue; }
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            javax.naming.directory.Attributes profileAttrs = ctx.getAttributes("uid=" + data + ",ou=people,dc=example,dc=com", new String[]{"cn", "mail"});
+            response.setHeader("X-Directory-Attributes", String.valueOf(profileAttrs.size()));
+        } finally { ctx.close(); }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

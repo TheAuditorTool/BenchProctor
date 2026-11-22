@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
+from starlette.responses import RedirectResponse
+from urllib.parse import urlparse
 from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+import re
+from app_runtime import db
 
 
 app = FastAPI()
@@ -22,12 +24,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00065")
 async def BenchmarkTest00065(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    data = (lambda v: v.strip())(cookie_value)
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    os.system('echo ' + str(processed))
-    return {"updated": True}
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    parts = str(db_value).split(',')
+    data = ' '.join(parts)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    return RedirectResponse(url=str(target_url))

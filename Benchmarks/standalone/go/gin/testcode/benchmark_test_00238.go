@@ -2,33 +2,31 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00238(c *gin.Context) {
-	pathValue := c.Param("id")
-	pending := strings.Split(pathValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	_lower := strings.ToLower(data)
-	if !strings.HasPrefix(_lower, "t") && !strings.HasPrefix(_lower, "f") && _lower != "1" && _lower != "0" {
-		c.String(http.StatusBadRequest, "invalid boolean")
+	headerValue := c.GetHeader("X-Custom-Header")
+	form := submissionForm{payload: headerValue}
+	data := form.payload
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	parsedBool := strconv.FormatBool(strings.HasPrefix(_lower, "t") || _lower == "1")
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	targetUrl := data
+	resp, err := http.Get(targetUrl)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+parsedBool+"']")
-	c.JSON(200, gin.H{"code": "OK"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

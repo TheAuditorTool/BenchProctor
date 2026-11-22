@@ -8,12 +8,11 @@ class BenchmarkTest00192Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
+        $userInput = $request->header('Authorization', '');
+        $data = vsprintf('%1$s', [$userInput]);
+        $hashCtx = hash_init('sha256');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
         return response()->json(['ok' => 1]);
     }
 }

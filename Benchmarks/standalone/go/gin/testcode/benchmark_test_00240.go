@@ -5,20 +5,22 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00240(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
+	authHeader := c.GetHeader("Authorization")
 	var data string
-	for _, token := range strings.Split(headerValue, ",") {
-		data = token
+	if authHeader != "" {
+		data = authHeader
 	}
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", data)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		c.String(http.StatusBadRequest, "malformed order")
 		return
 	}
-	defer rows.Close()
-	c.JSON(200, gin.H{"code": "OK"})
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	orderTotal := totalNode.InnerText()
+	c.JSON(http.StatusOK, map[string]string{"total": orderTotal})
 }

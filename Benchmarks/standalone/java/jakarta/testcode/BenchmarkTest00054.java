@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.net.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -34,13 +34,12 @@ public class BenchmarkTest00054 {
     @GET
     @Path("/BenchmarkTest00054")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00054(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data;
-        if (authHeader.length() > 256) { data = authHeader.substring(0, 256); }
-        else { data = authHeader; }
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+    public Response BenchmarkTest00054(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = originValue.replace("\u0000", "");
+        String socketRaw = String.valueOf(data);
+        String socketHost = socketRaw.contains("://") ? java.net.URI.create(socketRaw).getHost() : socketRaw;
+        new Socket(socketHost, 80).close();
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

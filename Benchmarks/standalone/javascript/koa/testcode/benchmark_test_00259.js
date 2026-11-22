@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const childProcess = require("child_process");
 
 const BenchmarkTest00259 = async (ctx) => {
-  const userInput = ctx.params.id || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const userInput = ctx.request.headers["user-agent"] || "";
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  childProcess.exec("echo " + data, (_err, stdout) => console.log(stdout));
   ctx.body = { ack: true };
 }
 

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import io
+import defusedxml.ElementTree
 from app_runtime import db
 from fastapi.responses import JSONResponse
 
@@ -21,7 +23,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00118")
 async def BenchmarkTest00118(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = '%s' % (user_id,)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = f'{comment_value!s}'
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(data).encode()), events=('end',)):
+        element.clear()
     return {"updated": True}

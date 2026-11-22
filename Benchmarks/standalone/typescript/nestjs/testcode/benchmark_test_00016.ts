@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import * as jsYaml from "js-yaml";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,11 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00016")
-  async BenchmarkTest00016(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const [data] = String(userInput).split(',');
-    const checkedPath = "/var/app/data/" + path.basename(data);
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  async BenchmarkTest00016(@Headers("user-agent") ua: string): Promise<unknown> {
+    const userInput = ua || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    const reportSpec = jsYaml.load(String(data), { schema: jsYaml.JSON_SCHEMA }) as { title?: unknown } | null;
+    return { title: String(reportSpec?.title ?? "") };
   }
 }

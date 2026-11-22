@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, ForbiddenException } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import * as net from "net";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,14 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00292")
-  async BenchmarkTest00292(): Promise<unknown> {
-    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-    const [data] = String(userInput).split(',');
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
-    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
-    const targetUrl = data;
-    net.connect(80, new URL(String(targetUrl)).hostname);
+  async BenchmarkTest00292(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const appDb = ((globalThis as unknown as { _appDb?: InstanceType<typeof Database> })._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+    appDb.prepare("SELECT id, name FROM users WHERE name = ?").all(userInput);
     return { created: true };
   }
 }

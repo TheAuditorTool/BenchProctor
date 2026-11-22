@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
-from flask import Flask, request, jsonify
-import json
 import os
+from flask import Flask, session
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,10 +21,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00186", methods=["POST"])
 def BenchmarkTest00186():
-    ua_value = request.headers.get('User-Agent', '')
-    try:
-        data = json.loads(ua_value).get('value', ua_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = ua_value
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(forwarded_ip)
+    session.update({'data': str(data)})
+    return jsonify({"result": "success"})

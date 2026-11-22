@@ -4,17 +4,21 @@ namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
-use Doctrine\ORM\EntityManagerInterface;
 
 #[Route('/BenchmarkTest00191', methods: ['POST'])]
 class BenchmarkTest00191Controller
 {
-    public function __invoke(Connection $conn, EntityManagerInterface $em)
+    public function __invoke()
     {
-        $userInput = $conn->fetchOne('SELECT bio FROM profiles LIMIT 1');
-        [$data] = [$userInput, 'http'];
-        $em->getRepository(\App\Entity\User::class)->find((int)$data);
+        $userInput = getenv('APP_INPUT') ?: '';
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        $_coerced = (float)$data;
+        $processed = $_coerced;
+        $sharedStore = new \Redis();
+        $sharedStore->connect('redis', 6379);
+        $sharedStore->set('tenant:display_name', (string) $processed);
         return new JsonResponse(["committed" => true]);
     }
 }

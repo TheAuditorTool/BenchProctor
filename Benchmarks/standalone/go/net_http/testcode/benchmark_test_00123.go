@@ -2,26 +2,28 @@
 package testcode
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 
-	"github.com/go-ldap/ldap/v3"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 func BenchmarkTest00123(w http.ResponseWriter, r *http.Request) {
 	originValue := r.Header.Get("Origin")
-	data := func(v string) string { return strings.TrimSpace(v) }(originValue)
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+	segments := strings.Split(originValue, ",")
+	data := strings.Join(segments, " ")
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	aead, err := chacha20poly1305.NewX(keyHash[:])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	nonce := make([]byte, aead.NonceSize())
+	rand.Read(nonce)
+	cipherOut := aead.Seal(nonce, nonce, []byte(data), nil)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "xchacha20-poly1305", "out": fmt.Sprintf("%x", cipherOut)})
 }

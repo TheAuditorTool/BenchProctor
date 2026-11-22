@@ -2,18 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00004', methods: ['POST'])]
 class BenchmarkTest00004Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $data = json_decode($userInput, true)['value'] ?? '';
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('Host', '');
+        [$data] = [$userInput, 'http'];
+        $sessionCookie = \Symfony\Component\HttpFoundation\Cookie::create('session')->withValue((string)$data)->withPath('/')->withSecure(false)->withHttpOnly(true)->withSameSite('strict');
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->setCookie($sessionCookie);
+        return $resp;
     }
 }

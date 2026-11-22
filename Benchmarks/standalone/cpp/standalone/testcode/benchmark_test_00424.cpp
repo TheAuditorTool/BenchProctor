@@ -2,17 +2,17 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstdlib>
-#include <unistd.h>
+#include <cstring>
 
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
-
-void benchmark_test_00424(int, char **)
+void benchmark_test_00424(int argc, char **argv)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = cpp_own(user_input);
-    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
-    FILE *_p = popen(_cmd.c_str(), "r");
-    if (_p) pclose(_p);
+    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    char *_p = new char[data.size() + 1];
+    std::strcpy(_p, data.c_str());
+    char _first = _p[0];
+    delete[] _p;
+    std::cout << _first << std::endl;
 }

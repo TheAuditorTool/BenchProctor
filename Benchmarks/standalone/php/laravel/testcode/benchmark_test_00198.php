@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00198Controller
 {
     public function __invoke(Request $request)
     {
         $userInput = $request->header('Referer', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $data = str_replace("\0", '', $userInput);
+        $rows = DB::table('users')->whereRaw('id = \'' . $data . '\'')->get();
         return response()->json(['ok' => 1]);
     }
 }

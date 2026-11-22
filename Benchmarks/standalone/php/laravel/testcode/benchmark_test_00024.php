@@ -8,9 +8,11 @@ class BenchmarkTest00024Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $data = str_replace("\0", '', $userInput);
-        $digest = md5((string)$data);
+        $userInput = $request->cookie('session_token', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $errno = 0; $errstr = '';
+        fsockopen((string) parse_url((string)$data, PHP_URL_HOST), 80, $errno, $errstr, 30);
         return response()->json(['ok' => 1]);
     }
 }

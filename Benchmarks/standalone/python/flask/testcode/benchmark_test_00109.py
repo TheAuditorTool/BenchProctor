@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+import urllib.request
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,12 +19,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00109", methods=["POST"])
 def BenchmarkTest00109():
-    auth_header = request.headers.get('Authorization', '')
-    pending = list(str(auth_header).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    field_value = request.form.get('field', '')
+    data = '{}'.format(field_value)
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return jsonify({"result": "success"})

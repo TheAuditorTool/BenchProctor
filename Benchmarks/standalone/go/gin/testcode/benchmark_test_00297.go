@@ -2,22 +2,30 @@
 package testcode
 
 import (
+	"bytes"
+	"html/template"
 	"net/http"
-	"os/exec"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	mdparser "github.com/yuin/goldmark/v2/parser"
+	mdhtml "github.com/yuin/goldmark/v2/renderer/html"
 )
 
 func BenchmarkTest00297(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(uaValue)
-	cmd := exec.Command("echo", data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	capture := func() string { return strings.TrimSpace(commentText) }
+	data := capture()
+	var mdBuf bytes.Buffer
+	mdSource := []byte(data)
+	_ = mdhtml.New().Render(&mdBuf, mdSource, mdparser.New().Parse(mdSource))
+	processed := mdBuf.String()
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(processed)); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Data(200, "text/plain", output)
+	c.Data(200, "text/html", bioPage.Bytes())
 }

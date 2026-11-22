@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00247(body: Bytes) -> impl IntoResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.replace("\t", " ");
-    use md5::Digest;
-    let _ = md5::Md5::digest(data.as_bytes());
+pub async fn benchmark_test_00247() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let _prefix: String = db_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
+    let data = match _prefix.as_str() {
+        "h" => db_value.to_lowercase(),
+        "f" => db_value.to_uppercase(),
+        _ => db_value.trim().to_string(),
+    };
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let seat_limit = plan_limits.get(data.as_str()).copied().unwrap();
+    let _ = seat_limit;
     Json(serde_json::json!({"count": 0})).into_response()
 }

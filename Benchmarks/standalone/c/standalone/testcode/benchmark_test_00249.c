@@ -13,20 +13,13 @@ static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captur
 void benchmark_test_00249(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    if (strchr(_p, ';') != NULL) return;
-    printf("%s\n", _p);
-    free(_p);
+    char _buf[16] = "fixedcontent12";
+    size_t _span = (size_t)strtoul(data, NULL, 10);
+    if (_span > sizeof(_buf)) _span = sizeof(_buf);
+    fwrite(_buf, 1, _span, stdout);
+    putchar('\n');
 }

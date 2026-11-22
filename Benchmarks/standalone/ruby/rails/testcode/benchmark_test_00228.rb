@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
 
 class BenchmarkTest00228Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,9 @@ class BenchmarkTest00228Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00228
-    user_input = Comment.first&.text.to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    processed = CGI.escapeHTML(data)
-    render html: ("<div>" + processed + "</div>").html_safe
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    redirect_back_or_to(data, allow_other_host: true)
   end
 end

@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import base64
-from lxml import etree
+import hashlib
+import json
 
 
 def BenchmarkTest00154(request):
-    raw_body = request.body.decode('utf-8')
-    data = base64.b64decode(raw_body).decode('utf-8', 'ignore')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return JsonResponse({"saved": True})
+    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
+    data = (lambda v: v.strip())(graphql_var)
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

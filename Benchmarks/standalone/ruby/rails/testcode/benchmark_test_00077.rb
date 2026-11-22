@@ -2,8 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "yaml"
 
 class BenchmarkTest00077Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,9 +11,9 @@ class BenchmarkTest00077Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00077
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    data = CGI.unescape(user_input)
-    YAML.unsafe_load(data)
+    user_input = params[:id].to_s
+    data = user_input.gsub("\u0000", "")
+    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
     render json: { status: "ok" }
   end
 end

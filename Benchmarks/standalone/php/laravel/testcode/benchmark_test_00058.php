@@ -9,10 +9,12 @@ class BenchmarkTest00058Controller
     public function __invoke(Request $request)
     {
         $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $data = sprintf('%s', $userInput);
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$data);
+        if ($item === null) { return response()->json(["error" => "not found"], 404); }
+        $price = $item->getAttribute('price');
+        return response()->json(['ok' => 1]);
     }
 }

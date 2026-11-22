@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::extract::Path;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
 
-pub async fn benchmark_test_00117() -> impl IntoResponse {
-    let api_value = crate::shared::fetch_url("https://api.partner.example.com/v1/records");
-    let (payload, _origin) = (api_value.clone(), "http");
-    let data = payload;
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00117(Path(path_id): Path<String>) -> impl IntoResponse {
+    let path_value = path_id.clone();
+    let mut pending: std::collections::VecDeque<String> = path_value.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    use md5::Digest;
+    let mut _hasher = md5::Md5::new();
+    _hasher.update(data.as_bytes());
+    let _ = _hasher.finalize();
+    Json(serde_json::json!({"count": 0})).into_response()
 }

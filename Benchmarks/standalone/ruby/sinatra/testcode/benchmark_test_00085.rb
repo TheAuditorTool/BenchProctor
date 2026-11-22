@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "base64"
 require "sequel"
 
 DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
@@ -22,8 +22,9 @@ class BenchmarkTest00085 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00085" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    Nokogiri::XML(user_input) { |config| config.dtdload.noent.nonet }
+    user_input = request.cookies["session_token"].to_s
+    data = Base64.decode64(user_input)
+    DB["SELECT * FROM users WHERE id = '" + data + "'"].prepare(:select, :user_lookup).call
     content_type :json
     JSON.generate({ status: "ok" })
   end

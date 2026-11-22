@@ -7,17 +7,17 @@
 #include <stdint.h>
 #include <time.h>
 
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
+
 void benchmark_test_00346(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _dst[16];
-    size_t _n = strlen(data);
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    memcpy(_dst, data, _n);
-    _dst[_n] = '\0';
-    printf("%s\n", _dst);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    int _vals[8];
+    int _idx = atoi(data) & 7;
+    printf("v=%d\n", _vals[_idx]);
 }

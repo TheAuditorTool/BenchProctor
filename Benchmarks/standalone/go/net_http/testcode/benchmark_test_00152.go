@@ -2,21 +2,31 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"context"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func BenchmarkTest00152(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	form := submissionForm{payload: refererValue}
-	data := form.payload
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
+		return
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	cookieValue := cookieObj.Value
+	var data string
+	if len(cookieValue) > 0 {
+		data = cookieValue
+	} else {
+		data = "default"
+	}
+	_lower := strings.ToLower(data)
+	if !strings.HasPrefix(_lower, "t") && !strings.HasPrefix(_lower, "f") && _lower != "1" && _lower != "0" {
+		http.Error(w, "invalid boolean", http.StatusBadRequest)
+		return
+	}
+	parsedBool := strconv.FormatBool(strings.HasPrefix(_lower, "t") || _lower == "1")
+	redisClient.HSet(context.Background(), "session:"+ctxString(r, ctxKeyUser), map[string]any{"display_name": parsedBool, "locale": "en"})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

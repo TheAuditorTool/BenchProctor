@@ -3,11 +3,17 @@ package testcode
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00250(w http.ResponseWriter, r *http.Request) {
-	val := rand.Intn(1000000)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
+	uaValue := r.Header.Get("User-Agent")
+	capture := func() string { return strings.TrimSpace(uaValue) }
+	data := capture()
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": apiToken})
 }

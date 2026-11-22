@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00084Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,10 @@ class BenchmarkTest00084Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00084
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = sprintf("%s", user_input)
-    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    session[:data] = processed.to_s
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = user_input.force_encoding("UTF-8")
+    reader = Nokogiri::XML::Reader(data) { |config| config.dtdload.noent }
+    values = reader.map { |node| node.value if node.value? }.compact
+    render json: { values: values }
   end
 end

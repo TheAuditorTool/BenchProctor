@@ -6,17 +6,21 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <regex.h>
 
 void benchmark_test_00325(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
     const char *data = (strlen(user_input) > 0) ? user_input : "";
-    size_t _n = strlen(data);
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    else _mode = 0;
-    printf("%d\n", _mode);
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^[a-zA-Z0-9 %._-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "config";
+        regfree(&_re);
+    }
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "ls %s", arg);
+    system(_cmd);
 }

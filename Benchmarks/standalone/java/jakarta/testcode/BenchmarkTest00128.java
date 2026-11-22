@@ -33,14 +33,16 @@ public class BenchmarkTest00128 {
     @GET
     @Path("/BenchmarkTest00128")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00128(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Referer") String referer, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(refererValue)); }
-        catch (NumberFormatException e) { data = refererValue; }
-        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        Object codeResult = new jakarta.el.ELProcessor().eval(data);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public Response BenchmarkTest00128(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
+        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
+        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+        try {
+            javax.naming.directory.Attributes profileAttrs = ctx.getAttributes("uid=" + envValue + ",ou=people,dc=example,dc=com", new String[]{"cn", "mail"});
+            response.setHeader("X-Directory-Attributes", String.valueOf(profileAttrs.size()));
+        } finally { ctx.close(); }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

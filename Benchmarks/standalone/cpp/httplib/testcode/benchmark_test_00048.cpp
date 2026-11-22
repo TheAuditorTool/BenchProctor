@@ -26,10 +26,11 @@ struct Client {
 
 void benchmark_test_00048(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
+    std::string user_input = req.body;
     std::string data;
     try { data = user_input; } catch (...) { data.clear(); }
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    const char *_sep = std::strstr(data.c_str(), "://");
+    if (_sep) std::putchar(_sep[3]);
+    std::putchar('\n');
     res.set_content("ok", "text/plain");
 }

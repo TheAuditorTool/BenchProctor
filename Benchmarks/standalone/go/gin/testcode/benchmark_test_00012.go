@@ -2,19 +2,35 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"encoding/base64"
 	"net/http"
-	"strings"
+	"regexp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00012(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	capture := func() string { return strings.TrimSpace(headerValue) }
-	data := capture()
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	authHeader := c.GetHeader("Authorization")
+	decodedBytes, _ := base64.StdEncoding.DecodeString(authHeader)
+	data := string(decodedBytes)
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
+	}
+	processed := data
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
+		return
+	}
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

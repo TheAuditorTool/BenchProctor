@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
+from pydantic import BaseModel
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -20,8 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00169")
-async def BenchmarkTest00169(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    parts = str(header_value).split(',')
-    data = ' '.join(parts)
-    return HTMLResponse('<div>' + str(data) + '</div>')
+async def BenchmarkTest00169(request: Request, req: UserInput):
+    json_value = req.payload
+    data, _sep, _rest = str(json_value).partition('\x00')
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    return {"updated": True}

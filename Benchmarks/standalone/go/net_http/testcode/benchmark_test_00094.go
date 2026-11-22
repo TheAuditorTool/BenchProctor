@@ -4,19 +4,20 @@ package testcode
 import (
 	"net/http"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00094(w http.ResponseWriter, r *http.Request) {
-	hostValue := r.Host
-	capture := func() string { return strings.TrimSpace(hostValue) }
-	data := capture()
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	data := func(v string) string { return strings.TrimSpace(v) }(pathValue)
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
+	}
+	if result == nil {
+		http.Error(w, "not found", 404)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
 }

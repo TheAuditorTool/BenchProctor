@@ -11,14 +11,11 @@ class BenchmarkTest00170Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('User-Agent', '');
-        [$data] = [$userInput, 'http'];
-        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
-        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $processed . ')');
+        $userInput = json_decode($request->getContent(), true)['variables']['input'] ?? '';
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$userInput);
+        $price = $item->getAttribute('price');
         return new JsonResponse(["committed" => true]);
     }
 }

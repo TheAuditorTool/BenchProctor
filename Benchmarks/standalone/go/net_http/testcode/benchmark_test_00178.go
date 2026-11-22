@@ -2,33 +2,27 @@
 package testcode
 
 import (
-	"bytes"
-	"io"
+	"fmt"
 	"net/http"
-	"os/exec"
 	"regexp"
+	"strings"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00178(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	rawBody := string(rawBytes)
-	data := string(bytes.TrimSpace([]byte(rawBody)))
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	fieldValue := r.FormValue("field")
+	data := fmt.Sprintf("%s", fieldValue)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
 		return
 	}
 	processed := data
-	cmd := exec.Command("python3", "-c", processed)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

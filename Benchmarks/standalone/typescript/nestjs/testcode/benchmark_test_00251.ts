@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Res, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
 import { Response } from "express";
-import { IsString } from "class-validator";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,13 +25,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00251")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00251(@Body() dto: UserInputDto, @Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = dto.payload;
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+  async BenchmarkTest00251(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const [data] = String(userInput).split(',');
+    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
+    xpath.select("//user[name='" + data + "']", xmlDoc);
     return { created: true };
   }
 }

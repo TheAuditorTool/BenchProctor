@@ -8,10 +8,11 @@ class BenchmarkTest00104Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Origin', '');
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        $records = (int) $data;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return response()->json(['frame_bytes' => strlen($frame)], 200);
     }
 }

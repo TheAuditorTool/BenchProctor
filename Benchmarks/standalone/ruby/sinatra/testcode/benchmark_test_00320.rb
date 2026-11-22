@@ -3,6 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00320 < Sinatra::Base
   before do
@@ -19,12 +22,8 @@ class BenchmarkTest00320 < Sinatra::Base
   end
   post "/benchmark_test_00320" do
     user_input = request.env["HTTP_REFERER"].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    eval(data)
+    data = user_input.gsub("\u0000", "")
+    DB[:users].with_sql("SELECT * FROM users WHERE id = '" + data + "'").all
     content_type :json
     JSON.generate({ status: "ok" })
   end

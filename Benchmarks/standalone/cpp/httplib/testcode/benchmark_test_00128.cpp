@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,14 +25,16 @@ struct Client {
 };
 }
 
-void benchmark_test_00128(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00128(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    const char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = std::strtoul(user_input.c_str(), nullptr, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    std::memcpy(_out, _buf, _span);
-    std::cout << std::string(_out, _span).size() << std::endl;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    char *_dst = new char[32];
+    std::snprintf(_dst, 32, "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
+    delete[] _dst;
     res.set_content("ok", "text/plain");
 }

@@ -2,27 +2,32 @@
 package testcode
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"os"
-	"regexp"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00186(w http.ResponseWriter, r *http.Request) {
-	var profileBio string
-	DB.QueryRow("SELECT bio FROM profiles LIMIT 1").Scan(&profileBio)
-	pending := strings.Split(profileBio, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#~\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	processed := data
-	os.Remove("/var/app/data/" + processed)
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	rawBody := string(rawBytes)
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(rawBody), &parsed)
+	data, _ := parsed["value"].(string)
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	procState, err := proc.Wait()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

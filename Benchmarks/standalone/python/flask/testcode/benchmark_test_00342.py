@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from urllib.parse import urlparse
-from flask import request, jsonify
-import re
+from Crypto.Hash import MD4
+from flask import Flask, request, jsonify
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -21,10 +24,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00342", methods=["POST"])
 def BenchmarkTest00342():
-    host_value = request.headers.get('Host', '')
-    data = str(host_value).replace('\x00', '')
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return jsonify({'error': 'forbidden host'}), 403
-    target_url = data
-    return redirect(str(target_url))
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    reader = make_reader(json_value)
+    data = reader()
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

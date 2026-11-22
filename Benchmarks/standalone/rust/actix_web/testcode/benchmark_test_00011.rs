@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpResponse, web};
-use url::Url;
 
 #[actix_web::post("/benchmark_test_00011")]
 pub async fn benchmark_test_00011(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.replace("\t", " ");
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let data = serde_json::from_str::<serde_json::Value>(&graphql_var)
+        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
+    if let Ok((_conn, mut _ldap)) = ldap3::LdapConnAsync::new(&std::env::var("LDAP_URL").unwrap_or_else(|_| "ldap://directory:1389".to_string())).await {
+        ldap3::drive!(_conn);
+        let _ = _ldap.compare(&format!("uid={},ou=people,dc=example,dc=com", data), "employeeType", "manager").await;
+        let _ = _ldap.unbind().await;
+    }
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

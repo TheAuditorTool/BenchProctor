@@ -20,11 +20,16 @@ public class BenchmarkTest00162 {
     }
 
     @GetMapping("/BenchmarkTest00162")
-    public void BenchmarkTest00162(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        String data = String.format("%s", refererValue);
-        if (!data.matches("^[a-zA-Z0-9 _.%\\-]+$")) { response.sendError(400); return; }
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public void BenchmarkTest00162(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(originValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        String boundedVal = data;
+        request.getServletContext().setAttribute("siteBanner", boundedVal);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

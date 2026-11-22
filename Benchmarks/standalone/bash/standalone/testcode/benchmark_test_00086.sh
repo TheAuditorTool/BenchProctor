@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00086() {
-  user_input="$(redis-cli GET user_data)"
-  data=$(printf "%s" "${user_input}" | tr -s " ")
-  _rest="${data#*://}"
-  exec 3<>"/dev/tcp/${_rest%%[/:]*}/80"
+  user_input="$USER_COMMENT"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  printf '%s' "$data" | xmllint --stream --nonet -
 }
 
 benchmark_test_00086 "$@"

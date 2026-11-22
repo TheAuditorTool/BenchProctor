@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import subprocess
 from flask import Flask, request, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,8 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00339", methods=["POST"])
 def BenchmarkTest00339():
-    cookie_value = request.cookies.get('session_token', '')
-    data = (lambda v: v.strip())(cookie_value)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    auth_header = request.headers.get('Authorization', '')
+    data = auth_header if auth_header else 'default'
+    subprocess.run(['echo', data], shell=False)
+    return jsonify({"result": "success"})

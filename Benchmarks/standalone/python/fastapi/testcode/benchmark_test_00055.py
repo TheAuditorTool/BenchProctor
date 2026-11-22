@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from app_runtime import db
+import base64
+import pickle
 from fastapi.responses import JSONResponse
 
 
@@ -22,7 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00055")
 async def BenchmarkTest00055(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(comment_value).encode(), _parser)
+    ua_value = request.headers.get('user-agent', '')
+    parts = []
+    for token in str(ua_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    pickle.loads(base64.b64decode(data))
     return {"updated": True}

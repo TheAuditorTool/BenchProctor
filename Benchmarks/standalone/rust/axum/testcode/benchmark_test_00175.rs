@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
+use axum::http::HeaderMap;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00175(body: Bytes) -> impl IntoResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    struct FormData { payload: String }
-    let data = FormData { payload: graphql_var.clone() }.payload;
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = result.unwrap();
-    let _ = value;
+pub async fn benchmark_test_00175(headers: HeaderMap) -> impl IntoResponse {
+    let origin_value = headers.get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data: String = origin_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| origin_value.clone());
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let Some(seat_limit) = plan_limits.get(data.as_str()).copied() else { return (StatusCode::NOT_FOUND, "").into_response(); };
+    let _ = seat_limit;
     Json(serde_json::json!({"count": 0})).into_response()
 }

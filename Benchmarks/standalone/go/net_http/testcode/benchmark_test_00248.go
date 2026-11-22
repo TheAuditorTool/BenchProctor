@@ -2,37 +2,24 @@
 package testcode
 
 import (
-	"context"
-	"io"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00248(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	data := strings.ReplaceAll(pathValue, "\x00", "")
+	lookupStmt, err := DB.Prepare("SELECT id, name FROM users WHERE id = $1")
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlBody := string(rawBytes)
-	relayPrefix := ""
-	if len(xmlBody) > 0 {
-		relayPrefix = strings.ToLower(xmlBody[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = xmlBody
-	case "f":
-		data = xmlBody
-	default:
-		data = xmlBody
-	}
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	processed := data
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, processed))
+	defer rows.Close()
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

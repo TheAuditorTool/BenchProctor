@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.yaml.snakeyaml.Yaml;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -34,14 +33,19 @@ public class BenchmarkTest00007 {
     @GET
     @Path("/BenchmarkTest00007")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00007(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String apiBody = java.util.Optional.ofNullable(new java.io.BufferedReader(new java.io.InputStreamReader(java.net.URI.create("https://api.svc.local/data").toURL().openStream())).readLine()).orElse("");
-        String data = String.format("%s", apiBody);
-        org.yaml.snakeyaml.LoaderOptions unsafeYamlOpts = new org.yaml.snakeyaml.LoaderOptions();
-        unsafeYamlOpts.setTagInspector(tag -> true);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.Constructor(unsafeYamlOpts));
-        Object obj = yaml.load(data);
-        response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
+    public Response BenchmarkTest00007(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        byte[] hexBytes = new byte[headerValue.length() / 2];
+        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
+            hexBytes[hexIdx] = (byte) Integer.parseInt(headerValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
+        }
+        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        jakarta.servlet.http.Cookie sessionCookie = new jakarta.servlet.http.Cookie("session", cookieValue);
+        sessionCookie.setPath("/");
+        sessionCookie.setHttpOnly(true);
+        sessionCookie.setAttribute("SameSite", "Strict");
+        response.addCookie(sessionCookie);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

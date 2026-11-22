@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00119(headers: HeaderMap) -> impl IntoResponse {
-    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
-    let data = String::from_utf8_lossy(&hex::decode(&cookie_value).unwrap_or_default()).to_string();
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00119(body: Bytes) -> impl IntoResponse {
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    if let Ok((_conn, mut _ldap)) = ldap3::LdapConnAsync::new(&std::env::var("LDAP_URL").unwrap_or_else(|_| "ldap://directory:1389".to_string())).await {
+        ldap3::drive!(_conn);
+        let _ = _ldap.compare(&format!("uid={},ou=people,dc=example,dc=com", json_value), "employeeType", "manager").await;
+        let _ = _ldap.unbind().await;
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

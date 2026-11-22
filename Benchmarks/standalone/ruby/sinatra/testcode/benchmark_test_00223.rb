@@ -3,8 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
-require "open-uri"
+require "dry/schema"
 
 class BenchmarkTest00223 < Sinatra::Base
   before do
@@ -20,8 +19,15 @@ class BenchmarkTest00223 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00223" do
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
-    URI.open(user_input).read
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%\-]+\z/) }
+    unless schema.call(value: data.to_s).success?
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    system("echo " + processed)
     content_type :json
     JSON.generate({ status: "ok" })
   end

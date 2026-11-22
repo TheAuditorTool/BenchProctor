@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
+from lxml import etree
 import re
+from starlette.responses import JSONResponse
+import json
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -23,10 +30,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00351")
 async def BenchmarkTest00351(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    data = '{}'.format(auth_header)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = RequestPayload(graphql_var).value
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    return {"updated": True}

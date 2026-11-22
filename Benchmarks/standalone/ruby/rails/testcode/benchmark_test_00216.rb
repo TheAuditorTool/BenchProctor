@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "socket"
 
 class BenchmarkTest00216Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +11,11 @@ class BenchmarkTest00216Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00216
-    user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    TCPSocket.new(data, 80).close
-    render json: { status: "ok" }
+    user_input = User.first&.name.to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("des-ede3-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
+import secrets
+from flask import Flask, request, jsonify
 from app_runtime import db
 
 
@@ -19,10 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00005", methods=["POST"])
 def BenchmarkTest00005():
-    profile_value = db.fetch_one('SELECT bio FROM profiles LIMIT 1')
-    if profile_value:
-        data = profile_value
-    else:
-        data = ''
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
-    return jsonify({"result": "success"})
+    cookie_value = request.cookies.get('session_token', '')
+    token = secrets.token_bytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(cookie_value), token))
+    return jsonify({'token': str(token)}), 200

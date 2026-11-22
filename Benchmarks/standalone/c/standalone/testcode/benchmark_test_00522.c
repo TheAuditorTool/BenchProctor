@@ -9,23 +9,18 @@
 #include <sqlite3.h>
 #include <regex.h>
 
-struct c_ctx { const char *captured; };
-static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
-
 void benchmark_test_00522(int argc, char **argv)
 {
     const char *user_input = (argc > 2) ? argv[2] : "";
-    struct c_ctx _clx = { user_input };
-    const char *data = c_capture(&_clx);
     regex_t _re;
-    const char *safe = data;
-    if (regcomp(&_re, "^[a-zA-Z0-9#._-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, data, 0, NULL, 0) != 0) safe = "config";
+    const char *arg = user_input;
+    if (regcomp(&_re, "^(asc|desc|name|created)$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, user_input, 0, NULL, 0) != 0) arg = "asc";
         regfree(&_re);
     }
     sqlite3 *_db = NULL;
     sqlite3_open("/var/app/app.db", &_db);
     char _sql[512];
-    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", safe);
+    snprintf(_sql, sizeof(_sql), "SELECT * FROM users WHERE name = '%s'", arg);
     sqlite3_exec(_db, _sql, NULL, NULL, NULL);
 }

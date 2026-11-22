@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-from app_runtime import db
-from fastapi.responses import JSONResponse
+import re
+from dataclasses import dataclass
+from starlette.responses import JSONResponse
 
 
-class UserInput(BaseModel):
-    payload: str = ''
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -24,10 +26,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00309")
-async def BenchmarkTest00309(request: Request, req: UserInput):
-    json_value = req.payload
-    def normalize(value):
-        return value.strip()
-    data = normalize(json_value)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return {"updated": True}
+async def BenchmarkTest00309(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    form = FormData(payload=raw_body)
+    data = form.payload
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

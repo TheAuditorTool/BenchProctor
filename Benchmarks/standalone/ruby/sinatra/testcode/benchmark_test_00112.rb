@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "yaml"
 
 class BenchmarkTest00112 < Sinatra::Base
   before do
@@ -19,10 +18,13 @@ class BenchmarkTest00112 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00112" do
-    user_input = ENV["APP_INPUT"] || ""
-    data = "#{user_input}"
-    YAML.unsafe_load(data)
+    user_input = request.body.read
+    payload, _origin = user_input, 'http'
+    data = payload
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return halt 404, JSON.generate({ error: "not found" }) if match.nil?
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

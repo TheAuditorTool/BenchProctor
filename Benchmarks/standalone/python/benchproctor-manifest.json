@@ -2,43 +2,97 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "django",
+    "django-legacy",
+    "django-lts",
     "fastapi",
-    "flask"
+    "fastapi-legacy",
+    "flask",
+    "flask-legacy"
   ],
   "language": "python",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "django": {
       "categories": 18,
-      "csv_sha256": "03d878e5ae29defe648c3e4ed5248ee5f6f577e7393a01c2b4470db1e9eda63d",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 722,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "c00d80f686c002239ff590e72a8bea4c5b9a0213ab45debe167fd002a17ebcee",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Django 6.1",
+      "published_files": 218,
+      "safe": 108,
+      "total": 216,
+      "vulnerable": 108
+    },
+    "django-legacy": {
+      "categories": 18,
+      "csv_sha256": "f96cdb56becf9cea42c23e9deed74e0bca220a162e83d5e4c4b16a9b46b34d17",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Django 4.2",
+      "published_files": 254,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
+    },
+    "django-lts": {
+      "categories": 18,
+      "csv_sha256": "df0966d38d9294df2fe48107945c0273f967765587e16f4a72a561b1692d50c7",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "lts",
+      "line": "Django 5.2 LTS",
+      "published_files": 254,
+      "safe": 126,
+      "total": 252,
+      "vulnerable": 126
     },
     "fastapi": {
       "categories": 18,
-      "csv_sha256": "414bb3c8646e5382877a859dcc69706ca14e85472cc759d0658c95633008c9de",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 721,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "01594978994d3c35f9ac05460e301e5a9d9823cf036ed332f9d102ad4740576b",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "FastAPI 0.161 with pydantic v2, Starlette 1.x",
+      "published_files": 361,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "fastapi-legacy": {
+      "categories": 18,
+      "csv_sha256": "24a416ece1afc6ad92e3321cd50a04f388f2ce3b58542941967aaeab00f8d20f",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "FastAPI 0.99 with pydantic v1",
+      "published_files": 361,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     },
     "flask": {
       "categories": 18,
-      "csv_sha256": "505562721bf880c69668b352cf0befec1ea7fa9a48f2cb02f0d426bde6c4da0f",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 721,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "6e60d42f0bd9182a28bfe11f1d16b5bab047575cc5f7cc31b1f8af41382972ba",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Flask 3.1",
+      "published_files": 361,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "flask-legacy": {
+      "categories": 18,
+      "csv_sha256": "14dc63ad9fa6e1210bc6dd95d52c85567c27d9743e19bbce123f467f7dd9057a",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Flask 2.x, Werkzeug 2.x",
+      "published_files": 361,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

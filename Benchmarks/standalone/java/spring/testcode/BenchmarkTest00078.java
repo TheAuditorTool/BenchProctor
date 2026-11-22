@@ -20,15 +20,16 @@ public class BenchmarkTest00078 {
     }
 
     @GetMapping("/BenchmarkTest00078")
-    public void BenchmarkTest00078(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data;
-        if (envValue.length() > 256) { data = envValue.substring(0, 256); }
-        else { data = envValue; }
-        if (!data.matches("^[a-zA-Z0-9 _.\\-]+$")) { response.sendError(400); return; }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    public void BenchmarkTest00078(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        try { Integer.parseInt(originValue); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        var boundedVal = Math.max(0, Math.min(Integer.parseInt(originValue), 1048576));
+        int quantity = boundedVal;
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { response.sendError(422, "order exceeds credit limit"); return; }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

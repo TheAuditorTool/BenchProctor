@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use tokio::net::TcpStream;
 
-pub async fn benchmark_test_00165(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Ok(Some(_field)) = multipart.next_field().await {
-            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
-        }
-        _fname
-    };
-    let data: String = upload_name.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| upload_name.clone());
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return (StatusCode::NOT_FOUND, "").into_response() };
-    let _ = value;
+pub async fn benchmark_test_00165(body: Bytes) -> impl IntoResponse {
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    struct FormData { payload: String }
+    let data = FormData { payload: json_value.clone() }.payload;
+    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
+    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

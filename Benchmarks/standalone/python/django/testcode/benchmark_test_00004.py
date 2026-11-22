@@ -4,12 +4,8 @@ from app_runtime import db
 
 
 def BenchmarkTest00004(request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = comment_value if comment_value else 'default'
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return JsonResponse({'error': 'invalid number'}, status=400)
-    processed = _coerced
-    request.session['data'] = str(processed)
-    return JsonResponse({"saved": True})
+    xml_value = request.body.decode('utf-8')
+    data, _sep, _rest = str(xml_value).partition('\x00')
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    value = result['name']
+    return JsonResponse({'name': str(value)}, status=200)

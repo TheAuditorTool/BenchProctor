@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.security.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -22,16 +20,15 @@ public class BenchmarkTest00214 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00214", consumes="multipart/form-data")
-    public void BenchmarkTest00214(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uploadName = file != null ? file.getOriginalFilename() : "";
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", uploadName);
-        String data = sw.toString();
-        java.nio.file.Path baseName = java.nio.file.Paths.get(data).getFileName();
-        String checkedPath = "/var/app/data/" + (baseName == null ? "index" : baseName.toString());
-        String content = Files.readString(Paths.get(checkedPath), java.nio.charset.StandardCharsets.UTF_8);
-        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+    record FormData(String payload) {}
+
+    @PostMapping(path="/BenchmarkTest00214", consumes="application/xml")
+    public void BenchmarkTest00214(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        FormData payload = new FormData(xmlValue);
+        String data = payload.payload();
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 async function BenchmarkTest00175(req, res) {
   const userInput = process.env.APP_INPUT || "";
-  const data = `${userInput}`;
-  await db.query({ name: "user-by-id", text: "SELECT * FROM users WHERE id = $1", values: [data] });
+  function normalize(value) { return String(value).normalize("NFC"); }
+  const data = normalize(userInput);
+  if (!/^[a-zA-Z0-9 _.\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
   res.json({ done: true });
 }
 

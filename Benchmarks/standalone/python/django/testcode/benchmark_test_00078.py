@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from lxml import etree
-from app_runtime import db
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
+import os
+import hashlib
 
 
 def BenchmarkTest00078(request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    parts = []
-    for token in str(comment_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return JsonResponse({"saved": True})
+    xml_value = request.body.decode('utf-8')
+    if xml_value:
+        data = xml_value
+    else:
+        data = ''
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return JsonResponse({'length': len(ciphertext)}, status=200)

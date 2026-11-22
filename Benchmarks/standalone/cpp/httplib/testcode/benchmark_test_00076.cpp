@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,15 +23,23 @@ struct Client {
 };
 }
 
-void benchmark_test_00076(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00076(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("DB_ROW_VALUE");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string user_input = req.get_header_value("User-Agent");
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    std::cout << _mode << std::endl;
     res.set_content("ok", "text/plain");
 }

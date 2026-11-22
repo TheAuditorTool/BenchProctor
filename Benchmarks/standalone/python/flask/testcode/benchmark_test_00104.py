@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
-from flask import Flask, request, jsonify
+import os
+from flask import Flask, session
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,7 +21,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00104", methods=["POST"])
 def BenchmarkTest00104():
-    raw_body = request.get_data(as_text=True)
-    data = str(raw_body).replace('\x00', '')
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
+    auth_header = request.headers.get('Authorization', '')
+    session.update({'data': str(auth_header)})
     return jsonify({"result": "success"})

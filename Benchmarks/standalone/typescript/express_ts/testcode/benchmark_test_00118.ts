@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as http from "http";
 
 export const BenchmarkTest00118 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  const data = `${userInput}`;
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  const userInput = (req.headers.host as string) || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const targetUrl = data;
+  http.get(targetUrl);
   res.json({ accepted: true });
 }

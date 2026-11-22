@@ -18,9 +18,16 @@ class BenchmarkTest00197 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00197" do
-    user_input = request.body.read
-    data = user_input.split(/[ \t]+/).join(" ")
-    system("echo " + data)
+    user_input = params[:id].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      halt 403, JSON.generate({ error: "forbidden" })
+      return
+    end
+    checked_path = resolved
+    File.write(checked_path, "data")
     content_type :json
     JSON.generate({ status: "ok" })
   end

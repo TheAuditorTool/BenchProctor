@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.parsers.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,18 +19,13 @@ public class BenchmarkTest00009 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    record FormData(String payload) {}
-
-    @PostMapping(path="/BenchmarkTest00009", consumes="application/xml")
-    public void BenchmarkTest00009(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        FormData payload = new FormData(xmlValue);
-        String data = payload.payload();
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        dbf.setExpandEntityReferences(false);
-        dbf.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    @PostMapping(path="/BenchmarkTest00009", consumes="multipart/form-data")
+    public void BenchmarkTest00009(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        String data = String.format("%s", multipartValue);
+        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
+        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
+        response.setHeader("X-Code-Result", String.valueOf(codeResult));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Post, Query, NotFoundException } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as libxmljs from "libxmljs";
-import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -21,10 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00308")
-  async BenchmarkTest00308(): Promise<unknown> {
-    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-    const data = nodeUtil.format("%s", userInput);
-    libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-    return { created: true };
+  async BenchmarkTest00308(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const data = `${userInput}`;
+    const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+    const plan = planQuotas.get(String(data));
+    if (!plan) { throw new NotFoundException({ error: "unknown plan" }); }
+    const { quota } = plan;
+    return { quota };
   }
 }

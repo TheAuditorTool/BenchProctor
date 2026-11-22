@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "yaml"
 
 class BenchmarkTest00269 < Sinatra::Base
   before do
@@ -18,13 +19,12 @@ class BenchmarkTest00269 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00269" do
-    user_input = request.env["HTTP_HOST"].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    YAML.safe_load(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

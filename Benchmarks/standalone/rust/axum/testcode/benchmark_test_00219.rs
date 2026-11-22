@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::response::Json;
+use url::Url;
 
-pub async fn benchmark_test_00219(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Ok(Some(_field)) = multipart.next_field().await {
-            _mv = _field.text().await.unwrap_or_default();
-        }
-        _mv
-    };
-    let mut pending: std::collections::VecDeque<String> = multipart_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    crate::shared::store_session("data", &data);
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00219() -> impl IntoResponse {
+    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(comment_value.clone());
+    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
+    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
+    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
+    let target_url = data.clone();
+    axum::response::Redirect::temporary(target_url.as_str()).into_response()
 }

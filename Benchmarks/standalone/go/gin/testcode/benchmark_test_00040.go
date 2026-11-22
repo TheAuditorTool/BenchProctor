@@ -2,23 +2,21 @@
 package testcode
 
 import (
-	"bytes"
-	"io"
 	"net/http"
-	"os/exec"
+	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00040(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+	pathValue := c.Param("id")
+	parsedURL, parseErr := url.Parse(pathValue)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(pathValue, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	rawBody := string(rawBytes)
-	data := string(bytes.TrimSpace([]byte(rawBody)))
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	c.Data(200, "text/plain", output)
+	targetUrl := pathValue
+	c.Redirect(http.StatusFound, targetUrl)
 }

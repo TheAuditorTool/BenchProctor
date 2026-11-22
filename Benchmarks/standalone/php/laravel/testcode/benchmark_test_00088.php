@@ -8,14 +8,12 @@ class BenchmarkTest00088Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $data = urldecode($userInput);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
-        return response()->json(['ok' => 1]);
+        $userInput = $request->json('payload', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $stream = function () use ($data) {
+            echo '<div class="comment">' . $data . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

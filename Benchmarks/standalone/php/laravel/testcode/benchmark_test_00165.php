@@ -8,10 +8,15 @@ class BenchmarkTest00165Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $userInput = $request->getContent();
+        $data = (!empty($userInput)) ? $userInput : '';
+        $_coerced = (float)$data;
+        $processed = $_coerced;
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $processed . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
         return response()->json(['ok' => 1]);
     }
 }

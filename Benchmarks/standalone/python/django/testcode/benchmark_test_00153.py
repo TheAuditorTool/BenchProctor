@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import yaml
-from urllib.parse import unquote
+import subprocess
 
 
 def BenchmarkTest00153(request):
-    multipart_value = request.POST.get('multipart_field', '')
-    data = unquote(multipart_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    cookie_value = request.COOKIES.get('session_token', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(cookie_value)
+    if data not in ('ls', 'cat', 'date', 'whoami'):
+        return JsonResponse({'error': 'forbidden'}, status=403)
+    processed = data
+    subprocess.Popen('echo ' + str(processed), shell=True).wait()
     return JsonResponse({"saved": True})

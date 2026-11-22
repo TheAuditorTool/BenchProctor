@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 use axum::http::HeaderMap;
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00235(headers: HeaderMap) -> impl IntoResponse {
-    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = match ua_value.chars().next() { Some(_) => ua_value.clone(), None => "default".to_string() };
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    tokio::fs::remove_file(format!("/var/app/data/{}", processed)).await.ok();
+    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = if forwarded_ip.len() <= 4096 { forwarded_ip.clone() } else { forwarded_ip.chars().take(4096).collect() };
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 8] = rand::random();
+    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec::<Pkcs7>(data.as_bytes())).unwrap_or_default();
+    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

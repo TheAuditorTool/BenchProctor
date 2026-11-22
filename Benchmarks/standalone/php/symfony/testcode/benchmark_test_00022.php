@@ -11,10 +11,12 @@ class BenchmarkTest00022Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query->get('id', '');
-        $data = str_replace("\0", '', $userInput);
+        $userInput = $request->cookies->get('session_token', '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $sessionCookie = \Symfony\Component\HttpFoundation\Cookie::create('session')->withValue((string)$data)->withPath('/')->withSecure(true)->withHttpOnly(true)->withSameSite('strict');
         $resp = new JsonResponse(['ok' => 1]);
-        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
+        $resp->headers->setCookie($sessionCookie);
         return $resp;
     }
 }

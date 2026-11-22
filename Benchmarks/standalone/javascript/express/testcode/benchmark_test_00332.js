@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeSerialize = require("node-serialize");
+const crypto = require("crypto");
 
 async function BenchmarkTest00332(req, res) {
-  const userInput = (await (await fetch("https://api.partner.example/v1/records")).json()).data || "";
-  const parts = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data = parts.join(',');
-  nodeSerialize.unserialize(data);
-  res.json({ done: true });
+  const userInput = req.body?.multipart_field || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  const digest = await crypto.subtle.digest("SHA-1", Buffer.from(String(data)));
+  res.json({ fingerprint: Buffer.from(digest).toString("hex") }); return;
 }
 
 module.exports = { BenchmarkTest00332 };

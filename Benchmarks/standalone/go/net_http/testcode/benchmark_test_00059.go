@@ -2,30 +2,39 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
+	"regexp"
+	"strconv"
+
+	"github.com/go-ldap/ldap/v3"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00059(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	data := fieldValue
-	if _, after, ok := strings.Cut(fieldValue, ","); ok {
-		data = after
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	form := submissionForm{payload: dbValue}
+	data := form.payload
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
 	}
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	processed := data
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer ldapConn.Close()
+	isAdmin, cmpErr := ldapConn.Compare("uid="+processed+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		http.Error(w, cmpErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("X-Directory-Admin", strconv.FormatBool(isAdmin))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

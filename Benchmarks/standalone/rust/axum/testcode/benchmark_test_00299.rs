@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Form;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use std::collections::HashMap;
 
-pub async fn benchmark_test_00299(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let data = if field_value.len() <= 4096 { field_value.clone() } else { field_value.chars().take(4096).collect() };
-    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00299(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Ok(Some(_field)) = multipart.next_field().await {
+            _mv = _field.text().await.unwrap_or_default();
+        }
+        _mv
+    };
+    crate::shared::ldap_search(&format!("uid={}", multipart_value));
     Json(serde_json::json!({"count": 0})).into_response()
 }

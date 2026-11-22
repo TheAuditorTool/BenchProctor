@@ -2,27 +2,19 @@
 package testcode
 
 import (
-	"encoding/json"
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00022(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
-	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	data := func(v string) string { return strings.TrimSpace(v) }(graphqlVar)
-	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
-	if !allowed[data] {
-		c.String(http.StatusForbidden, "forbidden")
-		return
-	}
-	checkedPath := "/var/app/data/" + data
-	os.WriteFile(checkedPath, []byte("data"), 0644)
-	c.JSON(200, gin.H{"code": "OK"})
+	forwardedIP := c.GetHeader("X-Forwarded-For")
+	data := strings.Join(strings.FieldsFunc(forwardedIP, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	otpValue := rand.Int32N(1000000)
+	otpCode := fmt.Sprintf("%06d", otpValue)
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

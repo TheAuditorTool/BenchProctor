@@ -11,9 +11,11 @@ class BenchmarkTest00095Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00095
-    user_input = cookies[:session_token].to_s
-    data = "%s" % user_input
-    system("echo", data)
-    render json: { status: "ok" }
+    user_input = request.headers["X-Forwarded-For"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    token = rand(1000000)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import os
 from starlette.responses import JSONResponse
-import json
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,13 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00243")
 async def BenchmarkTest00243(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    kind = 'json' if str(graphql_var).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(graphql_var).strip()
-        case _:
-            data = str(graphql_var)
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data, _sep, _rest = str(db_value).partition('\x00')
+    allowed = {'config.json', 'index.html', 'readme.md'}
+    if data not in allowed:
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = '/var/app/data/' + data
+    os.unlink(checked_path)
+    return {"updated": True}

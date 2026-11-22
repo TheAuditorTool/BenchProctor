@@ -18,10 +18,8 @@ class BenchmarkTest00251 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00251" do
-    user_input = request.env["HTTP_HOST"].to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    JSON.parse(user_input)
     content_type :json
     JSON.generate({ status: "ok" })
   end

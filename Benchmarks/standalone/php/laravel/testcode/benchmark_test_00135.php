@@ -2,18 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00135Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->input('multipart_field', '');
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
+        $data = sprintf('%s', $userInput);
+        $token = (string) (int) (lcg_value() * 1000000000000);
+        DB::statement('UPDATE users SET reset_token = ? WHERE email = ?', [$token, (string)$data]);
+        return response()->json(['reset' => 'sent'], 200);
     }
 }

@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00014() {
-  dd if=/dev/urandom bs=16 count=1 2>/dev/null | xxd -p
+  user_input="$(tr '&' '\n' | grep '^field=' | cut -d= -f2-)"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  mysql -e "SELECT * FROM users WHERE id = '$data'"
 }
 
 benchmark_test_00014 "$@"

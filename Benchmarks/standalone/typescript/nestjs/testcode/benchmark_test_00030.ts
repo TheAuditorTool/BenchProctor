@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Redirect } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,10 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00030")
-  @Redirect()
-  async BenchmarkTest00030(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    return { url: userInput };
+  @Post("BenchmarkTest00030/:id")
+  async BenchmarkTest00030(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const payload = { get value() { return userInput; } };
+    const data = payload.value;
+    const token = crypto.randomBytes(16).toString("hex");
+    return { token, label: String(data) };
   }
 }

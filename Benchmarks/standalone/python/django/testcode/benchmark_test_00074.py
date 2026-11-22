@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ctypes
+import re
+from dataclasses import dataclass
 
 
-def BenchmarkTest00074(request, path_param):
-    path_value = path_param
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JsonResponse({'wrapped': wrapped}, status=200)
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
+
+def BenchmarkTest00074(request):
+    raw_body = request.body.decode('utf-8')
+    form = FormData(payload=raw_body)
+    data = form.payload
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    domain = match.group(1)
+    return JsonResponse({'domain': domain}, status=200)

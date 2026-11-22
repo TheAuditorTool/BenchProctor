@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
+const crypto = require("crypto");
 
 async function BenchmarkTest00049(req, res) {
-  const userInput = req.body.multipart_field || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  fs.unlinkSync("/var/app/data/" + processed);
-  res.json({ done: true });
+  const userInput = req.params.id || "";
+  const data = String(userInput).slice(0, 200);
+  const token = crypto.randomUUID() + "-" + String(data).slice(0, 8);
+  res.json({ token }); return;
 }
 
 module.exports = { BenchmarkTest00049 };

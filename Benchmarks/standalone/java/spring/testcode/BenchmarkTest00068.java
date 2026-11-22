@@ -19,16 +19,17 @@ public class BenchmarkTest00068 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00068", consumes="multipart/form-data")
-    public void BenchmarkTest00068(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        String data = multipartValue.isEmpty() ? "default" : multipartValue;
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { response.sendError(400); return; }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    @GetMapping("/BenchmarkTest00068")
+    public void BenchmarkTest00068(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        String data;
+        if (headerValue.length() > 256) { data = headerValue.substring(0, 256); }
+        else { data = headerValue; }
+        String processed = data.matches("^(noop|identity|passthrough|echo)$") ? data : "noop";
+        try (jdk.jshell.JShell snippetShell = jdk.jshell.JShell.builder().executionEngine("local").build()) {
+            java.util.List<jdk.jshell.SnippetEvent> snippetEvents = snippetShell.eval(processed);
+            response.setHeader("X-Code-Result", snippetEvents.isEmpty() ? "" : String.valueOf(snippetEvents.get(0).value()));
+        }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

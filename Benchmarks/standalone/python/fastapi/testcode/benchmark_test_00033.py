@@ -1,18 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import os
+from sqlalchemy import create_engine
 
 
-class UserInput(BaseModel):
-    payload: str = ''
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -30,8 +27,15 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00033")
-async def BenchmarkTest00033(request: Request, req: UserInput):
-    json_value = req.payload
-    data = RequestPayload(json_value).value
-    defusedxml.ElementTree.fromstring(str(data))
+async def BenchmarkTest00033(request: Request):
+    referer_value = request.headers.get('referer', '')
+    reader = make_reader(referer_value)
+    data = reader()
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _coerced
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = ' + str(processed))
     return {"updated": True}

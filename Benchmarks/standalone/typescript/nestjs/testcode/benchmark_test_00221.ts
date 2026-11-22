@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Controller, Post, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,11 +19,16 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00221")
-  async BenchmarkTest00221(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const [data] = String(userInput).split(',');
-    const _prisma = new PrismaClient();
-    await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + data + "'");
-    return { created: true };
+  async BenchmarkTest00221(): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    let data;
+    try { data = JSON.parse(userInput).value || userInput; }
+    catch (e) { data = userInput; }
+    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+    const boundedVal = _coerced;
+    const recordCount = boundedVal;
+    if (!Number.isInteger(recordCount) || recordCount < 0 || recordCount > 16384) { throw new BadRequestException({ error: "too many records" }); }
+    const table = new ArrayBuffer(recordCount * 64);
+    return { allocated: table.byteLength };
   }
 }

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00073(req, res) {
-  const userInput = (req.file && req.file.originalname) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
-  res.json({ done: true });
+  const userInput = req.params.id || "";
+  const recordCount = parseInt(String(userInput), 10);
+  const table = new ArrayBuffer((recordCount * 64) >>> 0);
+  res.json({ allocated: table.byteLength }); return;
 }
 
 module.exports = { BenchmarkTest00073 };

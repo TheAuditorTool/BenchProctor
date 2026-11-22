@@ -26,11 +26,9 @@ struct Client {
 
 void benchmark_test_00229(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    if (_i >= 0 && _i < (int)sizeof(_buf)) std::cout << _buf[_i] << std::endl;
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    struct { int id; int flags; } _rec;
+    _rec.id = std::atoi(user_input.c_str());
+    std::cout << _rec.id << " " << _rec.flags << std::endl;
     res.set_content("ok", "text/plain");
 }

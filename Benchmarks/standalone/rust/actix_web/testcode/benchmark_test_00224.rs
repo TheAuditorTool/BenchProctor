@@ -3,10 +3,10 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00224")]
 pub async fn benchmark_test_00224(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = referer_value.to_string();
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
-    let _ = value;
+    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = String::from_utf8_lossy(&hex::decode(&auth_header).unwrap_or_default()).to_string();
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let Some(seat_limit) = plan_limits.get(data.as_str()).copied() else { return HttpResponse::NotFound().finish(); };
+    let _ = seat_limit;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

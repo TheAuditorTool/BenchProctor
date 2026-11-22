@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import json
-from app_runtime import db
+from fastapi import Form
+import os
+from sqlalchemy import create_engine
+from fastapi.responses import JSONResponse
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -21,14 +24,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00244")
-async def BenchmarkTest00244(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    if graphql_var:
-        data = graphql_var
-    else:
-        data = ''
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+async def BenchmarkTest00244(request: Request, field: str = Form('')):
+    field_value = field
+    data = str(field_value).replace('\x00', '')
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = :id', {'id': data})
+    return {"updated": True}

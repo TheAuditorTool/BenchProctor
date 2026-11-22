@@ -6,25 +6,17 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/rand.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00083(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/tmp/data", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_out)) _span = sizeof(_out);
-    memcpy(_out, _buf, _span);
-    printf("%.*s\n", (int)_span, _out);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = c_passthrough(user_input);
+    unsigned char _rnd[16];
+    if (RAND_priv_bytes(_rnd, sizeof(_rnd)) != 1) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; _i++) snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    printf("token for %s: %s\n", data, _hex);
 }

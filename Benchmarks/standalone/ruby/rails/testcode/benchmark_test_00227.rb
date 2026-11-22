@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "securerandom"
 
 class BenchmarkTest00227Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,9 @@ class BenchmarkTest00227Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00227
-    user_input = request.body.read
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    token = SecureRandom.hex(32)
-    render json: { status: "ok" }
+    user_input = (params[:variables] || {})[:input].to_s
+    match = user_input.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

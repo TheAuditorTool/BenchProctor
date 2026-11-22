@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00081Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,12 +12,17 @@ class BenchmarkTest00081Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00081
-    user_input = request.user_agent.to_s
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
     transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
     data = transform.call(user_input)
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
-    render json: { status: "ok" }
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = true }
+    render json: { text: handler.text }
   end
 end

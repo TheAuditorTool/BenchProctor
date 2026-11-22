@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
+from flask import Flask, request, jsonify
 import os
-from flask import Flask, jsonify
-import ctypes
+from sqlalchemy import create_engine
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = Flask(__name__)
 
@@ -20,9 +26,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00182", methods=["POST"])
 def BenchmarkTest00182():
-    env_value = os.environ.get('APP_INPUT', '')
-    parts = str(env_value).split(',')
-    data = ' '.join(parts)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return jsonify({'wrapped': wrapped}), 200
+    referer_value = request.headers.get('Referer', '')
+    reader = make_reader(referer_value)
+    data = reader()
+    try:
+        _coerced = int(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _coerced
+    with _engine.connect() as conn:
+        conn.exec_driver_sql('SELECT * FROM users WHERE id = ' + str(processed))
+    return jsonify({"result": "success"})

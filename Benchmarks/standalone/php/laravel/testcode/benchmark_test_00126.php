@@ -2,18 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00126Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
-        $parsedBool = $_coerced;
-        session(['data' => (string) $parsedBool]);
+        $userInput = $request->header('Authorization', '');
+        [$data] = [$userInput, 'http'];
+        $result = DB::table('users')->where('id', $data)->first();
+        $value = $result->name;
         return response()->json(['ok' => 1]);
     }
 }

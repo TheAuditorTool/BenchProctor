@@ -2,10 +2,9 @@
 
 async function BenchmarkTest00319(req, res) {
   const userInput = req.headers.authorization || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-  req.session.data = String(processed);
+  const Database = require("better-sqlite3");
+  const appDb = (globalThis._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+  appDb.prepare("SELECT id, name FROM users WHERE name = ?").all(userInput);
   res.json({ done: true });
 }
 

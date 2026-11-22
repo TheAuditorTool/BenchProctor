@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "bunny"
+require "nokogiri"
 
 class BenchmarkTest00024 < Sinatra::Base
   before do
@@ -19,9 +19,15 @@ class BenchmarkTest00024 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00024" do
-    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
-    data = format("%<value>s", value: user_input)
-    JSON.parse(data)
+    user_input = params[:upload][:filename].to_s rescue ""
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
     content_type :json
     JSON.generate({ status: "ok" })
   end

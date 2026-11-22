@@ -1,13 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import json
-from pydantic import BaseModel
 from starlette.responses import JSONResponse
-from app_runtime import db
+import urllib.parse
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -25,9 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00122")
-async def BenchmarkTest00122(request: Request, req: UserInput):
-    json_value = req.payload
-    data = json.loads(json_value).get('value', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+async def BenchmarkTest00122(request: Request):
+    ua_value = request.headers.get('user-agent', '')
+    encoded_session = urllib.parse.quote(str(ua_value), safe='')
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

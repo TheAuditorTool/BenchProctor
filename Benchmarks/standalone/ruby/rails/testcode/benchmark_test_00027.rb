@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "erb"
 
 class BenchmarkTest00027Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,9 @@ class BenchmarkTest00027Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00027
-    user_input = request.user_agent.to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    User.where(id: data).to_a
-    render json: { status: "ok" }
+    user_input = request.headers["X-Custom-Header"].to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    render html: ERB::Util.html_escape(data)
   end
 end

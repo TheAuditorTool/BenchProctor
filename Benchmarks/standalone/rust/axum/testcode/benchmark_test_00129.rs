@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00129() -> impl IntoResponse {
-    let config_value = tokio::fs::read_to_string("/etc/app/config.json").await.unwrap_or_default();
-    let captured = config_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    let _q = format!("SELECT * FROM users WHERE id = '{}'", data);
-    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
-        let _ = sqlx::query(&_q).execute(&_pool).await;
-    }
+pub async fn benchmark_test_00129(headers: HeaderMap) -> impl IntoResponse {
+    let origin_value = headers.get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let mut data = String::new();
+    for token in origin_value.split(',') { data = token.to_string(); }
+    let mut _rng = fastrand::Rng::new();
+    let _token = _rng.u64(..);
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,15 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00176/:id")
-  async BenchmarkTest00176(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    const requested = parseInt(data, 10);
-    const wrapped = (requested + 1) | 0;
-    const buf = Buffer.alloc(wrapped);
-    return { allocated: buf.length };
+  @Post("BenchmarkTest00176")
+  async BenchmarkTest00176(): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    stream.Readable.from([String(userInput)]).pipe(crypto.createHash("sha256")).setEncoding("hex").on("data", (checksum: string) => console.log("content checksum " + checksum));
+    return { created: true };
   }
 }

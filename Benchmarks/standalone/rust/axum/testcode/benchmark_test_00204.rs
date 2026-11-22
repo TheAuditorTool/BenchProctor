@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
-use axum::response::Json;
 
-pub async fn benchmark_test_00204() -> impl IntoResponse {
-    let profile_value = crate::shared::db_fetch_one("SELECT bio FROM profiles LIMIT 1");
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", profile_value).ok();
-    let _q = format!("SELECT * FROM users WHERE id = '{}'", data);
-    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
-        let _ = sqlx::query(&_q).execute(&_pool).await;
-    }
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00204(headers: HeaderMap) -> impl IntoResponse {
+    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(referer_value.clone());
+    axum::response::Redirect::to(data.as_str()).into_response()
 }

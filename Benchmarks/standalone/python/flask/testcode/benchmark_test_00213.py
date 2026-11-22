@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from flask import Flask, request, jsonify
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -19,9 +22,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00213", methods=["POST"])
 def BenchmarkTest00213():
-    header_value = request.headers.get('X-Custom-Header', '')
-    parts = str(header_value).split(',')
-    data = ' '.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return jsonify({"result": "success"})
+    field_value = request.form.get('field', '')
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(str(field_value).encode()) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+    return jsonify({'length': len(ciphertext)}), 200

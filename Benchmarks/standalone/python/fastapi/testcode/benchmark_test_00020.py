@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
+from lxml import etree
 from fastapi.responses import JSONResponse
 
 
@@ -19,11 +19,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00020")
-async def BenchmarkTest00020(request: Request):
-    host_value = request.headers.get('host', '')
-    data, _sep, _rest = str(host_value).partition('\x00')
-    checked_path = os.path.join('/var/app/data', os.path.basename(data))
-    with open(checked_path, 'w') as fh:
-        fh.write('data')
+@app.post("/BenchmarkTest00020/{id}")
+async def BenchmarkTest00020(request: Request, id: str):
+    path_value = id
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(path_value) + '"]')
     return {"updated": True}

@@ -8,13 +8,7 @@ class BenchmarkTest00227Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->input('multipart_field', '');
+        return \Illuminate\Support\Facades\Redirect::away((string)$userInput);
     }
 }

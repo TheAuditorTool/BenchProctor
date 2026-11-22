@@ -2,19 +2,18 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"net/http"
-	"strings"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00118(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(headerValue)
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	authHeader := c.GetHeader("Authorization")
+	content, err := os.ReadFile("/var/app/data/" + authHeader)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	c.Data(200, "text/plain", content)
 }

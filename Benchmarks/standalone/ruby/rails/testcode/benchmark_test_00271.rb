@@ -11,12 +11,12 @@ class BenchmarkTest00271Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00271
-    user_input = request.headers["Origin"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    Marshal.load(data)
+    user_input = request.referer.to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    _coerced = Integer(data, exception: false).to_s
+    parsed_id = _coerced
+    ActiveRecord::Base.connection.exec_query("SELECT * FROM users WHERE id = '" + parsed_id + "'", "SQL", [], prepare: true)
     render json: { status: "ok" }
   end
 end

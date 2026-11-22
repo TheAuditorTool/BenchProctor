@@ -2,18 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00145', methods: ['POST'])]
 class BenchmarkTest00145Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = file_get_contents('http://api.corp.lan/data');
+        $userInput = $request->request->get('field', '');
         $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
         $data = $form->payload;
-        unserialize($data);
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $email = $xpath->evaluate("string(//user[@id='" . $data . "']/email)");
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import urllib.request
+from urllib.parse import urlparse
 from flask import Flask, request, jsonify
+import re
 
 
 def make_reader(raw):
@@ -23,14 +26,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00123", methods=["POST"])
 def BenchmarkTest00123():
-    host_value = request.headers.get('Host', '')
-    reader = make_reader(host_value)
+    user_id = request.args.get('id', '')
+    reader = make_reader(user_id)
     data = reader()
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return jsonify({'allocated': allocated}), 200
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return jsonify({"result": "success"})

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -13,6 +14,12 @@ import jakarta.ws.rs.ext.Provider;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class BenchmarkTest00087 {
+    private static class UserInput {
+        @jakarta.validation.constraints.NotNull
+        public String payload;
+        public UserInput() {}
+        public UserInput(String payload) { this.payload = payload; }
+    }
 
     @Provider
     public static class BindingRestrictionFilter implements ContainerRequestFilter {
@@ -31,19 +38,18 @@ public class BenchmarkTest00087 {
     }
 
     @POST
-    @Path("/BenchmarkTest00087/comments")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/BenchmarkTest00087")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00087(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+    public Response BenchmarkTest00087(@Valid UserInput req, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String jsonValue = req.payload;
         java.util.Properties store = new java.util.Properties();
-        store.setProperty("value", commentValue);
+        store.setProperty("value", jsonValue);
         String data = store.getProperty("value", "");
-        java.net.URI parsed = java.net.URI.create(data);
-        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
-        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
-        String targetUrl = data;
-        response.sendRedirect(targetUrl);
-        return Response.ok().build();
+        try (jdk.jshell.JShell snippetShell = jdk.jshell.JShell.builder().executionEngine("local").build()) {
+            java.util.List<jdk.jshell.SnippetEvent> snippetEvents = snippetShell.eval(data);
+            response.setHeader("X-Code-Result", snippetEvents.isEmpty() ? "" : String.valueOf(snippetEvents.get(0).value()));
+        }
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

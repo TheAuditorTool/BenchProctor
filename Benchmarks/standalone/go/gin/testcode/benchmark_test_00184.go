@@ -2,24 +2,16 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"net/http"
-	"strconv"
+	"fmt"
+	"html/template"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00184(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	data := strings.ReplaceAll(commentText, "\x00", "")
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	refererValue := c.GetHeader("Referer")
+	data := func(v string) string { return strings.TrimSpace(v) }(refererValue)
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(c.Writer, "<p>Results for %s</p>", template.HTMLEscapeString(data))
 }

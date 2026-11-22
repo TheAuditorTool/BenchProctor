@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import subprocess
+import yaml
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 def BenchmarkTest00040(request):
-    user_id = request.GET.get('id', '')
-    data = '%s' % (user_id,)
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
+    origin_value = request.META.get('HTTP_ORIGIN', '')
+    data = RequestPayload(origin_value).value
+    yaml.load(data, Loader=yaml.UnsafeLoader)
     return JsonResponse({"saved": True})

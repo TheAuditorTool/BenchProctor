@@ -3,6 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00215 < Sinatra::Base
   before do
@@ -18,18 +22,15 @@ class BenchmarkTest00215 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00215" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + parsed_bool.to_s + "']/role")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ roles: roles.map(&:text) })
   end
 end

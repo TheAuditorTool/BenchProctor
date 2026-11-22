@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "nokogiri"
 require "sequel"
 
 DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
@@ -22,12 +22,11 @@ class BenchmarkTest00105 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00105" do
-    user_input = DB[:comments].first&.fetch(:text, "").to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
+    _ = _doc
     content_type :json
     JSON.generate({ status: "ok" })
   end

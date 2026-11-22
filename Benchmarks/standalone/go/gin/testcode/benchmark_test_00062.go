@@ -2,27 +2,22 @@
 package testcode
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00062(c *gin.Context) {
-	pathValue := c.Param("id")
-	data := pathValue
-	if _, after, ok := strings.Cut(pathValue, ","); ok {
-		data = after
-	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
+	forwardedIP := c.GetHeader("X-Forwarded-For")
+	data := fmt.Sprintf("%s", forwardedIP)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(data)); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	c.Data(200, "text/html", bioPage.Bytes())
 }

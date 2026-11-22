@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as childProcess from "child_process";
-import * as nodeUtil from "util";
+import * as shared from "./shared";
+const { db } = shared;
 
 export const BenchmarkTest00146 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
-  const data = nodeUtil.format("%s", userInput);
-  childProcess.execFileSync("echo", [data]);
-  res.json({ accepted: true });
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const domain = String(data).match(/@([A-Za-z0-9.-]+)$/)![1];
+  res.json({ domain }); return;
 }

@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Query;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00094(headers: HeaderMap) -> impl IntoResponse {
-    let referer_value = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let captured = referer_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    crate::shared::set_cookie(&format!("session={}; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00094(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let user_id = params.get("id").cloned().unwrap_or_default();
+    let data = user_id.to_string();
+    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
+    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), processed.clone());
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00096(req, res) {
-  const userInput = req.body.field || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
+  const userInput = req.headers["x-custom-header"] || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  new Function("return (" + String(processed) + ");")();
   res.json({ done: true });
 }
 

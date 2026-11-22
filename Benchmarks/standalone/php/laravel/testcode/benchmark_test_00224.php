@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00224Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1')->body;
-        $data = sprintf('%s', $userInput);
-        \App\Models\User::where('id', $data)->get();
+        $userInput = $request->json('payload', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        \Symfony\Component\Yaml\Yaml::parse((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

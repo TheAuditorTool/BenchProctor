@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use tokio::net::TcpStream;
-use url::Url;
 
-pub async fn benchmark_test_00269(body: Bytes) -> impl IntoResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = serde_json::from_str::<serde_json::Value>(&json_value)
-        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    let _sock_host = if target_url.contains("://") { url::Url::parse(&target_url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { target_url.clone() };
-    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
+pub async fn benchmark_test_00269(headers: HeaderMap) -> impl IntoResponse {
+    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
+    let data: String = cookie_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| cookie_value.clone());
+    use rand::{RngExt, SeedableRng};
+    let _seed: u64 = data.bytes().fold(0u64, |a, b| a.wrapping_add(b as u64));
+    let mut _rng = rand::rngs::StdRng::seed_from_u64(_seed);
+    let _token: u64 = _rng.random();
+    crate::shared::store_session("csrf_token", &_token.to_string());
     Json(serde_json::json!({"count": 0})).into_response()
 }

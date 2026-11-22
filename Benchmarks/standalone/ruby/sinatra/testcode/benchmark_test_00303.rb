@@ -3,10 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00303 < Sinatra::Base
   before do
@@ -22,9 +18,10 @@ class BenchmarkTest00303 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00303" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    _doc = Nokogiri::XML(user_input) { |config| config.nonet.nodtdload }
-    _ = _doc
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    redirect data
     content_type :json
     JSON.generate({ status: "ok" })
   end

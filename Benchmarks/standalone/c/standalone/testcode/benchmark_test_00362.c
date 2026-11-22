@@ -9,19 +9,12 @@
 
 void benchmark_test_00362(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
+    const char *user_input = (argc > 2) ? argv[2] : "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _dst[32];
-    sprintf(_dst, "user=%s", data);
-    puts(_dst);
+    const char *arg = data;
+    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) arg = "/bin/echo";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "%s", arg);
+    execl("/bin/sh", "sh", "-c", _cmd, (char *)NULL);
 }

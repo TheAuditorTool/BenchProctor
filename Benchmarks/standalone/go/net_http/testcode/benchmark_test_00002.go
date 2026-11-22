@@ -2,34 +2,24 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"io"
 	"net/http"
-	"strconv"
-	"strings"
+	"net/url"
 )
 
 func BenchmarkTest00002(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	relayPrefix := ""
-	if len(dbValue) > 0 {
-		relayPrefix = strings.ToLower(dbValue[:1])
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
 	}
+	rawBody := string(rawBytes)
 	var data string
-	switch relayPrefix {
-	case "h":
-		data = dbValue
-	case "f":
-		data = dbValue
-	default:
-		data = dbValue
+	if len(rawBody) > 0 {
+		data = rawBody
+	} else {
+		data = "default"
 	}
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	w.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; HttpOnly; SameSite=Strict")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

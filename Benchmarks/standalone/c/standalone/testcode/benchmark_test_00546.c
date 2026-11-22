@@ -6,15 +6,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <sqlite3.h>
+
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00546(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    size_t _n = strlen(data);
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    printf("%d\n", _mode);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    const char *data = c_passthrough(user_input);
+    sqlite3 *_db = NULL;
+    sqlite3_open("/var/app/app.db", &_db);
+    sqlite3_stmt *_stmt = NULL;
+    sqlite3_prepare_v2(_db, "SELECT * FROM users WHERE name = ?", -1, &_stmt, NULL);
+    sqlite3_bind_text(_stmt, 1, data, -1, NULL);
+    sqlite3_step(_stmt);
+    sqlite3_finalize(_stmt);
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -16,6 +15,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -26,20 +26,12 @@ struct Client {
 
 void benchmark_test_00068(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Origin");
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    std::string _authority = data;
-    std::string::size_type _scheme = _authority.find("://");
-    if (_scheme != std::string::npos) _authority = _authority.substr(_scheme + 3);
-    else if (_authority.rfind("//", 0) == 0) _authority = _authority.substr(2);
-    _authority = _authority.substr(0, _authority.find_first_of("/?#"));
-    std::string::size_type _userinfo = _authority.rfind('@');
-    if (_userinfo != std::string::npos) _authority = _authority.substr(_userinfo + 1);
-    _authority = _authority.substr(0, _authority.find(':'));
-    static const std::regex _hw("^(api\\.internal\\.example\\.com|cdn\\.internal\\.example\\.com)$");
-    if (!_authority.empty() && !std::regex_match(_authority, _hw)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
-    std::string safe = data;
-    res.set_redirect(safe, 302);
+    std::string user_input = req.get_param_value("multipart_field");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::string _ckval = data;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.insert(std::make_pair(std::string("Set-Cookie"), std::string("session=") + _ckval + "; Secure; HttpOnly; SameSite=Strict; Path=/"));
+    res.set_content("ok", "text/plain");
 }

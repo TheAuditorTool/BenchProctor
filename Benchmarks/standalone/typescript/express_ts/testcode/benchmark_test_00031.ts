@@ -2,14 +2,15 @@
 import { Request, Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import * as libxmljs from "libxmljs";
 
 export const BenchmarkTest00031 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-  const pending: string[] = String(userInput).split(',');
-  const collected: string[] = [];
-  while (pending.length) { collected.push(pending.shift() ?? ""); }
-  const data: string = collected.join(',');
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true } as libxmljs.XMLParseOptions);
-  res.json({ accepted: true });
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const requested = boundedVal;
+  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
+  const buf = Buffer.alloc(requested + 1);
+  res.json({ allocated: buf.length }); return;
 }

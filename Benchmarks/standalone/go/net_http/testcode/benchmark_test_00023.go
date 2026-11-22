@@ -3,22 +3,16 @@ package testcode
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
 func BenchmarkTest00023(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	capture := func() string { return strings.TrimSpace(originValue) }
-	data := capture()
-	baseDir := "/var/app/data"
-	cleanPath := filepath.Clean(filepath.Join(baseDir, data))
-	if cleanPath != baseDir && !strings.HasPrefix(cleanPath, baseDir+"/") {
-		http.Error(w, "access denied", http.StatusForbidden)
-		return
+	userID := r.URL.Query().Get("id")
+	var data string
+	for _, token := range strings.Split(userID, ",") {
+		data = token
 	}
-	checkedPath := cleanPath
-	os.WriteFile(checkedPath, []byte("data"), 0644)
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	w.Header().Add("Set-Cookie", sessionCookie.String())
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

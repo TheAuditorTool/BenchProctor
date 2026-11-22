@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00211() {
-  user_input="$(cat /dev/stdin)"
-  _schema_re='^[A-Za-z0-9_][A-Za-z0-9_ @-]*$'
-  if [[ ! "$user_input" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
-  processed="$user_input"
-  ldapsearch -x -b "dc=example,dc=com" "uid=$processed"
+  user_input="$HTTP_REFERER"
+  data=$(printf "%b" "${user_input//%/\\x}")
+  awk -v name="$data" 'BEGIN { system("getent group " name) }'
 }
 
 benchmark_test_00211 "$@"

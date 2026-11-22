@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse, web};
+use base64::Engine;
+use base64::engine::general_purpose;
 
 #[actix_web::post("/benchmark_test_00283")]
-pub async fn benchmark_test_00283() -> HttpResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data = db_value.replace("\t", " ");
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00283(body: web::Bytes) -> HttpResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&raw_body).unwrap_or_default()).to_string();
+    use sha1::Digest;
+    let _ = sha1::Sha1::new().chain_update(data.as_bytes()).finalize();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import Database from "better-sqlite3";
+import { createClient } from "redis";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,13 +21,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00258")
-  async BenchmarkTest00258(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    const pending: string[] = String(userInput).split(',');
-    const collected: string[] = [];
-    while (pending.length) { collected.push(pending.shift() ?? ""); }
-    const data: string = collected.join(',');
-    crypto.createHash("sha256").update(data).digest("hex");
+  async BenchmarkTest00258(): Promise<unknown> {
+    const _cache = createClient({ url: "redis://cache:6379" });
+    await _cache.connect();
+    const userInput = (await _cache.get("user_data")) || "";
+    const appDb = ((globalThis as unknown as { _appDb?: InstanceType<typeof Database> })._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+    appDb.prepare("SELECT id, name FROM users WHERE name = '" + userInput + "'").all();
     return { created: true };
   }
 }

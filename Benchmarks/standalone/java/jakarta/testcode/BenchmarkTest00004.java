@@ -30,16 +30,18 @@ public class BenchmarkTest00004 {
         }
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
     @GET
-    @Path("/BenchmarkTest00004/{pathId}")
+    @Path("/BenchmarkTest00004")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00004(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        String data = normalize(pathValue);
-        request.getSession().setAttribute("displayName", data);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00004(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", envValue);
+        String data = sw.toString();
+        java.util.Set<String> allowed = java.util.Set.of("ls", "cat", "date", "echo");
+        if (!allowed.contains(data)) { return Response.status(403).build(); }
+        String allowedBin = data;
+        Runtime.getRuntime().exec(new String[]{allowedBin}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

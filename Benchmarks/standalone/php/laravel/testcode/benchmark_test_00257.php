@@ -8,11 +8,9 @@ class BenchmarkTest00257Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        eval((string)$data);
+        $userInput = $request->header('User-Agent', '');
+        $data = "{$userInput}";
+        \Illuminate\Support\Facades\Cache::forever('tenant:display_name', (string) $data);
         return response()->json(['ok' => 1]);
     }
 }

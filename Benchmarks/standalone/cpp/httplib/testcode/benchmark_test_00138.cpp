@@ -27,11 +27,8 @@ struct Client {
 
 void benchmark_test_00138(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("Cookie");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    std::string _cmd = std::string("grep ") + data + " /var/log/app.log";
+    std::string user_input = req.path_params.at("id");
+    std::string _cmd = std::string("grep ") + user_input + " /var/log/app.log";
     FILE *_p = popen(_cmd.c_str(), "r");
     if (_p) pclose(_p);
     res.set_content("ok", "text/plain");

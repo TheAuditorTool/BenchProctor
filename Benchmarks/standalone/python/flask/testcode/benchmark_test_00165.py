@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import socket
-import os
-import redis
+from flask import Flask, request
+from flask import render_template_string
+from flask import jsonify
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = Flask(__name__)
 
@@ -23,8 +20,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00165", methods=["POST"])
 def BenchmarkTest00165():
-    redis_value = redis_client.get('user_data')
-    data = f'{redis_value!s}'
-    s = socket.create_connection((str(data), 80))
-    s.close()
-    return jsonify({"result": "success"})
+    cookie_value = request.cookies.get('session_token', '')
+    if cookie_value:
+        data = cookie_value
+    else:
+        data = ''
+    return render_template_string('<div>{{ value }}</div>', value=str(data))

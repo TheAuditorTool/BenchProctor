@@ -2,13 +2,15 @@
 package testcode
 
 import (
-	"os"
+	"fmt"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00011(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	os.Remove("/var/app/data/" + forwardedIP)
-	c.JSON(200, gin.H{"code": "OK"})
+	userID := c.Query("id")
+	data, _ := url.QueryUnescape(userID)
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(c.Writer, "<p>Results for %s</p>", data)
 }

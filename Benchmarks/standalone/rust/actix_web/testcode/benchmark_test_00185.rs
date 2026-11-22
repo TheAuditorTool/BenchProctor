@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpResponse, web};
-use url::Url;
+use rand::rngs::SysRng;
 
 #[actix_web::post("/benchmark_test_00185")]
-pub async fn benchmark_test_00185(body: web::Bytes) -> HttpResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = serde_json::from_str::<serde_json::Value>(&graphql_var)
-        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+pub async fn benchmark_test_00185(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    use rand::Rng;
+    let mut _rng: rand::rngs::StdRng = rand::make_rng();
+    let _token = _rng.next_u64();
+    crate::shared::store_session(&format!("csrf_token:{}", field_value), &_token.to_string());
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

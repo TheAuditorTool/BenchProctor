@@ -2,38 +2,20 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 func BenchmarkTest00189(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
+	cookieObj, err := r.Cookie("session_token")
 	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	uploadName := header.Filename
-	relayPrefix := ""
-	if len(uploadName) > 0 {
-		relayPrefix = strings.ToLower(uploadName[:1])
-	}
+	cookieValue := cookieObj.Value
 	var data string
-	switch relayPrefix {
-	case "h":
-		data = uploadName
-	case "f":
-		data = uploadName
-	default:
-		data = uploadName
+	if cookieValue != "" {
+		data = cookieValue
 	}
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	htmlOut := "<div>" + data + "</div>"
+	w.Write([]byte(htmlOut))
 }

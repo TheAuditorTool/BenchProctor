@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import javax.xml.parsers.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,7 +20,6 @@ public class BenchmarkTest00031 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
     private static java.sql.Connection connection;
     static {
         try {
@@ -30,19 +30,26 @@ public class BenchmarkTest00031 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
 
     @GetMapping("/BenchmarkTest00031")
-    public void BenchmarkTest00031(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String data = normalize(uaValue);
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
+    public void BenchmarkTest00031(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        String prefix = userName.length() > 0 ? userName.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = userName.toLowerCase(); break;
+            case "f": data = userName.toUpperCase(); break;
+            default: data = userName.strip(); break;
         }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

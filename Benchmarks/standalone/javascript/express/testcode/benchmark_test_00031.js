@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const path = require("path");
-const fs = require("fs");
+const ldapjs = require("ldapjs");
 
 async function BenchmarkTest00031(req, res) {
-  const userInput = req.headers.host || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const resolved = path.resolve("/var/app/data", data);
-  if (!resolved.startsWith("/var/app/data/")) { res.status(403).json({error:"forbidden"}); return; }
-  const checkedPath = resolved;
-  fs.unlinkSync(checkedPath);
+  const userInput = req.body?.multipart_field || "";
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + userInput + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
   res.json({ done: true });
 }
 

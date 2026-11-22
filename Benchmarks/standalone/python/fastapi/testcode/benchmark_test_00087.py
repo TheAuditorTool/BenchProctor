@@ -1,8 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from fastapi import Form
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from fastapi.responses import JSONResponse
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = FastAPI()
 
@@ -20,9 +35,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00087")
-async def BenchmarkTest00087(request: Request, field: str = Form('')):
-    field_value = field
-    data = str(field_value).replace('\x00', '')
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+async def BenchmarkTest00087(request: Request):
+    referer_value = request.headers.get('referer', '')
+    data = referer_value if referer_value else 'default'
+    with Session(_engine) as _session:
+        _session.scalars(select(User).where(User.id == data)).first()
+    return {"updated": True}

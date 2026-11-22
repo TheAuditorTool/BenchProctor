@@ -2,14 +2,42 @@
 package testcode
 
 import (
-	"strings"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00027(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	data := func(v string) string { return strings.TrimSpace(v) }(uaValue)
-	htmlOut := "<div>" + data + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
+	}
+	xmlBody := string(rawBytes)
+	var data string
+	if xmlBody != "" {
+		data = xmlBody
+	}
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
+		return
+	}
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+data+"']")
+	if queryErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
+		return
+	}
+	c.Header("X-User-Matches", strconv.Itoa(len(userNodes)))
+	c.JSON(200, gin.H{"code": "OK"})
 }

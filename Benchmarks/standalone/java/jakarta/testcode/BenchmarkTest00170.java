@@ -30,24 +30,19 @@ public class BenchmarkTest00170 {
         }
     }
 
-    record FormData(String payload) {}
-
-    @POST
+    @GET
     @Path("/BenchmarkTest00170")
-    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00170(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        FormData payload = new FormData(rawData);
-        String data = payload.payload();
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+    public Response BenchmarkTest00170(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(originValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        String boundedVal = data;
+        request.getServletContext().setAttribute("siteBanner", boundedVal);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

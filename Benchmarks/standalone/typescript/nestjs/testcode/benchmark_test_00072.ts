@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +20,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00072")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00072(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    eval(data);
+  async BenchmarkTest00072(@Headers("origin") origin: string): Promise<unknown> {
+    const userInput = origin || "";
+    const data = String(userInput).slice(0, 200);
+    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.parse("//user[name='" + processed + "']").select({ node: usersDoc });
     return { created: true };
   }
 }

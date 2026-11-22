@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00249Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return response()->json(['allocated' => $allocated], 200);
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $stream = function () use ($data) {
+            echo '<div class="comment">' . e($data) . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

@@ -2,32 +2,20 @@
 package testcode
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
-
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00110(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
+	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
+	data := strings.ReplaceAll(pathValue, "\x00", "")
+	query := fmt.Sprintf(`SELECT * FROM "%s"`, strings.ReplaceAll(data, `"`, `""`))
+	rows, err := DB.Query(query)
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(xmlBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
+	defer rows.Close()
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -11,13 +11,10 @@ class BenchmarkTest00258Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00258
-    user_input = User.first&.name.to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    ActiveRecord::Base.connection.execute("SELECT * FROM " + ActiveRecord::Base.connection.quote_column_name(data))
+    user_input = request.user_agent.to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    Marshal.load(data)
     render json: { status: "ok" }
   end
 end

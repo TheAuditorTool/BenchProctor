@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Headers, Post } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,11 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00344")
-  @Header("Content-Type", "text/html")
   async BenchmarkTest00344(@Headers("user-agent") ua: string): Promise<unknown> {
     const userInput = ua || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    return "<div>" + data + "</div>";
+    const data = String(userInput).slice(0, 200);
+    crypto.createHash("sha256").update(data).digest("hex");
+    return { created: true };
   }
 }

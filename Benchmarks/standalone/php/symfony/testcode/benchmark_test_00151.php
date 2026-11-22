@@ -11,11 +11,14 @@ class BenchmarkTest00151Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookies->get('session_token', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        if (!preg_match('#^[a-zA-Z0-9 _.\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $request->getSession()->set('data', (string) $processed);
+        $userInput = $request->headers->get('Referer', '');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $compiled = tempnam('/var/app/cache', 'rule_');
+        file_put_contents($compiled, '<?php return static fn (array $order) => ' . $data . ';');
+        $rule = include $compiled;
+        unlink($compiled);
+        $result = $rule(['total' => 100, 'items' => 3]);
         return new JsonResponse(["committed" => true]);
     }
 }

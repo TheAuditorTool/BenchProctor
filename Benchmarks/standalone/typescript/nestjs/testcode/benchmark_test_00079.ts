@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,15 +20,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00079")
-  async BenchmarkTest00079(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    const _input = String(userInput);
-    let data;
-    switch (_input.startsWith('{') ? 'json' : 'text') {
-      case 'json': data = _input.normalize('NFC'); break;
-      default: data = _input; break;
-    }
-    JSON.parse(data);
+  async BenchmarkTest00079(): Promise<unknown> {
+    const userInput = fs.readFileSync("/tmp/data", "utf8");
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    const _prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+    await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + data + "'");
     return { created: true };
   }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import javax.xml.parsers.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,12 +20,14 @@ public class BenchmarkTest00015 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00015")
-    public void BenchmarkTest00015(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        java.util.Map.Entry<String,String> pair = java.util.Map.entry(uaValue, "request");
-        String data = pair.getKey();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    record FormData(String payload) {}
+
+    @PostMapping(path="/BenchmarkTest00015", consumes="text/plain")
+    public void BenchmarkTest00015(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        FormData payload = new FormData(rawData);
+        String data = payload.payload();
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

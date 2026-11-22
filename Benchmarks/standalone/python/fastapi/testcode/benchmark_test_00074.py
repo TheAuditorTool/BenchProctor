@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
 from starlette.responses import JSONResponse
-from app_runtime import db
+from pathlib import Path
 
 
 app = FastAPI()
@@ -22,8 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00074")
 async def BenchmarkTest00074(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = str(db_value).replace('\x00', '')
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    origin_value = request.headers.get('origin', '')
+    data = f'{origin_value!s}'
+    allowed = {'config.json', 'index.html', 'readme.md'}
+    if data not in allowed:
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = '/var/app/data/' + data
+    Path(checked_path).write_text('data')
+    return {"updated": True}

@@ -11,11 +11,9 @@ class BenchmarkTest00197Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('multipart_field', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return new JsonResponse(['token' => (string)$token], 200);
+        $userInput = $request->headers->get('Host', '');
+        ini_set('yaml.decode_php', '0');
+        $document = yaml_parse((string)$userInput);
+        return new JsonResponse(["committed" => true]);
     }
 }

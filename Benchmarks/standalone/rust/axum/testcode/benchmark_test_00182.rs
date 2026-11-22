@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Form;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use std::collections::HashMap;
 
-pub async fn benchmark_test_00182(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let captured = field_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    crate::shared::db_query(&format!("SELECT * FROM `{}`", data.replace('`', "")));
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00182(headers: HeaderMap) -> impl IntoResponse {
+    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let (payload, _origin) = (ua_value.clone(), "http");
+    let data = payload;
+    let _cookie = cookie::Cookie::build(("session", data.clone())).http_only(true).same_site(cookie::SameSite::Strict).build();
+    return (axum::response::AppendHeaders([(axum::http::header::SET_COOKIE, _cookie.to_string())]), Json(serde_json::json!({"count": 0}))).into_response();
 }

@@ -11,9 +11,10 @@ class BenchmarkTest00179Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('multipart_field', '');
+        $userInput = $request->headers->get('Authorization', '');
         $data = (!empty($userInput)) ? $userInput : '';
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
-        return new JsonResponse(["committed" => true]);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->set('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; Secure; HttpOnly; SameSite=Strict');
+        return $resp;
     }
 }

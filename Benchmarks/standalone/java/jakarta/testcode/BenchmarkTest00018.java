@@ -30,22 +30,31 @@ public class BenchmarkTest00018 {
         }
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @GET
-    @Path("/BenchmarkTest00018")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00018(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        String data = normalize(originValue);
-        String processed = data.matches("^(admin|user|guest|service)$") ? data : "admin";
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+    private static java.sql.Connection connection;
+    static {
         try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + processed + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static final class EntityManagers {
+        static final jakarta.persistence.EntityManagerFactory FACTORY = jakarta.persistence.Persistence.createEntityManagerFactory("appPU");
+    }
+
+    @POST
+    @Path("/BenchmarkTest00018")
+    @Consumes("text/plain")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00018(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawData);
+        String data = root.path("value").asText();
+        if (!data.matches("^[a-zA-Z0-9_.#\\-]+$")) { return Response.status(400).build(); }
+        jakarta.persistence.EntityManager em = EntityManagers.FACTORY.createEntityManager();
+        em.createNativeQuery("SELECT id, name FROM users WHERE name = '" + data + "'").getResultList();
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

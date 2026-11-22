@@ -26,19 +26,9 @@ struct Client {
 
 void benchmark_test_00281(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    std::cout << _p << std::endl;
+    std::string user_input = req.body;
+    const char *_sep = std::strstr(user_input.c_str(), "://");
+    std::putchar(_sep[3]);
+    std::putchar('\n');
     res.set_content("ok", "text/plain");
 }

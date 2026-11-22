@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -33,13 +32,13 @@ public class BenchmarkTest00111 {
 
     @POST
     @Path("/BenchmarkTest00111")
-    @Consumes(MediaType.APPLICATION_XML)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00111(@jakarta.validation.constraints.Size(max = 4096) String xmlBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String xmlValue = xmlBody;
-        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
-        String data = transform.apply(xmlValue);
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+    public Response BenchmarkTest00111(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        String data = String.join(" ", fieldValue.split("[ \\t]+"));
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha1Hex(data);
+        response.setHeader("X-Hash", digestHex);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

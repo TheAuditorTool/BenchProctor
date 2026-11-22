@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-from flask import Flask, jsonify
-from app_runtime import db
+import requests
+from urllib.parse import urlparse
+from flask import Flask, request, jsonify
+import re
 
 
 app = Flask(__name__)
@@ -20,11 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00327", methods=["POST"])
 def BenchmarkTest00327():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    pending = list(str(comment_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    host_value = request.headers.get('Host', '')
+    data = str(host_value).replace('\x00', '')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    requests.get(str(target_url))
     return jsonify({"result": "success"})

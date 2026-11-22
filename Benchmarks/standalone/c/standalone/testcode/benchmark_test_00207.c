@@ -10,12 +10,12 @@
 void benchmark_test_00207(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
     char data[512];
     snprintf(data, sizeof(data), "%s", user_input);
-    char _dst[16];
-    size_t _n = strlen(data);
-    memcpy(_dst, data, _n + 1);
-    printf("%s\n", _dst);
+    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
+    unsigned int _seed = (unsigned int)time(NULL);
+    int _token = rand_r(&_seed);
+    printf("token for %s: %d\n", data, _token);
 }

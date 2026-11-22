@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
 
 class BenchmarkTest00246Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,9 @@ class BenchmarkTest00246Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00246
-    user_input = User.first&.name.to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    processed = CGI.escapeHTML(data)
-    render html: ("<div>" + processed + "</div>").html_safe
+    user_input = request.headers["X-Custom-Header"].to_s
+    data = user_input ? user_input : ''
+    IO.popen(["sh", "-c", "echo " + data], &:read)
+    render json: { status: "ok" }
   end
 end

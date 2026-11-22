@@ -1,25 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
+#include <regex>
 
 void benchmark_test_00020(int, char **)
 {
-    std::string user_input;
-    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
-        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
-        if (user_input_n > 0 && user_input_n < 1048576) {
-            user_input.resize((size_t)user_input_n);
-            std::cin.read(&user_input[0], user_input_n);
-            user_input.resize((size_t)std::cin.gcount());
-        }
-    }
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>";
+    std::fputs("Content-Type: text/html\r\n\r\n", stdout);
+    std::fwrite(_html.data(), 1, _html.size(), stdout);
 }

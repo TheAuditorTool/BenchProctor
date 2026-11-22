@@ -2,19 +2,27 @@
 package testcode
 
 import (
-	"strconv"
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00233(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
-	data := multipartValue
-	if _, after, ok := strings.Cut(multipartValue, ","); ok {
-		data = after
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
 	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	rawBody := string(rawBytes)
+	data := string(bytes.TrimSpace([]byte(rawBody)))
+	var matched []User
+	if err := gormDB.Raw(fmt.Sprintf(`SELECT id, name FROM "%s"`, strings.ReplaceAll(data, `"`, `""`))).Scan(&matched).Error; err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

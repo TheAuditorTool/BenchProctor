@@ -11,12 +11,12 @@ class BenchmarkTest00086Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
         $pending = explode(',', $userInput);
         $data = '';
         while (count($pending)) { $data = array_shift($pending); }
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return new JsonResponse(['wrapped' => $wrapped], 200);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, true, true, false, 'Strict'));
+        return $resp;
     }
 }

@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
-from urllib.parse import urlparse
-import socket
-from pydantic import BaseModel
 from starlette.responses import JSONResponse
-import re
+import urllib.parse
 
 
-class UserInput(BaseModel):
-    payload: str = ''
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -27,16 +25,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00091")
-async def BenchmarkTest00091(request: Request, req: UserInput):
-    json_value = req.payload
-    parts = []
-    for token in str(json_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return JSONResponse({'error': 'private range blocked'}, status_code=403)
-    target_url = data
-    requests.get(str(target_url))
-    return {"updated": True}
+async def BenchmarkTest00091(request: Request):
+    host_value = request.headers.get('host', '')
+    reader = make_reader(host_value)
+    data = reader()
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

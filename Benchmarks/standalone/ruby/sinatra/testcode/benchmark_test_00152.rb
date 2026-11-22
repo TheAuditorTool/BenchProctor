@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00152 < Sinatra::Base
   before do
@@ -19,9 +18,14 @@ class BenchmarkTest00152 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00152" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    cookie_value = Rack::Utils.escape(data.to_s)
+    headers["Set-Cookie"] = "session=" + cookie_value + "; Path=/; Secure; HttpOnly; SameSite=Strict"
     content_type :json
     JSON.generate({ status: "ok" })
   end

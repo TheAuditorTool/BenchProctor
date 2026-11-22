@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <unistd.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -22,29 +25,16 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
-extern "C" const EVP_CIPHER *EVP_des_ecb(void);
-extern "C" const EVP_CIPHER *EVP_rc4(void);
-extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
-extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
-extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
-extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
 
 void benchmark_test_00254(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Forwarded-For");
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
-    unsigned char _cout[512]; int _coutl = 0;
-    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(data.c_str()), (int)data.size());
-    EVP_CIPHER_CTX_free(_ctx);
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    static const std::regex _re("^[a-zA-Z0-9 _.%\\-]+$");
+    std::string arg = std::regex_match(data, _re) ? data : std::string("default");
+    std::string _cmd = std::string("grep ") + arg + " /var/log/app.log";
+    FILE *_p = popen(_cmd.c_str(), "r");
+    if (_p) pclose(_p);
     res.set_content("ok", "text/plain");
 }

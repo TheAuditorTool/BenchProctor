@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
+import os
+from flask import Flask, session
+from flask import jsonify
 from app_runtime import db
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,7 +22,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00041", methods=["POST"])
 def BenchmarkTest00041():
-    upload_name = request.files['upload'].filename
-    data = str(upload_name).replace('\x00', '')
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = f'{comment_value!s}'
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid number'}), 400
+    processed = _coerced
+    session.update({'data': str(processed)})
     return jsonify({"result": "success"})

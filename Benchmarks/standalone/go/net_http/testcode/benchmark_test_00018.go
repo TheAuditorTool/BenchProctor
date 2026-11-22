@@ -2,14 +2,11 @@
 package testcode
 
 import (
-	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
+	"net/url"
 	"regexp"
 	"strings"
-
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00018(w http.ResponseWriter, r *http.Request) {
@@ -19,23 +16,13 @@ func BenchmarkTest00018(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rawBody := string(rawBytes)
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", rawBody)
-	data := relayBuilder.String()
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	data := func(v string) string { return strings.TrimSpace(v) }(rawBody)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(output)
+	targetUrl := data
+	w.Header().Set("Location", targetUrl)
+	w.WriteHeader(http.StatusSeeOther)
 }

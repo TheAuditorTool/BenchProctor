@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import jsonify
-from app_runtime import db
+from lxml import etree
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,8 +25,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00058", methods=["POST"])
 def BenchmarkTest00058():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '%s' % (db_value,)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    header_value = request.headers.get('X-Custom-Header', '')
+    form = FormData(payload=header_value)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
+    return jsonify({"result": "success"})

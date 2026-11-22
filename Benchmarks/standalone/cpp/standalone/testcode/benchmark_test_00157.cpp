@@ -17,10 +17,15 @@ void benchmark_test_00157(int, char **)
         }
     }
     std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    delete[] _p;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    const char *_sep = std::strstr(data.c_str(), "://");
+    if (_sep) std::putchar(_sep[3]);
+    std::putchar('\n');
 }

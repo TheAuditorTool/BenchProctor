@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 const BenchmarkTest00163 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { ctx.status = 404; ctx.body = {error:"not found"}; return; }
-  const value = row.name;
+  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  Object.assign(ctx.session, { data: String(data), expiresAt: Date.now() + 900000 });
   ctx.body = { ack: true };
 }
 

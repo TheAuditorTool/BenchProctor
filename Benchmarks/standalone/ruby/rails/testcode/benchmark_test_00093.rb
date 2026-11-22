@@ -11,10 +11,9 @@ class BenchmarkTest00093Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00093
-    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
+    user_input = request.referer.to_s
+    data = user_input.gsub("\u0000", "")
+    User.find_by_sql("SELECT * FROM users WHERE id = '" + data + "'")
     render json: { status: "ok" }
   end
 end

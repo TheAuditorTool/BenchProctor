@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, make_response
-from flask import request, jsonify
+from flask import Flask, Response
+import markdown
+import bleach
+import json
+from flask import request
+from flask import jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,8 +23,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00031", methods=["POST"])
 def BenchmarkTest00031():
-    xml_value = request.get_data(as_text=True)
-    data = '{}'.format(xml_value)
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    raw_body = request.get_data(as_text=True)
+    data = json.loads(raw_body).get('value', '')
+    processed = bleach.clean(markdown.markdown(data))
+    resp = Response(mimetype='text/html')
+    resp.stream.write('<div>' + str(processed) + '</div>')
     return resp

@@ -11,10 +11,15 @@ class BenchmarkTest00034Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00034
-    user_input = request.host.to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    session[:data] = data.to_s
-    render json: { status: "ok" }
+    user_input = cookies[:session_token].to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    unless %w[ls cat date whoami].include?(data.to_s)
+      render json: { error: "forbidden" }, status: 400
+      return
+    end
+    IO.popen(["sh", "-c", data.to_s], &:read)
   end
 end

@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00017 < Sinatra::Base
   before do
@@ -22,12 +19,10 @@ class BenchmarkTest00017 < Sinatra::Base
   end
   post "/benchmark_test_00017" do
     user_input = request.env["HTTP_REFERER"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    DB.fetch("SELECT * FROM users WHERE id = '" + data + "'").all
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    content = File.read("/var/app/data/" + data)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

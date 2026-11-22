@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, ForbiddenException } from "@nestjs/common";
-import { Response } from "express";
-import * as http from "http";
+import { Controller, Headers, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,15 +18,18 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00167")
-  async BenchmarkTest00167(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const data = String(userInput).slice(0, 200);
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const _addr = (await require("dns").promises.lookup(_host)).address;
-    if (/^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)/.test(_addr)) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const targetUrl = data;
-    http.get(targetUrl);
-    return { created: true };
+  async BenchmarkTest00167(@Headers("origin") origin: string, @Req() req: Request): Promise<unknown> {
+    const userInput = origin || "";
+    const [data] = String(userInput).split(',');
+    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    const password = String(req.body?.password ?? "");
+    if (!password) { throw new BadRequestException({ error: "password required" }); }
+    const authenticated = await new Promise<boolean>((resolve) => {
+      ldapClient.bind("uid=" + processed + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+    });
+    return { authenticated };
   }
 }

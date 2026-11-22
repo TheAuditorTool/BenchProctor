@@ -1,8 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
+from sqlalchemy import text
+import requests
 from flask import Flask, jsonify
-from lxml import etree
-from app_runtime import db
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = Flask(__name__)
 
@@ -20,8 +35,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00267", methods=["POST"])
 def BenchmarkTest00267():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    with Session(_engine) as _session:
+        _session.query(User).from_statement(text("SELECT * FROM users WHERE name = '" + str(data) + "'")).all()
     return jsonify({"result": "success"})

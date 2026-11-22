@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Post, Redirect, UsePipes, ValidationPipe, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,13 +22,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00081")
-  async BenchmarkTest00081(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
-    let data;
-    try { data = JSON.parse(userInput).value || userInput; }
-    catch (e) { data = userInput; }
-    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-    eval(processed);
-    return { created: true };
+  @UsePipes(new ValidationPipe())
+  @Redirect()
+  async BenchmarkTest00081(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const data = userInput != null ? userInput : '';
+    let _host = "";
+    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"host not allowed"}); }
+    if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { throw new ForbiddenException({error:"host not allowed"}); }
+    const targetUrl = data;
+    return { url: targetUrl };
   }
 }

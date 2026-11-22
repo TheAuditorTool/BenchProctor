@@ -8,12 +8,12 @@ class BenchmarkTest00144Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return redirect($targetUrl);
+        $userInput = $request->json('variables.input', '');
+        $data = vsprintf('%1$s', [$userInput]);
+        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
+        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
+        $entry = ldap_read($ldap, 'uid=' . $data . ',ou=people,dc=example,dc=com', '(objectClass=inetOrgPerson)', ['cn', 'mail']);
+        return response()->json(['ok' => 1]);
     }
 }

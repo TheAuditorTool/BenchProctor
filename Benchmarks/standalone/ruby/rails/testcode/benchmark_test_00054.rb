@@ -11,14 +11,15 @@ class BenchmarkTest00054Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00054
-    user_input = request.host.to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    session[:data] = data.to_s
+    user_input = request.headers["Authorization"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    unless data =~ /\A(asc|desc|name|created)\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    session[:data] = processed.to_s
     render json: { status: "ok" }
   end
 end

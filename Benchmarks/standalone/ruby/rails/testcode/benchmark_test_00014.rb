@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "securerandom"
 
 class BenchmarkTest00014Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,11 +12,14 @@ class BenchmarkTest00014Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00014
-    user_input = ENV["APP_INPUT"] || ""
-    data = "%s" % user_input
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
-    render json: { status: "ok" }
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    token = SecureRandom.hex(32)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

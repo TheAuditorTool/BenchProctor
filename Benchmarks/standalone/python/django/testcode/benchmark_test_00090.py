@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
+import subprocess
 
 
 def BenchmarkTest00090(request):
-    json_value = json.loads(request.body or b'{}').get('payload', '')
-    data = (lambda v: v.strip())(json_value)
-    with open('/var/app/data/' + str(data), 'w') as fh:
-        fh.write('data')
+    field_value = request.POST.get('field', '')
+    data = '{}'.format(field_value)
+    subprocess.run(['echo', data], shell=False)
     return JsonResponse({"saved": True})

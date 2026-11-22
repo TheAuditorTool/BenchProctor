@@ -2,7 +2,9 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "httplib",
-    "standalone"
+    "httplib-legacy",
+    "standalone",
+    "standalone-legacy"
   ],
   "language": "cpp",
   "scorer": {
@@ -12,13 +14,15 @@
   "suites": {
     "httplib": {
       "categories": 22,
-      "csv_sha256": "f1b27049593a31580b945bcc01840c806c727047c484fd9f5dda985542b64f9c",
-      "expectedresults_csv": "expectedresults-2026.11.19.1.csv",
+      "csv_sha256": "8ea5232011733fd79363bb57d9724ab6d65873879e455aaa9c244db9e054a555",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "C++20 on cpp-httplib",
       "prerequisites": [
         {
           "debian": "librabbitmq-dev",
           "fedora": "librabbitmq-devel",
-          "files": 8,
+          "files": 3,
           "headers": [
             "amqp.h",
             "amqp_tcp_socket.h",
@@ -30,27 +34,63 @@
         {
           "debian": "libhiredis-dev",
           "fedora": "hiredis-devel",
-          "files": 6,
+          "files": 1,
           "headers": [
             "hiredis/hiredis.h"
           ],
           "library": "hiredis"
         }
       ],
-      "published_files": 1057,
-      "safe": 528,
-      "total": 1056,
-      "vulnerable": 528
+      "published_files": 529,
+      "safe": 264,
+      "total": 528,
+      "vulnerable": 264
+    },
+    "httplib-legacy": {
+      "categories": 22,
+      "csv_sha256": "f549628a134d49d933df86ff6c416e513d61475b8ac15b6ec384d167e825ef6e",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "C++14 on cpp-httplib, POSIX file calls in place of std::filesystem",
+      "prerequisites": [
+        {
+          "debian": "librabbitmq-dev",
+          "fedora": "librabbitmq-devel",
+          "files": 2,
+          "headers": [
+            "amqp.h",
+            "amqp_tcp_socket.h",
+            "rabbitmq-c/amqp.h",
+            "rabbitmq-c/tcp_socket.h"
+          ],
+          "library": "RabbitMQ C client"
+        },
+        {
+          "debian": "libhiredis-dev",
+          "fedora": "hiredis-devel",
+          "files": 3,
+          "headers": [
+            "hiredis/hiredis.h"
+          ],
+          "library": "hiredis"
+        }
+      ],
+      "published_files": 529,
+      "safe": 264,
+      "total": 528,
+      "vulnerable": 264
     },
     "standalone": {
       "categories": 22,
-      "csv_sha256": "fdf3903719a162140fb6354f10c247942b7a8b448f79bccd40b9866760a38681",
-      "expectedresults_csv": "expectedresults-2026.11.19.1.csv",
+      "csv_sha256": "bb3e533440eacd95c6ada8612c68da821c4115e7d88e5e6ddac1fe0fdb221ac8",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "C++20 with std::filesystem",
       "prerequisites": [
         {
           "debian": "librabbitmq-dev",
           "fedora": "librabbitmq-devel",
-          "files": 8,
+          "files": 3,
           "headers": [
             "amqp.h",
             "amqp_tcp_socket.h",
@@ -62,19 +102,53 @@
         {
           "debian": "libhiredis-dev",
           "fedora": "hiredis-devel",
-          "files": 6,
+          "files": 1,
           "headers": [
             "hiredis/hiredis.h"
           ],
           "library": "hiredis"
         }
       ],
-      "published_files": 1056,
-      "safe": 528,
-      "total": 1056,
-      "vulnerable": 528
+      "published_files": 528,
+      "safe": 264,
+      "total": 528,
+      "vulnerable": 264
+    },
+    "standalone-legacy": {
+      "categories": 22,
+      "csv_sha256": "df445424e037c6f444b4f15604d51cf42e03684e88b0706985597c466bd12ec7",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "C++14: POSIX directory and file calls where C++17 has std::filesystem",
+      "prerequisites": [
+        {
+          "debian": "librabbitmq-dev",
+          "fedora": "librabbitmq-devel",
+          "files": 3,
+          "headers": [
+            "amqp.h",
+            "amqp_tcp_socket.h",
+            "rabbitmq-c/amqp.h",
+            "rabbitmq-c/tcp_socket.h"
+          ],
+          "library": "RabbitMQ C client"
+        },
+        {
+          "debian": "libhiredis-dev",
+          "fedora": "hiredis-devel",
+          "files": 2,
+          "headers": [
+            "hiredis/hiredis.h"
+          ],
+          "library": "hiredis"
+        }
+      ],
+      "published_files": 528,
+      "safe": 264,
+      "total": 528,
+      "vulnerable": 264
     }
   },
   "tier": "curated",
-  "version": "2026.11.19.1"
+  "version": "2026.11.22"
 }

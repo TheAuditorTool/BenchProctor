@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-import re
+import base64
 from flask import Flask, request, jsonify
 import os
+from sqlalchemy import create_engine
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = Flask(__name__)
 
@@ -21,11 +23,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00024", methods=["POST"])
 def BenchmarkTest00024():
-    multipart_value = request.form.get('multipart_field', '')
-    data = (lambda v: v.strip())(multipart_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    cookie_value = request.cookies.get('session_token', '')
+    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
+    with _engine.connect() as conn:
+        conn.exec_driver_sql("SELECT * FROM users WHERE name = '" + str(data) + "'")
     return jsonify({"result": "success"})

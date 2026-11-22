@@ -3,7 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "base64"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00076 < Sinatra::Base
   before do
@@ -19,9 +21,13 @@ class BenchmarkTest00076 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00076" do
-    user_input = request.cookies["session_token"].to_s
-    data = Base64.decode64(user_input)
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = params[:q].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    alphabet = [*"a".."z", *"A".."Z", *"0".."9"]
+    token = alphabet.sample(24).join
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
+    content_type :json
+    JSON.generate({ reset: "sent" })
   end
 end

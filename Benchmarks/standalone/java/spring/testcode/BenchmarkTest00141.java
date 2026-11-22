@@ -19,15 +19,14 @@ public class BenchmarkTest00141 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00141")
-    public void BenchmarkTest00141(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data;
-        try { data = new String(java.util.Base64.getDecoder().decode(authHeader), java.nio.charset.StandardCharsets.UTF_8); }
-        catch (IllegalArgumentException base64Ex) { data = authHeader; }
-        String processed = data.matches("^(noop|identity|passthrough|echo)$") ? data : "noop";
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(processed).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    @PostMapping(path="/BenchmarkTest00141", consumes="application/xml")
+    public void BenchmarkTest00141(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String xmlValue = xmlBody;
+        String data = xmlValue.replace("\u0000", "");
+        StringBuilder xmlText = new StringBuilder();
+        javax.xml.parsers.SAXParser saxParser = javax.xml.parsers.SAXParserFactory.newInstance().newSAXParser();
+        saxParser.parse(new org.xml.sax.InputSource(new java.io.StringReader(data)), new org.xml.sax.helpers.DefaultHandler() { @Override public void characters(char[] ch, int start, int length) { xmlText.append(ch, start, length); } });
+        response.setHeader("X-Xml-Text-Length", String.valueOf(xmlText.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

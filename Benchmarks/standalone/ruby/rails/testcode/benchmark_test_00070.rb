@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00070Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,13 +12,13 @@ class BenchmarkTest00070Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00070
-    user_input = request.headers["X-Forwarded-For"].to_s
-    data = "#{user_input}"
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     render json: { status: "ok" }
   end
 end

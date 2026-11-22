@@ -3,10 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "bunny"
-require "resolv"
-require "ipaddr"
-require "open-uri"
+require "base64"
 
 class BenchmarkTest00138 < Sinatra::Base
   before do
@@ -22,16 +19,15 @@ class BenchmarkTest00138 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00138" do
-    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
-    data = user_input ? user_input : ''
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      halt 403, JSON.generate({ error: "private range blocked" })
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = Base64.decode64(user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
       return
     end
     target_url = data
-    URI.open(target_url).read
+    redirect target_url
     content_type :json
     JSON.generate({ status: "ok" })
   end

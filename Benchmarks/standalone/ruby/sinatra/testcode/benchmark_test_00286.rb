@@ -21,13 +21,12 @@ class BenchmarkTest00286 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00286" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _coerced = Integer(data, exception: false).to_s
-    parsed_id = _coerced
-    DB.fetch("SELECT * FROM users WHERE id = '" + parsed_id + "'").all
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ envelope: envelope.to_pem })
   end
 end

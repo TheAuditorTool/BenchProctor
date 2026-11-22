@@ -19,21 +19,13 @@ public class BenchmarkTest00142 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    record FormData(String payload) {}
-
-    @PostMapping(path="/BenchmarkTest00142", consumes="text/plain")
-    public void BenchmarkTest00142(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String rawData = rawBody != null ? rawBody : "";
-        FormData payload = new FormData(rawData);
-        String data = payload.payload();
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+    @GetMapping("/BenchmarkTest00142")
+    public void BenchmarkTest00142(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        int quantity = Integer.parseInt(cookieValue);
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { response.sendError(422, "order exceeds credit limit"); return; }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

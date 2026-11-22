@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00126 < Sinatra::Base
   before do
@@ -19,12 +18,14 @@ class BenchmarkTest00126 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00126" do
-    user_input = params[:field].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    content = File.read("/var/app/data/" + data)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

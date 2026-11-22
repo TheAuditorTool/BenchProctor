@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
+import json
+import urllib.parse
 
 
 app = FastAPI()
@@ -20,13 +22,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00221")
 async def BenchmarkTest00221(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = ' '.join(str(raw_body).split())
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
     try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+        data = json.loads(forwarded_ip).get('value', forwarded_ip)
+    except (json.JSONDecodeError, AttributeError):
+        data = forwarded_ip
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers['set-cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

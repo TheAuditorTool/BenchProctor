@@ -20,17 +20,10 @@ public class BenchmarkTest00210 {
     }
 
     @GetMapping("/BenchmarkTest00210")
-    public void BenchmarkTest00210(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String prefix = uaValue.length() > 0 ? uaValue.substring(0, 1).toLowerCase() : "";
-        String data;
-        switch (prefix) {
-            case "h": data = uaValue.toLowerCase(); break;
-            case "f": data = uaValue.toUpperCase(); break;
-            default: data = uaValue.strip(); break;
-        }
-        request.getSession().setAttribute("displayName", data);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    public void BenchmarkTest00210(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String headerValue = xCustomHeader != null ? xCustomHeader : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(headerValue);
+        new org.springframework.web.servlet.view.RedirectView(data).render(java.util.Map.of(), request, response);
     }
 }

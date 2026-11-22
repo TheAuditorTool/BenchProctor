@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+from fastapi import Form
 from fastapi.responses import JSONResponse
 
 
@@ -20,9 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00239")
-async def BenchmarkTest00239(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    data, _sep, _rest = str(header_value).partition('\x00')
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+async def BenchmarkTest00239(request: Request, field: str = Form('')):
+    field_value = field
+    parts = str(field_value).split(',')
+    data = ' '.join(parts)
+    request.app.state.active_tenant = str(data)
     return {"updated": True}

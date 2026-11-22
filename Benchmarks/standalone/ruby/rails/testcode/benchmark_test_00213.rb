@@ -11,7 +11,17 @@ class BenchmarkTest00213Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00213
-    user_input = request.referer.to_s
-    redirect_to user_input, allow_other_host: true
+    user_input = request.user_agent.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    unless data =~ /\A(asc|desc|name|created)\z/
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    render html: ("<div>" + processed + "</div>").html_safe
   end
 end

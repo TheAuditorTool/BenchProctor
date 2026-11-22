@@ -2,21 +2,28 @@
 package testcode
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00206(c *gin.Context) {
-	hostValue := c.Request.Host
-	data := func(v string) string { return strings.TrimSpace(v) }(hostValue)
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(graphqlVar)
+	resp, err := http.Get(data)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	c.JSON(200, gin.H{"code": "OK"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

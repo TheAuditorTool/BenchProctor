@@ -11,10 +11,10 @@ class BenchmarkTest00072Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query->get('id', '');
+        $userInput = $request->cookies->get('session_token', '');
         $asText = function ($v): string { return trim((string) $v); };
         $data = $asText($userInput);
-        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        system('gzip -f /var/app/reports/' . (string)$data);
         return new JsonResponse(["committed" => true]);
     }
 }

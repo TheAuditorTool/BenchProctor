@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00347(req, res) {
-  const userInput = req.cookies.session_token || "";
-  const data = `${userInput}`;
-  res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+  const userInput = req.body?.field || "";
+  const data = String(userInput).slice(0, 200);
+  const { stringifySetCookie } = require("cookie");
+  res.append(
+    "Set-Cookie",
+    stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict", secure: true }),
+  );
   res.json({ done: true });
 }
 

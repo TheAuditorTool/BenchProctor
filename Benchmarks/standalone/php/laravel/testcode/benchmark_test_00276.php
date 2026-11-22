@@ -2,18 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00276Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
-        $parsedBool = $_coerced;
-        session(['data' => (string) $parsedBool]);
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $zones = ['utc' => new \DateTimeZone('UTC'), 'berlin' => new \DateTimeZone('Europe/Berlin'), 'tokyo' => new \DateTimeZone('Asia/Tokyo')];
+        $zone = $zones[(string)$data];
+        $zoneName = $zone->getName();
         return response()->json(['ok' => 1]);
     }
 }

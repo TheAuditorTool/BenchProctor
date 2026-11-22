@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from app_runtime import db
+from flask import Flask, redirect
+import os
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -19,10 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00205", methods=["POST"])
 def BenchmarkTest00205():
-    header_value = request.headers.get('X-Custom-Header', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(header_value)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    env_value = os.environ.get('APP_INPUT', '')
+    parts = str(env_value).split(',')
+    data = ' '.join(parts)
+    return redirect(str(data))

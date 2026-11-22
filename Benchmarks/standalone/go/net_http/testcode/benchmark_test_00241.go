@@ -2,23 +2,22 @@
 package testcode
 
 import (
-	"crypto/rand"
+	"crypto/sha3"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00241(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	capture := func() string { return strings.TrimSpace(dbValue) }
-	data := capture()
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	data := strings.ReplaceAll(graphqlVar, "\x00", "")
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

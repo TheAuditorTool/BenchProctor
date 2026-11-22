@@ -33,11 +33,12 @@ public class BenchmarkTest00015 {
     @GET
     @Path("/BenchmarkTest00015")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00015(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public Response BenchmarkTest00015(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        int quantity = Integer.parseInt(cookieValue);
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { return Response.status(422).entity("order exceeds credit limit").build(); }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

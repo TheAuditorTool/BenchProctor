@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "net/http"
 
 class BenchmarkTest00108 < Sinatra::Base
   before do
@@ -18,13 +19,9 @@ class BenchmarkTest00108 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00108" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    token = rand(1000000)
+    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
+    data = "#{user_input}"
+    redirect data
     content_type :json
     JSON.generate({ status: "ok" })
   end

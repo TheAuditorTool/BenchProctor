@@ -18,15 +18,15 @@ class BenchmarkTest00047 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00047" do
-    user_input = request.env["HTTP_USER_AGENT"].to_s
+    user_input = request.body.read
     begin
       data = JSON.parse(user_input)['value'] || user_input
     rescue JSON::ParserError
       data = user_input
     end
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    eval(parsed_bool)
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    settings.set(:announcement, parsed_num.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

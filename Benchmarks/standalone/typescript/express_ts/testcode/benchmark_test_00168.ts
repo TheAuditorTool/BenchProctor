@@ -1,19 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
 
 export const BenchmarkTest00168 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers.referer as string) || "";
-  const pending: string[] = String(userInput).split(',');
-  const collected: string[] = [];
-  while (pending.length) { collected.push(pending.shift() ?? ""); }
-  const data: string = collected.join(',');
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
-  res.json({ accepted: true });
+  const userInput = (req.body?.payload as string) || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const { quota } = planQuotas.get(String(data))!;
+  res.json({ quota }); return;
 }

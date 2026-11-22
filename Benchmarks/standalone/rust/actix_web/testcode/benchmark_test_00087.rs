@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00087")]
-pub async fn benchmark_test_00087(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let captured = raw_body.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    crate::shared::db_query(&format!("SELECT * FROM `{}`", data.replace('`', "")));
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00087(req: HttpRequest) -> HttpResponse {
+    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = forwarded_ip.to_string();
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio|safe }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => data })).unwrap_or_default();
+    return HttpResponse::Ok().content_type("text/html").body(_page);
 }

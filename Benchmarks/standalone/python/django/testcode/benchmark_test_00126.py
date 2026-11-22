@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
 import os
-from pydantic import Field, ValidationError, create_model
+import hashlib
 
 
-def BenchmarkTest00126(request):
-    referer_value = request.META.get('HTTP_REFERER', '')
-    data = ' '.join(str(referer_value).split())
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JsonResponse({'error': 'invalid input'}, status=400)
-    processed = data
-    os.system('echo ' + str(processed))
-    return JsonResponse({"saved": True})
+def BenchmarkTest00126(request, path_param):
+    path_value = path_param
+    data = ' '.join(str(path_value).split())
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return JsonResponse({'length': len(ciphertext)}, status=200)

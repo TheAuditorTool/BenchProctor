@@ -36,8 +36,10 @@ public class BenchmarkTest00129 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00129(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
-        String data = commentValue.replace("\u0000", "");
-        response.sendRedirect(data);
-        return Response.ok().build();
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(commentValue);
+        request.getSession().setAttribute("displayName", data);
+        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
+        return Response.ok("{\"greetingLength\":" + greetingName.length() + "}", MediaType.APPLICATION_JSON).build();
     }
 }

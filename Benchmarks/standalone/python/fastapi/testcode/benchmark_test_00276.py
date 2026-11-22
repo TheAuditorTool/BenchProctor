@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import json
 import re
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,14 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00276")
 async def BenchmarkTest00276(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    pending = list(str(graphql_var).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    exec(str(processed))
-    return {"updated": True}
+    user_id = request.query_params.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    if match is None:
+        return JSONResponse({'error': 'not an email address'}, status_code=400)
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

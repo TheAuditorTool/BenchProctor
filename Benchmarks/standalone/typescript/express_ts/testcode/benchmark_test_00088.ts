@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as shared from "./shared";
+const { db } = shared;
+import * as fs from "fs";
+import * as crypto from "crypto";
 
 export const BenchmarkTest00088 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req.body.variables?.input) as string) || "";
-  const data = userInput != null ? userInput : '';
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const capture = (v: string) => (): string => v.trim();
+  const readInput = capture(userInput);
+  const data: string = readInput();
+  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const _siv = crypto.randomBytes(12);
+  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
+  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
+  const _stag = _scipher.getAuthTag();
+  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
   res.json({ accepted: true });
 }

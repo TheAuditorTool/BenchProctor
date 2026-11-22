@@ -2,17 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00112Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = getenv('APP_INPUT') ?: '';
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        if (!in_array((string)$data, ['ls', 'cat', 'date', 'whoami'], true)) { return response()->json(['error' => 'forbidden'], 403); }
-        $allowedBin = (string)$data;
-        system('gzip -f /var/app/reports/' . (string)$allowedBin);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->query('id', '');
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        $token = (string) (int) (lcg_value() * 1000000000000);
+        DB::statement('UPDATE users SET reset_token = ? WHERE email = ?', [$token, (string)$data]);
+        return response()->json(['reset' => 'sent'], 200);
     }
 }

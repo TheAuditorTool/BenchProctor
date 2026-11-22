@@ -8,10 +8,9 @@ class BenchmarkTest00321Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $digest = hash('sha256', (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        return \Illuminate\Support\Facades\Redirect::away((string)$data);
     }
 }

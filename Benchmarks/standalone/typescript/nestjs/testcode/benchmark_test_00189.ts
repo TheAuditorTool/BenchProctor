@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,13 +22,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00189")
-  async BenchmarkTest00189(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    const requested = parseInt(data, 10);
-    const wrapped = (requested + 1) | 0;
-    const buf = Buffer.alloc(wrapped);
-    return { allocated: buf.length };
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00189(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    let data;
+    try { data = JSON.parse(userInput).value || userInput; }
+    catch (e) { data = userInput; }
+    const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+    const { quota } = planQuotas.get(String(data))!;
+    return { quota };
   }
 }

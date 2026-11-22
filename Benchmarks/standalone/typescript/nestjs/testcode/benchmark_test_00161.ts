@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, ForbiddenException } from "@nestjs/common";
+import { Controller, Headers, Post, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as http from "http";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { stringifySetCookie } from "cookie";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,17 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00161")
-  async BenchmarkTest00161(): Promise<unknown> {
-    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const _addr = (await require("dns").promises.lookup(_host)).address;
-    if (/^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)/.test(_addr)) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const targetUrl = data;
-    http.get(targetUrl);
+  async BenchmarkTest00161(@Headers("authorization") auth: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = auth || "";
+    res.append(
+      "Set-Cookie",
+      stringifySetCookie({ name: "session", value: String(userInput), path: "/", httpOnly: true, sameSite: "strict" }),
+    );
     return { created: true };
   }
 }

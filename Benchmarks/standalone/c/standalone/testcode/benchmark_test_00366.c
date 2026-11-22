@@ -9,14 +9,12 @@
 
 void benchmark_test_00366(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    size_t _n = strlen(user_input);
-    char *_p = malloc(_n + 1);
-    if (_p == NULL) return;
-    memcpy(_p, user_input, _n + 1);
-    printf("%s\n", _p);
-    free(_p);
-    memset(_p, 0, _n + 1);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char data[512];
+    size_t _li = 0;
+    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
+    data[_li] = '\0';
+    const char *_sep = strstr(data, "://");
+    if (_sep != NULL) putchar(_sep[3]);
+    putchar('\n');
 }

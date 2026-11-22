@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
+from http.cookies import SimpleCookie
 from starlette.responses import JSONResponse
-import re
 
 
 app = FastAPI()
@@ -23,10 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00058")
 async def BenchmarkTest00058(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    data = '%s' % str(cookie_value)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    host_value = request.headers.get('host', '')
+    data, _sep, _rest = str(host_value).partition('\x00')
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = JSONResponse({'status': 'ok'})
+    resp.headers.append('set-cookie', cookie['session'].OutputString())
+    return resp

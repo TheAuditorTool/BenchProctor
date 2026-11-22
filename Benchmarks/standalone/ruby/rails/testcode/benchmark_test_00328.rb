@@ -11,12 +11,14 @@ class BenchmarkTest00328Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00328
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = request.headers["X-Forwarded-For"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
     end
-    data = _normalize_local(user_input)
-    session[:data] = data.to_s
-    render json: { status: "ok" }
+    processed = data
+    send_data("<div>" + processed + "</div>", type: "text/html", disposition: "inline")
   end
 end

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Controller, Post, Req } from "@nestjs/common";
 import { Request, Response } from "express";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,10 +22,11 @@ export class BenchmarkController {
   @Post("BenchmarkTest00262")
   async BenchmarkTest00262(@Req() req: Request): Promise<unknown> {
     const userInput = (req.body as string) || "";
-    const data = `${userInput}`;
+    const data = String(userInput).split(/[ \t]+/).join(" ");
     const _coerced = parseFloat(String(data));
     const parsedNum = _coerced;
-    req.session.data = String(parsedNum);
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.parse("//user[name='" + parsedNum + "']").select({ node: usersDoc });
     return { created: true };
   }
 }

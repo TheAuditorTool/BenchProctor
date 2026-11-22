@@ -9,17 +9,11 @@
 
 void benchmark_test_00227(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
-    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
-    const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", data);
-    FILE *_p = popen(_cmd, "r");
-    if (_p) pclose(_p);
+    const char *user_input = (argc > 2) ? argv[2] : "";
+    char _dst[16];
+    size_t _n = strlen(user_input);
+    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
+    memcpy(_dst, user_input, _n);
+    _dst[_n] = '\0';
+    printf("%s\n", _dst);
 }

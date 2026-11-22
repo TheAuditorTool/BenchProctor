@@ -2,17 +2,27 @@
 package testcode
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00161(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	hexBytes, _ := hex.DecodeString(headerValue)
-	data := string(hexBytes)
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var data string
+	if len(commentText) > 0 {
+		data = commentText
+	} else {
+		data = "default"
+	}
+	lookupStmt, err := DB.Prepare(fmt.Sprintf(`SELECT id, name FROM "%s"`, strings.ReplaceAll(data, `"`, `""`)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

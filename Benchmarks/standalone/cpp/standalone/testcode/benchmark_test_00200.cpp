@@ -3,19 +3,13 @@
 #include <string>
 #include <cstdlib>
 #include <unistd.h>
+#include <fstream>
 
 void benchmark_test_00200(int, char **)
 {
-    const char *user_input_env = std::getenv("QUERY_STRING");
+    const char *user_input_env = std::getenv("UPLOAD_NAME");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    for (std::string::size_type _i = 0; _i < user_input.size(); ++_i) {
-        if (user_input[_i] == '%' && _i + 2 < user_input.size()) {
-            data.push_back((char)std::strtol(user_input.substr(_i + 1, 2).c_str(), nullptr, 16));
-            _i += 2;
-        } else { data.push_back(user_input[_i]); }
-    }
-    std::string safe = (data == "/bin/echo" || data == "/bin/cat") ? data : std::string("/bin/echo");
-    const char *_argv[] = { safe.c_str(), nullptr };
-    execv(safe.c_str(), const_cast<char *const *>(_argv));
+    std::string _path = std::string("/var/app/data/") + user_input;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
 }

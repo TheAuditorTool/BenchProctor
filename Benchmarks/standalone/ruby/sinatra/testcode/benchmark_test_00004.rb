@@ -18,10 +18,12 @@ class BenchmarkTest00004 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00004" do
-    user_input = request.body.read
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = request.cookies["session_token"].to_s
+    data = user_input ? user_input : ''
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    eval(parsed_num)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

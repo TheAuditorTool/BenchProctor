@@ -8,9 +8,11 @@ class BenchmarkTest00089Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('variables.input', '');
-        $data = sprintf('%s', $userInput);
-        eval((string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('X-Custom-Header', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $response = response()->json(['ok' => 1]);
+        $response->header('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; HttpOnly; SameSite=Strict');
+        return $response;
     }
 }

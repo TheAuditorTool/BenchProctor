@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Path;
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
-use url::Url;
 
-pub async fn benchmark_test_00032(Path(path_id): Path<String>) -> impl IntoResponse {
-    let path_value = path_id.clone();
-    let data = if path_value.len() <= 4096 { path_value.clone() } else { path_value.chars().take(4096).collect() };
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+pub async fn benchmark_test_00032(headers: HeaderMap) -> impl IntoResponse {
+    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = ua_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    let parser = pulldown_cmark::Parser::new(&data);
+    let mut md_rendered = String::new();
+    pulldown_cmark::html::push_html(&mut md_rendered, parser);
+    let processed = ammonia::clean(&md_rendered);
+    return ([("content-type", "text/html")], format!("<div>{}</div>", processed)).into_response();
 }

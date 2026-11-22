@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
+import socket
+import urllib.parse
 from fastapi.responses import JSONResponse
 
 
@@ -19,14 +20,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00152/{id}")
-async def BenchmarkTest00152(request: Request, id: str):
-    path_value = id
-    pending = list(str(path_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    checked_path = os.path.join('/var/app/data', os.path.basename(data))
-    os.unlink(checked_path)
+@app.post("/BenchmarkTest00152")
+async def BenchmarkTest00152(request: Request):
+    user_id = request.query_params.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
     return {"updated": True}

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi import Form
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+import json
+from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,10 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00237")
-async def BenchmarkTest00237(request: Request, field: str = Form('')):
-    field_value = field
-    def normalize(value):
-        return value.strip()
-    data = normalize(field_value)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+async def BenchmarkTest00237(request: Request):
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    try:
+        data = json.loads(comment_value).get('value', comment_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = comment_value
+    parsed = json.loads(data)
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

@@ -2,21 +2,33 @@
 package testcode
 
 import (
-	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00185(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	headerValue := c.GetHeader("X-Custom-Header")
+	pending := strings.Split(headerValue, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
+	}
+	upstreamReq, err := http.NewRequest(http.MethodGet, data, nil)
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := fmt.Sprintf("%s", xmlBody)
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		c.String(http.StatusBadGateway, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

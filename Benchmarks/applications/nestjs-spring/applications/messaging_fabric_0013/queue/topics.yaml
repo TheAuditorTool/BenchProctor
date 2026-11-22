@@ -1,6 +1,0 @@
-topics:
-  - name: messaging.events.v0013
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

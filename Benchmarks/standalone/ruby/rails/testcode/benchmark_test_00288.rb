@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "base64"
 
 class BenchmarkTest00288Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,13 +12,13 @@ class BenchmarkTest00288Controller < ApplicationController
   end
   def benchmark_test_00288
     user_input = cookies[:session_token].to_s
-    data = Base64.decode64(user_input)
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
+    data = user_input.gsub("\u0000", "")
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
       return
     end
-    processed = data
-    eval(processed)
-    render json: { status: "ok" }
+    target_url = data
+    redirect_back_or_to(target_url, allow_other_host: true)
   end
 end

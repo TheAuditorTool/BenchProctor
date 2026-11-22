@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00018 < Sinatra::Base
   before do
@@ -19,11 +18,13 @@ class BenchmarkTest00018 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00018" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
+    user_input = request.body.read
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    JSON::Parser.new(data, create_additions: false).parse
     content_type :json
     JSON.generate({ status: "ok" })
   end

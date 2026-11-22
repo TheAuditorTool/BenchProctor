@@ -3,23 +3,26 @@ package testcode
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00121(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	data := strings.ReplaceAll(forwardedIP, "\x00", "")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
+	refererValue := c.GetHeader("Referer")
+	data := strings.ReplaceAll(refererValue, "\x00", "")
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
 		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

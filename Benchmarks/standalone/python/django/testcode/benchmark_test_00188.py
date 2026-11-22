@@ -1,15 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
-import ctypes
+from app_runtime import db
 
 
 def BenchmarkTest00188(request):
-    upload_name = request.FILES['upload'].name
-    try:
-        data = json.loads(upload_name).get('value', upload_name)
-    except (json.JSONDecodeError, AttributeError):
-        data = upload_name
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JsonResponse({'wrapped': wrapped}, status=200)
+    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
+    data = (lambda v: v.strip())(header_value)
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    return JsonResponse({"saved": True})

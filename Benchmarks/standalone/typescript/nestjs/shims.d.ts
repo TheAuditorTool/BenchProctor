@@ -1,6 +1,7 @@
 declare module "*";
+declare namespace Express { interface Request {} }
 declare module "express" {
-  export interface Request {
+  export interface Request extends Express.Request {
     query: Record<string, string | string[]>;
     body: any;
     params: Record<string, string>;
@@ -9,6 +10,7 @@ declare module "express" {
     path: string;
     url: string;
     originalUrl: string;
+    app: { locals: Record<string, unknown> };
     get(name: string): string | undefined;
   }
   export interface Response {
@@ -17,10 +19,14 @@ declare module "express" {
     send(body: any): Response;
     cookie(name: string, value: any, opts?: any): Response;
     redirect(url: string): void;
+    redirect(status: number, url: string): void;
+    location(url: string): Response;
+    sendStatus(code: number): Response;
     set(field: string, value: any): Response;
+    append(field: string, value: string | string[]): Response;
     setHeader(name: string, value: any): void;
     type(t: string): Response;
-    end(): void;
+    end(chunk?: string): void;
   }
   export type NextFunction = any;
   export const Router: any;
@@ -81,7 +87,8 @@ interface RequestEvent {
   params: Record<string, string>;
 }
 declare module "@prisma/client" { export const PrismaClient: any; }
-declare module "sequelize" { export const Sequelize: any; }
+declare module "@prisma/adapter-pg" { export const PrismaPg: any; }
+declare module "sequelize" { export const Sequelize: any; export const DataTypes: any; }
 declare module "typeorm" { export const DataSource: any; }
 declare module "knex" { const knex: any; export default knex; }
 declare module "drizzle-orm" { export const sql: any; }
@@ -95,6 +102,17 @@ declare module "express-validator" { export const body: any; export const valida
 declare module "redis" { export const createClient: any; }
 declare module "ioredis" { export const Redis: any; }
 declare module "pg" { export const Pool: any; export const escapeIdentifier: any; }
+declare module "axios" { const axios: any; export default axios; }
+declare module "lodash" { const lodash: any; export default lodash; }
+declare module "libxmljs2" { export function parseXmlString(source: string, options?: Record<string, boolean | string | undefined>): unknown; }
+declare module "cookie" {
+  export interface SetCookie {
+    name: string; value?: string; domain?: string; expires?: Date; httpOnly?: boolean; maxAge?: number;
+    partitioned?: boolean; path?: string; priority?: "low" | "medium" | "high"; sameSite?: boolean | "lax" | "strict" | "none"; secure?: boolean;
+  }
+  export function stringifySetCookie(cookie: SetCookie, options?: { encode?(value: string): string }): string;
+  export function parseCookie(header: string, options?: { decode?(value: string): string }): Record<string, string | undefined>;
+}
 declare module "@aws-sdk/client-s3" {
   export const S3Client: any;
   export const GetObjectCommand: any;
@@ -123,6 +141,9 @@ declare module "ldapjs" {
   export interface Client {
     on(event: string, listener: (...args: unknown[]) => void): Client;
     search(base: string, options: { filter?: string; scope?: "base" | "one" | "sub"; attributes?: string[] }, callback: (error: Error | null, res: SearchCallbackResponse) => void): void;
+    bind(dn: string, password: string, callback: (error: Error | null) => void): void;
+    compare(dn: string, attribute: string, value: string, callback: (error: Error | null, matched?: boolean) => void): void;
+    modify(dn: string, change: { operation: "add" | "delete" | "replace"; modification: Record<string, string | string[]> }, callback: (error: Error | null) => void): void;
     unbind(callback?: (error?: Error) => void): void;
   }
   export function createClient(options: { url: string | string[] }): Client;
@@ -134,6 +155,7 @@ declare module "libxmljs" {
   }
   export interface Document { validate(schema: Document): boolean; }
   export function parseXml(source: string, options?: XMLParseOptions): Document;
+  export function parseXmlAsync(source: string, options?: XMLParseOptions): Promise<Document>;
 }
 declare var process: any;
 declare var Buffer: any;
@@ -153,6 +175,7 @@ declare function fetch(input: any, init?: any): Promise<any>;
 declare class URL {
   constructor(input: string, base?: string);
   hostname: string; href: string; pathname: string; protocol: string;
+  username: string; password: string;
   searchParams: { get(name: string): string | null; getAll(name: string): string[] };
 }
 declare class Headers { constructor(init?: any); get(name: string): string | null; set(name: string, value: string): void; }
@@ -196,6 +219,7 @@ declare module "@nestjs/common" {
   export const Redirect: any;
   export const Req: any;
   export const Res: any;
+  export const StreamableFile: any;
   export const UploadedFile: any;
   export const UseFilters: any;
   export const UseGuards: any;

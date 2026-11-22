@@ -1,8 +1,8 @@
 services:
-  payout-service:
-    build: ./services/payout-service
+  mandate-registry:
+    build: ./services/mandate-registry
     environment:
-      - SERVICE_NAME=payout-service
+      - SERVICE_NAME=mandate-registry
       - DATABASE_URL=postgres://app:app@db:5432/app
       - APP_SECRET_KEY=placeholder-not-a-real-secret-00
     ports:
@@ -13,14 +13,16 @@ services:
       timeout: 3s
       retries: 12
     depends_on:
+      cache:
+        condition: service_healthy
       db:
         condition: service_healthy
-      fx-service:
+      payments-api:
         condition: service_healthy
-  fx-service:
-    build: ./services/fx-service
+  payments-api:
+    build: ./services/payments-api
     environment:
-      - SERVICE_NAME=fx-service
+      - SERVICE_NAME=payments-api
       - DATABASE_URL=postgres://app:app@db:5432/app
     ports:
       - "8080"
@@ -30,10 +32,22 @@ services:
       timeout: 3s
       retries: 12
     depends_on:
+      cache:
+        condition: service_healthy
       db:
         condition: service_healthy
+  cache:
+    image: redis:8.8.2-alpine3.23@sha256:f4ded511357f7c60551133fbceb0d07874a2240bfe3d1baaa49769a70ff83465
+    command: ["sh", "-c", "(until redis-cli SET user_data cached_value >/dev/null 2>&1; do sleep 1; done) & exec docker-entrypoint.sh redis-server"]
+    ports:
+      - "6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli GET user_data | grep -q ."]
+      interval: 5s
+      timeout: 3s
+      retries: 12
   db:
-    image: postgres:16-alpine
+    image: postgres:18.6-alpine3.23@sha256:dec395d8c09c45609d6deb5c2388a07882d64fa59b1d98c1895792e085f57888
     ports:
       - "5432"
     environment:

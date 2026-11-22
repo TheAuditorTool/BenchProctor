@@ -11,14 +11,11 @@ class BenchmarkTest00013Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
-        $data = str_replace("\0", '', $userInput);
-        if (!preg_match('#^[a-zA-Z0-9 _.\\#%\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
-        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $processed . ')');
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('Authorization', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->setCookie(\Symfony\Component\HttpFoundation\Cookie::create('session', (string)$data, 0, '/', null, false, true, false, 'Strict'));
+        return $resp;
     }
 }

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+import ldap3
+import os
 from fastapi.responses import JSONResponse
 
 
@@ -21,9 +22,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00253")
 async def BenchmarkTest00253(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    parts = str(header_value).split(',')
-    data = ' '.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    raw_body = (await request.body()).decode('utf-8')
+    if raw_body:
+        data = raw_body
+    else:
+        data = ''
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(data) + ')', attributes=['cn'])
     return {"updated": True}

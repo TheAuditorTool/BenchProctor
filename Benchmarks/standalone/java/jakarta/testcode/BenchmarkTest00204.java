@@ -5,6 +5,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import javax.xml.parsers.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -30,15 +31,17 @@ public class BenchmarkTest00204 {
         }
     }
 
-    @GET
+    record FormData(String payload) {}
+
+    @POST
     @Path("/BenchmarkTest00204")
+    @Consumes("text/plain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00204(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        String data = String.format("%s", hostValue);
-        if (!("true".equals(data) || "false".equals(data))) { return Response.status(400).build(); }
-        Object codeResult = new jakarta.el.ELProcessor().eval(data);
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public Response BenchmarkTest00204(@jakarta.validation.constraints.Size(max = 4096) String rawBody, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        FormData payload = new FormData(rawData);
+        String data = payload.payload();
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

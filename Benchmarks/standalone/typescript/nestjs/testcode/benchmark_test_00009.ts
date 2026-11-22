@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Header, Post, UsePipes, ValidationPipe } from "@nestjs/common";
-import { Response } from "express";
-import * as nodeUtil from "util";
-import isoDompurify from "isomorphic-dompurify";
-import * as marked from "marked";
-import { IsString } from "class-validator";
+import { Controller, Header, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as nunjucks from "nunjucks";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -25,12 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00009")
-  @UsePipes(new ValidationPipe())
   @Header("Content-Type", "text/html")
-  async BenchmarkTest00009(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const data = nodeUtil.format("%s", userInput);
-    const processed = isoDompurify.sanitize(marked.parse(data) as string);
-    return "<div>" + processed + "</div>";
+  async BenchmarkTest00009(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const [data] = String(userInput).split(',');
+    const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: data });
+    return page;
   }
 }

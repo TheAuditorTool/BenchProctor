@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import json
-import requests
-from starlette.responses import JSONResponse
+from dataclasses import dataclass
+import socket
+import urllib.parse
+from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -22,7 +28,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00296")
 async def BenchmarkTest00296(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = api_value if api_value else 'default'
-    parsed = json.loads(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    auth_header = request.headers.get('authorization', '')
+    form = FormData(payload=auth_header)
+    data = form.payload
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
+    return {"updated": True}

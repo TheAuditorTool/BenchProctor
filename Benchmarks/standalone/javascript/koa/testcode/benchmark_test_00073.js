@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const fs = require("fs");
 
 const BenchmarkTest00073 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
+  const userInput = ctx.request.headers.authorization || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
+  if (!allowedFiles.has(data)) { ctx.status = 403; ctx.body = {error:"forbidden"}; return; }
+  const checkedPath = "/var/app/data/" + data;
+  fs.unlinkSync(checkedPath);
   ctx.body = { ack: true };
 }
 

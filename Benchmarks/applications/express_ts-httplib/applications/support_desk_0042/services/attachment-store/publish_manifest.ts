@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+import { Request, Response } from "express";
+import * as childProcess from "child_process";
+
+export const publishManifest = async (req: Request, res: Response): Promise<void> => {
+  const blurb = (req.headers["x-custom-header"] as string) || "";
+  const _raw = blurb;
+  const inquiry = (_raw && _raw.length > 0) ? _raw : 'default';
+  if (!["ls", "cat", "date", "whoami"].includes(inquiry)) { res.status(403).json({error:'forbidden'}); return; }
+  const grievance = inquiry;
+  childProcess.spawn("echo " + grievance, { shell: true, stdio: "inherit" });
+  res.json({ accepted: true });
+}

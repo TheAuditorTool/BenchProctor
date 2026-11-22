@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import secrets
 from flask import Flask, request, jsonify
-from lxml import etree
+import json
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,12 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00140", methods=["POST"])
 def BenchmarkTest00140():
-    field_value = request.form.get('field', '')
-    pending = list(str(field_value).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    token = secrets.token_bytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

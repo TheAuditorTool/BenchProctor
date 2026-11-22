@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+
+async function BenchmarkTest00288(req, res) {
+  const userInput = req.body.field || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  JSON.parse(data);
+  res.json({ done: true });
+}
+
+module.exports = { BenchmarkTest00288 };

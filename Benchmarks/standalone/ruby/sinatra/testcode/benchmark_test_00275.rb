@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "rexml/document"
 
 class BenchmarkTest00275 < Sinatra::Base
   before do
@@ -19,10 +19,14 @@ class BenchmarkTest00275 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00275" do
-    user_input = ENV["APP_INPUT"] || ""
-    data = "#{user_input}"
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = request.env["HTTP_HOST"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    directory = REXML::Document.new(File.read("/var/app/data/users.xml"))
+    account = REXML::XPath.first(directory, "//user[@name='" + parsed_num.to_s + "']")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ found: !account.nil? })
   end
 end

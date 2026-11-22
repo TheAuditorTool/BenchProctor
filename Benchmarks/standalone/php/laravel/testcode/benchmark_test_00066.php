@@ -8,14 +8,14 @@ class BenchmarkTest00066Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $resolved = realpath('/var/app/data/' . $data);
-        if ($resolved === false || strpos($resolved, '/var/app/data/') !== 0) { return response()->json(['error'=>'forbidden'], 403); }
-        $checkedPath = $resolved;
-        $content = file_get_contents($checkedPath);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        if (!preg_match('#^[a-zA-Z0-9 _.\\#%\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $stream = function () use ($processed) {
+            echo '<div class="comment">' . $processed . '</div>';
+        };
+        return response()->stream($stream, 200, ['Content-Type' => 'text/html']);
     }
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import { Controller, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,11 +19,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00108")
-  async BenchmarkTest00108(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
-    const data = `${userInput}`;
-    const checkedPath = "/var/app/data/" + path.basename(data);
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  async BenchmarkTest00108(@Req() req: Request): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    if (!/^[a-zA-Z0-9 _.\-]+$/.test(userInput)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = userInput;
+    Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
+    return { created: true };
   }
 }

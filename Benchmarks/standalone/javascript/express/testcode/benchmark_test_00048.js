@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const fs = require("fs");
 
 async function BenchmarkTest00048(req, res) {
-  const userInput = req.headers.authorization || "";
-  const data = String(userInput).slice(0, 200);
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"private or loopback address not allowed"}); return; }
-  const _addr = (await require("dns").promises.lookup(_host)).address;
-  if (/^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)/.test(_addr)) { res.status(403).json({error:"private or loopback address not allowed"}); return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
-  res.json({ done: true });
+  const userInput = req.headers.referer || "";
+  const data = decodeURIComponent(userInput);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  const fileContent = fs.readFileSync("/var/app/data/" + processed, "utf8");
+  res.send(fileContent);
 }
 
 module.exports = { BenchmarkTest00048 };

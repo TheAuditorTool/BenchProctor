@@ -30,17 +30,17 @@ public class BenchmarkTest00036 {
         }
     }
 
-    @GET
+    @POST
     @Path("/BenchmarkTest00036")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00036(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        String data;
-        if (hostValue.length() > 256) { data = hostValue.substring(0, 256); }
-        else { data = hostValue; }
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00036(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : fieldValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        String streamedHtml = "<div class=\"comment\">" + data + "</div>";
+        jakarta.ws.rs.core.StreamingOutput htmlStream = htmlOut -> htmlOut.write(streamedHtml.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return Response.ok(htmlStream, MediaType.TEXT_HTML).build();
     }
 }

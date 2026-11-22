@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.utils.safestring import mark_safe
-from django.http import HttpResponse
+from django.http import JsonResponse
+from lxml import etree
+import re
 
 
 def BenchmarkTest00127(request):
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    data = '%s' % str(auth_header)
-    return HttpResponse(mark_safe('<div>' + str(data) + '</div>'))
+    field_value = request.POST.get('field', '')
+    data = '%s' % (field_value,)
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    return JsonResponse({"saved": True})

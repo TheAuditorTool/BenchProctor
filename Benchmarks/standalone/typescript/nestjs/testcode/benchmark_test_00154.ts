@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, ForbiddenException } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as net from "net";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,13 +22,11 @@ export class BenchmarkController {
   @Post("BenchmarkTest00154")
   async BenchmarkTest00154(@Body("multipart_field") mf: string): Promise<unknown> {
     const userInput = mf || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    let _host = "";
-    try { _host = new URL(String(data)).hostname; } catch (e) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const _addr = (await require("dns").promises.lookup(_host)).address;
-    if (/^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)/.test(_addr)) { throw new ForbiddenException({error:"private or loopback address not allowed"}); }
-    const targetUrl = data;
-    net.connect(80, new URL(String(targetUrl)).hostname);
+    const data = `${userInput}`;
+    const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+    const streamIv = crypto.randomBytes(8);
+    fs.writeFileSync("/var/data/cipher.iv", streamIv);
+    stream.pipeline(stream.Readable.from([String(data)]), crypto.createCipheriv("des-ede3-cbc", streamKey, streamIv), fs.createWriteStream("/var/data/cipher.bin"), (err: Error | null) => { if (err) console.error("encryption failed", err); });
     return { created: true };
   }
 }

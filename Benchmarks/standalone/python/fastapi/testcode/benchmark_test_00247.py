@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from cryptography.fernet import Fernet
-from starlette.responses import JSONResponse
-import os
+import requests
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,10 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00247")
-async def BenchmarkTest00247(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(ua_value)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+async def BenchmarkTest00247(request: Request, req: UserInput):
+    json_value = req.payload
+    data = json_value if json_value else 'default'
+    requests.get(str(data))
+    return {"updated": True}

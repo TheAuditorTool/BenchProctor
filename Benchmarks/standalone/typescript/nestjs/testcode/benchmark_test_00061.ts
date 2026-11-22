@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, Query } from "@nestjs/common";
 import { Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { sql } from "drizzle-orm";
-import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,13 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00061")
-  async BenchmarkTest00061(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    const _drizzle = drizzle(new Database(":memory:"));
-    await _drizzle.run(sql.raw("SELECT * FROM users WHERE id = '" + data + "'"));
+  async BenchmarkTest00061(@Query("id") id: string): Promise<unknown> {
+    const userInput = id || "";
+    const data = String(userInput).replace(/\u0000/g, "");
+    crypto.createHash("sha256").update(data).digest("hex");
     return { created: true };
   }
 }

@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cstring>
 #include <unistd.h>
 
 static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
@@ -19,11 +18,7 @@ void benchmark_test_00289(int, char **)
         }
     }
     std::string data = cpp_own(user_input);
-    char *_dst = new char[16];
-    size_t _n = data.size();
-    if (_n > 15) _n = 15;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    std::string _loc = data;
+    for (char &_c : _loc) if (_c == '\r' || _c == '\n') _c = ' ';
+    std::cout << "Location: " << _loc << std::endl;
 }

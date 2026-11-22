@@ -2,23 +2,32 @@
 package testcode
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00080(w http.ResponseWriter, r *http.Request) {
-	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
-	var parsed map[string]interface{}
-	json.Unmarshal([]byte(redisValue), &parsed)
-	data, _ := parsed["value"].(string)
-	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
-	rows, err := DB.Query(query)
+	_, header, err := r.FormFile("upload")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "bad upload", http.StatusBadRequest)
 		return
 	}
-	defer rows.Close()
+	uploadName := header.Filename
+	capture := func() string { return strings.TrimSpace(uploadName) }
+	data := capture()
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

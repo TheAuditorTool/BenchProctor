@@ -19,11 +19,12 @@ public class BenchmarkTest00122 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00122/{pathId}")
-    public void BenchmarkTest00122(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ pathValue.hashCode();
+    @GetMapping("/BenchmarkTest00122")
+    public void BenchmarkTest00122(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Host") String host, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(hostValue);
+        long randValue = java.security.SecureRandom.getInstance("DRBG").nextLong() ^ data.hashCode();
         response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");

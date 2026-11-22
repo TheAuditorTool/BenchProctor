@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const childProcess = require("child_process");
 
 const BenchmarkTest00143 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { ctx.status = 403; ctx.body = {error:"host not allowed"}; return; }
-  const targetUrl = data;
-  ctx.redirect(targetUrl);
+  const userInput = ctx.cookies.get("session_token") || "";
+  const data = decodeURIComponent(userInput);
+  if (!["ls", "cat", "date", "whoami"].includes(data)) { ctx.status = 403; ctx.body = {error:'forbidden'}; return; }
+  const allowedBin = data;
+  childProcess.execSync("echo " + allowedBin);
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00143 };

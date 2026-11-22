@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as net from "net";
+import * as fs from "fs";
 
 export const BenchmarkTest00360 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req as any).file?.originalname as string) || "";
-  const capture = (v: string) => (): string => v.trim();
-  const readInput = capture(userInput);
-  const data: string = readInput();
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const userInput = (req.headers.authorization as string) || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
+  if (!allowedFiles.has(data)) { res.status(403).json({error:"forbidden"}); return; }
+  const checkedPath = "/var/app/data/" + data;
+  fs.unlinkSync(checkedPath);
   res.json({ accepted: true });
 }

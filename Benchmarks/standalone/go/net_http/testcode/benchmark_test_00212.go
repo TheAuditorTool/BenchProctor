@@ -2,9 +2,10 @@
 package testcode
 
 import (
+	"crypto/md5"
+	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"strings"
 )
 
@@ -14,15 +15,10 @@ func BenchmarkTest00212(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	data := func(v string) string { return strings.TrimSpace(v) }(rawBody)
-	allowedBins := map[string]bool{"ls": true, "cat": true, "date": true, "whoami": true}
-	if !allowedBins[data] {
-		http.Error(w, "forbidden", http.StatusForbidden)
-		return
-	}
-	allowedBin := data
-	cmd := exec.Command("python3", "-c", allowedBin)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	xmlBody := string(rawBytes)
+	segments := strings.Split(xmlBody, ",")
+	data := strings.Join(segments, " ")
+	hash := md5.Sum([]byte(data))
+	hashStr := fmt.Sprintf("%x", hash)
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

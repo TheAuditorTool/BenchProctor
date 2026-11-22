@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00212 < Sinatra::Base
   before do
@@ -18,11 +19,25 @@ class BenchmarkTest00212 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00212" do
-    user_input = request.env["HTTP_HOST"].to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    eval(data)
+    user_input = request.body.read
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    password = params[:password].to_s
+    if password.empty?
+      halt 400, JSON.generate({ error: "password required" })
+      return
+    end
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    account = ldap.bind_as(base: "ou=people,dc=example,dc=com", filter: "(uid=" + data.to_s + ")", password: password)
+    unless account
+      halt 401, JSON.generate({ error: "invalid credentials" })
+      return
+    end
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ dn: account.first.dn })
   end
 end

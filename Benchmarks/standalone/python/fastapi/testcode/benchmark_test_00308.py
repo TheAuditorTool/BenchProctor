@@ -1,9 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
+import ldap
+from dataclasses import dataclass
 from starlette.responses import JSONResponse
+import os
+from pydantic import Field, ValidationError, create_model
 from app_runtime import db
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -23,7 +31,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00308")
 async def BenchmarkTest00308(request: Request):
     comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = ' '.join(str(comment_value).split())
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    form = FormData(payload=comment_value)
+    data = form.payload
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.#%\\-]+$")))(value=str(data))
+    except ValidationError:
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    return {"updated": True}

@@ -33,11 +33,10 @@ public class BenchmarkTest00143 {
     @GET
     @Path("/BenchmarkTest00143")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00143(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    public Response BenchmarkTest00143(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        java.util.Map.Entry<String,String> kv = java.util.Map.entry(uaValue, "request");
+        String data = kv.getKey();
+        return Response.ok("<div>" + data + "</div>", MediaType.TEXT_HTML).build();
     }
 }

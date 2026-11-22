@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00060Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,13 +12,14 @@ class BenchmarkTest00060Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00060
-    user_input = Profile.first&.bio.to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    ActiveRecord::Base.connection.execute("SELECT * FROM " + ActiveRecord::Base.connection.quote_column_name(data))
-    render json: { status: "ok" }
+    user_input = User.first&.name.to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + parsed_bool.to_s + "']/role")
+    render json: { roles: roles.map(&:text) }
   end
 end

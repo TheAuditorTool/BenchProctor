@@ -8,9 +8,13 @@ class BenchmarkTest00266Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        return response(e($data))->header('Content-Type', 'text/html');
+        $userInput = $request->header('Origin', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $_coerced = max(0, min((int)$data, 1048576));
+        $boundedVal = $_coerced;
+        $requested = (int) $boundedVal;
+        $allocated = $requested + 1;
+        return response()->json(['allocated' => $allocated], 200);
     }
 }

@@ -2,23 +2,23 @@
 package testcode
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
-	"regexp"
-	"strings"
+	"net/url"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00115(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := strings.ReplaceAll(dbValue, "\x00", "")
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
+	pathValue := c.Param("id")
+	data, _ := url.QueryUnescape(pathValue)
+	tokenLen, _ := strconv.Atoi(data)
+	if tokenLen < 16 || tokenLen > 64 {
+		tokenLen = 32
 	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	buf := make([]byte, tokenLen)
+	rand.Read(buf)
+	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
 }

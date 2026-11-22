@@ -8,10 +8,10 @@ class BenchmarkTest00292Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = $request->header('Referer', '');
+        $outbound = new \GuzzleHttp\Psr7\Request('GET', (string)$userInput);
+        $http = new \GuzzleHttp\Client(['timeout' => 5]);
+        $upstream = $http->send($outbound);
         return response()->json(['ok' => 1]);
     }
 }

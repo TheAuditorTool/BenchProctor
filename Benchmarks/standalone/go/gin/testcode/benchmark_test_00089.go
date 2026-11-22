@@ -2,17 +2,27 @@
 package testcode
 
 import (
+	"net/http"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00089(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := func(v string) string { return strings.TrimSpace(v) }(dbValue)
-	processed := bluemonday.UGCPolicy().Sanitize(data)
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	fieldValue := c.PostForm("field")
+	segments := strings.Split(fieldValue, ",")
+	data := strings.Join(segments, " ")
+	proc, err := os.StartProcess("/bin/sh", []string{"sh", "-c", "echo " + data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

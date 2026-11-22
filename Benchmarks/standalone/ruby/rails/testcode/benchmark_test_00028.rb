@@ -11,9 +11,14 @@ class BenchmarkTest00028Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00028
-    user_input = request.headers["Origin"].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = request.referer.to_s
+    data = "%s" % user_input
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
+      return
+    end
+    target_url = data
+    redirect_to target_url, allow_other_host: true
   end
 end

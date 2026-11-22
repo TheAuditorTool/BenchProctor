@@ -2,8 +2,8 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"crypto/rand"
+	"io"
 	"net/http"
 	"strings"
 
@@ -11,22 +11,15 @@ import (
 )
 
 func BenchmarkTest00068(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	relayPrefix := ""
-	if len(commentText) > 0 {
-		relayPrefix = strings.ToLower(commentText[:1])
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = commentText
-	case "f":
-		data = commentText
-	default:
-		data = commentText
-	}
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	xmlBody := string(rawBytes)
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(xmlBody)
+	apiToken := rand.Text()
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", data, apiToken)
+	c.JSON(http.StatusOK, map[string]string{"token": apiToken})
 }

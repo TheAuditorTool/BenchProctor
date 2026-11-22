@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi import Form
+import io
+import xml.sax
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -20,7 +25,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00349")
-async def BenchmarkTest00349(request: Request, field: str = Form('')):
-    field_value = field
-    exec(str(field_value))
+async def BenchmarkTest00349(request: Request, req: UserInput):
+    json_value = req.payload
+    data = (lambda v: v.strip())(json_value)
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
     return {"updated": True}

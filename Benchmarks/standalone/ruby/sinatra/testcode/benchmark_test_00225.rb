@@ -18,11 +18,11 @@ class BenchmarkTest00225 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00225" do
-    user_input = params[:field].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    system("echo " + data)
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(user_input.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

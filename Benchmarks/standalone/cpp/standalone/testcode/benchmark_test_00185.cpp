@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <unistd.h>
+
+extern "C" int RAND_priv_bytes(unsigned char *buf, int num);
 
 void benchmark_test_00185(int, char **)
 {
@@ -16,11 +18,12 @@ void benchmark_test_00185(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    if (std::strchr(_p, ';') != nullptr) return;
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    unsigned char _rnd[16];
+    if (RAND_priv_bytes(_rnd, sizeof(_rnd)) != 1) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; ++_i) std::snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    std::cout << "token for " << data << ": " << _hex << std::endl;
 }

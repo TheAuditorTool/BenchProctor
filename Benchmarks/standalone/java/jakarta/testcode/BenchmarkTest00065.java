@@ -33,11 +33,9 @@ public class BenchmarkTest00065 {
     @GET
     @Path("/BenchmarkTest00065")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00065(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public Response BenchmarkTest00065(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + userId}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

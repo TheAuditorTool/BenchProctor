@@ -8,8 +8,13 @@ class BenchmarkTest00030Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
+        $userInput = $request->input('multipart_field', '');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $pipes = [];
+        $snippet = proc_open([PHP_BINARY, '-r', (string)$data], [1 => ['pipe', 'w']], $pipes);
+        $result = stream_get_contents($pipes[1]);
+        proc_close($snippet);
+        return response()->json(['ok' => 1]);
     }
 }

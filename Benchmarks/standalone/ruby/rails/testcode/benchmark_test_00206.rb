@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "socket"
+require "base64"
 
 class BenchmarkTest00206Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,15 +12,14 @@ class BenchmarkTest00206Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00206
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    data = "%s" % user_input
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    TCPSocket.new(target_url, 80).close
-    render json: { status: "ok" }
+    user_input = User.first&.name.to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
+    _cipher.encrypt
+    _cipher.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))[0, _cipher.key_len]
+    iv = _cipher.random_iv
+    ciphertext = iv + _cipher.update(data.to_s) + _cipher.final + _cipher.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

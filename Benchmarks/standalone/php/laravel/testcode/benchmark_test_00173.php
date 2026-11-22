@@ -9,8 +9,10 @@ class BenchmarkTest00173Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->json('payload', '');
-        $data = vsprintf('%1$s', [$userInput]);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $data = ($userInput !== null) ? $userInput : '';
+        if (!preg_match('#^[a-zA-Z0-9 _.%\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        shell_exec('bash -c "grep -r ' . $processed . ' /var/app/logs"');
         return response()->json(['ok' => 1]);
     }
 }

@@ -8,12 +8,10 @@ class BenchmarkTest00328Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $checkedPath = '/var/app/data/' . basename($data);
-        unlink((string)$checkedPath);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $data, 'data_updated_at' => time()]);
         return response()->json(['ok' => 1]);
     }
 }

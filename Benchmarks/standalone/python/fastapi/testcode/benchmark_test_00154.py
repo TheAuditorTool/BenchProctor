@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-from app_runtime import db
+from lxml import etree
+import re
 import os
-import redis
+from starlette.responses import JSONResponse
 
 
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -25,12 +28,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00154")
 async def BenchmarkTest00154(request: Request):
-    redis_value = redis_client.get('user_data')
-    data = str(redis_value).replace('\x00', '')
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    env_value = os.environ.get('APP_INPUT', '')
+    reader = make_reader(env_value)
+    data = reader()
+    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(processed) + '"]')
     return {"updated": True}

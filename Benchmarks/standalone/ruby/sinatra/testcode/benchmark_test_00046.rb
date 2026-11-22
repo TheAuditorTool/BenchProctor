@@ -18,19 +18,13 @@ class BenchmarkTest00046 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00046" do
-    user_input = params[:upload][:filename].to_s rescue ""
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
-    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
-      halt 403, JSON.generate({ error: "forbidden" })
-      return
-    end
-    checked_path = resolved
-    File.write(checked_path, "data")
+    user_input = ENV["APP_INPUT"] || ""
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    settings.set(:announcement, parsed_num.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

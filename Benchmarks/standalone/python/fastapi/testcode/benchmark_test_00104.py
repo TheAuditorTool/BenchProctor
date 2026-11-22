@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-import secrets
-from fastapi import Form
-from starlette.responses import JSONResponse
-from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -21,10 +21,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00104")
-async def BenchmarkTest00104(request: Request, field: str = Form('')):
-    field_value = field
-    data = '%s' % (field_value,)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+@app.post("/BenchmarkTest00104/{id}")
+async def BenchmarkTest00104(request: Request, id: str):
+    path_value = id
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    request.session.update({'data': str(data)})
+    return {"updated": True}

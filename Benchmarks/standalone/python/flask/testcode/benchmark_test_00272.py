@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import json
-from flask import Flask, jsonify
-import defusedxml.ElementTree
-from app_runtime import db
+from Crypto.Hash import SHA256
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -21,7 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00272", methods=["POST"])
 def BenchmarkTest00272():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = json.loads(db_value).get('value', '')
-    defusedxml.ElementTree.fromstring(str(data))
-    return jsonify({"result": "success"})
+    user_id = request.args.get('id', '')
+    data = bytes.fromhex(user_id).decode('utf-8', 'ignore')
+    digest = SHA256.new(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

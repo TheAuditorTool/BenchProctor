@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -35,12 +33,13 @@ public class BenchmarkTest00095 {
     @GET
     @Path("/BenchmarkTest00095")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00095(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data = authHeader.replace("\u0000", "");
-        if (!data.matches("^[a-zA-Z0-9 _.#~\\-]+$")) { return Response.status(400).build(); }
-        String content = Files.readString(Paths.get("/var/app/data/" + data), java.nio.charset.StandardCharsets.UTF_8);
-        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+    public Response BenchmarkTest00095(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = String.join(" ", userId.split("[ \\t]+"));
+        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + processed});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

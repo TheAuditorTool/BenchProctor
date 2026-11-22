@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00134")]
-pub async fn benchmark_test_00134(req: HttpRequest) -> HttpResponse {
-    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
-    use std::fmt::Write;
-    let mut data = String::new();
-    write!(&mut data, "{}", cookie_value).ok();
-    crate::shared::store_session("data", &data);
+pub async fn benchmark_test_00134() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(db_value.clone());
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
+    let processed = data.clone();
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _doc = _pkg.as_document();
+        let _factory = sxd_xpath::Factory::new();
+        if let Ok(Some(_xpath)) = _factory.build(&format!("//user[@id='{}']/@role", processed)) {
+            let _ = _xpath.evaluate(&sxd_xpath::Context::new(), _doc.root());
+        }
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

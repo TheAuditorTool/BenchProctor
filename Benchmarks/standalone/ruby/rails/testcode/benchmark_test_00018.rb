@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00018Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,9 @@ class BenchmarkTest00018Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00018
-    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
+    user_input = params[:id].to_s
+    data = CGI.unescape(user_input)
+    JSON.parse(data)
     render json: { status: "ok" }
   end
 end

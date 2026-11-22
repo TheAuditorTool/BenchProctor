@@ -29,7 +29,7 @@ struct Client {
 void benchmark_test_00470(const httplib::Request &, httplib::Response &res)
 {
     std::string user_input;
-    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
         char _b[256];
         if (std::fgets(_b, sizeof(_b), _fp)) {
             _b[std::strcspn(_b, "\n")] = 0;
@@ -38,18 +38,12 @@ void benchmark_test_00470(const httplib::Request &, httplib::Response &res)
         std::fclose(_fp);
     }
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
     char *_p = new char[data.size() + 1];
     std::strcpy(_p, data.c_str());
     std::cout << _p << std::endl;
-    if (std::strchr(_p, ';') != nullptr) delete[] _p;
+    if (std::strchr(_p, ';') != nullptr) { delete[] _p; return; }
     delete[] _p;
     res.set_content("ok", "text/plain");
 }

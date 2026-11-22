@@ -33,15 +33,16 @@ public class BenchmarkTest00141 {
     @GET
     @Path("/BenchmarkTest00141")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00141(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uaValue = userAgent != null ? userAgent : "";
-        String data = String.join(" ", uaValue.split("[ \\t]+"));
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00141(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Properties container = new java.util.Properties();
+        container.setProperty("value", cookieValue);
+        String data = container.getProperty("value", "");
+        org.apache.hc.client5.http.classic.methods.HttpGet fetchRequest = new org.apache.hc.client5.http.classic.methods.HttpGet(data);
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient fetchClient = org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            int fetchStatus = fetchClient.execute(fetchRequest, fetchResponse -> fetchResponse.getCode());
+            response.setHeader("X-Fetch-Status", String.valueOf(fetchStatus));
+        }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

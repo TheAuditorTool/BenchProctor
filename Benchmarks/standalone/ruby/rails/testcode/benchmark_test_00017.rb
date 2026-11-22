@@ -11,10 +11,16 @@ class BenchmarkTest00017Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00017
-    user_input = Profile.first&.bio.to_s
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    File.delete("/var/app/data/" + data)
+    user_input = params[:id].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      render json: { error: "forbidden" }, status: 403
+      return
+    end
+    checked_path = resolved
+    File.write(checked_path, "data")
     render json: { status: "ok" }
   end
 end

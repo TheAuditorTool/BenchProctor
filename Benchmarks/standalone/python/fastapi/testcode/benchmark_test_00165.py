@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+import subprocess
 from fastapi.responses import JSONResponse
 
 
@@ -21,8 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00165")
 async def BenchmarkTest00165(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = (lambda v: v.strip())(user_id)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    auth_header = request.headers.get('authorization', '')
+    data = auth_header if auth_header else 'default'
+    subprocess.run(['echo', data], shell=False)
     return {"updated": True}

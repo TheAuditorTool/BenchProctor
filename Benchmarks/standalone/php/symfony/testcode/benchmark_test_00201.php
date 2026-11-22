@@ -11,9 +11,11 @@ class BenchmarkTest00201Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('multipart_field', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $userInput = $request->headers->get('User-Agent', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $users = simplexml_load_file('/var/app/data/users.xml');
+        $matches = $users->xpath("//user[@name='" . $data . "']");
         return new JsonResponse(["committed" => true]);
     }
 }

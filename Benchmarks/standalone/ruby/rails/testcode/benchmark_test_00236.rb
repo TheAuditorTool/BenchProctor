@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00236Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,17 +12,16 @@ class BenchmarkTest00236Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00236
-    user_input = cookies[:session_token].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
+    user_input = request.referer.to_s
+    data = "%s" % user_input
+    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
     end
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    processed = data
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port, auth: { method: :simple, username: ENV.fetch("LDAP_BIND_DN"), password: ENV.fetch("LDAP_BIND_PASSWORD") })
+    ldap.replace_attribute("uid=" + processed.to_s + ",ou=people,dc=example,dc=com", :description, "reviewed")
     render json: { status: "ok" }
   end
 end

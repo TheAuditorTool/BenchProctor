@@ -3,15 +3,14 @@ package testcode
 
 import (
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00198(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", uaValue)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	authHeader := r.Header.Get("Authorization")
+	capture := func() string { return strings.TrimSpace(authHeader) }
+	data := capture()
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	w.Header().Add("Set-Cookie", sessionCookie.String())
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

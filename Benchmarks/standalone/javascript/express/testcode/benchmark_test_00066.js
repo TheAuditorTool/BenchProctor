@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const nodeSerialize = require("node-serialize");
+const http = require("http");
 
 async function BenchmarkTest00066(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const [data] = String(userInput).split(',');
-  nodeSerialize.unserialize(data);
+  const userInput = req.cookies.session_token || "";
+  let data;
+  try { data = JSON.parse(userInput).value || userInput; }
+  catch (e) { data = userInput; }
+  http.get(data);
   res.json({ done: true });
 }
 

@@ -8,15 +8,9 @@ import (
 )
 
 func BenchmarkTest00231(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
+	multipartValue := r.FormValue("multipart_field")
 	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", userID)
+	fmt.Fprintf(&relayBuilder, "%s", multipartValue)
 	data := relayBuilder.String()
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	http.RedirectHandler(data, http.StatusFound).ServeHTTP(w, r)
 }

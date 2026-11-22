@@ -2,40 +2,33 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00257(c *gin.Context) {
-	header, err := c.FormFile("upload")
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var data string
+	if len(commentText) > 0 {
+		data = commentText
+	} else {
+		data = "default"
+	}
+	lookupStmt, err := DB.Prepare(fmt.Sprintf(`SELECT id, name FROM "%s"`, strings.ReplaceAll(data, `"`, `""`)))
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	uploadName := header.Filename
-	relayPrefix := ""
-	if len(uploadName) > 0 {
-		relayPrefix = strings.ToLower(uploadName[:1])
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = uploadName
-	case "f":
-		data = uploadName
-	default:
-		data = uploadName
-	}
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

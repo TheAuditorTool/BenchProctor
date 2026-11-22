@@ -1,19 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
+import io
+from lxml import etree
 from fastapi.responses import JSONResponse
 
 
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
-
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -31,6 +23,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00223")
 async def BenchmarkTest00223(request: Request):
     raw_body = (await request.body()).decode('utf-8')
-    data = RequestPayload(raw_body).value
-    request.session['data'] = str(data)
+    data = raw_body.decode('utf-8', 'ignore') if isinstance(raw_body, bytes) else raw_body
+    for _event, element in etree.iterparse(io.BytesIO(str(data).encode()), events=('end',), load_dtd=True, resolve_entities=True, no_network=False):
+        element.clear()
     return {"updated": True}

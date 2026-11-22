@@ -8,10 +8,10 @@ class BenchmarkTest00027Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $processed = (new \HTMLPurifier())->purify($data);
-        return response('<div>' . $processed . '</div>')->header('Content-Type', 'text/html');
+        $userInput = $request->header('Origin', '');
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
+        return response()->json(['ok' => 1]);
     }
 }

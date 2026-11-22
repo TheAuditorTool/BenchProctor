@@ -11,14 +11,11 @@ class BenchmarkTest00023Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00023
-    user_input = request.body.read
-    data = user_input ? user_input : ''
-    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    session[:data] = processed.to_s
+    user_input = Comment.first&.text.to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    eval(parsed_bool)
     render json: { status: "ok" }
   end
 end

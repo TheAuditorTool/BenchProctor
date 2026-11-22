@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const crypto = require("crypto");
-const nodeUtil = require("util");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00343(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const data = nodeUtil.format("%s", userInput);
-  crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(data));
+  const userInput = req.headers.referer || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  childProcess.exec("echo " + data, (_err, stdout) => console.log(stdout));
   res.json({ done: true });
 }
 

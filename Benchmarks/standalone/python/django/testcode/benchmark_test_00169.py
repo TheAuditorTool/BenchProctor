@@ -1,16 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+import ctypes
 import os
-from django.http import HttpResponse
 
 
 def BenchmarkTest00169(request):
-    raw_body = request.body.decode('utf-8')
-    base_dir = '/var/app/data'
-    full_path = os.path.realpath(os.path.join(base_dir, raw_body))
-    if not full_path.startswith(base_dir + os.sep):
-        return JsonResponse({'error': 'forbidden'}, status=403)
-    checked_path = full_path
-    with open(checked_path, 'r') as fh:
-        content = fh.read()
-    return HttpResponse(content)
+    env_value = os.environ.get('APP_INPUT', '')
+    data = str(env_value).replace('\x00', '')
+    count = int(str(data))
+    records = ctypes.create_string_buffer(ctypes.c_uint32(count * 64).value)
+    return JsonResponse({'allocated': len(records)}, status=200)

@@ -1,19 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00213(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Ok(Some(_field)) = multipart.next_field().await {
-            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
-        }
-        _fname
-    };
-    let data = upload_name.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    let _q = format!("SELECT * FROM users WHERE id = '{}'", data);
-    if let Ok(_pool) = sqlx::PgPool::connect("postgres://app:app@localhost/appdb").await {
-        let _ = sqlx::query(&_q).execute(&_pool).await;
-    }
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00213(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let mut data = String::new();
+    for token in raw_body.split(',') { data = token.to_string(); }
+    return (axum::response::AppendHeaders([(axum::http::header::SET_COOKIE, format!("session={}; Secure; HttpOnly; SameSite=Strict", urlencoding::encode(&data)))]), Json(serde_json::json!({"count": 0}))).into_response();
 }

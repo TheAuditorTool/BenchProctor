@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
+from flask import Flask, abort
+from flask import redirect
+from flask import request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -18,12 +21,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00209", methods=["POST"])
 def BenchmarkTest00209():
-    cookie_value = request.cookies.get('session_token', '')
-    kind = 'json' if str(cookie_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(cookie_value).strip()
-        case _:
-            data = str(cookie_value)
-    eval(str(data))
-    return jsonify({"result": "success"})
+    origin_value = request.headers.get('Origin', '')
+    data = '%s' % str(origin_value)
+    abort(redirect(str(data)))

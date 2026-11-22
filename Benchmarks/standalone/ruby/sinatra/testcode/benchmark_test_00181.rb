@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00181 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,15 +19,15 @@ class BenchmarkTest00181 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00181" do
-    user_input = request.cookies["session_token"].to_s
-    data = user_input ? user_input : ''
-    unless data =~ /\A[a-zA-Z0-9 _.\-]+\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    session[:data] = processed.to_s
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
+    _cipher.encrypt
+    _cipher.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))[0, _cipher.key_len]
+    iv = _cipher.random_iv
+    ciphertext = iv + _cipher.update(data.to_s) + _cipher.final
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

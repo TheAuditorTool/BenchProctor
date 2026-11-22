@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
 
 const BenchmarkTest00256 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  net.connect(80, new URL(String(data)).hostname);
-  ctx.body = { ack: true };
+  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+  ctx.body = { token };
 }
 
 module.exports = { BenchmarkTest00256 };

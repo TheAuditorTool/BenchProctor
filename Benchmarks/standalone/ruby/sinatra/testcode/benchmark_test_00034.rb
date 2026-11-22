@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "socket"
 
 class BenchmarkTest00034 < Sinatra::Base
   before do
@@ -21,11 +19,11 @@ class BenchmarkTest00034 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00034" do
-    user_input = ENV["APP_INPUT"] || ""
+    user_input = params[:id].to_s
+    pending = user_input.split(',')
     data = ''
-    user_input.split(',').each { |token| data = token }
-    result = DB[:users].where(name: data).first
-    value = result[:name]
+    data = pending.shift until pending.empty?
+    TCPSocket.new(URI.parse(data.to_s).host, 80).close
     content_type :json
     JSON.generate({ status: "ok" })
   end

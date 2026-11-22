@@ -3,11 +3,16 @@
 #include <string>
 #include <cstdlib>
 
+extern "C" unsigned char *SHA1(const unsigned char *d, unsigned long n, unsigned char *md);
+
 void benchmark_test_00300(int, char **)
 {
-    const char *user_input_env = std::getenv("GRAPHQL_INPUT");
+    const char *user_input_env = std::getenv("APP_INPUT");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    std::cout << "Location: " << data << std::endl;
+    std::string data;
+    std::string::size_type _w = 0;
+    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
+    unsigned char _digest[20];
+    SHA1(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
 }

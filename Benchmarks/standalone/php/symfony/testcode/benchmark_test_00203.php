@@ -5,16 +5,16 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00203', methods: ['POST'])]
 class BenchmarkTest00203Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = $request->headers->get('Host', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        $userInput = $request->headers->get('X-Custom-Header', '');
+        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$userInput]);
+        $value = $result['name'];
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,17 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
-from pydantic import BaseModel
+import os
+from pathlib import Path
+from fastapi import Form
 from starlette.responses import JSONResponse
-from app_runtime import db
 
-
-class UserInput(BaseModel):
-    payload: str = ''
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -29,10 +22,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00174")
-async def BenchmarkTest00174(request: Request, req: UserInput):
-    json_value = req.payload
-    reader = make_reader(json_value)
-    data = reader()
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+async def BenchmarkTest00174(request: Request, field: str = Form('')):
+    field_value = field
+    data = '%s' % (field_value,)
+    base = Path('/var/app/data').resolve()
+    candidate = (base / data).resolve()
+    if base not in candidate.parents and candidate != base:
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = str(candidate)
+    os.unlink(checked_path)
+    return {"updated": True}

@@ -11,12 +11,17 @@ class BenchmarkTest00056Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('field', '');
-        $data = sprintf('%s', $userInput);
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return new JsonResponse(['allocated' => $allocated], 200);
+        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
+        $_prefix = strtolower(substr($userInput, 0, 1));
+        $data = '';
+        switch ($_prefix) {
+            case 'h': $data = strtolower($userInput); break;
+            case 'f': $data = strtoupper($userInput); break;
+            default: $data = trim($userInput); break;
+        }
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        file_put_contents('/var/uploads/' . $processed, 'data');
+        return new JsonResponse(["committed" => true]);
     }
 }

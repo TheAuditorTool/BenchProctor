@@ -2,14 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BenchmarkTest00037Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $userInput = $request->header('Origin', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $_valid = Validator::make(['value' => (string)$data], ['value' => ['regex:' . '#^[a-zA-Z0-9 _.\\-]+$#']]);
+        if ($_valid->fails()) { error_log('schema validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = (string)$data;
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $processed, 'data_updated_at' => time()]);
+        return response()->json(['ok' => 1]);
     }
 }

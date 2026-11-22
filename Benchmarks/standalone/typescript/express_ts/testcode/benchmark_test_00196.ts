@@ -2,12 +2,8 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00196 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  const data = userInput != null ? userInput : '';
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
-  const buf = Buffer.alloc(requested + 1);
-  res.json({ allocated: buf.length }); return;
+  const userInput = (req.cookies?.session_token as string) || "";
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  res.send("<div>" + data + "</div>");
 }

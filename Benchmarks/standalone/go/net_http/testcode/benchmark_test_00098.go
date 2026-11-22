@@ -2,21 +2,15 @@
 package testcode
 
 import (
-	"encoding/hex"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
+	"strings"
 )
 
 func BenchmarkTest00098(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
-	hexBytes, _ := hex.DecodeString(userID)
-	data := string(hexBytes)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
-		return
-	}
-	targetUrl := data
-	http.Redirect(w, r, targetUrl, http.StatusFound)
+	hostValue := r.Host
+	segments := strings.Split(hostValue, ",")
+	data := strings.Join(segments, " ")
+	os.WriteFile("/var/app/data/"+data, []byte("data"), 0644)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

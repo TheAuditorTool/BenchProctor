@@ -2,10 +2,9 @@
 package testcode
 
 import (
-	"bytes"
 	"io"
 	"net/http"
-	"os/exec"
+	"strings"
 )
 
 func BenchmarkTest00090(w http.ResponseWriter, r *http.Request) {
@@ -15,8 +14,12 @@ func BenchmarkTest00090(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rawBody := string(rawBytes)
-	data := string(bytes.TrimSpace([]byte(rawBody)))
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	capture := func() string { return strings.TrimSpace(rawBody) }
+	data := capture()
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE name = '" + data + "'").Scan(&matched).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

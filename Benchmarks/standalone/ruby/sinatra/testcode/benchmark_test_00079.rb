@@ -18,14 +18,10 @@ class BenchmarkTest00079 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00079" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    resolved = File.realpath(File.join("/var/app/data", user_input)) rescue nil
-    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
-      halt 403, JSON.generate({ error: "forbidden" })
-      return
-    end
-    checked_path = resolved
-    File.delete(checked_path)
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    cookie_value = Rack::Utils.escape(data.to_s)
+    headers["Set-Cookie"] = "session=" + cookie_value + "; Path=/; HttpOnly; SameSite=Strict"
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -19,11 +19,12 @@ class BenchmarkTest00338 < Sinatra::Base
   end
   post "/benchmark_test_00338" do
     user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    checked_path = "/var/app/data/" + File.basename(data)
-    File.write(checked_path, "data")
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    limit = plan.fetch(:requests)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ requests: limit })
   end
 end

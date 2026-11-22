@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00191(req, res) {
-  const userInput = req.headers.host || "";
+  const userInput = (req.files && req.files[0] && req.files[0].originalname) || "";
   function normalize(value) { return String(value).normalize("NFC"); }
   const data = normalize(userInput);
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
-  const buf = Buffer.alloc(requested + 1);
-  res.json({ allocated: buf.length }); return;
+  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+  res.json({ token });
 }
 
 module.exports = { BenchmarkTest00191 };

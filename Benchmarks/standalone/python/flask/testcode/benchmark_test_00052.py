@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from flask import Flask, request, jsonify
+import json
 import os
-from flask import Flask, jsonify
-from app_runtime import db
+import hashlib
 
 
 app = Flask(__name__)
@@ -20,10 +23,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00052", methods=["POST"])
 def BenchmarkTest00052():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = str(env_value).replace('\x00', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return jsonify({'error': 'not found'}), 404
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    header_value = request.headers.get('X-Custom-Header', '')
+    try:
+        data = json.loads(header_value).get('value', header_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = header_value
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(str(data).encode()) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+    return jsonify({'length': len(ciphertext)}), 200

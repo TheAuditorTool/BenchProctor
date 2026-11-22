@@ -18,10 +18,13 @@ class BenchmarkTest00189 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00189" do
-    user_input = params[:multipart_field].to_s
-    payload, _origin = user_input, 'http'
-    data = payload
-    redirect data
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    unless user_input =~ /\A[a-zA-Z0-9 _.#~\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = user_input
+    File.write("/var/uploads/" + processed, "data")
     content_type :json
     JSON.generate({ status: "ok" })
   end

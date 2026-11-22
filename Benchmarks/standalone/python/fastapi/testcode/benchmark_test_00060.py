@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from jinja2 import Environment
-from fastapi.responses import JSONResponse
+import secrets
+from starlette.responses import JSONResponse
+from app_runtime import db
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -27,7 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00060")
 async def BenchmarkTest00060(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    reader = make_reader(cookie_value)
-    data = reader()
-    return HTMLResponse(Environment(autoescape=True).from_string('{{ value }}').render(value=data))
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    def normalize(value):
+        return value.strip()
+    data = normalize(db_value)
+    token = secrets.token_bytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

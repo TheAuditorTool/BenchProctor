@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -16,6 +16,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -24,16 +25,12 @@ struct Client {
 };
 }
 
-void benchmark_test_00376(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00376(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    size_t _n = data.size();
-    char *_p = new char[_n + 1];
-    std::memcpy(_p, data.c_str(), _n + 1);
-    std::cout << _p << std::endl;
-    std::memset(_p, 0, _n + 1);
-    delete[] _p;
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string _ckval = user_input;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.insert(std::make_pair(std::string("Set-Cookie"), std::string("session=") + _ckval + "; HttpOnly; SameSite=Strict; Path=/"));
     res.set_content("ok", "text/plain");
 }

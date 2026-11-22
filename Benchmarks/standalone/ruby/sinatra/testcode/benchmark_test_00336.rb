@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00336 < Sinatra::Base
   before do
@@ -19,11 +18,13 @@ class BenchmarkTest00336 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00336" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    return halt 404, JSON.generate({ error: "not found" }) if plan.nil?
+    limit = plan.fetch(:requests)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ requests: limit })
   end
 end

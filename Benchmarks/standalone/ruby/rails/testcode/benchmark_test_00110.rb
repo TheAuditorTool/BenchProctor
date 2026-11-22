@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "securerandom"
 
 class BenchmarkTest00110Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,8 +13,10 @@ class BenchmarkTest00110Controller < ApplicationController
   end
   def benchmark_test_00110
     user_input = request.body.read
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    render html: ("<div>" + data + "</div>").html_safe
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    token = SecureRandom.random_bytes(16).unpack1("H*")
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

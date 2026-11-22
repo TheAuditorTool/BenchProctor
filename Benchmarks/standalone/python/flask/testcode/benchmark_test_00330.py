@@ -1,7 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-import json
+import requests
+from flask import Flask, jsonify
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
 
 app = Flask(__name__)
 
@@ -19,10 +35,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00330", methods=["POST"])
 def BenchmarkTest00330():
-    xml_value = request.get_data(as_text=True)
-    try:
-        data = json.loads(xml_value).get('value', xml_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = xml_value
-    exec(str(data))
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    parts = []
+    for token in str(api_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    with Session(_engine) as _session:
+        _session.scalars(select(User).where(User.id == data)).first()
     return jsonify({"result": "success"})

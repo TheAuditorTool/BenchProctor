@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00008")]
-pub async fn benchmark_test_00008(req: HttpRequest) -> HttpResponse {
-    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = origin_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| origin_value.clone());
-    use rand::{Rng, SeedableRng};
-    let _seed: u64 = data.bytes().fold(0u64, |a, b| a.wrapping_add(b as u64));
-    let mut _rng = rand::rngs::StdRng::seed_from_u64(_seed);
-    let _token: u64 = _rng.gen();
-    crate::shared::store_session("csrf_token", &_token.to_string());
+pub async fn benchmark_test_00008() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let _prefix: String = db_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
+    let data = match _prefix.as_str() {
+        "h" => db_value.to_lowercase(),
+        "f" => db_value.to_uppercase(),
+        _ => db_value.trim().to_string(),
+    };
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let seat_limit = plan_limits.get(data.as_str()).copied().unwrap();
+    let _ = seat_limit;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

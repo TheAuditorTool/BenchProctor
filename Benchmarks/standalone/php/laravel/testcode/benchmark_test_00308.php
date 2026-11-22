@@ -8,13 +8,12 @@ class BenchmarkTest00308Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        file_get_contents((string)$targetUrl);
+        $userInput = $request->input('multipart_field', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $zones = ['utc' => new \DateTimeZone('UTC'), 'berlin' => new \DateTimeZone('Europe/Berlin'), 'tokyo' => new \DateTimeZone('Asia/Tokyo')];
+        $zone = $zones[(string)$data] ?? null;
+        if ($zone === null) { return response()->json(["error" => "not found"], 404); }
+        $zoneName = $zone->getName();
         return response()->json(['ok' => 1]);
     }
 }

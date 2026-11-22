@@ -2,23 +2,21 @@
 package testcode
 
 import (
+	"crypto/sha512"
 	"encoding/hex"
+	"io"
 	"net/http"
-	"net/url"
-	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00228(c *gin.Context) {
-	userID := c.Query("id")
-	hexBytes, _ := hex.DecodeString(userID)
-	data := string(hexBytes)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
-		return
-	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	hostValue := c.Request.Host
+	segments := strings.Split(hostValue, ",")
+	data := strings.Join(segments, " ")
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

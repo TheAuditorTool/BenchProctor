@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00008 < Sinatra::Base
   before do
@@ -19,9 +18,8 @@ class BenchmarkTest00008 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00008" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = "%s" % user_input
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = params[:id].to_s
+    File.delete("/var/app/data/" + user_input)
     content_type :json
     JSON.generate({ status: "ok" })
   end

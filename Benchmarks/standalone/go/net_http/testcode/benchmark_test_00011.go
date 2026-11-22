@@ -3,18 +3,22 @@ package testcode
 
 import (
 	"net/http"
-	"strconv"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00011(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
+	refererValue := r.Header.Get("Referer")
 	var data string
-	if len(originValue) > 0 {
-		data = originValue
-	} else {
-		data = "default"
+	for _, token := range strings.Split(refererValue, ",") {
+		data = token
 	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	htmlOut := "<div>" + processed + "</div>"
+	w.Write([]byte(htmlOut))
 }

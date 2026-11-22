@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
-require "net/ldap"
 
 class BenchmarkTest00334 < Sinatra::Base
   before do
@@ -21,21 +19,11 @@ class BenchmarkTest00334 < Sinatra::Base
   end
   post "/benchmark_test_00334" do
     user_input = request.body.read
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

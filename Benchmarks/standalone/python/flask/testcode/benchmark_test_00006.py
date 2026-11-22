@@ -1,14 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from dataclasses import dataclass
-from flask import request
-from flask import jsonify
+import json
+from flask import Flask, request, jsonify
+import importlib
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 app = Flask(__name__)
 
@@ -26,7 +27,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00006", methods=["POST"])
 def BenchmarkTest00006():
-    auth_header = request.headers.get('Authorization', '')
-    form = FormData(payload=auth_header)
-    data = form.payload
-    return redirect(str(data))
+    ua_value = request.headers.get('User-Agent', '')
+    parts = str(ua_value).split(',')
+    data = ' '.join(parts)
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
+    return jsonify({'parsed': str(parsed)}), 200

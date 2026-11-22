@@ -2,12 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 
 class BenchmarkTest00234Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $token = bin2hex(random_bytes(32));
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->query('id', '');
+        $data = hex2bin($userInput);
+        $hashCtx = hash_init('sha256');
+        hash_update($hashCtx, (string)$data);
+        $digest = hash_final($hashCtx);
+        return response()->json(['ok' => 1]);
     }
 }

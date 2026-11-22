@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import json
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -21,7 +23,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00300")
 async def BenchmarkTest00300(request: Request):
-    origin_value = request.headers.get('origin', '')
-    data = '%s' % (origin_value,)
-    parsed = json.loads(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(forwarded_ip)
+    request.session.update({'data': str(data)})
+    return {"updated": True}

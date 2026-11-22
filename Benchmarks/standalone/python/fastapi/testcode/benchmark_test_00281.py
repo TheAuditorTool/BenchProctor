@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from starlette.responses import StreamingResponse
+from jinja2 import Environment
 from app_runtime import db
 from fastapi.responses import JSONResponse
 
@@ -21,10 +23,5 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00281")
 async def BenchmarkTest00281(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    if db_value:
-        data = db_value
-    else:
-        data = ''
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
-    return {"updated": True}
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    return StreamingResponse(iter([Environment(autoescape=True).from_string('<div>{{ value }}</div>').render(value=str(comment_value))]), media_type='text/html')

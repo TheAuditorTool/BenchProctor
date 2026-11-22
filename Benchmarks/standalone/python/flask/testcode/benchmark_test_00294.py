@@ -1,12 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
+from flask import Flask, request
 from flask import jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,12 +19,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00294", methods=["POST"])
 def BenchmarkTest00294():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    parts = []
-    for token in str(comment_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    session['data'] = str(processed)
-    return jsonify({"result": "success"})
+    raw_body = request.get_data(as_text=True)
+    data = '{}'.format(raw_body)
+    return '', 302, {'Location': str(data)}

@@ -19,14 +19,30 @@ public class BenchmarkTest00127 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00127")
-    public void BenchmarkTest00127(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.util.Properties store = new java.util.Properties();
-        store.setProperty("value", fieldValue);
-        String data = store.getProperty("value", "");
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+
+    @GetMapping("/BenchmarkTest00127/{pathId}")
+    public void BenchmarkTest00127(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = java.net.URLDecoder.decode(pathValue, java.nio.charset.StandardCharsets.UTF_8);
+        String fetched;
+        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                fetched = rs.next() ? rs.getString("name") : null;
+            }
+        }
+        if (fetched == null) { response.sendError(404); return; }
+        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

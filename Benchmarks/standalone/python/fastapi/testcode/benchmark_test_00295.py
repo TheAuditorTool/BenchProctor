@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
+from Crypto.Hash import MD4
 from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+import json
 
 
 app = FastAPI()
@@ -22,13 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00295")
 async def BenchmarkTest00295(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    data, _sep, _rest = str(ua_value).partition('\x00')
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%~\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return {"updated": True}
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = '%s' % (graphql_var,)
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

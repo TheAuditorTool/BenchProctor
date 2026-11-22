@@ -9,8 +9,11 @@ class BenchmarkTest00014Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->getContent();
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
+        $data = base64_decode($userInput);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return response('', 302)->header('Location', (string)$targetUrl);
     }
 }

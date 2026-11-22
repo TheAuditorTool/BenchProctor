@@ -3,26 +3,19 @@ package testcode
 
 import (
 	"net/http"
-	"os/exec"
 	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00148(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	var data string
-	if headerValue != "" {
-		data = headerValue
-	}
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	multipartValue := r.FormValue("multipart_field")
+	data := strings.ReplaceAll(multipartValue, "\x00", "")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
 	processed := data
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(output)
+	trustedSettings.Store("partner_callback_host", processed)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -2,17 +2,20 @@
 package testcode
 
 import (
-	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00255(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", uaValue)
-	data := relayBuilder.String()
-	htmlOut := "<div>" + data + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	authHeader := c.GetHeader("Authorization")
+	data := strings.Join(strings.FieldsFunc(authHeader, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
+	}
+	c.JSON(http.StatusOK, map[string]string{"name": *result})
 }

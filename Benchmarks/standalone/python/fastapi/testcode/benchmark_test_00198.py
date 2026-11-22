@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from cryptography.fernet import Fernet
+import ldap
 from starlette.responses import JSONResponse
 import os
+from pydantic import Field, ValidationError, create_model
 
 
 app = FastAPI()
@@ -22,7 +23,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00198")
 async def BenchmarkTest00198(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = multipart_value if multipart_value else 'default'
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    auth_header = request.headers.get('authorization', '')
+    data = f'{auth_header!s}'
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.#%\\-]+$")))(value=str(data))
+    except ValidationError:
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    return {"updated": True}

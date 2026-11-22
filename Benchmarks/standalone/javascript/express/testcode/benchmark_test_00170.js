@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 async function BenchmarkTest00170(req, res) {
-  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-  const data = String(userInput).replace(/\u0000/g, "");
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  eval(parsedNum);
+  const userInput = (req.files && req.files[0] && req.files[0].originalname) || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  eval(processed);
   res.json({ done: true });
 }
 

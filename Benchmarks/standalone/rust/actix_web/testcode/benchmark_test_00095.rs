@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00095")]
-pub async fn benchmark_test_00095(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let user_id = query.get("id").cloned().unwrap_or_default();
-    let mut data = String::new();
-    for token in user_id.split(',') { data = token.to_string(); }
-    fn _schema_check(v: &str) -> Result<(), validator::ValidationError> {
-        static _RE_SCHEMA: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.\\-]+$").unwrap());
-        if _RE_SCHEMA.is_match(v) { Ok(()) } else { Err(validator::ValidationError::new("schema")) }
-    }
-    #[derive(validator::Validate)]
-    struct _SchemaInput<'a> { #[validate(custom(function = "_schema_check"))] value: &'a str }
-    use validator::Validate;
-    if (_SchemaInput { value: &data }).validate().is_err() { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::store_session("data", &processed);
+pub async fn benchmark_test_00095(req: HttpRequest) -> HttpResponse {
+    let host_value = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = host_value.to_string();
+    use sha1::Digest;
+    let _ = sha1::Sha1::new().chain_update(data.as_bytes()).finalize();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
 
 const BenchmarkTest00180 = async (ctx) => {
-  const userInput = ctx.query.id || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = row.name;
-  ctx.body = { ack: true };
+  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  const quantity = parseInt(String(data), 10);
+  const totalCents = Math.imul(quantity, 1999);
+  ctx.body = { quantity, totalCents }; return;
 }
 
 module.exports = { BenchmarkTest00180 };

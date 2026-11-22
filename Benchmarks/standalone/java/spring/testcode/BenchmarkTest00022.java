@@ -9,11 +9,6 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00022 {
-    private static class GraphQLRequest {
-        public String query;
-        public java.util.Map<String, Object> variables;
-        public GraphQLRequest() {}
-    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -24,13 +19,16 @@ public class BenchmarkTest00022 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00022", consumes="application/json")
-    public void BenchmarkTest00022(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
-        String data = graphqlVar.replace("\u0000", "");
-        java.util.Random rng = new java.util.Random();
-        int randValue = rng.nextInt() ^ data.hashCode();
-        response.setHeader("X-Rand", String.valueOf(randValue));
+    @GetMapping("/BenchmarkTest00022")
+    public void BenchmarkTest00022(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", envValue);
+        String data = sw.toString();
+        java.util.Set<String> allowed = java.util.Set.of("ls", "cat", "date", "echo");
+        if (!allowed.contains(data)) { response.sendError(403); return; }
+        String allowedBin = data;
+        Runtime.getRuntime().exec(new String[]{allowedBin}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

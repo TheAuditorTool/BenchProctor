@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from flask import Flask, request, jsonify
 import os
-from flask import Flask, session
-from flask import request, jsonify
+import hashlib
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -21,7 +21,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00352", methods=["POST"])
 def BenchmarkTest00352():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    data = str(graphql_var).replace('\x00', '')
-    session['data'] = str(data)
-    return jsonify({"result": "success"})
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = ' '.join(str(forwarded_ip).split())
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

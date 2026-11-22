@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
-from flask import Flask, jsonify
+import random
+from flask import Flask, request, jsonify
 from app_runtime import db
 
 
@@ -20,8 +20,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00059", methods=["POST"])
 def BenchmarkTest00059():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '%s' % str(db_value)
-    token = secrets.token_hex(32)
+    xml_value = request.get_data(as_text=True)
+    pending = list(str(xml_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    token = '%032x' % random.SystemRandom().getrandbits(128)
     db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
     return jsonify({'token': str(token)}), 200

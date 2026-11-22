@@ -8,9 +8,10 @@ class BenchmarkTest00217Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $data = "{$userInput}";
-        $digest = hash('sha256', (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Authorization', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $response = response()->json(['ok' => 1]);
+        $response->header('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; Secure; HttpOnly; SameSite=Strict');
+        return $response;
     }
 }

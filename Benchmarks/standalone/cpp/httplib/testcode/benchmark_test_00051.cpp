@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
-#include <cstring>
-#include <unistd.h>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,25 +24,18 @@ struct Client {
 };
 }
 
-void benchmark_test_00051(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00051(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input;
-    if (FILE *_fp = std::fopen("/tmp/data", "r")) {
-        char _b[256];
-        if (std::fgets(_b, sizeof(_b), _fp)) {
-            _b[std::strcspn(_b, "\n")] = 0;
-            user_input = _b;
-        }
-        std::fclose(_fp);
+    std::string user_input = req.get_header_value("Referer");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::string arg = std::regex_match(data, std::regex("^(plain|markdown|html|text)$")) ? data : std::string("plain");
+    std::string _page = "<section class=\"profile\" title=\"{{name}}\"><h2>{{name}}</h2></section>";
+    std::string::size_type _at = 0;
+    while ((_at = _page.find("{{name}}", _at)) != std::string::npos) {
+        _page.replace(_at, 8, arg);
+        _at += arg.size();
     }
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    size_t _n = data.size();
-    int _mode;
-    if (_n > 64) _mode = 2;
-    else if (_n > 0) _mode = 1;
-    else _mode = 0;
-    std::cout << _mode << std::endl;
-    res.set_content("ok", "text/plain");
+    res.set_content(_page, "text/html");
 }

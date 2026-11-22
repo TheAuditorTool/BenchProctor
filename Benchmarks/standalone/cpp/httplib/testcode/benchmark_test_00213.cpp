@@ -2,7 +2,9 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
-#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <climits>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,15 +27,17 @@ struct Client {
 };
 }
 
-void benchmark_test_00213(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00213(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    char _dst[16];
-    if (data.size() < sizeof(_dst)) std::strcpy(_dst, data.c_str());
-    else _dst[0] = '\0';
-    std::cout << _dst << std::endl;
+    const char *user_input_env = std::getenv("USER_COMMENT");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
+    std::string data = _fn(user_input);
+    std::string _joined = std::string("/var/app/data/") + data;
+    char _resolved[PATH_MAX];
+    if (!realpath(_joined.c_str(), _resolved)) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    if (std::string(_resolved).rfind("/var/app/data/", 0) != 0) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    std::string arg = _resolved;
+    if (FILE *_f = std::fopen(arg.c_str(), "w")) std::fclose(_f);
     res.set_content("ok", "text/plain");
 }

@@ -27,16 +27,9 @@ struct Client {
 
 void benchmark_test_00321(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
+    std::string user_input = req.get_header_value("Cookie");
     std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
+    if (!user_input.empty()) data = user_input;
     const char _buf[16] = "fixedcontent12";
     char _out[256];
     size_t _span = std::strtoul(data.c_str(), nullptr, 10);

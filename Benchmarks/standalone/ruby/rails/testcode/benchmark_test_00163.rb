@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00163Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,14 +11,11 @@ class BenchmarkTest00163Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00163
-    user_input = cookies[:session_token].to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    digest = Digest::MD5.hexdigest(data.to_s)
-    render json: { status: "ok" }
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    data = "%s" % user_input
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return render json: { error: "not found" }, status: 404 if match.nil?
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from urllib.parse import urlparse
-from flask import request, jsonify
-import re
+from flask import Flask, Response
+from flask import render_template_string
+from app_runtime import db
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -21,12 +21,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00258", methods=["POST"])
 def BenchmarkTest00258():
-    header_value = request.headers.get('X-Custom-Header', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(header_value)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return jsonify({'error': 'forbidden host'}), 403
-    target_url = data
-    return redirect(str(target_url))
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    resp = Response(mimetype='text/html')
+    resp.stream.write(render_template_string('<div>{{ value }}</div>', value=str(comment_value)))
+    return resp

@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
+use tokio::process::Command;
 
-#[actix_web::post("/benchmark_test_00182")]
+#[actix_web::post("/benchmark_test_00182/{id}")]
 pub async fn benchmark_test_00182(req: HttpRequest) -> HttpResponse {
-    let header_value = req.headers().get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut pending: std::collections::VecDeque<String> = header_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    let base = std::path::Path::new("/var/app/data");
-    let candidate = tokio::fs::canonicalize(base.join(&data)).await.unwrap_or_default();
-    if !candidate.starts_with(base) { return HttpResponse::Forbidden().finish(); }
-    let checked_path = candidate.to_string_lossy().to_string();
-    tokio::fs::remove_file(&checked_path).await.ok();
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(path_value.clone());
+    Command::new("sh").arg("-c").arg(format!("cat {}", data)).output().await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -8,10 +8,13 @@ class BenchmarkTest00175Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $data = vsprintf('%1$s', [$userInput]);
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = $request->header('Authorization', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $zones = ['utc' => new \DateTimeZone('UTC'), 'berlin' => new \DateTimeZone('Europe/Berlin'), 'tokyo' => new \DateTimeZone('Asia/Tokyo')];
+        $zone = $zones[(string)$data] ?? null;
+        if ($zone === null) { return response()->json(["error" => "not found"], 404); }
+        $zoneName = $zone->getName();
+        return response()->json(['ok' => 1]);
     }
 }

@@ -11,9 +11,16 @@ class BenchmarkTest00011Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00011
-    user_input = request.headers["Authorization"].to_s
-    data = user_input.gsub("\u0000", "")
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = request.headers["Origin"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
+    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
+      render json: { error: "forbidden" }, status: 403
+      return
+    end
+    checked_path = resolved
+    content = File.read(checked_path)
+    render json: { content: content }
   end
 end

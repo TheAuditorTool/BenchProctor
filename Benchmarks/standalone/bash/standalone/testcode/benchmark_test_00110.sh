@@ -3,8 +3,8 @@
 
 benchmark_test_00110() {
   user_input="$(cat /dev/stdin)"
-  data="${user_input//$'\x00'/}"
-  cat "/var/app/data/$data"
+  data=$(printf "%s" "${user_input}" | tr -s " ")
+  printf '%s' "$data" | openssl dgst -md4 -provider legacy -provider default
 }
 
 benchmark_test_00110 "$@"

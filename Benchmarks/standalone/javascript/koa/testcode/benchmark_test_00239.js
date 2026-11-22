@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const nodeSerialize = require("node-serialize");
 
 const BenchmarkTest00239 = async (ctx) => {
-  const userInput = ctx.request.headers.authorization || "";
-  const trim = (v) => String(v).trim();
-  const data = trim(userInput);
-  if (!/^[a-zA-Z0-9 _.%~\-]+$/.test(data)) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  const userInput = ctx.params.id || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  nodeSerialize.unserialize(data);
   ctx.body = { ack: true };
 }
 

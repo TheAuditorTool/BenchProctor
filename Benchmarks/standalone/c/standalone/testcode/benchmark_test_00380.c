@@ -10,10 +10,18 @@
 void benchmark_test_00380(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
     const char *data = (strlen(user_input) > 0) ? user_input : "";
-    struct { int id; int flags; } _rec;
-    _rec.id = atoi(data);
-    printf("%d %d\n", _rec.id, _rec.flags);
+    const int _rec_size = 64;
+    int _count = atoi(data);
+    int _bytes = _count * _rec_size;
+    char *_recs = malloc((size_t)_bytes);
+    if (_recs) free(_recs);
 }

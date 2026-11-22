@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-from flask import Flask, jsonify
-from app_runtime import db
+import urllib.request
+from urllib.parse import urlparse
+from flask import Flask, request, jsonify
+import re
 
 
 app = Flask(__name__)
@@ -20,11 +21,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00124", methods=["POST"])
 def BenchmarkTest00124():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    parts = []
-    for token in str(comment_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    xml_value = request.get_data(as_text=True)
+    data = '{}'.format(xml_value)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return jsonify({"result": "success"})

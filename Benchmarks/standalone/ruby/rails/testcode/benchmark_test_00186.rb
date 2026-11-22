@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00186Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,15 +12,15 @@ class BenchmarkTest00186Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00186
-    user_input = ENV["APP_INPUT"] || ""
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
+      render json: { error: "invalid" }, status: 400
+      return
     end
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
+    processed = data
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
     render json: { status: "ok" }
   end
 end

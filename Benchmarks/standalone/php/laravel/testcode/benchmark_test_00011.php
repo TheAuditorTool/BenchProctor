@@ -8,11 +8,10 @@ class BenchmarkTest00011Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $userInput . "']");
+        $userInput = $request->json('variables.input', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $digest = md5((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

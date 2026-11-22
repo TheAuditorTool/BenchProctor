@@ -11,10 +11,11 @@ class BenchmarkTest00112Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        unserialize($data);
+        $userInput = $request->request->get('field', '');
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        $request->getSession()->set('data', (string) $data);
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import json
+from urllib.parse import unquote
 from starlette.responses import JSONResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
 
 
 app = FastAPI()
@@ -22,12 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00302")
-async def BenchmarkTest00302(request: Request):
-    origin_value = request.headers.get('origin', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(origin_value)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+@app.post("/BenchmarkTest00302/{id}")
+async def BenchmarkTest00302(request: Request, id: str):
+    path_value = id
+    data = unquote(path_value)
+    parsed = json.loads(data)
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

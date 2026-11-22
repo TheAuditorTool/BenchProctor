@@ -2,15 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00223Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $data = hex2bin($userInput);
-        $digest = md5((string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('User-Agent', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $response = response()->json(['ok' => 1]);
+        $response->header('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; HttpOnly; SameSite=Strict');
+        return $response;
     }
 }

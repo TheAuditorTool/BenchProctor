@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-import re
+import ctypes
 from flask import Flask, request, jsonify
-import json
 
 
 app = Flask(__name__)
@@ -21,14 +19,18 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00319", methods=["POST"])
 def BenchmarkTest00319():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    host_value = request.headers.get('Host', '')
+    kind = 'json' if str(host_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(host_value).strip()
+        case _:
+            data = str(host_value)
     try:
-        data = json.loads(json_value).get('value', json_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = json_value
-    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return jsonify({"result": "success"})
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    count = int(processed)
+    records = ctypes.create_string_buffer(min(count, 65536) * 64)
+    return jsonify({'allocated': len(records)}), 200

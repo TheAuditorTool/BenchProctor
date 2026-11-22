@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "digest"
 
 class BenchmarkTest00190Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,12 +12,9 @@ class BenchmarkTest00190Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00190
-    user_input = request.referer.to_s
-    data = user_input ? user_input : ''
-    unless %w[ls cat date whoami].include?(data.to_s)
-      render json: { error: "forbidden" }, status: 400
-      return
-    end
-    system(data.to_s)
+    user_input = Comment.first&.text.to_s
+    data = "#{user_input}"
+    digest = Digest::SHA1.base64digest(data.to_s)
+    render json: { digest: digest }
   end
 end

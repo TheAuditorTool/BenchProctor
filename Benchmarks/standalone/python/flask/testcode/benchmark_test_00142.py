@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
+import ldap
+import jsonschema
+from flask import Flask, request, jsonify
 import os
-from flask import Flask, make_response
-from flask import jsonify
-from app_runtime import db
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -22,8 +28,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00142", methods=["POST"])
 def BenchmarkTest00142():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = f'{comment_value!s}'
-    resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = RequestPayload(json_value).value
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.#%\\-]+$"})
+    except jsonschema.ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(processed) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
+    return jsonify({"result": "success"})

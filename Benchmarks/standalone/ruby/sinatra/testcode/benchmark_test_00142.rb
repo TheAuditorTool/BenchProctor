@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "net/http"
 
 class BenchmarkTest00142 < Sinatra::Base
   before do
@@ -19,12 +19,14 @@ class BenchmarkTest00142 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00142" do
-    user_input = request.body.read
-    attrs = { value: user_input.to_s }
-    data = attrs[:value]
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
+    user_input = params[:field].to_s
+    data = format("%<value>s", value: user_input)
+    uri = URI.parse(data.to_s)
+    outbound = Net::HTTP::Get.new(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    reply = http.request(outbound)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ upstream_status: reply.code.to_i })
   end
 end

@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "socket"
 
 class BenchmarkTest00255 < Sinatra::Base
   before do
@@ -19,15 +18,9 @@ class BenchmarkTest00255 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00255" do
-    user_input = request.body.read
+    user_input = params[:id].to_s
     data = "%s" % user_input
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    TCPSocket.new(target_url, 80).close
+    File.write("/var/uploads/" + data, "data")
     content_type :json
     JSON.generate({ status: "ok" })
   end

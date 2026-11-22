@@ -2,20 +2,27 @@
 package testcode
 
 import (
+	"fmt"
+	"io"
 	"net/http"
-	"os/exec"
+	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00131(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
+	rawBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	cookieValue := cookieObj.Value
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(cookieValue)
-	cmd := exec.Command("python3", "-c", data)
-	output, _ := cmd.CombinedOutput()
-	w.Write(output)
+	rawBody := string(rawBytes)
+	data := fmt.Sprintf("%s", rawBody)
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

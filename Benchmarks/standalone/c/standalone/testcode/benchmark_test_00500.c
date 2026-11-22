@@ -7,15 +7,14 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00500(int argc, char **argv)
 {
     const char *user_input = (argc > 1) ? argv[1] : "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    srand((unsigned)time(NULL));
-    int _token = rand();
-    printf("token for %s: %d\n", data, _token);
+    const char *data = c_passthrough(user_input);
+    int _req = atoi(data);
+    int _alloc = _req + 1;
+    char *_buf = malloc((size_t)_alloc);
+    if (_buf) free(_buf);
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const crypto = require("crypto");
+const stream = require("node:stream");
 
 async function BenchmarkTest00295(req, res) {
-  const userInput = req.headers["user-agent"] || "";
-  const [data] = String(userInput).split(',');
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  const userInput = req.cookies.session_token || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  stream.Readable.from([String(data)]).pipe(crypto.createHash("md5")).setEncoding("hex").on("data", (checksum) => console.log("content checksum " + checksum));
   res.json({ done: true });
 }
 

@@ -2,28 +2,32 @@
 package testcode
 
 import (
-	"strconv"
+	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00113(c *gin.Context) {
-	pathValue := c.Param("id")
+	hostValue := c.Request.Host
 	relayPrefix := ""
-	if len(pathValue) > 0 {
-		relayPrefix = strings.ToLower(pathValue[:1])
+	if len(hostValue) > 0 {
+		relayPrefix = strings.ToLower(hostValue[:1])
 	}
 	var data string
 	switch relayPrefix {
 	case "h":
-		data = pathValue
+		data = hostValue
 	case "f":
-		data = pathValue
+		data = hostValue
 	default:
-		data = pathValue
+		data = hostValue
 	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	content, err := os.ReadFile("/var/app/data/" + data)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	c.Data(200, "text/plain", content)
 }

@@ -19,13 +19,21 @@ public class BenchmarkTest00039 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00039")
-    public void BenchmarkTest00039(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        java.util.Map.Entry<String,String> edge = java.util.Map.entry(headerValue, "request");
-        String data = edge.getKey();
-        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + processed}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    @PostMapping(path="/BenchmarkTest00039", consumes="multipart/form-data")
+    public void BenchmarkTest00039(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        java.util.Properties property = new java.util.Properties();
+        property.setProperty("value", multipartValue);
+        String data = property.getProperty("value", "");
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
+        String targetUrl = data;
+        org.apache.hc.client5.http.classic.methods.HttpGet fetchRequest = new org.apache.hc.client5.http.classic.methods.HttpGet(targetUrl);
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient fetchClient = org.apache.hc.client5.http.impl.classic.HttpClients.createDefault()) {
+            int fetchStatus = fetchClient.execute(fetchRequest, fetchResponse -> fetchResponse.getCode());
+            response.setHeader("X-Fetch-Status", String.valueOf(fetchStatus));
+        }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

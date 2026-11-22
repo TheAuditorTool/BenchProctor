@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, Req, UsePipes, ValidationPipe } from "@nestjs/common";
-import { Request, Response } from "express";
-import { IsString } from "class-validator";
+import { Controller, Post, BadRequestException } from "@nestjs/common";
+import { Response } from "express";
+import * as fs from "fs";
+import * as xpath from "xpath";
+import * as xmldom from "@xmldom/xmldom";
+import * as zod from "zod";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,12 +21,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00322")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00322(@Body() dto: UserInputDto, @Req() req: Request): Promise<unknown> {
-    const userInput = dto.payload;
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    req.session.data = String(data);
+  async BenchmarkTest00322(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const _parsed = zod.z.string().regex(/^[a-zA-Z0-9 _.%~\-]+$/).safeParse(String(userInput));
+    if (!_parsed.success) { throw new BadRequestException({error:"invalid"}); }
+    const processed = _parsed.data;
+    const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+    xpath.evaluate("//user[name='" + processed + "']", usersDoc, null, xpath.XPathResult.ANY_TYPE, null);
     return { created: true };
   }
 }

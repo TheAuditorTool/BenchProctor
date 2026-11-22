@@ -2,22 +2,22 @@
 package testcode
 
 import (
-	"context"
 	"net/http"
+	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00134(c *gin.Context) {
-	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
-	var data string
-	if redisValue != "" {
-		data = redisValue
-	}
-	var u User
-	if err := gormDB.Where("id = ?", data).First(&u).Error; err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	multipartValue := c.PostForm("multipart_field")
+	capture := func() string { return strings.TrimSpace(multipartValue) }
+	data := capture()
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
 		return
 	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
 	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,6 +30,7 @@ public class BenchmarkTest00073 {
         }
     }
 
+    private static String normalize(String v) { return v.strip(); }
     private static java.sql.Connection connection;
     static {
         try {
@@ -41,20 +41,24 @@ public class BenchmarkTest00073 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
-
-    @POST
-    @Path("/BenchmarkTest00073")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00073(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.util.function.Supplier<String> valueSupplier = () -> fieldValue.strip();
-        String data = valueSupplier.get();
-        String sortKey = data.replaceAll("[^a-zA-Z0-9_]", "");
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM users ORDER BY " + sortKey)) {
-            rs.next();
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
         }
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/BenchmarkTest00073")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00073(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        String data = normalize(userName);
+        String processed = org.owasp.encoder.Encode.forHtml(data);
+        String streamedHtml = "<div class=\"comment\">" + processed + "</div>";
+        jakarta.ws.rs.core.StreamingOutput htmlStream = htmlOut -> htmlOut.write(streamedHtml.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return Response.ok(htmlStream, MediaType.TEXT_HTML).build();
     }
 }

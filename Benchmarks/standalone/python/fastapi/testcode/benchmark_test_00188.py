@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from fastapi import Form
-from fastapi.responses import JSONResponse
+import secrets
+from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -21,7 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00188")
-async def BenchmarkTest00188(request: Request, field: str = Form('')):
-    field_value = field
-    data = field_value if field_value else 'default'
-    return RedirectResponse(url=str(data))
+async def BenchmarkTest00188(request: Request):
+    cookie_value = request.cookies.get('session_token', '')
+    data = (lambda v: v.strip())(cookie_value)
+    token = secrets.token_hex(32)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

@@ -2,18 +2,30 @@
 package testcode
 
 import (
-	"context"
 	"net/http"
+	"os"
 	"strings"
 )
 
 func BenchmarkTest00269(w http.ResponseWriter, r *http.Request) {
-	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
-	data := func(v string) string { return strings.TrimSpace(v) }(redisValue)
-	var u User
-	if err := gormDB.Where("id = ?", data).First(&u).Error; err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	userID := r.URL.Query().Get("id")
+	relayPrefix := ""
+	if len(userID) > 0 {
+		relayPrefix = strings.ToLower(userID[:1])
+	}
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = userID
+	case "f":
+		data = userID
+	default:
+		data = userID
+	}
+	content, err := os.ReadFile("/var/app/data/" + data)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	w.Write(content)
 }

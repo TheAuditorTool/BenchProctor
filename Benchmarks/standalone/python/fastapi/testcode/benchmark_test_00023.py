@@ -1,18 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-import base64
-import asyncio
-import os
-import pika
-from fastapi.responses import JSONResponse
+from Crypto.Hash import MD4
+from starlette.responses import JSONResponse
 
-
-def _amqp_receive(queue):
-    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
-        channel = connection.channel()
-        channel.queue_declare(queue=queue, durable=True)
-        return channel.basic_get(queue=queue, auto_ack=True)[2]
 
 app = FastAPI()
 
@@ -31,7 +21,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00023")
 async def BenchmarkTest00023(request: Request):
-    msg_value = ((await asyncio.to_thread(_amqp_receive, 'app-events')) or b'').decode()
-    data = base64.b64decode(msg_value).decode('utf-8', 'ignore')
-    yaml.load(data, Loader=yaml.UnsafeLoader)
-    return {"updated": True}
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    pending = list(str(upload_name).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

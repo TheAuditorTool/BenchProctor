@@ -2,21 +2,21 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
 	"net/http"
+	"os"
 	"strings"
 )
 
 func BenchmarkTest00286(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
-	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
+	fieldValue := r.FormValue("field")
+	segments := strings.Split(fieldValue, ",")
+	data := strings.Join(segments, " ")
+	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
+	if !allowed[data] {
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
-	uploadName := header.Filename
-	data := strings.ReplaceAll(uploadName, "\x00", "")
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	checkedPath := "/var/app/data/" + data
+	os.Remove(checkedPath)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

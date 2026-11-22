@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "yaml"
 
 class BenchmarkTest00147 < Sinatra::Base
   before do
@@ -21,13 +19,10 @@ class BenchmarkTest00147 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00147" do
-    user_input = DB[:profiles].first&.fetch(:bio, "").to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    DB.execute("SELECT * FROM " + (data =~ /\A\w+\z/ ? data : "users"))
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    YAML.unsafe_load(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

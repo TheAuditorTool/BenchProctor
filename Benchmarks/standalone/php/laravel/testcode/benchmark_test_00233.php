@@ -8,15 +8,9 @@ class BenchmarkTest00233Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        file_get_contents((string)$data);
+        $userInput = $request->json('variables.input', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $digest = sha1((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

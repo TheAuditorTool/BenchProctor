@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as crypto from "crypto";
+import { Controller, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,9 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00014")
-  async BenchmarkTest00014(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    crypto.createHash("md5").update(userInput).digest("hex");
+  async BenchmarkTest00014(@Req() req: Request): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    if (!/^[a-zA-Z0-9 _.\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    Object.assign(req.session, { data: String(processed), expiresAt: Date.now() + 900000 });
     return { created: true };
   }
 }

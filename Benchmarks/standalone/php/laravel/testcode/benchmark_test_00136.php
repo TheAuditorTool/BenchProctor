@@ -8,10 +8,8 @@ class BenchmarkTest00136Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Host', '');
-        $data = sprintf('%s', $userInput);
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = $request->header('X-Forwarded-For', '');
+        [$data] = [$userInput, 'http'];
+        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
     }
 }

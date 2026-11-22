@@ -1,0 +1,15 @@
+{
+  "name": "tracking-service",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "express": "4.22.3",
+    "express-session": "1.19.0",
+    "pg": "8.23.1"
+  }
+}

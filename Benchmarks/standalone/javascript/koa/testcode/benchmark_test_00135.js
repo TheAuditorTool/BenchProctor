@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00135 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { ctx.status = 403; ctx.body = {error:"private or loopback address not allowed"}; return; }
-  const _addr = (await require("dns").promises.lookup(_host)).address;
-  if (/^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1$|::[fF]{4}:(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)|[fF][cCdD]|[fF][eE]80:)/.test(_addr)) { ctx.status = 403; ctx.body = {error:"private or loopback address not allowed"}; return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const userInput = ctx.cookies.get("session_token") || "";
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + userInput + "']").select({ node: usersDoc });
   ctx.body = { ack: true };
 }
 

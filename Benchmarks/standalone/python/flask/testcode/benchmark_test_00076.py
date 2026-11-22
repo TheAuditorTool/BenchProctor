@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from app_runtime import db
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from flask import Flask, request, jsonify
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -19,11 +22,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00076", methods=["POST"])
 def BenchmarkTest00076():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    parts = []
-    for token in str(db_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    value = result['name']
-    return jsonify({'name': str(value)}), 200
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    data = f'{forwarded_ip!s}'
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(str(data).encode()) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+    return jsonify({'length': len(ciphertext)}), 200

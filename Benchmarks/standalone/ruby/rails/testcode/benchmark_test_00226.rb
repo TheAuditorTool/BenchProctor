@@ -2,10 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "bunny"
-require "resolv"
-require "ipaddr"
-require "open-uri"
 
 class BenchmarkTest00226Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -15,16 +11,10 @@ class BenchmarkTest00226Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00226
-    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
-    data = user_input ? user_input : ''
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      render json: { error: "private range blocked" }, status: 403
-      return
-    end
-    target_url = data
-    URI.open(target_url).read
-    render json: { status: "ok" }
+    user_input = Comment.first&.text.to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    response.set_header("Location", data)
+    head :found
   end
 end

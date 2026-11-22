@@ -2,20 +2,32 @@
 package testcode
 
 import (
-	"io"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00264(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
+	cookieValue, err := c.Cookie("session_token")
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := func(v string) string { return strings.TrimSpace(v) }(xmlBody)
-	c.Redirect(http.StatusFound, data)
+	form := submissionForm{payload: cookieValue}
+	data := form.payload
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		c.String(http.StatusInternalServerError, ldapErr.Error())
+		return
+	}
+	defer ldapConn.Close()
+	isAdmin, cmpErr := ldapConn.Compare("uid="+data+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		c.String(http.StatusInternalServerError, cmpErr.Error())
+		return
+	}
+	c.Header("X-Directory-Admin", strconv.FormatBool(isAdmin))
+	c.JSON(200, gin.H{"code": "OK"})
 }

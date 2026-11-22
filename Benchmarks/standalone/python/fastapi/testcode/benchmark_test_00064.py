@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from starlette.responses import JSONResponse
+import json
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -20,9 +24,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00064")
 async def BenchmarkTest00064(request: Request):
-    forwarded_ip = request.headers.get('x-forwarded-for', '')
-    data = str(forwarded_ip).replace('\x00', '')
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    exec(str(processed))
-    return {"updated": True}
+    xml_value = (await request.body()).decode('utf-8')
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

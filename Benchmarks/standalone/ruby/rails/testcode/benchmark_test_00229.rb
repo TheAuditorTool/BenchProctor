@@ -2,6 +2,8 @@
 require "json"
 require "uri"
 require "openssl"
+require "redis"
+require "open-uri"
 
 class BenchmarkTest00229Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,15 +13,9 @@ class BenchmarkTest00229Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00229
-    user_input = request.user_agent.to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    eval(parsed_bool)
+    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
+    data = "%s" % user_input
+    URI.open(data).read
     render json: { status: "ok" }
   end
 end

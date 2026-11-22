@@ -2,23 +2,29 @@
 package testcode
 
 import (
-	"encoding/base64"
-	"net"
+	"io"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00166(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
-	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+	headerValue := r.Header.Get("X-Custom-Header")
+	form := submissionForm{payload: headerValue}
+	data := form.payload
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	cookieValue := cookieObj.Value
-	decodedBytes, _ := base64.StdEncoding.DecodeString(cookieValue)
-	data := string(decodedBytes)
-	conn, err := net.Dial("tcp", data)
-	if err == nil {
-		defer conn.Close()
+	targetUrl := data
+	resp, err := http.Get(targetUrl)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

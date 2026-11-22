@@ -2,13 +2,12 @@
 package testcode
 
 import (
+	"fmt"
+	"net"
 	"net/http"
-	"os/exec"
-	"regexp"
-	"strings"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00173(c *gin.Context) {
@@ -20,18 +19,15 @@ func BenchmarkTest00173(c *gin.Context) {
 		return
 	}
 	jsonValue := reqBody.Payload
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(jsonValue)
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		c.String(http.StatusBadRequest, "invalid input")
+	data := fmt.Sprintf("%s", jsonValue)
+	dialURL, dialErr := url.Parse(data)
+	if dialErr != nil {
+		c.String(http.StatusBadRequest, "invalid url")
 		return
 	}
-	processed := data
-	cmd := exec.Command("python3", "-c", processed)
-	output, _ := cmd.CombinedOutput()
-	c.Data(200, "text/plain", output)
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
+	if err == nil {
+		defer conn.Close()
+	}
+	c.JSON(200, gin.H{"code": "OK"})
 }

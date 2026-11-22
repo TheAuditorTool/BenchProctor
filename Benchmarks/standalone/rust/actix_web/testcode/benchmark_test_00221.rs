@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00221")]
-pub async fn benchmark_test_00221(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let data = if field_value.len() <= 4096 { field_value.clone() } else { field_value.chars().take(4096).collect() };
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00221(req: HttpRequest) -> HttpResponse {
+    let auth_header = req.headers().get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = String::from_utf8_lossy(&hex::decode(&auth_header).unwrap_or_default()).to_string();
+    let mut _env = minijinja::Environment::new();
+    _env.add_template("profile.html", "<div class=\"profile-bio\">{{ bio|safe }}</div>").ok();
+    let _page = _env.get_template("profile.html").and_then(|t| t.render(minijinja::context! { bio => data })).unwrap_or_default();
+    return HttpResponse::Ok().content_type("text/html").body(_page);
 }

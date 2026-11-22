@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00188() {
-  user_input="$(sed -n '/^\r*$/{n;s/\r$//;p;q}')"
-  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
-  data=$(normalize "$user_input")
-  _rest="${data#*://}"
-  exec 3<>"/dev/tcp/${_rest%%[/:]*}/80"
+  user_input="$USER_COMMENT"
+  data=""
+  IFS="," read -ra _tokens <<< "${user_input}"
+  for token in "${_tokens[@]}"; do data="$token"; done
+  printf '%s' "$data" | xmllint --stream --nonet -
 }
 
 benchmark_test_00188 "$@"

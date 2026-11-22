@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00051 < Sinatra::Base
   before do
@@ -21,17 +18,14 @@ class BenchmarkTest00051 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00051" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    resolved = File.realpath(File.join("/var/app/data", data)) rescue nil
-    unless resolved && (resolved == "/var/app/data" || resolved.start_with?("/var/app/data/"))
-      halt 403, JSON.generate({ error: "forbidden" })
-      return
-    end
-    checked_path = resolved
-    content = File.read(checked_path)
+    user_input = params[:upload][:filename].to_s rescue ""
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

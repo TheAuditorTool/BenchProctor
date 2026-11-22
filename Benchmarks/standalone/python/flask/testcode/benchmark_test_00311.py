@@ -18,9 +18,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00311", methods=["POST"])
 def BenchmarkTest00311():
-    cookie_value = request.cookies.get('session_token', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(cookie_value)
-    exec(str(data))
-    return jsonify({"result": "success"})
+    raw_body = request.get_data(as_text=True)
+    try:
+        _bounded = max(0, min(int(raw_body), 2147483647))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid integer'}), 400
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return jsonify({'allocated': allocated}), 200

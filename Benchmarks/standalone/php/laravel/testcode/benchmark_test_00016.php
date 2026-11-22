@@ -8,7 +8,9 @@ class BenchmarkTest00016Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Referer', '');
-        return redirect($userInput);
+        $userInput = $request->json('payload', '');
+        $data = ($userInput !== null) ? $userInput : '';
+        file_get_contents((string)$data);
+        return response()->json(['ok' => 1]);
     }
 }

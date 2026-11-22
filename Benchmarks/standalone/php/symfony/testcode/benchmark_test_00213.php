@@ -2,24 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00213', methods: ['POST'])]
 class BenchmarkTest00213Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Connection $conn)
     {
-        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        if (!preg_match('#^[a-zA-Z0-9 _.%~\\-]+$#', $data)) { error_log('input validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
-        $processed = $data;
+        $userInput = $conn->fetchOne('SELECT text FROM comments LIMIT 1');
+        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
+        $data = $payload->value();
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
         $doc = new \DOMDocument();
         @$doc->load('/var/app/data/users.xml');
         $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $processed . "']");
+        $email = $xpath->evaluate("string(//user[@id='" . $parsedBool . "']/email)");
         return new JsonResponse(["committed" => true]);
     }
 }

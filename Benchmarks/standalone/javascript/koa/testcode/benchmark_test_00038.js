@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
 
 const BenchmarkTest00038 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  net.connect(80, new URL(String(data)).hostname);
+  const userInput = ctx.request.rawBody || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  JSON.parse(data);
   ctx.body = { ack: true };
 }
 

@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
+from lxml import etree
 from flask import Flask, request, jsonify
-from app_runtime import db
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -20,8 +24,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00021", methods=["POST"])
 def BenchmarkTest00021():
-    user_id = request.args.get('id', '')
-    data, _sep, _rest = str(user_id).partition('\x00')
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    upload_name = request.files['upload'].filename
+    reader = make_reader(upload_name)
+    data = reader()
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(data) + '"]')
+    return jsonify({"result": "success"})

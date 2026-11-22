@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import ldap
+from pydantic import BaseModel
 import os
-from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,12 +25,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00026")
-async def BenchmarkTest00026(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(header_value))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = header_value
-    os.system('echo ' + str(processed))
+async def BenchmarkTest00026(request: Request, req: UserInput):
+    json_value = req.payload
+    parts = []
+    for token in str(json_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
     return {"updated": True}

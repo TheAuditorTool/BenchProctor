@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import json
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
@@ -21,12 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00172")
 async def BenchmarkTest00172(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    try:
-        data = json.loads(ua_value).get('value', ua_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = ua_value
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
+    user_id = request.query_params.get('id', '')
+    data = '{}'.format(user_id)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
     exec(str(processed))
     return {"updated": True}

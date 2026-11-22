@@ -1,16 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
-use base64::Engine;
-use base64::engine::general_purpose;
-use url::Url;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00080")]
-pub async fn benchmark_test_00080(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&raw_body).unwrap_or_default()).to_string();
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+pub async fn benchmark_test_00080(req: HttpRequest) -> HttpResponse {
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = referer_value.replace("\t", " ");
+    use cbc::cipher::{BlockModeEncrypt, KeyIvInit, block_padding::Pkcs7};
+    use hmac::Mac;
+    let data_key = hex::decode(std::env::var("DATA_ENCRYPTION_KEY").unwrap_or_default()).unwrap_or_default();
+    let mac_key = hex::decode(std::env::var("DATA_MAC_KEY").unwrap_or_default()).unwrap_or_default();
+    let iv: [u8; 16] = rand::random();
+    if let Ok(_aes) = cbc::Encryptor::<aes::Aes256>::new_from_slices(&data_key, &iv) {
+        let _sealed = _aes.encrypt_padded_vec::<Pkcs7>(data.as_bytes());
+        let mut _ciphertext = iv.to_vec();
+        _ciphertext.extend_from_slice(&_sealed);
+        if let Ok(mut _mac) = <hmac::Hmac<sha2::Sha256> as hmac::KeyInit>::new_from_slice(&mac_key) {
+            _mac.update(&_ciphertext);
+            _ciphertext.extend_from_slice(&_mac.finalize().into_bytes());
+            tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+        }
+    }
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

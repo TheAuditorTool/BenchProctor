@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from lxml import etree
-from app_runtime import db
+from Crypto.Hash import MD4
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,13 +19,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00054", methods=["POST"])
 def BenchmarkTest00054():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    kind = 'json' if str(db_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(db_value).strip()
-        case _:
-            data = str(db_value)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    pending = list(str(upload_name).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

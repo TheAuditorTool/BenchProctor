@@ -2,7 +2,6 @@
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -20,16 +19,16 @@ public class BenchmarkTest00184 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00184", consumes="multipart/form-data")
-    public void BenchmarkTest00184(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uploadName = file != null ? file.getOriginalFilename() : "";
-        String data;
-        if (uploadName.length() > 256) { data = uploadName.substring(0, 256); }
-        else { data = uploadName; }
-        java.net.URI parsed = java.net.URI.create(data);
-        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
-        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
-        String targetUrl = data;
-        response.sendRedirect(targetUrl);
+    @PostMapping(path="/BenchmarkTest00184", consumes="text/plain")
+    public void BenchmarkTest00184(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(rawData);
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.activateDefaultTyping(com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(), com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL);
+        Object polymorphicObj = objectMapper.readValue(data, Object.class);
+        response.setHeader("X-Deserialized-Class", polymorphicObj != null ? polymorphicObj.getClass().getName() : "null");
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

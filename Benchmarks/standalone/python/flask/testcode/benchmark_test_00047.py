@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from flask import Flask, request, jsonify
 import os
+from http.cookies import SimpleCookie
+from flask import Flask, make_response
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -20,8 +22,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00047", methods=["POST"])
 def BenchmarkTest00047():
-    header_value = request.headers.get('X-Custom-Header', '')
-    data = str(header_value).replace('\x00', '')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return jsonify({"result": "success"})
+    field_value = request.form.get('field', '')
+    parts = []
+    for token in str(field_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers.add('Set-Cookie', cookie['session'].OutputString())
+    return resp

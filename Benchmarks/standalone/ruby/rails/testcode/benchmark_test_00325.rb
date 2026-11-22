@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "active_model"
 
 class BenchmarkTest00325Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +13,19 @@ class BenchmarkTest00325Controller < ApplicationController
   end
   def benchmark_test_00325
     user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = sprintf("%s", user_input)
-    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+    data = "#{user_input}"
+    validator = Class.new do
+      include ActiveModel::Validations
+      attr_accessor :value
+      validates :value, format: { with: /\A[a-zA-Z0-9 _.\-]+\z/ }
+    end.new
+    validator.value = data.to_s
+    unless validator.valid?
       render json: { error: "invalid" }, status: 400
       return
     end
     processed = data
-    render html: ("<div>" + processed + "</div>").html_safe
+    Rails.application.config.x.announcement = processed.to_s
+    render json: { status: "ok" }
   end
 end

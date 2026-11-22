@@ -11,12 +11,11 @@ class BenchmarkTest00199Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00199
-    user_input = User.first&.name.to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return render json: { error: "not found" }, status: 404 if match.nil?
+    domain = match[:domain].downcase
+    render json: { domain: domain }
   end
 end

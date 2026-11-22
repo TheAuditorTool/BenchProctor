@@ -11,14 +11,19 @@ class BenchmarkTest00090Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00090
-    user_input = params[:id].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
       return
     end
-    processed = data
-    render html: ("<div>" + processed + "</div>").html_safe
+    target_url = data
+    response.set_header("Location", target_url)
+    head :found
   end
 end

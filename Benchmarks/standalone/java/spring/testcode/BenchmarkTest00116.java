@@ -20,11 +20,11 @@ public class BenchmarkTest00116 {
     }
 
     @GetMapping("/BenchmarkTest00116")
-    public void BenchmarkTest00116(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public void BenchmarkTest00116(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("User-Agent") String userAgent, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = String.format("%s", uaValue);
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; HttpOnly; SameSite=Strict");
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

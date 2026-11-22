@@ -3,8 +3,9 @@ import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as shared from "./shared";
 const { db } = shared;
-import * as crypto from "crypto";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { escapeIdentifier } from "pg";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -21,10 +22,9 @@ class FailureFilter implements ExceptionFilter {
 export class BenchmarkController {
   @Post("BenchmarkTest00342")
   async BenchmarkTest00342(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    const formData = Object.freeze({ payload: userInput });
-    const data = formData.payload;
-    crypto.createHash("md5").update(data).digest("hex");
+    const userInput = JSON.parse(fs.readFileSync("/etc/app/config.json", "utf8")).value;
+    const data = userInput != null ? userInput : '';
+    await db.query("SELECT * FROM users ORDER BY " + escapeIdentifier(String(data)));
     return { created: true };
   }
 }

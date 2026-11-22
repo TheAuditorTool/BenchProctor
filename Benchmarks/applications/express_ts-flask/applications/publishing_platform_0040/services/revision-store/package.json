@@ -1,0 +1,26 @@
+{
+  "name": "revision-store",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.ts",
+  "scripts": {
+    "start": "ts-node main.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "axios": "1.20.0",
+    "express": "4.22.3",
+    "express-session": "1.19.0",
+    "multer": "2.5.0",
+    "pg": "8.23.1",
+    "redis": "4.7.1"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.25",
+    "@types/node": "20.19.43",
+    "@types/pg": "8.23.1",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
+  }
+}

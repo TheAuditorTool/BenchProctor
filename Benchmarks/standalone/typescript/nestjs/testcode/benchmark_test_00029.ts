@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as nodeSerialize from "node-serialize";
+import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00029")
-  async BenchmarkTest00029(@Body("variables") vars: { input?: string }): Promise<unknown> {
-    const userInput = (vars?.input as string) || "";
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    nodeSerialize.unserialize(data);
+  async BenchmarkTest00029(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + userInput + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
     return { created: true };
   }
 }

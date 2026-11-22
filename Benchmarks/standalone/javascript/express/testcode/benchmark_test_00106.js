@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
+const nodeSerialize = require("node-serialize");
 
 async function BenchmarkTest00106(req, res) {
-  const userInput = req.headers["x-forwarded-for"] || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  res.json({ token });
+  const userInput = req.params.id || "";
+  const pending = String(userInput).split(',');
+  const collected = [];
+  while (pending.length) { collected.push(pending.shift()); }
+  const data = collected.join(',');
+  nodeSerialize.unserialize(data);
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00106 };

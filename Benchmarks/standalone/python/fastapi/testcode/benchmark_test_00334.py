@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import socket
-import os
-import redis
-from fastapi.responses import JSONResponse
+import json
+from starlette.responses import JSONResponse
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = FastAPI()
 
@@ -25,8 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00334")
 async def BenchmarkTest00334(request: Request):
-    redis_value = redis_client.get('user_data')
-    data = f'{redis_value!s}'
-    s = socket.create_connection((str(data), 80))
-    s.close()
-    return {"updated": True}
+    xml_value = (await request.body()).decode('utf-8')
+    try:
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    parsed = json.JSONDecoder().decode(str(data))
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

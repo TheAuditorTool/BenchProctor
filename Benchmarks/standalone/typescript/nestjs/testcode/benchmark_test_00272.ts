@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import axios from "axios";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,16 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00272")
-  async BenchmarkTest00272(@Headers("origin") origin: string): Promise<unknown> {
-    const userInput = origin || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + processed + "']", xmlDoc);
+  @Post("BenchmarkTest00272/:id")
+  async BenchmarkTest00272(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const data = userInput != null ? userInput : '';
+    const outbound = { method: "get", url: String(data), timeout: 5000 };
+    await axios.request(outbound);
     return { created: true };
   }
 }

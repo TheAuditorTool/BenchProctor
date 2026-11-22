@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.*;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,18 +30,14 @@ public class BenchmarkTest00090 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00090")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00090(@FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uploadName = fileDetail.getFileName();
-        String data = uploadName.replace("\u0000", "");
-        byte[] serBytes = java.util.Base64.getDecoder().decode(data);
-        try (ObjectInputStream ois = new ObjectInputStream(new java.io.ByteArrayInputStream(serBytes))) {
-            Object obj = ois.readObject();
-            response.setHeader("X-Deserialized-Class", obj != null ? obj.getClass().getName() : "null");
-        }
+    public Response BenchmarkTest00090(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String data = String.join(" ", uaValue.split("[ \\t]+"));
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

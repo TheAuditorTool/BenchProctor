@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00013Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,15 +13,14 @@ class BenchmarkTest00013Controller < ApplicationController
   end
   def benchmark_test_00013
     user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
+    data = Base64.decode64(user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
+      return
     end
-    data = _normalize_local(user_input)
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    target_url = data
+    response.set_header("Location", target_url)
+    head :found
   end
 end

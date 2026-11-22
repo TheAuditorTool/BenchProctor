@@ -8,10 +8,9 @@ class BenchmarkTest00040Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('field', '');
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        exec('tar -czf /tmp/backup.tgz ' . (string)$data);
+        $userInput = $request->header('Referer', '');
+        [$data] = [$userInput, 'http'];
+        file_put_contents('/var/uploads/' . $data, 'data');
         return response()->json(['ok' => 1]);
     }
 }

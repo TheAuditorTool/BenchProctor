@@ -2,8 +2,9 @@
 package testcode
 
 import (
-	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -11,24 +12,26 @@ import (
 )
 
 func BenchmarkTest00165(c *gin.Context) {
-	header, err := c.FormFile("upload")
+	multipartValue := c.PostForm("multipart_field")
+	data := func(v string) string { return strings.TrimSpace(v) }(multipartValue)
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
+		return
+	}
+	targetUrl := data
+	upstreamReq, err := http.NewRequest(http.MethodGet, targetUrl, nil)
 	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	uploadName := header.Filename
-	data := strings.Join(strings.FieldsFunc(uploadName, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
-		return
-	}
-	processed := data
-	query := fmt.Sprintf("SELECT * FROM users ORDER BY %s", processed)
-	rows, err := DB.Query(query)
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.String(http.StatusBadGateway, err.Error())
 		return
 	}
-	defer rows.Close()
-	c.JSON(200, gin.H{"code": "OK"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

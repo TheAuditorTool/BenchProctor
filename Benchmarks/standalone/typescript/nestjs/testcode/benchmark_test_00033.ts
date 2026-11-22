@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as nodeSerialize from "node-serialize";
+import { Controller, Headers, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +19,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00033")
-  async BenchmarkTest00033(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    nodeSerialize.unserialize(data);
+  async BenchmarkTest00033(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const data = Buffer.from(userInput, "base64").toString();
+    stream.Readable.from([String(data)]).pipe(crypto.createHash("md5")).setEncoding("hex").on("data", (checksum: string) => console.log("content checksum " + checksum));
     return { created: true };
   }
 }

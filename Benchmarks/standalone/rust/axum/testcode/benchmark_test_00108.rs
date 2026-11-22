@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Path;
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use tokio::process::Command;
 
-pub async fn benchmark_test_00108(Path(path_id): Path<String>) -> impl IntoResponse {
-    let path_value = path_id.clone();
-    let data = path_value.to_string();
-    Command::new("sh").arg("-c").arg(format!("cat {}", data)).output().await.ok();
+pub async fn benchmark_test_00108(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let mut pending: std::collections::VecDeque<String> = raw_body.split(',').map(String::from).collect();
+    let mut data = String::new();
+    while let Some(item) = pending.pop_front() { data = item; }
+    let requested: u32 = data.parse().unwrap_or(0);
+    let count = (requested * 4096) as usize;
+    let _buf: Vec<u8> = vec![0u8; count];
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -2,33 +2,61 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "gin",
-    "net_http"
+    "gin-legacy",
+    "net_http",
+    "net_http-legacy"
   ],
   "language": "go",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "gin": {
       "categories": 15,
-      "csv_sha256": "c1c7ed5383cca7c320f2f75cf326f32571b29a5795a2ded6e5e87beaba15ed55",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 602,
-      "safe": 300,
-      "total": 600,
-      "vulnerable": 300
+      "csv_sha256": "8194ba62e913c9ac5924117be3c61ccf06c66f1bcde4299849e662ef4c666b1e",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "gin 1.12 on Go 1.27: any, min and max, math/rand/v2, the standard library's pbkdf2 and sha3, mongo-driver v2, goldmark v2",
+      "published_files": 302,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
+    },
+    "gin-legacy": {
+      "categories": 15,
+      "csv_sha256": "8b54fd7033a60333caf55cdffafef9a6245499edc93b7140660d8eed4356df89",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "gin 1.9 on a go 1.20 module: io/ioutil, interface{}, math/rand with Seed, x/crypto pbkdf2 and sha3, mongo-driver v1, goldmark v1",
+      "published_files": 302,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
     },
     "net_http": {
       "categories": 15,
-      "csv_sha256": "ab5722c774cc73a6246bb7a77811fb155466cf71063163787e364b5653d1c1ef",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 602,
-      "safe": 300,
-      "total": 600,
-      "vulnerable": 300
+      "csv_sha256": "4e33ce643f87484d98851e416eee63ffaedf01a5e2758e4612a8a2fcdbe36fb8",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "net/http on Go 1.27: any, min and max, math/rand/v2, the standard library's pbkdf2 and sha3",
+      "published_files": 302,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
+    },
+    "net_http-legacy": {
+      "categories": 15,
+      "csv_sha256": "b19deb8cad5b43d716f43a25a332f65aa7b41c5acba902c78a4431638c387def",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "net/http on a go 1.20 module: handlers refuse other methods themselves, io/ioutil, interface{}, math/rand with Seed, x/crypto",
+      "published_files": 302,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

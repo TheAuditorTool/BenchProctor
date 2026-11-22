@@ -2,14 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 
 class BenchmarkTest00204Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = getenv('APP_INPUT') ?: '';
-        $data = "{$userInput}";
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('User-Agent', '');
+        $data = vsprintf('%1$s', [$userInput]);
+        $_coerced = max(0, min((int)$data, 1048576));
+        $boundedVal = $_coerced;
+        $records = (int) $boundedVal;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return response()->json(['frame_bytes' => strlen($frame)], 200);
     }
 }

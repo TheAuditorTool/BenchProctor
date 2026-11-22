@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00132Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = DB::selectOne('SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1')->body;
-        $data = base64_decode($userInput);
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
+        $userInput = $request->cookie('session_token', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        system('gzip -f /var/app/reports/' . (string)$data);
         return response()->json(['ok' => 1]);
     }
 }

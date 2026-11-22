@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00163() -> impl IntoResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let mut pending: std::collections::VecDeque<String> = db_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return (StatusCode::NOT_FOUND, "").into_response() };
-    let _ = value;
+pub async fn benchmark_test_00163(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Ok(Some(_field)) = multipart.next_field().await {
+            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+        }
+        _fname
+    };
+    let (payload, _origin) = (upload_name.clone(), "http");
+    let data = payload;
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), data.clone());
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

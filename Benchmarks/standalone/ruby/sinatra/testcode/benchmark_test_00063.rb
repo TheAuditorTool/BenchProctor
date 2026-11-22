@@ -18,10 +18,9 @@ class BenchmarkTest00063 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00063" do
-    user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    Marshal.load(data)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    content_type :html
+    erb "<p><%= comment %></p>", locals: { comment: data }
   end
 end

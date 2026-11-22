@@ -2,25 +2,23 @@
 package testcode
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
 	"net/http"
-	"os/exec"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00157(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
+	uaValue := c.GetHeader("User-Agent")
 	var data string
-	if len(authHeader) > 0 {
-		data = authHeader
-	} else {
-		data = "default"
+	for _, token := range strings.Split(uaValue, ",") {
+		data = token
 	}
-	cmd := exec.Command("echo", data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Data(200, "text/plain", output)
+	digest := sha1.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

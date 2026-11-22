@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query, Res } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as vm from "node:vm";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,10 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00129")
-  async BenchmarkTest00129(@Query("id") id: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = id || "";
-    const data = Buffer.from(userInput, "hex").toString();
-    res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
+  async BenchmarkTest00129(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    vm.runInNewContext(String(data), { Math });
     return { created: true };
   }
 }

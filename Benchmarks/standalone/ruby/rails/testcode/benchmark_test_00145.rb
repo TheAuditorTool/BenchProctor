@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
 
 class BenchmarkTest00145Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +11,10 @@ class BenchmarkTest00145Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00145
-    user_input = cookies[:session_token].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = user_input.split(/[ \t]+/).join(" ")
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

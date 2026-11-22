@@ -33,16 +33,12 @@ public class BenchmarkTest00132 {
     @GET
     @Path("/BenchmarkTest00132")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00132(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        java.util.Map.Entry<String,String> entry = java.util.Map.entry(cookieValue, "header");
-        String data = entry.getKey();
-        try { Integer.parseInt(data); }
-        catch (NumberFormatException e) { return Response.status(400).build(); }
-        var boundedVal = Math.max(0, Math.min(Integer.parseInt(data), 1048576));
-        long requested = boundedVal;
-        long allocSize = requested + 1;
-        response.setHeader("X-Alloc-Size", String.valueOf(allocSize));
+    public Response BenchmarkTest00132(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data = String.format("%s", envValue);
+        java.util.Random rng = new java.util.Random();
+        int randValue = rng.nextInt() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

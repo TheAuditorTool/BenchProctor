@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from dataclasses import dataclass
 from flask import Flask, jsonify
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 from app_runtime import db
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -27,7 +29,8 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00244", methods=["POST"])
 def BenchmarkTest00244():
     db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    form = FormData(payload=db_value)
-    data = form.payload
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    reader = make_reader(db_value)
+    data = reader()
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return jsonify({'length': len(ciphertext)}), 200

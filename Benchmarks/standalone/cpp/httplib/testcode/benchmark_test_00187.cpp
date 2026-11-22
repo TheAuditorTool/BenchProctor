@@ -22,26 +22,29 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-typedef struct evp_cipher_st EVP_CIPHER;
-typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
-extern "C" const EVP_CIPHER *EVP_des_ecb(void);
-extern "C" const EVP_CIPHER *EVP_rc4(void);
-extern "C" const EVP_CIPHER *EVP_aes_128_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_cbc(void);
-extern "C" const EVP_CIPHER *EVP_aes_256_gcm(void);
-extern "C" EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-extern "C" int EVP_EncryptInit_ex(EVP_CIPHER_CTX *, const EVP_CIPHER *, void *, const unsigned char *, const unsigned char *);
-extern "C" int EVP_EncryptUpdate(EVP_CIPHER_CTX *, unsigned char *, int *, const unsigned char *, int);
-extern "C" void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *);
+struct env_md_st; typedef struct env_md_st EVP_MD;
+typedef struct evp_md_ctx_st EVP_MD_CTX;
+extern "C" EVP_MD_CTX *EVP_MD_CTX_new(void);
+extern "C" void EVP_MD_CTX_free(EVP_MD_CTX *);
+extern "C" const EVP_MD *EVP_sha256(void);
+extern "C" int EVP_DigestInit_ex(EVP_MD_CTX *, const EVP_MD *, void *);
+extern "C" int EVP_DigestUpdate(EVP_MD_CTX *, const void *, size_t);
+extern "C" int EVP_DigestFinal_ex(EVP_MD_CTX *, unsigned char *, unsigned int *);
+extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
 
 void benchmark_test_00187(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("X-Custom-Header");
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ckey[32] = {0};
-    EVP_EncryptInit_ex(_ctx, EVP_des_ecb(), nullptr, _ckey, nullptr);
-    unsigned char _cout[512]; int _coutl = 0;
-    EVP_EncryptUpdate(_ctx, _cout, &_coutl, reinterpret_cast<const unsigned char *>(user_input.c_str()), (int)user_input.size());
-    EVP_CIPHER_CTX_free(_ctx);
+    std::string user_input = req.body;
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_sha256(), nullptr);
+    EVP_DigestUpdate(_mdctx, data.data(), data.size());
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

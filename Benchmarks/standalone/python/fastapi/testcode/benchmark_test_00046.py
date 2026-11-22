@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
 from starlette.responses import JSONResponse
-from pydantic import Field, ValidationError, create_model
+import ctypes
 
 
 app = FastAPI()
@@ -22,15 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00046")
 async def BenchmarkTest00046(request: Request):
-    referer_value = request.headers.get('referer', '')
-    parts = []
-    for token in str(referer_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return JSONResponse({'error': 'invalid input'}, status_code=400)
-    processed = data
-    subprocess.Popen('echo ' + str(processed), shell=True).wait()
-    return {"updated": True}
+    auth_header = request.headers.get('authorization', '')
+    data = bytes.fromhex(auth_header).decode('utf-8', 'ignore')
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return JSONResponse({'wrapped': wrapped}, status_code=200)

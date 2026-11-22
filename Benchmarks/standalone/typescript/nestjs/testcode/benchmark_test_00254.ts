@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
+import * as ldapjs from "ldapjs";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +19,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00254")
-  async BenchmarkTest00254(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00254(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
     const transform = (v: string): string => v.trim();
     const data: string = transform(userInput);
-    const token = crypto.randomBytes(16).toString("hex");
-    return { token, label: String(data) };
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    ldapClient.compare("uid=" + data + ",ou=people,dc=example,dc=com", "employeeType", "manager", (_err: Error | null, _matched?: boolean) => ldapClient.unbind());
+    return { created: true };
   }
 }

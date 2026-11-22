@@ -2,22 +2,18 @@
 package testcode
 
 import (
-	"context"
-	"encoding/json"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00101(w http.ResponseWriter, r *http.Request) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
-	}
-	json.NewDecoder(r.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	var data string
-	if len(graphqlVar) > 0 {
-		data = graphqlVar
-	} else {
-		data = "default"
-	}
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
+	multipartValue := r.FormValue("multipart_field")
+	data := strings.ReplaceAll(multipartValue, "\x00", "")
+	digest := sha1.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

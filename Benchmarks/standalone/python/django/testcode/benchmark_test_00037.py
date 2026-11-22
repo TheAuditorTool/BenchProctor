@@ -1,14 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+import json
+import importlib
 
+
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 def BenchmarkTest00037(request):
-    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
-    data, _sep, _rest = str(header_value).partition('\x00')
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    ua_value = request.META.get('HTTP_USER_AGENT', '')
+    parts = str(ua_value).split(',')
+    data = ' '.join(parts)
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
+    return JsonResponse({'parsed': str(parsed)}, status=200)

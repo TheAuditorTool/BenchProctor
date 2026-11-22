@@ -11,13 +11,12 @@ class BenchmarkTest00211Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        $resolved = gethostbyname($host);
-        if (preg_match('#^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)#', $resolved)) { return new JsonResponse(['error' => 'private range blocked'], 403); }
-        $targetUrl = $data;
-        file_get_contents((string)$targetUrl);
+        $userInput = $request->request->get('field', '');
+        $data = sprintf('%s', $userInput);
+        $ldap = ldap_connect(getenv('LDAP_URL') ?: 'ldap://directory:1389');
+        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_bind($ldap, getenv('LDAP_BIND_DN'), getenv('LDAP_BIND_PASS'));
+        $entries = ldap_search($ldap, 'ou=people,dc=example,dc=com', '(uid=' . $data . ')');
         return new JsonResponse(["committed" => true]);
     }
 }

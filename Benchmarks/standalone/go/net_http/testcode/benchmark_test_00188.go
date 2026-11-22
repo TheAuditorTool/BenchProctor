@@ -4,19 +4,12 @@ package testcode
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00188(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(fieldValue)
-	_lower := strings.ToLower(data)
-	if !strings.HasPrefix(_lower, "t") && !strings.HasPrefix(_lower, "f") && _lower != "1" && _lower != "0" {
-		http.Error(w, "invalid boolean", http.StatusBadRequest)
-		return
-	}
-	parsedBool := strconv.FormatBool(strings.HasPrefix(_lower, "t") || _lower == "1")
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, parsedBool))
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := strings.Join(strings.FieldsFunc(forwardedIP, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	redisClient.HSet(context.Background(), "session:"+ctxString(r, ctxKeyUser), map[string]any{"display_name": data, "locale": "en"})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

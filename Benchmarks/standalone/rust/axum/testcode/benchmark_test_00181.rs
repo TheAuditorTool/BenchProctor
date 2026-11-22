@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
 use axum::response::IntoResponse;
+use axum::response::Json;
 
-pub async fn benchmark_test_00181(headers: HeaderMap) -> impl IntoResponse {
-    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = forwarded_ip.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    return ([("content-type", "text/html")], format!("<div>{}</div>", data)).into_response();
+pub async fn benchmark_test_00181() -> impl IntoResponse {
+    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", env_value).ok();
+    let _token = fastrand::u64(..);
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
+    Json(serde_json::json!({"count": 0})).into_response()
 }

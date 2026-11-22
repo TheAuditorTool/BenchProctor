@@ -2,14 +2,17 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
 
-void benchmark_test_00384(int argc, char **argv)
+void benchmark_test_00384(int, char **)
 {
-    std::string user_input = (argc > 2) ? std::string(argv[2]) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    char *_dst = new char[32];
-    std::sprintf(_dst, "user=%s", data.c_str());
-    std::cout << _dst << std::endl;
-    delete[] _dst;
+    const char *user_input_env = std::getenv("PATH_INFO");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::string _html = std::string("<div class=\"comment\" data-author=\"") + data + "\">" + data + "</div>";
+    std::fputs("Content-Type: text/html\r\n\r\n", stdout);
+    std::fwrite(_html.data(), 1, _html.size(), stdout);
 }

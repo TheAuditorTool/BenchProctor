@@ -2,18 +2,19 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"crypto/sha3"
+	"encoding/hex"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00263(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	data := strings.ReplaceAll(headerValue, "\x00", "")
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
+	originValue := c.GetHeader("Origin")
+	form := submissionForm{payload: originValue}
+	data := form.payload
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
 	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

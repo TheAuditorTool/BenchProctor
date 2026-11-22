@@ -2,27 +2,22 @@
 package testcode
 
 import (
-	"io"
-	"net/http"
+	"context"
 	"os/exec"
-	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00039(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
+	userID := c.Query("id")
+	var data string
+	if userID != "" {
+		data = userID
 	}
-	rawBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(rawBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", data)
+	output, _ := cmd.CombinedOutput()
 	c.Data(200, "text/plain", output)
 }

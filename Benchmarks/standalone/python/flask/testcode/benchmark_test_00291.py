@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
 import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from flask import Flask, jsonify
+import json
 
 
 app = Flask(__name__)
@@ -22,7 +20,16 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00291", methods=["POST"])
 def BenchmarkTest00291():
-    ua_value = request.headers.get('User-Agent', '')
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(ua_value).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    env_value = os.environ.get('APP_INPUT', '')
+    try:
+        data = json.loads(env_value).get('value', env_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = env_value
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid number'}), 400
+    processed = _coerced
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
+    return jsonify({"result": "success"})

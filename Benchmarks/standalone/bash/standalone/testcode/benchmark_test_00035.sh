@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00035() {
-  user_input="$(jq -r '.value // empty' 2>/dev/null)"
-  if [ -n "$user_input" ]; then data="$user_input"; else data=""; fi
-  _schema_re='^[a-zA-Z0-9 %._-]+$'
-  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  eval "echo $processed"
+  user_input="$(cat /dev/stdin)"
+  data=$(printf "%s" "${user_input}" | tr -s " ")
+  echo "$data" | xmllint --noent --nonet - > /dev/null 2>&1
 }
 
 benchmark_test_00035 "$@"

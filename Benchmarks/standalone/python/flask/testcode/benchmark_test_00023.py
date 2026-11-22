@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from lxml import etree
+from flask import Flask, request
+from flask import render_template_string
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -19,11 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00023", methods=["POST"])
 def BenchmarkTest00023():
-    multipart_value = request.form.get('multipart_field', '')
-    if multipart_value:
-        data = multipart_value
-    else:
-        data = ''
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(json_value)
+    return render_template_string('<div>{{ value|safe }}</div>', value=str(data))

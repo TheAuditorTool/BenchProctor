@@ -2,27 +2,24 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 )
 
 func BenchmarkTest00156(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
+	uaValue := r.Header.Get("User-Agent")
+	data := strings.ReplaceAll(uaValue, "\x00", "")
+	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
+	if !allowed[data] {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	checkedPath := "/var/app/data/" + data
+	content, err := os.ReadFile(checkedPath)
 	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
-	cookieValue := cookieObj.Value
-	data := strings.Join(strings.FieldsFunc(cookieValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
-		return
-	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	w.Write(content)
 }

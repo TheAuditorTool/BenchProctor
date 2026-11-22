@@ -10,21 +10,27 @@ extern "C" int ldap_search_ext_s(LDAP *, const char *, int, const char *, char *
 extern "C" int ldap_msgfree(LDAPMessage *);
 extern "C" int ldap_unbind_ext_s(LDAP *, void *, void *);
 enum { LDAP_SCOPE_SUBTREE = 2 };
+extern "C" int ldap_search_ext(LDAP *, const char *, int, const char *, char **, int, void *, void *, void *, int, int *);
+extern "C" int ldap_result(LDAP *, int, int, void *, LDAPMessage **);
+enum { LDAP_MSG_ALL = 1 };
+struct ValueSource { virtual std::string get() const = 0; virtual ~ValueSource() = default; };
+struct HeldValue : ValueSource { std::string v; explicit HeldValue(const std::string &s) : v(s) {} std::string get() const override { return v; } };
 
 void benchmark_test_00383(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_ORIGIN");
+    const char *user_input_env = std::getenv("QUERY_STRING");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
+    HeldValue _held(user_input);
+    const ValueSource &_vs = _held;
+    std::string data = _vs.get();
+    std::string arg = std::regex_match(data, std::regex("^(admin|user|guest|service)$")) ? data : std::string("admin");
     LDAP *_ld = nullptr;
     const char *_ldap_url = std::getenv("LDAP_URL");
     ldap_initialize(&_ld, _ldap_url ? _ldap_url : "ldap://directory:1389");
-    std::string _filter = std::string("(uid=") + safe + ")";
+    std::string _filter = std::string("(mail=") + arg + ")";
+    int _msgid = 0;
+    ldap_search_ext(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_msgid);
     LDAPMessage *_lres = nullptr;
-    ldap_search_ext_s(_ld, "dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter.c_str(), nullptr, 0, nullptr, nullptr, nullptr, 0, &_lres);
-    if (_lres) ldap_msgfree(_lres);
+    if (ldap_result(_ld, _msgid, LDAP_MSG_ALL, nullptr, &_lres) > 0) ldap_msgfree(_lres);
     ldap_unbind_ext_s(_ld, nullptr, nullptr);
 }

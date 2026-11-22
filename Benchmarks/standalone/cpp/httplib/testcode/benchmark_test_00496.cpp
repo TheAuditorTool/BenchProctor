@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <regex>
+#include <cstdlib>
 #include <unordered_map>
 
 namespace httplib {
@@ -26,11 +26,18 @@ struct Client {
 
 void benchmark_test_00496(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("field");
+    std::string user_input = req.body;
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    static const std::regex _re("^[a-zA-Z0-9 _.#%\\-]+$");
-    std::string safe = std::regex_match(data, _re) ? data : std::string("default");
-    res.set_content(std::string("<div class=\"comment\" data-author=\"") + safe + "\">" + safe + "</div>", "text/html");
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    const char _buf[16] = "fixedcontent12";
+    int _i = std::atoi(data.c_str());
+    std::cout << _buf[_i] << std::endl;
+    res.set_content("ok", "text/plain");
 }

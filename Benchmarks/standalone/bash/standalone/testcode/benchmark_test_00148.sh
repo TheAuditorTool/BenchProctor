@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00148() {
-  user_input="$QUERY_STRING"
-  data="${user_input:-default}"
-  printf "%s" "$data" | openssl enc -des-ede3-cbc -K "$DATA_ENC_KEY" -iv "$(openssl rand -hex 8)" -out /var/app/run/record.enc
+  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  printf -v data "%s" "${user_input}"
+  xsltproc --param user "'$data'" /etc/app/user_lookup.xsl /var/data/users.xml
 }
 
 benchmark_test_00148 "$@"

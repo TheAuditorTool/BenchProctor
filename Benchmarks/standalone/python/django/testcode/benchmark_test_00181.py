@@ -1,16 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-import os
+import json
+from django.http import HttpResponse
 
 
 def BenchmarkTest00181(request):
-    field_value = request.POST.get('field', '')
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    if data not in ('ls', 'cat', 'date', 'whoami'):
-        return JsonResponse({'error': 'forbidden'}, status=403)
-    processed = data
-    os.system('echo ' + str(processed))
-    return JsonResponse({"saved": True})
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    data = json.loads(json_value).get('value', '')
+    resp = HttpResponse(content_type='text/html')
+    resp.write('<div>' + str(data) + '</div>')
+    return resp

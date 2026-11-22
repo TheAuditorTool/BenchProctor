@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use rand::rngs::OsRng;
 
-pub async fn benchmark_test_00009() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let _prefix: String = comment_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => comment_value.to_lowercase(),
-        "f" => comment_value.to_uppercase(),
-        _ => comment_value.trim().to_string(),
-    };
-    use rand::Rng;
-    let _token: u64 = OsRng.gen();
-    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
+pub async fn benchmark_test_00009(body: Bytes) -> impl IntoResponse {
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(json_value.clone());
+    use sha2::Digest;
+    let _ = sha2::Sha256::new().chain_update(data.as_bytes()).finalize();
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -18,9 +18,10 @@ class BenchmarkTest00025 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00025" do
-    user_input = params[:field].to_s
-    data = user_input ? user_input : ''
-    redirect data
+    user_input = request.cookies["session_token"].to_s
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    eval(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

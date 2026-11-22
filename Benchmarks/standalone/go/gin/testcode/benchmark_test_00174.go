@@ -2,23 +2,34 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/json"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00174(c *gin.Context) {
-	pathValue := c.Param("id")
-	data := fmt.Sprintf("%s", pathValue)
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	rawBody := string(rawBytes)
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(rawBody), &parsed)
+	data, _ := parsed["value"].(string)
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

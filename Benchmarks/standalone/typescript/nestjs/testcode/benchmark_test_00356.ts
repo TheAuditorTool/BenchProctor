@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +18,17 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00356")
-  async BenchmarkTest00356(@Headers("referer") referer: string): Promise<unknown> {
-    const userInput = referer || "";
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00356(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const _input = String(userInput);
     let data;
-    try { data = JSON.parse(userInput).value || userInput; }
-    catch (e) { data = userInput; }
-    fs.unlinkSync("/var/app/data/" + data);
-    return { created: true };
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+    const { quota } = planQuotas.get(String(data))!;
+    return { quota };
   }
 }

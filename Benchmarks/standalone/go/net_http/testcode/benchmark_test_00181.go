@@ -2,23 +2,26 @@
 package testcode
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"os"
+
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 func BenchmarkTest00181(w http.ResponseWriter, r *http.Request) {
-	var profileBio string
-	DB.QueryRow("SELECT bio FROM profiles LIMIT 1").Scan(&profileBio)
-	var data string
-	if len(profileBio) > 0 {
-		data = profileBio
-	} else {
-		data = "default"
-	}
-	content, err := os.ReadFile("/var/app/data/" + data)
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	aead, err := chacha20poly1305.NewX(keyHash[:])
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write(content)
+	nonce := make([]byte, aead.NonceSize())
+	rand.Read(nonce)
+	cipherOut := aead.Seal(nonce, nonce, []byte(dbValue), nil)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "xchacha20-poly1305", "out": fmt.Sprintf("%x", cipherOut)})
 }

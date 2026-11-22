@@ -2,6 +2,7 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
@@ -9,19 +10,18 @@ import (
 )
 
 func BenchmarkTest00003(c *gin.Context) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	pending := strings.Split(commentText, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
 	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	rawBody := string(rawBytes)
+	capture := func() string { return strings.TrimSpace(rawBody) }
+	data := capture()
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE name = '" + data + "'").Scan(&matched).Error; err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	c.JSON(200, gin.H{"code": "OK"})
 }

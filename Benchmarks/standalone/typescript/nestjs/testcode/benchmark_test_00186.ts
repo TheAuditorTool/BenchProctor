@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -19,11 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00186")
-  async BenchmarkTest00186(): Promise<unknown> {
-    const userInput = fs.readFileSync("/tmp/data", "utf8");
-    const data = userInput != null ? userInput : '';
-    const _prisma = new PrismaClient();
-    await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + data + "'");
+  async BenchmarkTest00186(@Req() req: Request): Promise<unknown> {
+    const userInput = (req.body as string) || "";
+    const data = Buffer.from(userInput, "utf-8").toString();
+    const _coerced = parseFloat(String(data));
+    const parsedNum = _coerced;
+    eval(String(parsedNum));
     return { created: true };
   }
 }

@@ -3,20 +3,35 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
+	"os"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 )
 
 func BenchmarkTest00210(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := strings.ReplaceAll(dbValue, "\x00", "")
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	multipartValue := r.FormValue("multipart_field")
+	segments := strings.Split(multipartValue, ",")
+	data := strings.Join(segments, " ")
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		http.Error(w, openErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	roleExpr, exprErr := xpath.Compile("//user[@name='" + data + "']/role")
+	if exprErr != nil {
+		http.Error(w, "invalid user name", http.StatusBadRequest)
+		return
+	}
+	if roleNode := xmlquery.QuerySelector(xmlDoc, roleExpr); roleNode != nil {
+		w.Header().Set("X-User-Role", roleNode.InnerText())
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

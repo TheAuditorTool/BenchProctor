@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open-uri"
 
 class BenchmarkTest00108Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,15 @@ class BenchmarkTest00108Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00108
-    user_input = User.first&.name.to_s
-    data = user_input ? user_input : ''
-    eval(data)
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    data = "%s" % user_input
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
+      return
+    end
+    target_url = data
+    URI.open(target_url).read
     render json: { status: "ok" }
   end
 end

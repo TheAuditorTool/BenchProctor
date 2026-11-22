@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00184', methods: ['POST'])]
@@ -12,13 +11,11 @@ class BenchmarkTest00184Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Referer', '');
-        $pending = explode(',', $userInput);
-        $data = '';
-        while (count($pending)) { $data = array_shift($pending); }
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        if (!preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return new JsonResponse(['error' => 'forbidden host'], 403); }
-        $targetUrl = $data;
-        return new RedirectResponse($targetUrl);
+        $userInput = $request->headers->get('Authorization', '');
+        [$data] = [$userInput, 'http'];
+        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return new JsonResponse(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $request->getSession()->set('data', (string) $processed);
+        return new JsonResponse(["committed" => true]);
     }
 }

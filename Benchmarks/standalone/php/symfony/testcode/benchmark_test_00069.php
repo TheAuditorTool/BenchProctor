@@ -14,7 +14,8 @@ class BenchmarkTest00069Controller
     {
         $userInput = $request->getContent();
         [$data] = [$userInput, 'http'];
-        $conn->executeQuery('SELECT * FROM users WHERE "' . str_replace('"', '""', (string)$data) . '" = 1');
+        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
+        $value = $result['name'];
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as nodeUtil from "util";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -20,11 +20,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00117")
-  async BenchmarkTest00117(@Headers("origin") origin: string): Promise<unknown> {
-    const userInput = origin || "";
-    const data = nodeUtil.format("%s", userInput);
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + data + "']", xmlDoc);
+  async BenchmarkTest00117(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    const appDb = ((globalThis as unknown as { _appDb?: InstanceType<typeof Database> })._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+    appDb.prepare("SELECT id, name FROM users WHERE name = '" + data + "'").all();
     return { created: true };
   }
 }

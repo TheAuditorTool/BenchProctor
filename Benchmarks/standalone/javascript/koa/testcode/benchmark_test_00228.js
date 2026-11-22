@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
 
 const BenchmarkTest00228 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
+  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
   const capture = (v) => () => String(v).trim();
   const readInput = capture(userInput);
   const data = readInput();
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  const token = crypto.randomBytes(16).toString("hex");
+  ctx.body = { token, label: String(data) };
 }
 
 module.exports = { BenchmarkTest00228 };

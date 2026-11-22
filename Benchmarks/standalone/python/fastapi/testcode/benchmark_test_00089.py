@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from fastapi import Form
 from starlette.responses import JSONResponse
-import re
-from app_runtime import db
+import os
+import hashlib
 
 
 app = FastAPI()
@@ -24,9 +26,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00089")
 async def BenchmarkTest00089(request: Request, field: str = Form('')):
     field_value = field
-    data = field_value if field_value else 'default'
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    db.execute('SELECT * FROM users ORDER BY ' + str(processed))
-    return {"updated": True}
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(str(field_value).encode()) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

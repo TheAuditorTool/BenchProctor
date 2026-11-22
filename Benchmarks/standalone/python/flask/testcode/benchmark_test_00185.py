@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-from flask import Flask, jsonify
-from app_runtime import db
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,13 +18,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00185", methods=["POST"])
 def BenchmarkTest00185():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '%s' % (db_value,)
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid number'}), 400
-    processed = _coerced
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    if upload_name:
+        data = upload_name
+    else:
+        data = ''
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    value = label.upper()
+    return jsonify({'plan': value}), 200

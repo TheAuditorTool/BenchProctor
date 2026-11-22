@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
-const fs = require("fs");
+const jsYaml = require("js-yaml");
 
 const BenchmarkTest00313 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  const data = decodeURIComponent(userInput);
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
-  ctx.body = { ack: true };
+  const userInput = ctx.request.headers.origin || "";
+  const _input = String(userInput);
+  let data;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': data = _input.normalize('NFC'); break;
+    default: data = _input; break;
+  }
+  const reportSpec = jsYaml.load(String(data), { schema: jsYaml.JSON_SCHEMA });
+  ctx.body = { title: String(reportSpec?.title ?? "") }; return;
 }
 
 module.exports = { BenchmarkTest00313 };

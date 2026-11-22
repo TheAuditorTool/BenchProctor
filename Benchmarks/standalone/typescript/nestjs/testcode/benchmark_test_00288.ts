@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Headers, Post, NotFoundException } from "@nestjs/common";
 import { Response } from "express";
-import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,10 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00288")
-  async BenchmarkTest00288(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const data = String(userInput).slice(0, 200);
-    crypto.createHash("md5").update(data).digest("hex");
-    return { created: true };
+  async BenchmarkTest00288(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const data = userInput != null ? userInput : '';
+    const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+    const plan = planQuotas.get(String(data));
+    if (!plan) { throw new NotFoundException({ error: "unknown plan" }); }
+    const { quota } = plan;
+    return { quota };
   }
 }

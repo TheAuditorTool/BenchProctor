@@ -2,20 +2,14 @@
 package testcode
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"os"
-	"strings"
 )
 
 func BenchmarkTest00089(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	xmlBody := string(rawBytes)
-	data := strings.ReplaceAll(xmlBody, "\x00", "")
-	os.Remove("/var/app/data/" + data)
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	data := fmt.Sprintf("%s", dbValue)
+	htmlOut := "<div>" + data + "</div>"
+	w.Write([]byte(htmlOut))
 }

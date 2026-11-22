@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
 
 async function BenchmarkTest00071(req, res) {
-  const userInput = req.body.field || "";
-  childProcess.execFileSync("echo", [userInput]);
+  const userInput = process.env.APP_INPUT || "";
+  const payload = { get value() { return userInput; } };
+  const data = payload.value;
+  JSON.parse(data);
   res.json({ done: true });
 }
 

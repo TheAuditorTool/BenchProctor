@@ -4,28 +4,32 @@ The operational guide: how to pick the cases you want, run a scanner against the
 score. For what the release is and why it is built the way it is, see [README.md](README.md); for
 the release history, see [changelog.md](changelog.md).
 
-The current release is `2026.11.19`, with C and C++ at `2026.11.19.1`: 15,372 standalone cases,
-one file per case, in all 11 languages, and 368 multi-service applications. The C and C++ answer
-keys are named `expectedresults-2026.11.19.1.csv`. It is published as plain files in `Benchmarks/`;
-nothing needs unpacking. Earlier releases are under [`archive/`](archive/).
+The current release is `2026.11.22`: 15,372 standalone cases, one file per case, in all 11
+languages, and 368 multi-service applications. It is published as plain files in `Benchmarks/`;
+nothing needs unpacking. Earlier releases are under [`archive/`](archive/), one zip per release.
 
 ## 1. Pick your cases
 
-A standalone language folder holds every framework for that language, so you choose the framework
-inside it.
+A standalone language folder holds every framework for that language, one folder per framework
+and API generation, so you choose the framework and the generation inside it.
 
 ```
 Benchmarks/standalone/<language>/
 Benchmarks/applications/
 ```
 
-- "I want Java" -> `Benchmarks/standalone/java/`, then its `spring/` or `jakarta/` framework folder.
-- "I want Python, FastAPI" -> `Benchmarks/standalone/python/fastapi/`.
+- "I want Java" -> `Benchmarks/standalone/java/`, then `spring/` (Spring Boot 4.1 on Java 25),
+  `spring-lts/` (Boot 3.5 on Java 21) or `spring-legacy/` (Boot 2.7 on Java 11), or the same three
+  for `jakarta`.
+- "I want Python, FastAPI" -> `Benchmarks/standalone/python/fastapi/` (FastAPI 0.161 with
+  pydantic 2) or `fastapi-legacy/` (FastAPI 0.99 with pydantic 1).
 - "I want the multi-service applications" -> `Benchmarks/applications/`, then one service-graph
   folder in it.
 
-The framework names for each language are listed in the README's
-[Languages & frameworks](README.md#languages--frameworks) table.
+`<framework>` is always the modern generation, `<framework>-lts` the long-term-support line where
+the project has one, and `<framework>-legacy` an older line that is still widely deployed. The
+README's [Generations](README.md#generations) table lists every line, and each language folder's
+README lists the folders it holds.
 
 ## 2. What is inside a standalone language folder
 
@@ -35,34 +39,38 @@ label-bearing names, so you cannot infer a label from a file.
 ```
 Benchmarks/standalone/<language>/
   score_sarif.py                     the scorer (standard-library Python, no dependencies)
-  benchproctor-manifest.json         version, per-framework counts, checksums, C/C++ libraries
-  README.md                          folder-local notes
-  <framework>/
+  benchproctor-manifest.json         version, per-folder counts, generation and line, checksums, C/C++ libraries
+  README.md                          folder-local notes, including what each generation folder targets
+  <framework>[-legacy|-lts]/
     testcode/                        the cases you scan
-    expectedresults-2026.11.19.csv   the answer key for this framework
+    expectedresults-2026.11.22.csv   the answer key for this folder
 ```
 
 Every framework folder except C, C++ and Bash also carries its language's dependency manifest next
-to `testcode/`, listing the packages its cases import: `pom.xml`, `go.mod`, `Cargo.toml`,
-`requirements.txt`, `package.json`, `composer.json` or `Gemfile`. Install from it when your tool
-resolves types or you want to run a case. Some frameworks carry other build files their toolchain
-needs, such as `tsconfig.json`. None of them hold labels.
+to `testcode/`, listing the packages its cases import at exact versions of that generation's line:
+`pom.xml`, `go.mod` and `go.sum`, `Cargo.toml`, `requirements.txt`,
+`package.json`, `composer.json` or `Gemfile`. Install from it when your tool resolves types or you
+want to run a case. Some frameworks carry other build files their toolchain needs, such as
+`tsconfig.json`. None of them hold labels.
 
 Compiling some C and C++ cases needs a library's development headers (SQLite, libcurl and OpenSSL
 for C; hiredis and the RabbitMQ C client for C++), because neither standard library has an SQL,
 HTTP, cryptography or message-queue API. See
 [C and C++ prerequisites](README.md#c-and-c-prerequisites) for the install commands.
 
-## 3. Run and score a standalone framework
+## 3. Run and score a standalone folder
 
 ```bash
-# scan one framework's testcode and export SARIF 2.1.0
+# scan one folder's testcode and export SARIF 2.1.0
 your-tool scan Benchmarks/standalone/java/spring/testcode --format sarif -o results.sarif
 
-# score against that framework's answer key
+# score against that folder's answer key
 python Benchmarks/standalone/java/score_sarif.py results.sarif \
-  Benchmarks/standalone/java/spring/expectedresults-2026.11.19.csv
+  Benchmarks/standalone/java/spring/expectedresults-2026.11.22.csv
 ```
+
+Score each generation folder against its own answer key: test names restart in every folder, so
+one SARIF file per folder keeps the matching unambiguous.
 
 The scorer matches a finding to a case by file and recovers the finding's CWE from the SARIF
 `ruleId`, the result or rule `properties` or `tags` (for example `external/cwe/cwe-089`), or CWE
@@ -71,8 +79,8 @@ file then counts. That mode rewards over-flagging, so prefer the default when yo
 
 If your tool does not attempt some classes, declare its scope: `--skip-categories ldapi,sqli`
 leaves those classes out, and `--categories null_deref,use_after_free` scores only those. The
-summary names every class left out. The scorer in `scripts/` and the copies in the C and C++
-folders have these options; the other language folders get them in the next release.
+summary names every class left out. The scorer in `scripts/` and the copy in every language
+folder have these options.
 
 ### Reading the output
 
@@ -87,8 +95,10 @@ cannot dominate; **flat aggregate** weights every case equally. A perfect tool s
 A flag-everything or flag-nothing tool scores `0%`, because its TPR and FPR are equal. A tool that
 flags safe code and misses real bugs scores below zero.
 
-Each framework holds 20 vulnerable and 20 safe cases per class, so one case moves one class in one
-framework by five points, and the framework's headline score by well under one point.
+A framework's 20 vulnerable and 20 safe cases per class are split across its generations: 10 and
+10 per folder over two generations, 7, 7 and 6 over three (15 in C, 12 in C++). One case moves one
+class in one folder by ten points (about fifteen with seven per side), and the folder's headline
+score by under one point.
 
 ## 4. The applications
 
@@ -99,17 +109,19 @@ Benchmarks/applications/
   README.md                                 folder-local notes
   <service-graph>/
     applications/<application>/             one project: docker-compose.yml and services/<service>/
-    expectedresults-2026.11.19.csv          one row per labeled flow, with its file and line
-    expectedresults-chains-2026.11.19.csv   the service graph and whether the chain completes
+    expectedresults-2026.11.22.csv          one row per labeled flow, with its file and line
+    expectedresults-chains-2026.11.22.csv   the service graph and whether the chain completes
 ```
 
-Scan a service graph's `applications/` directory as one tree, then score it:
+Each application is written in one generation of both its services, legacy or modern, and each
+graph holds both; a service's dependency manifest, lockfile and Dockerfile name the releases it
+targets. Scan a service graph's `applications/` directory as one tree, then score it:
 
 ```bash
 your-tool scan Benchmarks/applications/nestjs-spring/applications --format sarif -o results.sarif
 python Benchmarks/applications/score_apps.py \
-  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.19.csv \
-  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.19.csv \
+  --flows  Benchmarks/applications/nestjs-spring/expectedresults-2026.11.22.csv \
+  --chains Benchmarks/applications/nestjs-spring/expectedresults-chains-2026.11.22.csv \
   --tool-sarif results.sarif
 ```
 
@@ -132,8 +144,13 @@ Every published file is listed with its SHA-256. From the `Benchmarks/` director
 sha256sum -c SHASUMS256.txt
 ```
 
-Each folder under `archive/` carries its own `SHASUMS256.txt`, checked the same way from that
-folder.
+For an archived release, check the zip against `archive/SHASUMS256.txt`, unzip it, and run the
+same check inside the release folder it holds:
+
+```bash
+cd archive && sha256sum -c SHASUMS256.txt --ignore-missing
+unzip 2026.11.19.zip -d /some/where && cd /some/where/2026.11.19 && sha256sum -c SHASUMS256.txt
+```
 
 ## FAQ
 
@@ -142,14 +159,25 @@ So a tool cannot game the score by flagging everything. Under Youden's J, a flag
 a 100% true-positive rate and a 100% false-positive rate, which nets to zero. The applications are
 not 50 / 50: most of the code in a real project is safe, and so it is there.
 
+**Which generation should I score?**
+All of them, each on its own. The modern folder shows how a tool handles current releases; the
+legacy and long-term-support folders show whether it still recognizes the same weaknesses written
+against the older APIs that much deployed code uses. Report the folders side by side rather than
+pooled.
+
+**My dependency scanner reports vulnerable packages in the legacy folders. Is that a defect?**
+No. The legacy and long-term-support folders use the releases of their own lines, and some of those
+lines carry published advisories, as such code does in the field. The answer keys label the code's
+weaknesses only; dependency advisories are not part of the ground truth.
+
 **Why is the release curated rather than the whole corpus?**
 Twenty cases per side for each framework and class is enough to score a language or a class
 closely, and each release is a fresh draw, so a tool cannot be tuned to the files.
 
 **Where are the earlier releases?**
-Under [`archive/`](archive/), one folder per release, kept whole and unchanged. Release 2026.11.16
-was published as zips and is kept there unpacked; its original zips are in this repository's
-history.
+Under [`archive/`](archive/), one zip per release (`archive/<version>.zip`), kept unchanged and
+listed with its SHA-256 in `archive/SHASUMS256.txt`. Each zip holds that release's folders and its
+own `SHASUMS256.txt`.
 
 **Does it test whether my tool understands a broken safeguard?**
 No. In this release a vulnerable case has no safeguard and a safe case has one that works. See the

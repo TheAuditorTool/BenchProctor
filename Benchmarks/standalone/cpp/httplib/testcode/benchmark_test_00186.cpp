@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <spawn.h>
-#include <sys/wait.h>
+#include <unistd.h>
+#include <fstream>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +25,15 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00186(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_param_value("id");
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char *_sp_argv[] = { "/usr/bin/grep", data.c_str(), nullptr };
-    char *const _sp_env[] = { nullptr };
-    pid_t _pid;
-    if (posix_spawn(&_pid, "/usr/bin/grep", nullptr, nullptr, const_cast<char *const *>(_sp_argv), _sp_env) == 0) waitpid(_pid, nullptr, 0);
+    std::string user_input = req.path_params.at("id");
+    std::string data = cpp_own(user_input);
+    std::string arg = std::regex_match(data, std::regex("^(config|data|index|schema)$")) ? data : std::string("config");
+    std::string _path = std::string("/var/app/data/") + arg;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
     res.set_content("ok", "text/plain");
 }

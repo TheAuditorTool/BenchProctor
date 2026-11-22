@@ -2,34 +2,15 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 func BenchmarkTest00084(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	relayPrefix := ""
-	if len(uaValue) > 0 {
-		relayPrefix = strings.ToLower(uaValue[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = uaValue
-	case "f":
-		data = uaValue
-	default:
-		data = uaValue
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
-		return
-	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	hexBytes, _ := hex.DecodeString(dbValue)
+	data := string(hexBytes)
+	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

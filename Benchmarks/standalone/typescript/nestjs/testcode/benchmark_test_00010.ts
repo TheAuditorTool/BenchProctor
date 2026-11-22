@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
+import * as libxmljs from "libxmljs";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,15 +23,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00010")
-  async BenchmarkTest00010(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
-    const [data] = String(userInput).split(',');
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00010(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const transform = (v: string): string => v.trim();
+    const data: string = transform(userInput);
+    libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false } as libxmljs.XMLParseOptions);
     return { created: true };
   }
 }

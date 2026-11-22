@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
+import * as childProcess from "child_process";
 
 export const BenchmarkTest00115 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.params.id as string) || "";
-  const _input = String(userInput);
-  let data;
-  switch (_input.startsWith('{') ? 'json' : 'text') {
-    case 'json': data = _input.normalize('NFC'); break;
-    default: data = _input; break;
-  }
-  res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+  const userInput = (req.query.id as string) || "";
+  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+  const data = tokens.join(' ');
+  if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  childProcess.execSync("echo " + processed);
   res.json({ accepted: true });
 }

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-import re
-from urllib.parse import unquote
+import io
+import xml.sax
+import defusedxml.sax
 from flask import Flask, request, jsonify
 
 
@@ -21,11 +21,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00216", methods=["POST"])
 def BenchmarkTest00216():
-    referer_value = request.headers.get('Referer', '')
-    data = unquote(referer_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    field_value = request.form.get('field', '')
+    data = '%s' % str(field_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
     return jsonify({"result": "success"})

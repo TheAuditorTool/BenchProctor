@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, session
+from flask import jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -17,9 +19,13 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00055", methods=["POST"])
-def BenchmarkTest00055():
-    upload_name = request.files['upload'].filename
-    data = ' '.join(str(upload_name).split())
-    os.unlink('/var/app/data/' + str(data))
+@app.route("/BenchmarkTest00055/<path_param>", methods=["POST"])
+def BenchmarkTest00055(path_param):
+    path_value = path_param
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    session.update({'data': str(data)})
     return jsonify({"result": "success"})

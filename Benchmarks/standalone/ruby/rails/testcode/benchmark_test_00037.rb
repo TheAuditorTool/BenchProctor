@@ -11,14 +11,15 @@ class BenchmarkTest00037Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00037
-    user_input = request.body.read
-    data = "%s" % user_input
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
     unless data =~ /\A(asc|desc|name|created)\z/
       render json: { error: "invalid" }, status: 400
       return
     end
     processed = data
-    eval(processed)
+    Object.new.instance_eval(processed.to_s)
     render json: { status: "ok" }
   end
 end

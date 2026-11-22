@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00208() {
-  dd if=/dev/urandom bs=16 count=1 2>/dev/null | xxd -p
+  user_input="$(sed -n '/^\r*$/{n;s/\r$//;p;q}')"
+  printf -v data "%s" "${user_input}"
+  echo -n "$data" | sha256sum
 }
 
 benchmark_test_00208 "$@"

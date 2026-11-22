@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,12 +23,10 @@ public class BenchmarkTest00121 {
     @PostMapping(path="/BenchmarkTest00121", consumes="application/xml")
     public void BenchmarkTest00121(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String xmlBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
         String xmlValue = xmlBody;
-        java.util.Properties container = new java.util.Properties();
-        container.setProperty("value", xmlValue);
-        String data = container.getProperty("value", "");
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; HttpOnly; SameSite=Strict");
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+        java.util.Map.Entry<String,String> tuple = java.util.Map.entry(xmlValue, "json");
+        String data = tuple.getKey();
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String deserialized = objectMapper.readValue(data.getBytes(java.nio.charset.StandardCharsets.UTF_8), String.class);
+        response.getWriter().print(deserialized);
     }
 }

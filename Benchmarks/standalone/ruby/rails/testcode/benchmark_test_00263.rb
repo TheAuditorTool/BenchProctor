@@ -12,13 +12,8 @@ class BenchmarkTest00263Controller < ApplicationController
   end
   def benchmark_test_00263
     user_input = ENV["APP_INPUT"] || ""
-    data = "%s" % user_input
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    system("echo " + processed)
-    render json: { status: "ok" }
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    redirect_to data, allow_other_host: true
   end
 end

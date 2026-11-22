@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 
 void benchmark_test_00177(int, char **)
 {
-    const char *user_input_env = std::getenv("PATH_INFO");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    char _fmt_buf[512];
-    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
-    std::string data = _fmt_buf;
-    const long _unit_cents = 1999;
-    long _qty = std::strtol(data.c_str(), nullptr, 10);
-    if (_qty < 0 || _qty > 100000) return;
-    long _total = _qty * _unit_cents;
-    std::cout << "total=" << _total << std::endl;
+    std::string user_input;
+    if (const char *user_input_cl = std::getenv("CONTENT_LENGTH")) {
+        long user_input_n = std::strtol(user_input_cl, nullptr, 10);
+        if (user_input_n > 0 && user_input_n < 1048576) {
+            user_input.resize((size_t)user_input_n);
+            std::cin.read(&user_input[0], user_input_n);
+            user_input.resize((size_t)std::cin.gcount());
+        }
+    }
+    std::string data;
+    if (!user_input.empty()) data = user_input;
+    const char *_found = std::strchr(data.c_str(), '=');
+    if (_found) std::cout << *_found << std::endl;
 }

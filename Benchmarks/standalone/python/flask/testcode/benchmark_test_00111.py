@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
+from flask import Flask, jsonify
 import os
-from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -17,14 +18,9 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00111", methods=["POST"])
-def BenchmarkTest00111():
-    host_value = request.headers.get('Host', '')
-    data = host_value if host_value else 'default'
-    base_dir = '/var/app/data'
-    full_path = os.path.realpath(os.path.join(base_dir, data))
-    if not full_path.startswith(base_dir + os.sep):
-        return jsonify({'error': 'forbidden'}), 403
-    checked_path = full_path
-    os.unlink(checked_path)
-    return jsonify({"result": "success"})
+@app.route("/BenchmarkTest00111/<path_param>", methods=["POST"])
+def BenchmarkTest00111(path_param):
+    path_value = path_param
+    data = '%s' % str(path_value)
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return jsonify({'length': len(ciphertext)}), 200

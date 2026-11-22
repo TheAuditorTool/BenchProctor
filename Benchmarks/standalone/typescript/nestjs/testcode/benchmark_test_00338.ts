@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
-import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,13 +17,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00338")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00338(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + data + "']", xmlDoc);
-    return { created: true };
+  async BenchmarkTest00338(@Headers("x-custom-header") hdr: string): Promise<unknown> {
+    const userInput = hdr || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+    return { token };
   }
 }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,10 +20,10 @@ public class BenchmarkTest00133 {
     }
 
     @GetMapping("/BenchmarkTest00133")
-    public void BenchmarkTest00133(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        String data = originValue.isEmpty() ? "default" : originValue;
-        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+    public void BenchmarkTest00133(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        long randValue = java.util.random.RandomGenerator.of("SecureRandom").nextLong() ^ authHeader.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

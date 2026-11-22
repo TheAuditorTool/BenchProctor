@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
-require "socket"
 
 class BenchmarkTest00169 < Sinatra::Base
   before do
@@ -20,10 +18,17 @@ class BenchmarkTest00169 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00169" do
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
-    data = user_input.split(/[ \t]+/).join(" ")
-    TCPSocket.new(data, 80).close
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    content_type :html
+    stream do |out|
+      out << "<div>" + processed + "</div>"
+    end
   end
 end

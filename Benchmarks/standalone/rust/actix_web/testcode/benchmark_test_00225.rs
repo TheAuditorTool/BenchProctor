@@ -1,18 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::HttpResponse;
+use tokio::process::Command;
 
 #[actix_web::post("/benchmark_test_00225")]
-pub async fn benchmark_test_00225(web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let user_id = query.get("id").cloned().unwrap_or_default();
-    let _prefix: String = user_id.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => user_id.to_lowercase(),
-        "f" => user_id.to_uppercase(),
-        _ => user_id.trim().to_string(),
-    };
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+pub async fn benchmark_test_00225() -> HttpResponse {
+    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
+    let (payload, _origin) = (env_value.clone(), "http");
+    let data = payload;
+    Command::new("sh").arg("-c").arg(format!("cat {}", data)).output().await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

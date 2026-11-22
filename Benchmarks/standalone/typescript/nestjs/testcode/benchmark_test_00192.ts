@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req, BadRequestException } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as ldapjs from "ldapjs";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import knex from "knex";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,15 +21,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00192")
-  async BenchmarkTest00192(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  async BenchmarkTest00192(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const data = nodeUtil.format("%s", userInput);
+    const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
+    await _knex.select("id", "name").from("users").whereRaw("name = ?", [data]);
     return { created: true };
   }
 }

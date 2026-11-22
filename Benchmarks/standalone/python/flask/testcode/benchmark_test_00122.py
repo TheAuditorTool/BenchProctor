@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import io
+import defusedxml.ElementTree
 from flask import Flask, request, jsonify
-import json
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
 
 
 app = Flask(__name__)
@@ -23,11 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00122", methods=["POST"])
 def BenchmarkTest00122():
-    origin_value = request.headers.get('Origin', '')
-    try:
-        data = json.loads(origin_value).get('value', origin_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = origin_value
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = (lambda v: v.strip())(json_value)
+    for _event, element in defusedxml.ElementTree.iterparse(io.BytesIO(str(data).encode()), events=('end',)):
+        element.clear()
+    return jsonify({"result": "success"})

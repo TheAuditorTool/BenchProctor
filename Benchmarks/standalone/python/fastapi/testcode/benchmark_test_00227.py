@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from pydantic import BaseModel
-from fastapi.responses import JSONResponse
+import json
+import os
+from starlette.responses import JSONResponse
 
 
-class UserInput(BaseModel):
-    payload: str = ''
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -24,9 +26,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00227")
-async def BenchmarkTest00227(request: Request, req: UserInput):
-    json_value = req.payload
-    data, _sep, _rest = str(json_value).partition('\x00')
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+async def BenchmarkTest00227(request: Request):
+    env_value = os.environ.get('APP_INPUT', '')
+    reader = make_reader(env_value)
+    data = reader()
+    parsed = json.loads(data)
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

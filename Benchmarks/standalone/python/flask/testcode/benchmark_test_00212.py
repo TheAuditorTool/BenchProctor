@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import secrets
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+import json
 from app_runtime import db
 
 
@@ -20,8 +20,14 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00212", methods=["POST"])
 def BenchmarkTest00212():
-    field_value = request.form.get('field', '')
-    data = '%s' % (field_value,)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    try:
+        data = json.loads(db_value).get('value', db_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = db_value
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return jsonify({'error': 'unknown plan'}), 404
+    value = label.upper()
+    return jsonify({'plan': value}), 200

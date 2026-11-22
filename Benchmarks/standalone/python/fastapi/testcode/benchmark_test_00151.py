@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import json
+import io
+import xml.sax
+from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,16 +23,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00151")
 async def BenchmarkTest00151(request: Request):
-    ua_value = request.headers.get('user-agent', '')
-    try:
-        data = json.loads(ua_value).get('value', ua_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = ua_value
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = (lambda v: v.strip())(db_value)
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return {"updated": True}

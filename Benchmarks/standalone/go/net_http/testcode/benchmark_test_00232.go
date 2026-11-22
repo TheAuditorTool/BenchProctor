@@ -3,48 +3,38 @@ package testcode
 
 import (
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00232(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
+	originValue := r.Header.Get("Origin")
 	relayPrefix := ""
-	if len(headerValue) > 0 {
-		relayPrefix = strings.ToLower(headerValue[:1])
+	if len(originValue) > 0 {
+		relayPrefix = strings.ToLower(originValue[:1])
 	}
 	var data string
 	switch relayPrefix {
 	case "h":
-		data = headerValue
+		data = originValue
 	case "f":
-		data = headerValue
+		data = originValue
 	default:
-		data = headerValue
+		data = originValue
 	}
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-	processed := data
 	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
 	if ldapErr != nil {
 		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	isAdmin, cmpErr := ldapConn.Compare("uid="+data+",ou=people,dc=example,dc=com", "employeeType", "admin")
+	if cmpErr != nil {
+		http.Error(w, cmpErr.Error(), http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("X-Directory-Admin", strconv.FormatBool(isAdmin))
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

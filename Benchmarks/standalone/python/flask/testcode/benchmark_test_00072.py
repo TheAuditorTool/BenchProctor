@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import subprocess
 from flask import Flask, request, jsonify
-import defusedxml.ElementTree
 
 
 app = Flask(__name__)
@@ -19,10 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00072", methods=["POST"])
 def BenchmarkTest00072():
-    field_value = request.form.get('field', '')
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    defusedxml.ElementTree.fromstring(str(data))
+    header_value = request.headers.get('X-Custom-Header', '')
+    data = header_value if header_value else 'default'
+    subprocess.Popen('echo ' + str(data), shell=True).wait()
     return jsonify({"result": "success"})

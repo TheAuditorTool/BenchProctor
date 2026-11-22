@@ -3,6 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00098 < Sinatra::Base
   before do
@@ -18,20 +21,12 @@ class BenchmarkTest00098 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00098" do
-    user_input = request.cookies["session_token"].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    redirect target_url
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = user_input.gsub("\u0000", "")
+    prng = Random.new
+    token = prng.bytes(16).unpack1("H*")
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

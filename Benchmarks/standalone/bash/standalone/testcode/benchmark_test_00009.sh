@@ -2,14 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00009() {
-  user_input="$HTTP_USER_AGENT"
-  _captured="${user_input}"
-  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
-  data=$(make_reader)
-  _bool_re='^(true|false|1|0)$'
-  if [[ ! "$data" =~ $_bool_re ]]; then echo "invalid bool" >&2; exit 1; fi
-  parsed_bool="$data"
-  xmllint --xpath "//user[name='$parsed_bool']" /var/data/users.xml
+  user_input="$1"
+  data="${user_input//$'\x00'/}"
+  cat "/var/app/data/$data"
 }
 
 benchmark_test_00009 "$@"

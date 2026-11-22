@@ -2,33 +2,27 @@
 package testcode
 
 import (
-	"io"
-	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00019(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
+	headerValue := c.GetHeader("X-Custom-Header")
+	relayPrefix := ""
+	if len(headerValue) > 0 {
+		relayPrefix = strings.ToLower(headerValue[:1])
 	}
-	xmlBody := string(rawBytes)
-	data := strings.Join(strings.FieldsFunc(xmlBody, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
-		return
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = headerValue
+	case "f":
+		data = headerValue
+	default:
+		data = headerValue
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
+	c.Writer.Header().Add("Set-Cookie", "session=" + url.QueryEscape(data) + "; Path=/; Secure; HttpOnly; SameSite=Strict")
 	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -8,15 +8,12 @@ class BenchmarkTest00228Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $userInput = $request->getContent();
+        $data = (!empty($userInput)) ? $userInput : '';
+        $salt = random_bytes(16);
+        $rc4 = new \phpseclib4\Crypt\RC4();
+        $rc4->setKey(hash_hmac('sha256', $salt, (string) getenv('DATA_ENC_KEY'), true));
+        $ciphertext = $salt . $rc4->encrypt((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

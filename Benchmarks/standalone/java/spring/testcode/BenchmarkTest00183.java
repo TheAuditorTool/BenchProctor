@@ -20,19 +20,22 @@ public class BenchmarkTest00183 {
     }
 
     @GetMapping("/BenchmarkTest00183")
-    public void BenchmarkTest00183(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : authHeader.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
-        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
-        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        javax.crypto.SecretKey key = keyGen.generateKey();
-        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
-        byte[] ct = cipher.doFinal(data.getBytes());
-        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+    public void BenchmarkTest00183(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = String.join(" ", originValue.split("[ \\t]+"));
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        String boundedVal = data;
+        String formulaSource = "public class Formula implements java.util.function.Supplier<Object> { public Object get() { return " + boundedVal + "; } }";
+        javax.tools.JavaFileObject formulaUnit = new javax.tools.SimpleJavaFileObject(java.net.URI.create("string:///Formula.java"), javax.tools.JavaFileObject.Kind.SOURCE) { @Override public CharSequence getCharContent(boolean ignoreEncodingErrors) { return formulaSource; } };
+        java.nio.file.Path formulaOut = java.nio.file.Files.createTempDirectory("formula");
+        javax.tools.JavaCompiler formulaCompiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        boolean formulaCompiled = formulaCompiler.getTask(null, null, null, java.util.List.of("-d", formulaOut.toString()), null, java.util.List.of(formulaUnit)).call();
+        if (!formulaCompiled) { response.sendError(422, "formula did not compile"); return; }
+        try (java.net.URLClassLoader formulaLoader = new java.net.URLClassLoader(new java.net.URL[]{ formulaOut.toUri().toURL() })) {
+            Object formulaValue = ((java.util.function.Supplier<?>) formulaLoader.loadClass("Formula").getDeclaredConstructor().newInstance()).get();
+            response.setHeader("X-Formula-Value", String.valueOf(formulaValue));
+        }
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

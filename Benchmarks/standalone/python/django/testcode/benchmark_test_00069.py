@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
 
 
 def BenchmarkTest00069(request):
-    user_id = request.GET.get('id', '')
-    try:
-        data = json.loads(user_id).get('value', user_id)
-    except (json.JSONDecodeError, AttributeError):
-        data = user_id
-    resp = JsonResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    upload_name = request.FILES['upload'].name
+    if upload_name:
+        data = upload_name
+    else:
+        data = ''
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    value = label.upper()
+    return JsonResponse({'plan': value}, status=200)

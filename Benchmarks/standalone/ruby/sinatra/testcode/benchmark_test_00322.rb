@@ -18,12 +18,10 @@ class BenchmarkTest00322 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00322" do
-    user_input = params[:id].to_s
+    user_input = params[:multipart_field].to_s
     data = ''
     user_input.split(',').each { |token| data = token }
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    eval(parsed_bool)
+    Object.new.instance_eval(data.to_s)
     content_type :json
     JSON.generate({ status: "ok" })
   end

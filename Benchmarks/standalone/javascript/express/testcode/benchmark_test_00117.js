@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const { db } = require("./shared");
 
 async function BenchmarkTest00117(req, res) {
-  const userInput = req.headers["x-custom-header"] || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  net.connect(80, new URL(String(data)).hostname);
-  res.json({ done: true });
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  return res.status(302).set("Location", String(data)).end();
 }
 
 module.exports = { BenchmarkTest00117 };

@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-const net = require("net");
+const { db } = require("./shared");
+const crypto = require("crypto");
+const fs = require("fs");
+const nodeUtil = require("util");
 
 async function BenchmarkTest00105(req, res) {
-  const { createClient } = require("redis");
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  const data = Buffer.from(userInput, "utf-8").toString();
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = nodeUtil.format("%s", userInput);
+  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
+  const _siv = crypto.randomBytes(12);
+  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
+  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
+  const _stag = _scipher.getAuthTag();
+  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
   res.json({ done: true });
 }
 

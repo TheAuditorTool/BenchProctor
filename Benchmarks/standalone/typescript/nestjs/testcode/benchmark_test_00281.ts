@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Headers, Post, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as ldapjs from "ldapjs";
+import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,10 +20,10 @@ export class BenchmarkController {
   @Post("BenchmarkTest00281")
   async BenchmarkTest00281(@Headers("authorization") auth: string): Promise<unknown> {
     const userInput = auth || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+    const [data] = String(userInput).split(',');
+    if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    childProcess.spawn("echo " + processed, { shell: true, stdio: "inherit" });
     return { created: true };
   }
 }

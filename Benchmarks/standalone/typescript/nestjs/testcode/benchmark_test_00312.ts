@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as nodeUtil from "util";
+import * as fs from "fs";
+import * as path from "path";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,11 +20,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00312")
-  async BenchmarkTest00312(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const data = nodeUtil.format("%s", userInput);
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    const value = (row as any).name;
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00312(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = String(userInput).split(/[ \t]+/).join(" ");
+    const resolved = path.resolve("/var/app/data", data);
+    if (!resolved.startsWith("/var/app/data/")) { throw new ForbiddenException({error:"forbidden"}); }
+    const checkedPath = resolved;
+    fs.writeFileSync(checkedPath, "data");
     return { created: true };
   }
 }

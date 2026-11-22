@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
 import os
-from app_runtime import db
 from fastapi.responses import JSONResponse
 
 
@@ -23,9 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00234")
 async def BenchmarkTest00234(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    parts = str(comment_value).split(',')
-    data = ' '.join(parts)
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
+    origin_value = request.headers.get('origin', '')
+    data = '%s' % (origin_value,)
+    os.unlink('/var/app/data/' + str(data))
     return {"updated": True}

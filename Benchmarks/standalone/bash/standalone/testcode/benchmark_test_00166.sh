@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00166() {
-  user_input="$HTTP_REFERER"
-  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
-  data=$(normalize "$user_input")
-  _rest="${data#*://}"
-  exec 3<>"/dev/tcp/${_rest%%[/:]*}/80"
+  user_input="$QUERY_STRING"
+  data=$(printf "%b" "${user_input//%/\\x}")
+  sqlite3 /var/app/data/app.db "SELECT * FROM users WHERE id = '$data'"
 }
 
 benchmark_test_00166 "$@"

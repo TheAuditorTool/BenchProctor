@@ -8,11 +8,10 @@ class BenchmarkTest00315Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->json('variables.input', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
+        return response()->json(['ok' => 1]);
     }
 }

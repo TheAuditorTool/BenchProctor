@@ -2,23 +2,22 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"os/exec"
-	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00289(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(headerValue)
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	processed := data
-	cmd := exec.Command("python3", "-c", processed)
-	output, _ := cmd.CombinedOutput()
-	c.Data(200, "text/plain", output)
+	rawBody := string(rawBytes)
+	segments := strings.Split(rawBody, ",")
+	data := strings.Join(segments, " ")
+	trustedSettings.Store("partner_callback_host", data)
+	c.JSON(200, gin.H{"code": "OK"})
 }

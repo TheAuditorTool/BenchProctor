@@ -5,8 +5,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.parsers.*;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,17 +32,19 @@ public class BenchmarkTest00195 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00195")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00195(@jakarta.validation.constraints.Size(max = 4096) @FormDataParam("multipart_field") String multipartField, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(multipartValue.split(",")));
+    public Response BenchmarkTest00195(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uploadedName = java.util.Optional.ofNullable((String) request.getAttribute("uploadName")).orElse("");
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(uploadedName.split(",")));
         java.util.List<String> lowered = new java.util.ArrayList<>();
         while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
         String data = String.join(",", lowered);
-        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(data)));
+        java.util.Set<String> allowed = java.util.Set.of("config.json", "index.html");
+        if (!allowed.contains(data)) { return Response.status(403).build(); }
+        String checkedPath = "/var/app/data/" + data;
+        Files.write(Paths.get(checkedPath), "data".getBytes());
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

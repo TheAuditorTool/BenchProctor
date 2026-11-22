@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { Body, Controller, Post, Req, UsePipes, ValidationPipe, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -18,13 +22,16 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00001")
-  @UseInterceptors(FileInterceptor("file"))
-  async BenchmarkTest00001(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
-    const userInput = file?.originalname || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
-    eval(processed);
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00001(@Body() dto: UserInputDto, @Req() req: Request): Promise<unknown> {
+    const userInput = dto.payload;
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    if (!/^(asc|desc|name|created)$/.test(String(data))) { throw new BadRequestException({error:"invalid"}); }
+    const processed = data;
+    req.app.locals.announcement = String(processed);
     return { created: true };
   }
 }

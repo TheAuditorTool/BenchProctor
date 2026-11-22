@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
+import random
 import json
+from app_runtime import db
 
 
 def BenchmarkTest00045(request):
-    graphql_var = json.loads(request.body or b'{}').get('variables', {}).get('input', '')
-    if graphql_var:
-        data = graphql_var
-    else:
-        data = ''
-    resp = JsonResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = json.loads(db_value).get('value', '')
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JsonResponse({'token': str(token)}, status=200)

@@ -2,18 +2,17 @@
 package testcode
 
 import (
-	"strconv"
-	"strings"
+	"fmt"
+	"math/rand/v2"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00066(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(dbValue)
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	userID := c.Query("id")
+	tokenRNG := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	apiToken := fmt.Sprintf("%016x", tokenRNG.Uint64())
+	DB.Exec("INSERT INTO api_tokens (label, token) VALUES ($1, $2)", userID, apiToken)
+	c.JSON(http.StatusOK, map[string]string{"token": apiToken})
 }

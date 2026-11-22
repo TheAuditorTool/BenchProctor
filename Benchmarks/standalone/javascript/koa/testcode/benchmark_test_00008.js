@@ -2,13 +2,11 @@
 const crypto = require("crypto");
 
 const BenchmarkTest00008 = async (ctx) => {
-  const userInput = ctx.request.body || "";
-  const pending = String(userInput).split(',');
-  const collected = [];
-  while (pending.length) { collected.push(pending.shift()); }
-  const data = collected.join(',');
-  crypto.createHash("sha256").update(data).digest("hex");
-  ctx.body = { ack: true };
+  const userInput = ctx.query.id || "";
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  const token = crypto.randomUUID() + "-" + String(data).slice(0, 8);
+  ctx.body = { token }; return;
 }
 
 module.exports = { BenchmarkTest00008 };

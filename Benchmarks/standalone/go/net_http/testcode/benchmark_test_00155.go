@@ -2,23 +2,22 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"regexp"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00155(w http.ResponseWriter, r *http.Request) {
-	pathValue := strings.TrimPrefix(r.URL.Path, "/api/")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", pathValue)
-	data := relayBuilder.String()
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	data := strings.Join(strings.FieldsFunc(dbValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		http.Error(w, "malformed order", http.StatusBadRequest)
 		return
 	}
-	processed := data
-	os.WriteFile("/var/app/data/"+processed, []byte("data"), 0644)
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	orderTotal := totalNode.InnerText()
+	RespondJSON(w, http.StatusOK, map[string]string{"total": orderTotal})
 }

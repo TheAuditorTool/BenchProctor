@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00006(headers: HeaderMap) -> impl IntoResponse {
-    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let transform = |v: String| v.trim().to_string();
-    let data = transform(forwarded_ip.clone());
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00006(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let user_id = params.get("id").cloned().unwrap_or_default();
+    let data = match user_id.chars().next() { Some(_) => user_id.clone(), None => "default".to_string() };
+    let _ = tokio::fs::read_to_string(format!("/var/app/data/{}", data)).await;
     Json(serde_json::json!({"count": 0})).into_response()
 }

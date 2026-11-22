@@ -8,10 +8,10 @@ class BenchmarkTest00125Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        session(['data' => (string) $data]);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->json('payload', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        $html = \Illuminate\Support\Facades\Blade::render('<div class="comment">{!! $comment !!}</div>', ['comment' => $data]);
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

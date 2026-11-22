@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.net.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,38 +19,26 @@ public class BenchmarkTest00203 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS mq_messages (id INTEGER PRIMARY KEY, queue VARCHAR DEFAULT '' NOT NULL, body VARCHAR DEFAULT '' NOT NULL)");
-                stmt.execute("MERGE INTO mq_messages t USING (VALUES (1, 'msg-001')) s(id, body) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, body) VALUES (s.id, s.body)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-    private static String dbReadColumn(String sql) {
-        try (var stmt = connection.createStatement();
-             var rs = stmt.executeQuery(sql)) {
-            return rs.next() ? rs.getString(1) : "";
-        } catch (java.sql.SQLException e) {
-            return "";
+    @PostMapping(path="/BenchmarkTest00203", consumes="text/plain")
+    public void BenchmarkTest00203(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(rawData.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { response.sendError(400); return; }
+        String boundedVal = data;
+        String formulaSource = "public class Formula implements java.util.function.Supplier<Object> { public Object get() { return " + boundedVal + "; } }";
+        javax.tools.JavaFileObject formulaUnit = new javax.tools.SimpleJavaFileObject(java.net.URI.create("string:///Formula.java"), javax.tools.JavaFileObject.Kind.SOURCE) { @Override public CharSequence getCharContent(boolean ignoreEncodingErrors) { return formulaSource; } };
+        java.nio.file.Path formulaOut = java.nio.file.Files.createTempDirectory("formula");
+        javax.tools.JavaCompiler formulaCompiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        boolean formulaCompiled = formulaCompiler.getTask(null, null, null, java.util.List.of("-d", formulaOut.toString()), null, java.util.List.of(formulaUnit)).call();
+        if (!formulaCompiled) { response.sendError(422, "formula did not compile"); return; }
+        try (java.net.URLClassLoader formulaLoader = new java.net.URLClassLoader(new java.net.URL[]{ formulaOut.toUri().toURL() })) {
+            Object formulaValue = ((java.util.function.Supplier<?>) formulaLoader.loadClass("Formula").getDeclaredConstructor().newInstance()).get();
+            response.setHeader("X-Formula-Value", String.valueOf(formulaValue));
         }
-    }
-
-    @GetMapping("/BenchmarkTest00203")
-    public void BenchmarkTest00203(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String messageBody = java.util.Optional.ofNullable(dbReadColumn("SELECT body FROM mq_messages ORDER BY id DESC LIMIT 1")).orElse("");
-        String data;
-        if (messageBody.length() > 256) { data = messageBody.substring(0, 256); }
-        else { data = messageBody; }
-        java.net.URI parsedUri = java.net.URI.create(data.contains("://") ? data : "https://" + data);
-        String resolvedIp = java.net.InetAddress.getByName(parsedUri.getHost()).getHostAddress();
-        if (java.util.regex.Pattern.compile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").matcher(resolvedIp).find()) { response.sendError(403); return; }
-        String targetUrl = data;
-        String socketRaw = String.valueOf(targetUrl);
-        String socketHost = socketRaw.contains("://") ? java.net.URI.create(socketRaw).getHost() : socketRaw;
-        new Socket(socketHost, 80).close();
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

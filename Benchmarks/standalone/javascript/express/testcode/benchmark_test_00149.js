@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00149(req, res) {
-  const { createClient } = require("redis");
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const userInput = req.headers.authorization || "";
+  const [data] = String(userInput).split(',');
+  if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
   const processed = data;
-  await db.query("SELECT * FROM users ORDER BY " + processed);
+  childProcess.spawn("echo " + processed, { shell: true, stdio: "inherit" });
   res.json({ done: true });
 }
 

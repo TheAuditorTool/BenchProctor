@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.*;
-import java.net.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,19 +30,29 @@ public class BenchmarkTest00209 {
         }
     }
 
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+    private static final class EntityManagers {
+        static final jakarta.persistence.EntityManagerFactory FACTORY = jakarta.persistence.Persistence.createEntityManagerFactory("appPU");
+    }
+
     @GET
     @Path("/BenchmarkTest00209")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00209(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String hostValue = host != null ? host : "";
-        java.util.Properties property = new java.util.Properties();
-        property.setProperty("value", hostValue);
-        String data = property.getProperty("value", "");
-        try {
-            java.net.http.HttpRequest httpReq = java.net.http.HttpRequest.newBuilder(java.net.URI.create(data)).GET().build();
-            java.net.http.HttpResponse<String> httpResp = java.net.http.HttpClient.newHttpClient().send(httpReq, java.net.http.HttpResponse.BodyHandlers.ofString());
-            response.setHeader("X-Fetch-Status", String.valueOf(httpResp.statusCode()));
-        } catch (Exception e) { return Response.status(502).build(); }
+    public Response BenchmarkTest00209(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        java.util.Map.Entry<String,String> edge = java.util.Map.entry(authHeader, "json");
+        String data = edge.getKey();
+        jakarta.persistence.EntityManager em = EntityManagers.FACTORY.createEntityManager();
+        em.createNativeQuery("SELECT id, name FROM users WHERE name = '" + data + "'").getResultList();
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

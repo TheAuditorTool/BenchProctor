@@ -21,10 +21,10 @@ class BenchmarkTest00282 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00282" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    token = rand(1000000)
+    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    DB.fetch("SELECT * FROM users WHERE id = '" + data + "'").all
     content_type :json
     JSON.generate({ status: "ok" })
   end

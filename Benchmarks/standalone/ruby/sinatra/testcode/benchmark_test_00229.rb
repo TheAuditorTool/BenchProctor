@@ -3,6 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "bunny"
+require "open-uri"
 
 class BenchmarkTest00229 < Sinatra::Base
   before do
@@ -18,9 +20,10 @@ class BenchmarkTest00229 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00229" do
-    user_input = params[:q].to_s
-    data = user_input ? user_input : ''
-    system("echo " + data)
+    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    URI.open(data).read
     content_type :json
     JSON.generate({ status: "ok" })
   end

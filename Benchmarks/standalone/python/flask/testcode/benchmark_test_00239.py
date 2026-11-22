@@ -1,14 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -26,13 +19,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00239", methods=["POST"])
 def BenchmarkTest00239():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = RequestPayload(env_value).value
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return jsonify({'allocated': allocated}), 200
+    cookie_value = request.cookies.get('session_token', '')
+    pending = list(str(cookie_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    os.unlink('/var/app/data/' + str(data))
+    return jsonify({"result": "success"})

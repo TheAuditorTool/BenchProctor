@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,19 +21,14 @@ public class BenchmarkTest00139 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00139")
-    public void BenchmarkTest00139(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
-        String data = transform.apply(originValue);
-        String processed = data.matches("^(admin|user|guest|service)$") ? data : "admin";
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + processed + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+    @GetMapping("/BenchmarkTest00139/{pathId}")
+    public void BenchmarkTest00139(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        java.util.Properties property = new java.util.Properties();
+        property.setProperty("value", pathValue);
+        String data = property.getProperty("value", "");
+        if (!data.matches("^[a-zA-Z0-9 _.#~\\-]+$")) { response.sendError(400); return; }
+        Files.delete(Paths.get("/var/app/data/" + data));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors, BadRequestException } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,10 +18,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00043")
-  async BenchmarkTest00043(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const data = `${userInput}`;
-    await db.query("SELECT * FROM users WHERE id = $1", [data]);
-    return { created: true };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00043(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const emailMatch = String(data).match(/@([A-Za-z0-9.-]+)$/);
+    if (!emailMatch) { throw new BadRequestException({ error: "not an email address" }); }
+    const domain = emailMatch[1];
+    return { domain };
   }
 }

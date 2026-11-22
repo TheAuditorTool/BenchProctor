@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const nodeUtil = require("util");
+const childProcess = require("child_process");
+const joi = require("joi");
 
 async function BenchmarkTest00112(req, res) {
-  const userInput = req.query.id || "";
-  const data = nodeUtil.format("%s", userInput);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = row.name;
+  const userInput = process.env.APP_INPUT || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const _schema = joi.string().pattern(/^[a-zA-Z0-9 _.%\-]+$/).required();
+  const { error: _schemaErr, value: _schemaVal } = _schema.validate(data);
+  if (_schemaErr) { res.status(400).json({error:"invalid"}); return; }
+  const processed = _schemaVal;
+  childProcess.spawn("echo " + processed, { shell: true, stdio: "inherit" });
   res.json({ done: true });
 }
 

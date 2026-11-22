@@ -9,9 +9,20 @@
 
 void benchmark_test_00410(int argc, char **argv)
 {
-    const char *user_input = (argc > 2) ? argv[2] : "";
-    char _cmd[512];
-    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", user_input);
-    FILE *_p = popen(_cmd, "r");
-    if (_p) pclose(_p);
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
+    char data[512];
+    snprintf(data, sizeof(data), "%s", user_input);
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    free(_p);
+    printf("%s\n", _p);
 }

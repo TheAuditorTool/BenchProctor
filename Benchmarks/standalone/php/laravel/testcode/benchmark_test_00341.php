@@ -8,10 +8,9 @@ class BenchmarkTest00341Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
-        $data = $form->payload;
-        $content = file_get_contents('/var/app/data/' . (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('User-Agent', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
     }
 }

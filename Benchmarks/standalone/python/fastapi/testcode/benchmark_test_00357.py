@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
+from urllib.parse import urlparse
+import requests
 from starlette.responses import JSONResponse
-from app_runtime import db
+import socket
+import urllib.parse
+import re
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -24,11 +24,17 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00357")
-async def BenchmarkTest00357(request: Request, req: UserInput):
-    json_value = req.payload
-    data = str(json_value).replace('\x00', '')
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+async def BenchmarkTest00357(request: Request):
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    pending = list(str(api_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    s = socket.create_connection((urllib.parse.urlparse(str(target_url)).hostname, 80))
+    s.close()
+    return {"updated": True}

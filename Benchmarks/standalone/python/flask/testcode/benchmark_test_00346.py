@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request
-from flask import jsonify
+import json
+from flask import Flask, request, jsonify
+import importlib
 
+
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 app = Flask(__name__)
 
@@ -19,6 +27,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00346", methods=["POST"])
 def BenchmarkTest00346():
-    referer_value = request.headers.get('Referer', '')
-    data, _sep, _rest = str(referer_value).partition('\x00')
-    return '<div>' + str(data) + '</div>'
+    forwarded_ip = request.headers.get('X-Forwarded-For', '')
+    pending = list(str(forwarded_ip).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
+    return jsonify({'parsed': str(parsed)}), 200

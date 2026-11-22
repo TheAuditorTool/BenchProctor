@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-const nodeUtil = require("util");
-const libxmljs = require("libxmljs");
+const path = require("path");
+const fs = require("fs");
 
 const BenchmarkTest00034 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const data = nodeUtil.format("%s", userInput);
-  libxmljs.parseXml(data, { noent: false, dtdload: false, nonet: true });
-  ctx.body = { ack: true };
+  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  const resolved = path.resolve("/var/app/data", data);
+  if (!resolved.startsWith("/var/app/data/")) { ctx.status = 403; ctx.body = {error:"forbidden"}; return; }
+  const checkedPath = resolved;
+  const fileContent = fs.readFileSync(checkedPath, "utf8");
+  ctx.body = fileContent;
 }
 
 module.exports = { BenchmarkTest00034 };

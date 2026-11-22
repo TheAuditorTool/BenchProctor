@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 class BenchmarkTest00006Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('Host', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        return redirect($data);
+        $userInput = \Illuminate\Support\Facades\Redis::get('user_data');
+        $data = sprintf('%s', $userInput);
+        file_get_contents((string)$data);
+        return response()->json(['ok' => 1]);
     }
 }

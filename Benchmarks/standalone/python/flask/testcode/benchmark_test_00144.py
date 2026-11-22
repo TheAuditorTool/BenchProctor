@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request
-from flask import jsonify
+import urllib.request
+from urllib.parse import urlparse
+import json
+from flask import Flask, request, jsonify
+import re
 
 
 app = Flask(__name__)
@@ -19,8 +22,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00144", methods=["POST"])
 def BenchmarkTest00144():
-    multipart_value = request.form.get('multipart_field', '')
-    data = str(multipart_value).replace('\x00', '')
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return content
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    data = json.loads(graphql_var).get('value', '')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    outbound = urllib.request.Request(str(target_url), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return jsonify({"result": "success"})

@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.fernet import Fernet
 from flask import Flask, request, jsonify
-from app_runtime import db
+import os
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -24,8 +20,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00157", methods=["POST"])
 def BenchmarkTest00157():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    reader = make_reader(json_value)
-    data = reader()
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return jsonify({"result": "success"})
+    xml_value = request.get_data(as_text=True)
+    pending = list(str(xml_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
+    return jsonify({'length': len(ciphertext)}), 200

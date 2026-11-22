@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00010 < Sinatra::Base
   before do
@@ -20,9 +19,14 @@ class BenchmarkTest00010 < Sinatra::Base
   end
   post "/benchmark_test_00010" do
     user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ envelope: envelope.to_pem })
   end
 end

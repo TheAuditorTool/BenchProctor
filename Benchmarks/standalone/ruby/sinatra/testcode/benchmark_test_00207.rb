@@ -3,10 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00207 < Sinatra::Base
   before do
@@ -22,10 +18,11 @@ class BenchmarkTest00207 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00207" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = "#{user_input}"
-    processed = CGI.escapeHTML(data)
-    content_type :html
-    "<div>" + processed + "</div>"
+    user_input = request.env["HTTP_REFERER"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    File.write("/var/uploads/" + data, "data")
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

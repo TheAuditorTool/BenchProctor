@@ -2,23 +2,31 @@
 package testcode
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
-	"regexp"
-
-	"github.com/go-playground/validator/v10"
+	"net/url"
 )
 
 func BenchmarkTest00279(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(userID, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	processed := userID
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, processed))
+	jsonValue := reqBody.Payload
+	data := fmt.Sprintf("%s", jsonValue)
+	dialURL, dialErr := url.Parse(data)
+	if dialErr != nil {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+	conn, err := net.Dial("tcp", net.JoinHostPort(dialURL.Hostname(), "80"))
+	if err == nil {
+		defer conn.Close()
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -23,7 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00256")
 async def BenchmarkTest00256(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data, _sep, _rest = str(raw_body).partition('\x00')
-    request.session['data'] = str(data)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = (lambda v: v.strip())(comment_value)
+    code = compile(str(data), '<rule>', 'exec')
+    exec(code)
     return {"updated": True}

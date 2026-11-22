@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.sql.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -41,19 +40,21 @@ public class BenchmarkTest00085 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
 
     @GET
     @Path("/BenchmarkTest00085")
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00085(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fileValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/var/app/data.txt")))).orElse("");
-        String data;
-        if (fileValue.length() > 256) { data = fileValue.substring(0, 256); }
-        else { data = fileValue; }
-        try (PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (ResultSet rs = ps.executeQuery()) { rs.next(); }
-        }
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        if (!userName.matches("^[a-zA-Z0-9 _.#%\\-]+$")) { return Response.status(400).build(); }
+        return Response.ok("<div>" + userName + "</div>", MediaType.TEXT_HTML).build();
     }
 }

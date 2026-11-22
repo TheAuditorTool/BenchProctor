@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
-from flask import request, jsonify
+import urllib.request
+from flask import Flask, request, jsonify
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -26,8 +26,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00038", methods=["POST"])
 def BenchmarkTest00038():
-    header_value = request.headers.get('X-Custom-Header', '')
-    reader = make_reader(header_value)
-    data = reader()
-    session['data'] = str(data)
+    referer_value = request.headers.get('Referer', '')
+    data = RequestPayload(referer_value).value
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
     return jsonify({"result": "success"})

@@ -21,10 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00301")
 async def BenchmarkTest00301(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = user_id if user_id else 'default'
+    auth_header = request.headers.get('authorization', '')
+    data, _sep, _rest = str(auth_header).partition('\x00')
     result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
     value = result['name']
     return JSONResponse({'name': str(value)}, status_code=200)

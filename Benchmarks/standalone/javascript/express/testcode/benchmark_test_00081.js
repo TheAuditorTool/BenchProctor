@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+const nodeUtil = require("util");
 
 async function BenchmarkTest00081(req, res) {
-  const userInput = req.headers["x-forwarded-for"] || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  JSON.parse(data);
+  const userInput = req.cookies.session_token || "";
+  const data = nodeUtil.format("%s", userInput);
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  req.session.data = String(parsedNum);
   res.json({ done: true });
 }
 

@@ -7,20 +7,20 @@
 #include <stdint.h>
 #include <time.h>
 
-struct c_payload { const char *value; };
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00121(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
+    const char *user_input = getenv("DB_ROW_VALUE");
     if (user_input == NULL) user_input = "";
-    struct c_payload _pd;
-    _pd.value = user_input;
-    const char *data = _pd.value;
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    char _first = _p[0];
-    free(_p);
-    printf("%c\n", _first);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    const char *arg = data;
+    if (strcmp(data, "/bin/echo") != 0 && strcmp(data, "/bin/cat") != 0) arg = "/bin/echo";
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", arg);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

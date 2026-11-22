@@ -3,31 +3,32 @@ package testcode
 
 import (
 	"net/http"
-	"strconv"
+	"regexp"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00195(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	pending := strings.Split(uaValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	hostValue := c.Request.Host
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(hostValue)
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		c.String(http.StatusBadRequest, "invalid input")
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	processed := data
+	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
 	}
+	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
 	c.JSON(200, gin.H{"code": "OK"})
 }

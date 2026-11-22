@@ -8,11 +8,10 @@ class BenchmarkTest00021Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->input('field', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        return response()->json(['ok' => 1]);
     }
 }

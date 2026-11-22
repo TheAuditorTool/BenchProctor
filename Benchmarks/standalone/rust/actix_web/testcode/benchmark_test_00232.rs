@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 
-#[actix_web::post("/benchmark_test_00232")]
-pub async fn benchmark_test_00232() -> HttpResponse {
-    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
-    let data = db_value.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
-    HttpResponse::Found().append_header(("Location", data.as_str())).finish()
+#[actix_web::post("/benchmark_test_00232/{id}")]
+pub async fn benchmark_test_00232(req: HttpRequest) -> HttpResponse {
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    crate::shared::store_session("data", &path_value);
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

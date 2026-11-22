@@ -3,6 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "securerandom"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00088 < Sinatra::Base
   before do
@@ -18,10 +22,15 @@ class BenchmarkTest00088 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00088" do
-    user_input = params[:q].to_s
-    data = "#{user_input}"
-    system("echo " + data)
+    user_input = params[:id].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    token = SecureRandom.hex(32)
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

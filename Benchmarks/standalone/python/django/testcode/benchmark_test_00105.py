@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ctypes
+import urllib.parse
 
 
 def BenchmarkTest00105(request):
-    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
-    data = ' '.join(str(header_value).split())
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JsonResponse({'wrapped': wrapped}, status=200)
+    xml_value = request.body.decode('utf-8')
+    data = str(xml_value).replace('\x00', '')
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = JsonResponse({'status': 'ok'})
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; HttpOnly; SameSite=Strict; Path=/'
+    return resp

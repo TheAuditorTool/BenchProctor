@@ -2,21 +2,31 @@
 package testcode
 
 import (
-	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00287(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	data := func(v string) string { return strings.TrimSpace(v) }(authHeader)
-	var _num float64
-	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
-		http.Error(w, "invalid number", http.StatusBadRequest)
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
+	data := applyPolicy(graphqlVar)
+	orderDoc, parseErr := xmlquery.Parse(strings.NewReader(data))
+	if parseErr != nil {
+		http.Error(w, "malformed order", http.StatusBadRequest)
 		return
 	}
-	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, boundedVal))
+	totalNode := xmlquery.FindOne(orderDoc, "//order/total")
+	if totalNode == nil {
+		http.Error(w, "order total missing", http.StatusBadRequest)
+		return
+	}
+	orderTotal := totalNode.InnerText()
+	RespondJSON(w, http.StatusOK, map[string]string{"total": orderTotal})
 }

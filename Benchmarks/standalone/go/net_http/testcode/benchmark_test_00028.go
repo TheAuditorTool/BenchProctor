@@ -2,27 +2,40 @@
 package testcode
 
 import (
-	"context"
-	"fmt"
 	"net/http"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00028(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
-	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
+	forwardedIP := r.Header.Get("X-Forwarded-For")
+	data := strings.Join(strings.FieldsFunc(forwardedIP, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
-	uploadName := header.Filename
-	segments := strings.Split(uploadName, ",")
-	data := strings.Join(segments, " ")
-	var _num float64
-	if _, _err := fmt.Sscanf(data, "%f", &_num); _err != nil {
-		http.Error(w, "invalid number", http.StatusBadRequest)
+	processed := data
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		http.Error(w, openErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	boundedVal := strconv.FormatFloat(_num, 'f', -1, 64)
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, boundedVal))
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	userNodes, queryErr := xmlquery.QueryAll(xmlDoc, "//user[@name='"+processed+"']")
+	if queryErr != nil {
+		http.Error(w, "invalid user name", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("X-User-Matches", strconv.Itoa(len(userNodes)))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

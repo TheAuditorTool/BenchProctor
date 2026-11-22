@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
+from http.cookies import SimpleCookie
 from flask import Flask, make_response
-from dataclasses import dataclass
 from flask import request, jsonify
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
@@ -27,9 +22,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00236", methods=["POST"])
 def BenchmarkTest00236():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    form = FormData(payload=graphql_var)
-    data = form.payload
+    host_value = request.headers.get('Host', '')
+    data, _sep, _rest = str(host_value).partition('\x00')
+    cookie = SimpleCookie()
+    cookie['session'] = str(data)
+    cookie['session'].update({'httponly': True, 'samesite': 'Strict', 'path': '/'})
     resp = make_response(jsonify({'status': 'ok'}))
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    resp.headers.add('Set-Cookie', cookie['session'].OutputString())
     return resp

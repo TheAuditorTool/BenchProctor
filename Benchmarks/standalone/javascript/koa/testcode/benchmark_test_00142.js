@@ -2,11 +2,12 @@
 
 const BenchmarkTest00142 = async (ctx) => {
   const userInput = ctx.request.headers["x-custom-header"] || "";
-  const data = String(userInput).slice(0, 200);
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  ctx.session.data = String(parsedNum);
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00142 };

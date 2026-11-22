@@ -2,12 +2,10 @@
 const crypto = require("crypto");
 
 async function BenchmarkTest00142(req, res) {
-  const userInput = process.env.APP_INPUT || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  const token = crypto.randomBytes(16).toString("hex");
-  res.json({ token, label: String(data) });
+  const userInput = req.headers["user-agent"] || "";
+  const data = String(userInput).slice(0, 200);
+  crypto.createHash("sha256").update(data).digest("hex");
+  res.json({ done: true });
 }
 
 module.exports = { BenchmarkTest00142 };

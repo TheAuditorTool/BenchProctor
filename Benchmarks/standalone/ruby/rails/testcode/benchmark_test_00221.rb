@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open3"
 
 class BenchmarkTest00221Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,14 @@ class BenchmarkTest00221Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00221
-    user_input = request.headers["Origin"].to_s
-    data = sprintf("%s", user_input)
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
+    user_input = request.user_agent.to_s
+    data = "%s" % user_input
+    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
+      render json: { error: "invalid" }, status: 400
       return
     end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    processed = data
+    Open3.capture2e("echo " + processed)
+    render json: { status: "ok" }
   end
 end

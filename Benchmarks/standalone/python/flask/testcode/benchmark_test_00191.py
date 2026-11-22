@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-import re
-import os
-from flask import Flask, jsonify
+import hashlib
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -21,11 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00191", methods=["POST"])
 def BenchmarkTest00191():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = '%s' % str(env_value)
-    if not re.fullmatch("^[a-zA-Z0-9 _.%~\\-]+$", data):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return jsonify({"result": "success"})
+    ua_value = request.headers.get('User-Agent', '')
+    data = '%s' % str(ua_value)
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

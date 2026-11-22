@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from app_runtime import db
+import subprocess
 
 
 def BenchmarkTest00209(request):
-    user_id = request.GET.get('id', '')
-    data = '%s' % (user_id,)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    header_value = request.META.get('HTTP_X_CUSTOM_HEADER', '')
+    data = header_value if header_value else 'default'
+    subprocess.Popen('echo ' + str(data), shell=True).wait()
     return JsonResponse({"saved": True})

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
+import { Controller, Headers, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as vm from "node:vm";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,14 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00207")
-  async BenchmarkTest00207(@Req() req: Request): Promise<unknown> {
-    const userInput = (req.body as string) || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    const _coerced = parseFloat(String(data));
-    const parsedNum = _coerced;
-    const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-    xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  async BenchmarkTest00207(@Headers("origin") origin: string): Promise<unknown> {
+    const userInput = origin || "";
+    const data = String(userInput).replace(/\u0000/g, "");
+    vm.runInNewContext(String(data), { Math });
     return { created: true };
   }
 }

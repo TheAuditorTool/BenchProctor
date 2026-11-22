@@ -1,6 +1,0 @@
-channels:
-  - name: inventory:inbound:0018
-    payload: json
-keys:
-  - pattern: inventory:record:{id}
-    ttl_seconds: 300

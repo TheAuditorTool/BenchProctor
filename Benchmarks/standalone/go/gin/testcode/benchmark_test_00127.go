@@ -2,24 +2,25 @@
 package testcode
 
 import (
+	"crypto/md5"
+	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00127(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
 		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	jsonValue := reqBody.Payload
-	data := strings.Join(strings.FieldsFunc(jsonValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	xmlBody := string(rawBytes)
+	segments := strings.Split(xmlBody, ",")
+	data := strings.Join(segments, " ")
+	hash := md5.Sum([]byte(data))
+	hashStr := fmt.Sprintf("%x", hash)
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

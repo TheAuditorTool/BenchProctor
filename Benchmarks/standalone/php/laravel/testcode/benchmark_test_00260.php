@@ -8,10 +8,12 @@ class BenchmarkTest00260Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD);
+        $userInput = $request->query('id', '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        session(['data' => (string) $parsedBool]);
         return response()->json(['ok' => 1]);
     }
 }

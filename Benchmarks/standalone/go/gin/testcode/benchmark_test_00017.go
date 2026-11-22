@@ -2,27 +2,16 @@
 package testcode
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00017(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	jsonValue := reqBody.Payload
-	pending := strings.Split(jsonValue, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(commentText)
+	processed := bluemonday.UGCPolicy().Sanitize(data)
+	htmlOut := "<div>" + processed + "</div>"
+	c.Data(200, "text/html", []byte(htmlOut))
 }

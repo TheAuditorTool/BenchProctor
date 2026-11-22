@@ -11,9 +11,12 @@ class BenchmarkTest00129Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00129
-    user_input = request.query_parameters[:q].to_s
-    data = "%s" % user_input
-    cookies[:session] = { value: data, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    hasher = OpenSSL::Digest.new("MD5")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
+    render json: { digest: digest }
   end
 end

@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from fastapi.responses import JSONResponse
+import numpy as np
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -20,9 +24,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00306")
-async def BenchmarkTest00306(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = raw_body.decode('utf-8', 'ignore') if isinstance(raw_body, bytes) else raw_body
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+async def BenchmarkTest00306(request: Request, req: UserInput):
+    json_value = req.payload
+    data = '%s' % (json_value,)
+    quantity = int(str(data))
+    total_cents = np.int32(quantity) * np.int32(1999)
+    return JSONResponse({'total_cents': int(total_cents)}, status_code=200)

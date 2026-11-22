@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstdlib>
-#include <cstring>
+#include <unistd.h>
+#include <fstream>
 #include <unordered_map>
 
 namespace httplib {
@@ -25,20 +25,14 @@ struct Client {
 };
 }
 
-void benchmark_test_00296(const httplib::Request &, httplib::Response &res)
+void benchmark_test_00296(const httplib::Request &req, httplib::Response &res)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
-    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    switch (user_input.empty() ? '\0' : user_input[0]) {
-        case '\0':
-            data.clear();
-            break;
-        default:
-            data = user_input;
-            break;
-    }
-    const char *_found = std::strchr(data.c_str(), '=');
-    if (_found) std::cout << *_found << std::endl;
+    std::string user_input = req.get_header_value("X-Custom-Header");
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::string _path = std::string("/var/app/data/") + data;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
     res.set_content("ok", "text/plain");
 }

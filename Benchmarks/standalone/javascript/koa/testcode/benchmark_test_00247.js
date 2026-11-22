@@ -2,8 +2,8 @@
 const fs = require("fs");
 
 const BenchmarkTest00247 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  const data = userInput != null ? userInput : '';
+  const userInput = ctx.request.body || "";
+  const data = String(userInput).slice(0, 200);
   fs.unlinkSync("/var/app/data/" + data);
   ctx.body = { ack: true };
 }

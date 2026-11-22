@@ -2,29 +2,34 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"strconv"
-
-	"github.com/go-ldap/ldap/v3"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00277(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
+	refererValue := r.Header.Get("Referer")
+	data := strings.Join(strings.FieldsFunc(refererValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
+	}
+	targetUrl := data
+	upstreamReq, err := http.NewRequest(http.MethodGet, targetUrl, nil)
 	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	uploadName := header.Filename
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+uploadName+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	w.Write(body)
 }

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
@@ -21,14 +20,20 @@ public class BenchmarkTest00114 {
     }
 
     @GetMapping("/BenchmarkTest00114")
-    public void BenchmarkTest00114(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
+    public void BenchmarkTest00114(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String prefix = userId.length() > 0 ? userId.substring(0, 1).toLowerCase() : "";
         String data;
-        if (authHeader.length() > 256) { data = authHeader.substring(0, 256); }
-        else { data = authHeader; }
-        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
-        response.addHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+        switch (prefix) {
+            case "h": data = userId.toLowerCase(); break;
+            case "f": data = userId.toUpperCase(); break;
+            default: data = userId.strip(); break;
+        }
+        java.net.URI parsed = java.net.URI.create(data);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { response.sendError(403); return; }
+        String targetUrl = data;
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.setHeader("Location", targetUrl);
     }
 }

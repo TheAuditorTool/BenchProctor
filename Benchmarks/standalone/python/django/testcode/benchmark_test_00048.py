@@ -1,16 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+import re
 
 
 def BenchmarkTest00048(request):
-    origin_value = request.META.get('HTTP_ORIGIN', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(origin_value)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    user_id = request.GET.get('id', '')
+    data = '{}'.format(user_id)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JsonResponse({'error': 'forbidden'}, status=400)
+    processed = data
+    exec(str(processed))
+    return JsonResponse({"saved": True})

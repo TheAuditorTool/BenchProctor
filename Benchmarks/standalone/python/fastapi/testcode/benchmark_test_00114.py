@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import re
+from Crypto.Hash import MD4
 from starlette.responses import JSONResponse
-import os
 
 
 app = FastAPI()
@@ -21,16 +19,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00114/{id}")
-async def BenchmarkTest00114(request: Request, id: str):
-    path_value = id
-    parts = []
-    for token in str(path_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+@app.post("/BenchmarkTest00114")
+async def BenchmarkTest00114(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data = raw_body if raw_body else 'default'
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

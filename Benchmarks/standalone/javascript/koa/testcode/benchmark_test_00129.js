@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-const http = require("http");
+const crypto = require("crypto");
 
 const BenchmarkTest00129 = async (ctx) => {
-  const userInput = ctx.query.id || "";
-  const formData = Object.freeze({ payload: userInput });
-  const data = formData.payload;
-  http.get(data);
+  const userInput = ctx.request.headers["user-agent"] || "";
+  const data = String(userInput).slice(0, 200);
+  crypto.createHash("sha256").update(data).digest("hex");
   ctx.body = { ack: true };
 }
 

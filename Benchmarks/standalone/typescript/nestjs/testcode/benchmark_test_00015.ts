@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Headers, Post, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as libxmljs from "libxmljs";
-import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -23,12 +17,9 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00015")
-  @UsePipes(new ValidationPipe())
-  async BenchmarkTest00015(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false } as libxmljs.XMLParseOptions);
-    return { created: true };
+  async BenchmarkTest00015(@Headers("host") host: string, @Res() res: Response): Promise<unknown> {
+    const userInput = host || "";
+    const data = String(userInput).replace(/\u0000/g, "");
+    return res.status(302).set("Location", String(data)).end();
   }
 }

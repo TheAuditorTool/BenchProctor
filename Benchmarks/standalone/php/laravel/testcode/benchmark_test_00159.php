@@ -9,11 +9,8 @@ class BenchmarkTest00159Controller
     public function __invoke(Request $request)
     {
         $userInput = $request->header('X-Custom-Header', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
-        return response()->json(['ok' => 1]);
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        return response(e($data))->header('Content-Type', 'text/html');
     }
 }

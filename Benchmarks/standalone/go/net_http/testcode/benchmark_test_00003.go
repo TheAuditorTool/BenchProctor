@@ -2,27 +2,34 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"io"
+	"context"
+	"encoding/json"
 	"net/http"
-	"strconv"
+	"strings"
 )
 
 func BenchmarkTest00003(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(rawBody)
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
+	jsonValue := reqBody.Payload
+	relayPrefix := ""
+	if len(jsonValue) > 0 {
+		relayPrefix = strings.ToLower(jsonValue[:1])
 	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	RespondJSON(w, http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = jsonValue
+	case "f":
+		data = jsonValue
+	default:
+		data = jsonValue
+	}
+	redisClient.HSet(context.Background(), "session:"+ctxString(r, ctxKeyUser), map[string]any{"display_name": data, "locale": "en"})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

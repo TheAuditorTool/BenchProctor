@@ -18,17 +18,31 @@ extern xmlDocPtr xmlReadMemory(const char *_buffer, int _size, const char *_url,
 extern void xmlFreeDoc(xmlDocPtr _doc);
 extern xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr _doc);
 extern xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *_str, xmlXPathContextPtr _ctxt);
+typedef struct _xmlParserCtxt *xmlParserCtxtPtr;
+extern xmlParserCtxtPtr xmlNewParserCtxt(void);
+extern xmlDocPtr xmlCtxtReadMemory(xmlParserCtxtPtr _ctxt, const char *_buffer, int _size, const char *_url, const char *_encoding, int _options);
+extern void xmlFreeParserCtxt(xmlParserCtxtPtr _ctxt);
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
 
 void benchmark_test_00012(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("DB_ROW_VALUE");
-    if (user_input == NULL) user_input = "";
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    xmlDocPtr _doc = xmlReadMemory(data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NOENT);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    long _clen = 0;
+    const char *_cl = getenv("CONTENT_LENGTH");
+    if (_cl != NULL) _clen = strtol(_cl, NULL, 10);
+    if (_clen > 0) {
+        size_t _rn = (size_t)_clen < sizeof(user_input_buf) - 1 ? (size_t)_clen : sizeof(user_input_buf) - 1;
+        size_t _got = fread(user_input_buf, 1, _rn, stdin);
+        user_input_buf[_got] = '\0';
+    }
+    const char *user_input = user_input_buf;
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    xmlParserCtxtPtr _pctx = xmlNewParserCtxt();
+    if (_pctx == NULL) return;
+    xmlDocPtr _doc = xmlCtxtReadMemory(_pctx, data, (int)strlen(data), "noname.xml", NULL, XML_PARSE_NONET);
     if (_doc) xmlFreeDoc(_doc);
+    xmlFreeParserCtxt(_pctx);
 }

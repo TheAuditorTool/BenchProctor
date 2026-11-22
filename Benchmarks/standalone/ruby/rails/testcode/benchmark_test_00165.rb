@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "base64"
 
 class BenchmarkTest00165Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +12,14 @@ class BenchmarkTest00165Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00165
-    user_input = cookies[:session_token].to_s
-    data = format("%<value>s", value: user_input)
-    digest = Digest::MD5.hexdigest(data.to_s)
-    render json: { status: "ok" }
+    user_input = request.headers["Authorization"].to_s
+    data = Base64.decode64(user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      render json: { error: "forbidden host" }, status: 403
+      return
+    end
+    target_url = data
+    redirect_to target_url, allow_other_host: true
   end
 end

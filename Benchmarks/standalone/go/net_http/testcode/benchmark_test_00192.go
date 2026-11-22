@@ -2,22 +2,23 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00192(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	data := strings.Join(strings.FieldsFunc(headerValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		http.Error(w, "not found", 404)
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", commentText)
+	data := relayBuilder.String()
+	query := fmt.Sprintf("SELECT * FROM users WHERE id = '%s'", data)
+	rows, err := DB.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	defer rows.Close()
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

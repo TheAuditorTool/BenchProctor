@@ -2,19 +2,18 @@
 package testcode
 
 import (
-	"encoding/hex"
-	"net/http"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00093(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
-		return
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	hexBytes, _ := hex.DecodeString(cookieValue)
-	data := string(hexBytes)
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	form := submissionForm{payload: graphqlVar}
+	data := form.payload
 	c.Set("data", data)
 }

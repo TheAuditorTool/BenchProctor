@@ -1,9 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives.ciphers import Cipher
+from starlette.responses import JSONResponse
+import os
+import hashlib
 from app_runtime import db
-from fastapi.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -22,7 +30,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00348")
 async def BenchmarkTest00348(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = (lambda v: v.strip())(api_value)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return {"updated": True}
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    reader = make_reader(db_value)
+    data = reader()
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    algorithm = ARC4(key)
+    encryptor = Cipher(algorithm, mode=None).encryptor()
+    ciphertext = encryptor.update(str(data).encode()) + encryptor.finalize()
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

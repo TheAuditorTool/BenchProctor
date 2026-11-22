@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00034Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        [$data] = [$userInput, 'http'];
-        session(['data' => (string) $data]);
+        $userInput = $request->header('X-Custom-Header', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        DB::select('SELECT * FROM users WHERE id = \'' . $data . '\'');
         return response()->json(['ok' => 1]);
     }
 }

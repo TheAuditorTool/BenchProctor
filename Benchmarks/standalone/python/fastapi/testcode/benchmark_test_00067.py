@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
+from app_runtime import db
+from fastapi.responses import JSONResponse
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -25,9 +21,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00067")
 async def BenchmarkTest00067(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    reader = make_reader(xml_value)
-    data = reader()
-    resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
-    return resp
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    data = (lambda v: v.strip())(upload_name)
+    db.execute('SELECT * FROM users WHERE id = :id', {'id': data})
+    return {"updated": True}

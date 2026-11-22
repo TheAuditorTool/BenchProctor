@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from dataclasses import dataclass
-from starlette.responses import JSONResponse
-import ctypes
+import ldap
+import os
+from fastapi.responses import JSONResponse
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -25,11 +20,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00167")
-async def BenchmarkTest00167(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    form = FormData(payload=raw_body)
-    data = form.payload
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JSONResponse({'wrapped': wrapped}, status_code=200)
+@app.post("/BenchmarkTest00167/{id}")
+async def BenchmarkTest00167(request: Request, id: str):
+    path_value = id
+    pending = list(str(path_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(data) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
+    return {"updated": True}

@@ -12,9 +12,7 @@ class BenchmarkTest00064Controller < ApplicationController
   end
   def benchmark_test_00064
     user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    token = rand(1000000)
-    render json: { status: "ok" }
+    data = "%s" % user_input
+    render html: ("<div>" + data + "</div>").html_safe
   end
 end

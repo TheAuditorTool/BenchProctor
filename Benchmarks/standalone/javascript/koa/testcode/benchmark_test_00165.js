@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
 
 const BenchmarkTest00165 = async (ctx) => {
-  const userInput = ctx.request.body || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  const userInput = ctx.request.headers.host || "";
+  const data = `${userInput}`;
+  const digest = await crypto.subtle.digest("SHA-1", Buffer.from(String(data)));
+  ctx.body = { fingerprint: Buffer.from(digest).toString("hex") }; return;
 }
 
 module.exports = { BenchmarkTest00165 };

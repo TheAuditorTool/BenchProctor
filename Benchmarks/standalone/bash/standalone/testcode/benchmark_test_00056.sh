@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00056() {
-  user_input="$(mysql -N -e 'SELECT name FROM users LIMIT 1')"
+  user_input="$QUERY_STRING"
   normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
   data=$(normalize "$user_input")
-  ldapsearch -x -b "dc=example,dc=com" "uid=$data"
+  printf '%s' "$data" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo CAST5 --allow-old-cipher-algos -o /var/app/run/record.gpg 3<<<"$DATA_ENC_KEY"
 }
 
 benchmark_test_00056 "$@"

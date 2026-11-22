@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,20 +30,18 @@ public class BenchmarkTest00012 {
         }
     }
 
-    @POST
+    @GET
     @Path("/BenchmarkTest00012")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00012(@FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uploadName = fileDetail.getFileName();
-        String data;
-        if (uploadName.length() > 256) { data = uploadName.substring(0, 256); }
-        else { data = uploadName; }
+    public Response BenchmarkTest00012(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Host") String host, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String hostValue = host != null ? host : "";
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", hostValue);
+        String data = sw.toString();
         java.net.URI parsed = java.net.URI.create(data);
         String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
         if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
         String targetUrl = data;
-        response.sendRedirect(targetUrl);
-        return Response.ok().build();
+        return Response.seeOther(java.net.URI.create(targetUrl)).build();
     }
 }

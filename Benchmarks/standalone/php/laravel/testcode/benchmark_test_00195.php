@@ -8,12 +8,10 @@ class BenchmarkTest00195Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('X-Forwarded-For', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
+        $userInput = $request->header('User-Agent', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $sealed = base64_decode((string)$data, true) ?: '';
+        $claims = openssl_decrypt(substr($sealed, 28), 'aes-256-gcm', getenv('DATA_ENC_KEY'), OPENSSL_RAW_DATA, substr($sealed, 0, 12), substr($sealed, 12, 16));
         return response()->json(['ok' => 1]);
     }
 }

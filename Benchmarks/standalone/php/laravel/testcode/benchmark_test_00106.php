@@ -8,11 +8,10 @@ class BenchmarkTest00106Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        $errno = 0; $errstr = '';
-        fsockopen((string)$data, 80, $errno, $errstr, 30);
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $data = ($userInput !== null) ? $userInput : '';
+        $sealed = base64_decode((string)$data, true) ?: '';
+        $claims = openssl_decrypt(substr($sealed, 28), 'aes-256-gcm', getenv('DATA_ENC_KEY'), OPENSSL_RAW_DATA, substr($sealed, 0, 12), substr($sealed, 12, 16));
         return response()->json(['ok' => 1]);
     }
 }

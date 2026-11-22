@@ -11,11 +11,8 @@ class BenchmarkTest00339Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00339
-    user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    render html: ("<div>" + data + "</div>").html_safe
+    user_input = Comment.first&.text.to_s
+    data = user_input.split(/[ \t]+/).join(" ")
+    send_data("<div>" + ERB::Util.html_escape(data) + "</div>", type: "text/html", disposition: "inline")
   end
 end

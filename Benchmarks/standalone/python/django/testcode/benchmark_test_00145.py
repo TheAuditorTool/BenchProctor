@@ -1,15 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import os
-from app_runtime import db
+import requests
+from django.contrib.auth.models import User
 
 
 def BenchmarkTest00145(request):
-    env_value = os.environ.get('APP_INPUT', '')
-    parts = str(env_value).split(',')
-    data = ' '.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JsonResponse({'error': 'not found'}, status=404)
-    value = result['name']
-    return JsonResponse({'name': str(value)}, status=200)
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    User.objects.extra(where=["name = '" + str(data) + "'"]).first()
+    return JsonResponse({"saved": True})

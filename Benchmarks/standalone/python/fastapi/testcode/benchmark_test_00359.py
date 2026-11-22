@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from pydantic import BaseModel
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import json
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -24,7 +20,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00359")
-async def BenchmarkTest00359(request: Request, req: UserInput):
-    json_value = req.payload
-    data = json_value if json_value else 'default'
-    return RedirectResponse(url=str(data))
+async def BenchmarkTest00359(request: Request):
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = '%s' % str(graphql_var)
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    eval(str(processed))
+    return {"updated": True}

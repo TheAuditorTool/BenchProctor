@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from app_runtime import db
-from fastapi.responses import JSONResponse
+import re
+from starlette.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -22,6 +26,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00099")
 async def BenchmarkTest00099(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
-    return RedirectResponse(url=str(data))
+    multipart_value = (await request.form()).get('multipart_field', '')
+    reader = make_reader(multipart_value)
+    data = reader()
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

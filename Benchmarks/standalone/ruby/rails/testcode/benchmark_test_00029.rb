@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00029Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,14 +12,13 @@ class BenchmarkTest00029Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00029
-    user_input = request.referer.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    user_input = params[:id].to_s
+    data = user_input ? user_input : ''
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

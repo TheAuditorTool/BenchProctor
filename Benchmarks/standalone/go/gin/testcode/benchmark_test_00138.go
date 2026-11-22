@@ -2,8 +2,9 @@
 package testcode
 
 import (
-	"crypto/md5"
-	"fmt"
+	"crypto/sha512"
+	"encoding/hex"
+	"io"
 	"net/http"
 	"strings"
 
@@ -11,9 +12,14 @@ import (
 )
 
 func BenchmarkTest00138(c *gin.Context) {
-	refererValue := c.GetHeader("Referer")
-	data := func(v string) string { return strings.TrimSpace(v) }(refererValue)
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
+	cookieValue, err := c.Cookie("session_token")
+	if err != nil {
+		c.String(http.StatusBadRequest, "missing cookie")
+		return
+	}
+	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
 	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as fs from "fs";
 
 export const BenchmarkTest00041 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req as any).file?.originalname as string) || "";
-  const [data] = String(userInput).split(',');
-  const fileContent = fs.readFileSync("/var/app/data/" + data, "utf8");
-  res.send(fileContent);
+  const userInput = (req.body as string) || "";
+  res.cookie("session", userInput, { secure: true, httpOnly: true, sameSite: "strict" });
+  res.json({ accepted: true });
 }

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
+import requests
+from urllib.parse import urlparse
 from starlette.responses import JSONResponse
-from app_runtime import db
+import re
 
 
 app = FastAPI()
@@ -23,10 +24,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00310")
 async def BenchmarkTest00310(request: Request):
     host_value = request.headers.get('host', '')
-    parts = []
-    for token in str(host_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    data = str(host_value).replace('\x00', '')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    requests.get(str(target_url))
+    return {"updated": True}

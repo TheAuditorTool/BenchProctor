@@ -8,12 +8,12 @@ class BenchmarkTest00329Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $data = base64_decode($userInput);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->getContent();
+        $data = vsprintf('%1$s', [$userInput]);
+        $salt = random_bytes(16);
+        $rc4 = new \phpseclib4\Crypt\RC4();
+        $rc4->setKey(hash_hmac('sha256', $salt, (string) getenv('DATA_ENC_KEY'), true));
+        $ciphertext = $salt . $rc4->encrypt((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

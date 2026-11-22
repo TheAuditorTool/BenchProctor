@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const childProcess = require("child_process");
 
 async function BenchmarkTest00040(req, res) {
   const userInput = req.params.id || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(data));
+  const data = decodeURIComponent(userInput);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  childProcess.spawn("echo " + processed, { shell: true, stdio: "inherit" });
   res.json({ done: true });
 }
 

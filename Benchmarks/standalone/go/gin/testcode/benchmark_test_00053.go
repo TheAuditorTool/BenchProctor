@@ -2,11 +2,6 @@
 package testcode
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -15,17 +10,24 @@ import (
 )
 
 func BenchmarkTest00053(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	var data string
-	for _, token := range strings.Split(dbValue, ",") {
-		data = token
+	userID := c.Query("id")
+	relayPrefix := ""
+	if len(userID) > 0 {
+		relayPrefix = strings.ToLower(userID[:1])
 	}
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := aes.NewCipher(keyHash[:])
-	gcm, _ := cipher.NewGCM(cipherBlock)
-	nonce := make([]byte, gcm.NonceSize())
-	rand.Read(nonce)
-	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
-	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = userID
+	case "f":
+		data = userID
+	default:
+		data = userID
+	}
+	content, err := os.ReadFile("/var/app/data/" + data)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	c.Data(200, "text/plain", content)
 }

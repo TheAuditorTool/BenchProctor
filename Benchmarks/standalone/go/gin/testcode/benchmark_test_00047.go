@@ -2,34 +2,22 @@
 package testcode
 
 import (
-	"encoding/json"
-	"fmt"
+	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
+	"os/exec"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00047(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
-	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	pending := strings.Split(graphqlVar, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	userID := c.Query("id")
+	hexBytes, _ := hex.DecodeString(userID)
+	data := string(hexBytes)
+	cmd := exec.Command("sh", "-c", "echo "+data)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	c.Data(200, "text/plain", output)
 }

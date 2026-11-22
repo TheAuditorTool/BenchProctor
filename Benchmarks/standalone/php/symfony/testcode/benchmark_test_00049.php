@@ -2,21 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00049', methods: ['POST'])]
 class BenchmarkTest00049Controller
 {
-    public function __invoke(Request $request, Connection $conn)
+    public function __invoke()
     {
-        $userInput = $request->headers->get('Host', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        if ($result === false) { return new JsonResponse(["error" => "not found"], 404); }
-        $value = $result['name'];
-        return new JsonResponse(["committed" => true]);
+        $userInput = file_get_contents('http://api.corp.lan/data');
+        $data = "{$userInput}";
+        return new RedirectResponse($data);
     }
 }

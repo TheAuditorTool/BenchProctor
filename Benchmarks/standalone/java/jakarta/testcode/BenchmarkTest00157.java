@@ -30,14 +30,32 @@ public class BenchmarkTest00157 {
         }
     }
 
-    @POST
-    @Path("/BenchmarkTest00157")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    private static java.sql.Connection connection;
+    static {
+        try {
+            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
+                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
+            }
+        } catch (java.sql.SQLException ignored) {}
+    }
+
+    @GET
+    @Path("/BenchmarkTest00157/{pathId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00157(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        String data = java.net.URLDecoder.decode(fieldValue, java.nio.charset.StandardCharsets.UTF_8);
-        String processed = data.matches("^(plain|markdown|html|text)$") ? data : "plain";
-        return Response.ok("<div>" + processed + "</div>", MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00157(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = java.net.URLDecoder.decode(pathValue, java.nio.charset.StandardCharsets.UTF_8);
+        String fetched;
+        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
+            ps.setString(1, data);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                fetched = rs.next() ? rs.getString("name") : null;
+            }
+        }
+        if (fetched == null) { return Response.status(404).build(); }
+        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

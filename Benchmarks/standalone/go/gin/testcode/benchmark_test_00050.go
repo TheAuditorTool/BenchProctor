@@ -2,27 +2,25 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00050(c *gin.Context) {
-	pathValue := c.Param("id")
-	var data string
-	for _, token := range strings.Split(pathValue, ",") {
-		data = token
-	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", dbValue)
+	data := relayBuilder.String()
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
 		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	processed := data
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(c.Writer, "<p>Results for %s</p>", processed)
 }

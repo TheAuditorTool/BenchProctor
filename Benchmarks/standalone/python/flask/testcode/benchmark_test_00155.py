@@ -19,7 +19,6 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00155", methods=["POST"])
 def BenchmarkTest00155():
-    header_value = request.headers.get('X-Custom-Header', '')
-    parts = str(header_value).split(',')
-    data = ' '.join(parts)
+    ua_value = request.headers.get('User-Agent', '')
+    data = (lambda v: v.strip())(ua_value)
     return '<div>' + str(data) + '</div>'

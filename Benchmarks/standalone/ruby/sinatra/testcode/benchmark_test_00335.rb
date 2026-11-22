@@ -18,12 +18,12 @@ class BenchmarkTest00335 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00335" do
-    user_input = ENV["APP_INPUT"] || ""
-    data = user_input ? user_input : ''
-    unless %w[ls cat date whoami].include?(data.to_s)
-      halt 400, JSON.generate({ error: "forbidden" })
-      return
-    end
-    system(data.to_s)
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    data = JSON.parse(user_input)["value"] rescue ""
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    eval(parsed_bool)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

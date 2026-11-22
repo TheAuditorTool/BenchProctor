@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
-import * as ldapjs from "ldapjs";
+import { Controller, createParamDecorator, ExecutionContext, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -20,13 +24,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00305")
-  async BenchmarkTest00305(): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-    ldapClient.on("error", () => {});
-    ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + data + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  async BenchmarkTest00305(@Cookies("session_token") cookieToken: string, @Req() req: Request): Promise<unknown> {
+    const userInput = cookieToken || "";
+    const data = nodeUtil.format("%s", userInput);
+    const _coerced = parseFloat(String(data));
+    const parsedNum = _coerced;
+    req.session.data = String(parsedNum);
     return { created: true };
   }
 }

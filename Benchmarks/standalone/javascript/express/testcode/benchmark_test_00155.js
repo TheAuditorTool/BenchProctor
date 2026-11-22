@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const fs = require("fs");
 
 async function BenchmarkTest00155(req, res) {
-  const userInput = req.body || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const _coerced = parseFloat(String(data));
-  const parsedNum = _coerced;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + parsedNum + "']", xmlDoc);
+  const userInput = req.headers.referer || "";
+  const data = String(userInput).slice(0, 200);
+  const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
+  if (!allowedFiles.has(data)) { res.status(403).json({error:"forbidden"}); return; }
+  const checkedPath = "/var/app/data/" + data;
+  fs.unlinkSync(checkedPath);
   res.json({ done: true });
 }
 

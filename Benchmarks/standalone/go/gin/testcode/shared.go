@@ -23,15 +23,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *sql.DB
 
-var mongoClient, _ = mongo.Connect(context.Background(), options.Client().ApplyURI(envOr("MONGO_URL", "mongodb://mongo:27017/app")))
+var mongoClient, _ = mongo.Connect(options.Client().ApplyURI(envOr("MONGO_URL", "mongodb://mongo:27017/app")))
 
 var redisClient = redis.NewClient(&redis.Options{Addr: "cache:6379"})
 
@@ -56,6 +56,8 @@ var storageKey = func() []byte {
 var lastRequestValue atomic.Value
 
 var loginAttempts atomic.Int64
+
+var trustedSettings sync.Map
 
 type requestEnvelope struct{ body string }
 

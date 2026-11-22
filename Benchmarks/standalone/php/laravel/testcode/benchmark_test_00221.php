@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00221Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->json('payload', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $digest = hash('sha256', (string)$data);
+        $userInput = file_get_contents('http://api.corp.lan/data');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $rows = DB::table('users')->where('id', $data)->get();
         return response()->json(['ok' => 1]);
     }
 }

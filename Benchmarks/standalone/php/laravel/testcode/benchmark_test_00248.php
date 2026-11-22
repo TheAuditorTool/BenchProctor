@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 class BenchmarkTest00248Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('Origin', '');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $digest = hash('sha256', (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = getenv('APP_INPUT') ?: '';
+        $data = ($userInput !== null) ? $userInput : '';
+        $quantity = (int) $data;
+        $lineTotal = intval($quantity * 1999);
+        return response()->json(['line_total_cents' => $lineTotal], 200);
     }
 }

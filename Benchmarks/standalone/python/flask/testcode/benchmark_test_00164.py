@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import random
 from flask import Flask, request, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -18,8 +20,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00164", methods=["POST"])
 def BenchmarkTest00164():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = (lambda v: v.strip())(json_value)
-    with open('/var/app/data/' + str(data), 'w') as fh:
-        fh.write('data')
-    return jsonify({"result": "success"})
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    kind = 'json' if str(graphql_var).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(graphql_var).strip()
+        case _:
+            data = str(graphql_var)
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

@@ -20,10 +20,15 @@ public class BenchmarkTest00140 {
     }
 
     @GetMapping("/BenchmarkTest00140")
-    public void BenchmarkTest00140(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        java.util.Map.Entry<String,String> pair = java.util.Map.entry(refererValue, "header");
-        String data = pair.getKey();
-        response.getWriter().print("<div>" + data + "</div>");
+    public void BenchmarkTest00140(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = String.join(" ", cookieValue.split("[ \\t]+"));
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("DESede/CBC/PKCS5Padding");
+        byte[] desedeIv = new byte[8]; new java.security.SecureRandom().nextBytes(desedeIv);
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, new javax.crypto.spec.SecretKeySpec(java.util.Base64.getDecoder().decode(java.util.Objects.requireNonNullElse(System.getenv("LEGACY_DESEDE_KEY"), "")), "DESede"), new javax.crypto.spec.IvParameterSpec(desedeIv));
+        byte[] ct = cipher.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

@@ -1,13 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from dataclasses import dataclass
 from flask import Flask, request, jsonify
+import socket
+import urllib.parse
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -25,8 +20,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00344", methods=["POST"])
 def BenchmarkTest00344():
-    multipart_value = request.form.get('multipart_field', '')
-    form = FormData(payload=multipart_value)
-    data = form.payload
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    cookie_value = request.cookies.get('session_token', '')
+    data = ' '.join(str(cookie_value).split())
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
+    return jsonify({"result": "success"})

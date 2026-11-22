@@ -20,13 +20,13 @@ public class BenchmarkTest00178 {
     }
 
     @GetMapping("/BenchmarkTest00178")
-    public void BenchmarkTest00178(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String cookieValue = sessionToken != null ? sessionToken : "";
-        byte[] hexBytes = new byte[cookieValue.length() / 2];
-        for (int hexIdx = 0; hexIdx < hexBytes.length; hexIdx++) {
-            hexBytes[hexIdx] = (byte) Integer.parseInt(cookieValue.substring(hexIdx * 2, hexIdx * 2 + 2), 16);
-        }
-        String data = new String(hexBytes, java.nio.charset.StandardCharsets.UTF_8);
-        response.sendRedirect(data);
+    public void BenchmarkTest00178(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
+        String data = String.format("%s", envValue);
+        java.util.Random rng = new java.util.Random();
+        int randValue = rng.nextInt() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

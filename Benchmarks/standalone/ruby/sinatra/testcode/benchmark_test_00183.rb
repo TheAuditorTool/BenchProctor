@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
 
 class BenchmarkTest00183 < Sinatra::Base
   before do
@@ -19,16 +18,10 @@ class BenchmarkTest00183 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00183" do
-    user_input = params[:id].to_s
-    data = sprintf("%s", user_input)
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    system("echo " + processed)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    headers["Location"] = data
+    halt 302
   end
 end

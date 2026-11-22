@@ -1,0 +1,6 @@
+channels:
+  - name: publishing:inbound:0003
+    payload: json
+keys:
+  - pattern: publishing:record:{id}
+    ttl_seconds: 300

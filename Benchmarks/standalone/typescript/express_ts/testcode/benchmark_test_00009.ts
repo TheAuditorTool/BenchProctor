@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as nodeSerialize from "node-serialize";
-import { createClient } from "redis";
+import * as shared from "./shared";
+const { db } = shared;
 
 export const BenchmarkTest00009 = async (req: Request, res: Response): Promise<void> => {
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  const data = `${userInput}`;
-  nodeSerialize.unserialize(data);
-  res.json({ accepted: true });
+  const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
+  const boundedVal = _coerced;
+  const requested = boundedVal;
+  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
+  const buf = Buffer.alloc(requested + 1);
+  res.json({ allocated: buf.length }); return;
 }

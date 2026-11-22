@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as stream from "node:stream";
 
 export const BenchmarkTest00104 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["user-agent"] as string) || "";
-  const parts: string[] = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data: string = parts.join(',');
-  const _prisma = new PrismaClient();
-  await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + data + "'");
+  const userInput = (req.body?.multipart_field as string) || "";
+  const data = `${userInput}`;
+  const streamKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  const streamIv = crypto.randomBytes(8);
+  fs.writeFileSync("/var/data/cipher.iv", streamIv);
+  stream.pipeline(stream.Readable.from([String(data)]), crypto.createCipheriv("des-ede3-cbc", streamKey, streamIv), fs.createWriteStream("/var/data/cipher.bin"), (err: Error | null) => { if (err) console.error("encryption failed", err); });
   res.json({ accepted: true });
 }

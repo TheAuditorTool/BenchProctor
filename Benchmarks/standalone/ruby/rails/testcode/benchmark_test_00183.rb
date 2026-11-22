@@ -11,11 +11,11 @@ class BenchmarkTest00183Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00183
-    user_input = request.referer.to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
+    user_input = cookies[:session_token].to_s
+    data = user_input ? user_input : ''
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    eval(parsed_num)
     render json: { status: "ok" }
   end
 end

@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Header, Post, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import { IsString } from "class-validator";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-class UserInputDto {
-  @IsString()
-  payload!: string;
-}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -22,10 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00260")
-  @UsePipes(new ValidationPipe())
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00260(@Body() dto: UserInputDto): Promise<unknown> {
-    const userInput = dto.payload;
-    return "<div>" + userInput + "</div>";
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00260(@UploadedFile() file: Express.Multer.File, @Res() res: Response): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const data = userInput != null ? userInput : '';
+    return res.redirect(303, String(data));
   }
 }

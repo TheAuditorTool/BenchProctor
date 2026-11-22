@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 use axum::http::HeaderMap;
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use url::Url;
+use axum::response::Json;
 
 pub async fn benchmark_test_00021(headers: HeaderMap) -> impl IntoResponse {
-    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
-    let transform = |v: String| v.trim().to_string();
-    let data = transform(cookie_value.clone());
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let target_url = data.clone();
-    axum::response::Redirect::to(target_url.as_str()).into_response()
+    let origin_value = headers.get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data: String = origin_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| origin_value.clone());
+    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
+    let processed = _bounded.to_string();
+    let requested: i64 = processed.parse().unwrap_or(0);
+    let count = requested.clamp(0, 4096) as usize;
+    let _buf: Vec<u8> = vec![0u8; count];
+    Json(serde_json::json!({"count": 0})).into_response()
 }

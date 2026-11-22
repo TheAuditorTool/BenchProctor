@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
+import os
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
-import re
 
 
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -25,12 +23,15 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00235/{id}")
-async def BenchmarkTest00235(request: Request, id: str):
-    path_value = id
-    reader = make_reader(path_value)
-    data = reader()
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
+@app.post("/BenchmarkTest00235")
+async def BenchmarkTest00235(request: Request, req: UserInput):
+    json_value = req.payload
+    if json_value:
+        data = json_value
+    else:
+        data = ''
+    if data not in ('ls', 'cat', 'date', 'whoami'):
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
     processed = data
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+    os.system('echo ' + str(processed))
+    return {"updated": True}

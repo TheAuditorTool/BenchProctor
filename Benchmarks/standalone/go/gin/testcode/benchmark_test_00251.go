@@ -2,32 +2,30 @@
 package testcode
 
 import (
-	"net"
 	"net/http"
 	"net/url"
-	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00251(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
+	refererValue := c.GetHeader("Referer")
+	pending := strings.Split(refererValue, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
 	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	if upstream == nil {
+		c.String(http.StatusNotFound, "unknown service")
 		return
 	}
-	jsonValue := reqBody.Payload
-	parsedURL, _ := url.Parse(jsonValue)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
-		return
-	}
-	targetUrl := jsonValue
-	conn, err := net.Dial("tcp", targetUrl)
-	if err == nil {
-		defer conn.Close()
-	}
-	c.JSON(200, gin.H{"code": "OK"})
+	upstreamHost := upstream.Host
+	c.JSON(http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

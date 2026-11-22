@@ -8,15 +8,9 @@ class BenchmarkTest00239Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        unserialize($data);
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $data = urldecode($userInput);
+        json_decode($data, true);
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from lxml import etree
 
 
 def BenchmarkTest00024(request):
-    ua_value = request.META.get('HTTP_USER_AGENT', '')
-    data = '%s' % (ua_value,)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
+    raw_body = request.body.decode('utf-8')
+    if raw_body:
+        data = raw_body
+    else:
+        data = ''
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'invalid number'}, status=400)
+    processed = _coerced
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
     return JsonResponse({"saved": True})

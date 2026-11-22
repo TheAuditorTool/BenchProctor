@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import random
 from starlette.responses import JSONResponse
-import json
-from app_runtime import db
+import os
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 app = FastAPI()
@@ -23,11 +24,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00333")
 async def BenchmarkTest00333(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    try:
-        data = json.loads(cookie_value).get('value', cookie_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = cookie_value
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    origin_value = request.headers.get('origin', '')
+    data = (lambda v: v.strip())(origin_value)
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

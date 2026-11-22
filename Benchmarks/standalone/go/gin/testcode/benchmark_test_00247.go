@@ -2,31 +2,31 @@
 package testcode
 
 import (
+	"context"
 	"net/http"
-	"strconv"
+	"regexp"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00247(c *gin.Context) {
-	hostValue := c.Request.Host
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
 	var data string
-	if hostValue != "" {
-		data = hostValue
+	for _, token := range strings.Split(commentText, ",") {
+		data = token
 	}
-	_lower := strings.ToLower(data)
-	if !strings.HasPrefix(_lower, "t") && !strings.HasPrefix(_lower, "f") && _lower != "1" && _lower != "0" {
-		c.String(http.StatusBadRequest, "invalid boolean")
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		c.String(http.StatusBadRequest, "invalid input")
 		return
 	}
-	parsedBool := strconv.FormatBool(strings.HasPrefix(_lower, "t") || _lower == "1")
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+parsedBool+"']")
+	processed := data
+	redisClient.HSet(context.Background(), "session:"+c.GetString("user"), map[string]any{"display_name": processed, "locale": "en"})
 	c.JSON(200, gin.H{"code": "OK"})
 }

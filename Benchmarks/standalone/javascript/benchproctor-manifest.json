@@ -2,33 +2,61 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "express",
-    "koa"
+    "express-legacy",
+    "koa",
+    "koa-legacy"
   ],
   "language": "javascript",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "express": {
       "categories": 18,
-      "csv_sha256": "ae34a503be469caeec442ee9606427c6ab5fbde6cf8773163b209dfc79420b4c",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 723,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "2385c26f2d292a84b1f3d36eabf485e5e0d8bf22e1e934ff5885cc2d6a2804d0",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Express 5, Node 24",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "express-legacy": {
+      "categories": 18,
+      "csv_sha256": "3e3123de57385b62af85a1ee7539d94a8e9689b3c7ea84b1ea69b58dd50b3569",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Express 4, Node 20",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     },
     "koa": {
       "categories": 18,
-      "csv_sha256": "ca9b438ac60893d413b3400a4663c3ba68964841e5ef5840426ec20f72bccc7e",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 723,
-      "safe": 360,
-      "total": 720,
-      "vulnerable": 360
+      "csv_sha256": "b4d109c7819c48094ecd085d788bc5a4bbcf3c0f2a628a25449780434aab6b5d",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "Koa 3",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
+    },
+    "koa-legacy": {
+      "categories": 18,
+      "csv_sha256": "e4dfdfbbd2046dc10ec70fdc01e7ab6bc7d6ffc01ea9168ffbd531c1d510e6c4",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "Koa 2",
+      "published_files": 363,
+      "safe": 180,
+      "total": 360,
+      "vulnerable": 180
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

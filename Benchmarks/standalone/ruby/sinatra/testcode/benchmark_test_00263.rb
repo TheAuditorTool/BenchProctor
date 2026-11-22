@@ -4,8 +4,9 @@ require "json"
 require "uri"
 require "openssl"
 require "redis"
-require "base64"
-require "socket"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00263 < Sinatra::Base
   before do
@@ -22,14 +23,9 @@ class BenchmarkTest00263 < Sinatra::Base
   end
   post "/benchmark_test_00263" do
     user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = Base64.decode64(user_input)
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    TCPSocket.new(target_url, 80).close
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    DB[:users].with_sql("SELECT * FROM users WHERE id = '" + data + "'").all
     content_type :json
     JSON.generate({ status: "ok" })
   end

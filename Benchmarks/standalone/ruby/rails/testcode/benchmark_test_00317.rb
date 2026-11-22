@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
 
 class BenchmarkTest00317Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,10 +11,11 @@ class BenchmarkTest00317Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00317
-    user_input = cookies[:session_token].to_s
-    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
-    data = transform.call(user_input)
-    processed = CGI.escapeHTML(data)
-    render html: ("<div>" + processed + "</div>").html_safe
+    user_input = User.first&.name.to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("aes-256-cbc"), OpenSSL::PKCS7::BINARY)
+    render json: { envelope: envelope.to_pem }
   end
 end

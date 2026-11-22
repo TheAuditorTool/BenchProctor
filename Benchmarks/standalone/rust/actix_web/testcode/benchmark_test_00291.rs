@@ -2,14 +2,12 @@
 use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00291")]
-pub async fn benchmark_test_00291(web::Form(form): web::Form<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let _prefix: String = field_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => field_value.to_lowercase(),
-        "f" => field_value.to_uppercase(),
-        _ => field_value.trim().to_string(),
-    };
-    crate::shared::store_session("data", &data);
+pub async fn benchmark_test_00291(body: web::Bytes) -> HttpResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = match raw_body.chars().next() { Some(_) => raw_body.clone(), None => "default".to_string() };
+    use diesel::prelude::*;
+    if let Ok(mut _conn) = diesel::SqliteConnection::establish(&crate::shared::seeded_database_path()) {
+        let _ = diesel::sql_query("SELECT id, name FROM users WHERE name = ?").bind::<diesel::sql_types::Text, _>(data.clone()).execute(&mut _conn);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

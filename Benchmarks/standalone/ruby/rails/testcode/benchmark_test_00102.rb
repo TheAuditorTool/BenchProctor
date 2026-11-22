@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "open-uri"
 
 class BenchmarkTest00102Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,8 +13,8 @@ class BenchmarkTest00102Controller < ApplicationController
   end
   def benchmark_test_00102
     user_input = params.require(:request_data).permit(:payload)[:payload].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    ActiveRecord::Base.connection.execute("SELECT * FROM " + ActiveRecord::Base.connection.quote_column_name(data))
+    data = user_input ? user_input : ''
+    URI.open(data).read
     render json: { status: "ok" }
   end
 end

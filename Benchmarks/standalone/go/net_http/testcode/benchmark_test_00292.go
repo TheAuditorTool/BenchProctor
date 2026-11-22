@@ -2,27 +2,33 @@
 package testcode
 
 import (
-	"fmt"
+	"io"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00292(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	capture := func() string { return strings.TrimSpace(refererValue) }
-	data := capture()
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
+	_apiResp, _apiErr := http.Get("https://api.svc.cluster/data")
+	if _apiErr != nil {
 		return
 	}
-	parsedId := strconv.Itoa(_num)
-	rows, err := DB.Query("SELECT * FROM users WHERE id = $1", parsedId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	defer _apiResp.Body.Close()
+	_apiBytes, _ := io.ReadAll(_apiResp.Body)
+	apiValue := string(_apiBytes)
+	pending := strings.Split(apiValue, ",")
+	var data string
+	for len(pending) > 0 {
+		data = pending[0]
+		pending = pending[1:]
+	}
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	targetUrl := data
+	w.Header().Set("Location", targetUrl)
+	w.WriteHeader(http.StatusSeeOther)
 }

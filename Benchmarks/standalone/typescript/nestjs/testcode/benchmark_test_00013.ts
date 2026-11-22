@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Res } from "@nestjs/common";
+import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { DataSource } from "typeorm";
 
+const Cookies = createParamDecorator(
+  (data: string, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.cookies?.[data] ?? "";
+  },
+);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -19,10 +24,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00013")
-  async BenchmarkTest00013(@Res({ passthrough: true }) res: Response): Promise<unknown> {
-    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  async BenchmarkTest00013(@Cookies("session_token") cookieToken: string): Promise<unknown> {
+    const userInput = cookieToken || "";
     const data = String(userInput).split(/[ \t]+/).join(" ");
-    res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
+    const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
+    await _dataSource.initialize();
+    await _dataSource.createQueryBuilder().select("u.id").from("users", "u").where("u.name = '" + data + "'").getRawMany();
     return { created: true };
   }
 }

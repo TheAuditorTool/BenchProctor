@@ -18,7 +18,8 @@ class BenchmarkTest00316Controller < ApplicationController
     rescue JSON::ParserError
       data = user_input
     end
-    token = SecureRandom.hex(32)
-    render json: { status: "ok" }
+    token = SecureRandom.alphanumeric(24)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

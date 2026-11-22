@@ -2,29 +2,23 @@
 package testcode
 
 import (
-	"fmt"
+	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func BenchmarkTest00086(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	data := fmt.Sprintf("%s", commentText)
-	baseDir := "/var/app/data"
-	cleanPath := filepath.Clean(filepath.Join(baseDir, data))
-	resolvedPath, resolveErr := filepath.EvalSymlinks(cleanPath)
-	if resolveErr != nil {
-		http.Error(w, "access denied", http.StatusForbidden)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	if resolvedPath != baseDir && !strings.HasPrefix(resolvedPath, baseDir+"/") {
-		http.Error(w, "access denied", http.StatusForbidden)
+	rawBody := string(rawBytes)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(rawBody)
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE name = '" + data + "'").Scan(&matched).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	checkedPath := resolvedPath
-	os.WriteFile(checkedPath, []byte("data"), 0644)
 	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

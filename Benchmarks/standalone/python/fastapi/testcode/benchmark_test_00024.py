@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pathlib import Path
-from starlette.responses import JSONResponse
-from starlette.responses import PlainTextResponse
+import io
+import xml.sax
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -21,18 +25,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00024")
-async def BenchmarkTest00024(request: Request):
-    upload_name = getattr((await request.form()).get('doc'), 'filename', '')
-    pending = list(str(upload_name).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    base = Path('/var/app/data').resolve()
-    candidate = (base / data).resolve()
-    if base not in candidate.parents and candidate != base:
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    checked_path = str(candidate)
-    with open(checked_path, 'r') as fh:
-        content = fh.read()
-    return PlainTextResponse(content)
+async def BenchmarkTest00024(request: Request, req: UserInput):
+    json_value = req.payload
+    data = str(json_value).replace('\x00', '')
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
+    return {"updated": True}

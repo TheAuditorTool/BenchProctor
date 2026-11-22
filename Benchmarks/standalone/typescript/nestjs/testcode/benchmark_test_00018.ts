@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Param, Post, Res } from "@nestjs/common";
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -17,14 +16,12 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00018")
-  async BenchmarkTest00018(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    const _prisma = new PrismaClient();
-    await _prisma.$queryRawUnsafe("SELECT * FROM users WHERE id = '" + data + "'");
+  @Post("BenchmarkTest00018/:id")
+  async BenchmarkTest00018(@Param("id") pathId: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = pathId;
+    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
+    const data = tokens.join(' ');
+    res.cookie("session", data, { secure: true, httpOnly: true, sameSite: "strict" });
     return { created: true };
   }
 }

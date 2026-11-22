@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00127")]
-pub async fn benchmark_test_00127() -> HttpResponse {
-    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
-    let captured = env_value.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+pub async fn benchmark_test_00127(req: HttpRequest) -> HttpResponse {
+    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data: String = origin_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| origin_value.clone());
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let Some(seat_limit) = plan_limits.get(data.as_str()).copied() else { return HttpResponse::NotFound().finish(); };
+    let _ = seat_limit;
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

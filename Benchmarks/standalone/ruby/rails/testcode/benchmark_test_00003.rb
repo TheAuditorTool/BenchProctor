@@ -11,14 +11,9 @@ class BenchmarkTest00003Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00003
-    user_input = request.headers["Authorization"].to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    eval(data)
-    render json: { status: "ok" }
+    user_input = cookies[:session_token].to_s
+    data = "%s" % user_input
+    response.set_header("Location", data)
+    head :found
   end
 end

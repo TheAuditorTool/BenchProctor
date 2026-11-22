@@ -1,12 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
-from flask import Flask, request, jsonify
+from lxml import etree
+from flask import Flask, jsonify
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -22,10 +17,9 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00017", methods=["POST"])
-def BenchmarkTest00017():
-    auth_header = request.headers.get('Authorization', '')
-    reader = make_reader(auth_header)
-    data = reader()
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+@app.route("/BenchmarkTest00017/<path_param>", methods=["POST"])
+def BenchmarkTest00017(path_param):
+    path_value = path_param
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    tree.xpath('/users/user[@name="' + str(path_value) + '"]')
+    return jsonify({"result": "success"})

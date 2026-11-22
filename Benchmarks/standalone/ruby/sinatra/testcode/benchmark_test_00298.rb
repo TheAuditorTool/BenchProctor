@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "dry/schema"
-require "net/ldap"
 
 class BenchmarkTest00298 < Sinatra::Base
   before do
@@ -21,18 +18,12 @@ class BenchmarkTest00298 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00298" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = CGI.unescape(user_input)
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    user_input = params[:q].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    match = data.to_s.match(/\A(?<user>[\w.+-]+)@(?<domain>[\w-]+(?:\.[\w-]+)+)\z/)
+    return halt 404, JSON.generate({ error: "not found" }) if match.nil?
+    domain = match[:domain].downcase
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ domain: domain })
   end
 end

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+import random
+from fastapi import Form
+from starlette.responses import JSONResponse
+from app_runtime import db
 
 
 app = FastAPI()
@@ -20,8 +22,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00179")
-async def BenchmarkTest00179(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    data = '%s' % (xml_value,)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+async def BenchmarkTest00179(request: Request, field: str = Form('')):
+    field_value = field
+    pending = list(str(field_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    token = '%032x' % random.Random().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

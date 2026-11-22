@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
-import jsonschema
-import os
-from flask import Flask, jsonify
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
+import base64
+import pickle
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -21,12 +26,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00282", methods=["POST"])
 def BenchmarkTest00282():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = ' '.join(str(env_value).split())
-    try:
-        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.%\\-]+$"})
-    except jsonschema.ValidationError:
-        return jsonify({'error': 'invalid input'}), 400
-    processed = data
-    subprocess.run('echo ' + str(processed), shell=True)
+    raw_body = request.get_data(as_text=True)
+    form = FormData(payload=raw_body)
+    data = form.payload
+    pickle.loads(base64.b64decode(data))
     return jsonify({"result": "success"})

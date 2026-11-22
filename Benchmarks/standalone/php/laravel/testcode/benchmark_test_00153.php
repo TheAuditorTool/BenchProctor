@@ -8,13 +8,12 @@ class BenchmarkTest00153Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
-        return response()->json(['ok' => 1]);
+        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
+        $data = sprintf('%s', $userInput);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return response('', 302)->header('Location', (string)$targetUrl);
     }
 }

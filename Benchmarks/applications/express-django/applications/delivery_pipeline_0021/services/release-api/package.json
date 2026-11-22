@@ -1,0 +1,19 @@
+{
+  "name": "release-api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "axios": "1.20.0",
+    "express": "4.22.3",
+    "express-session": "1.19.0",
+    "isomorphic-dompurify": "2.36.0",
+    "node-serialize": "0.0.4",
+    "pg": "8.23.1",
+    "typeorm": "0.3.31"
+  }
+}

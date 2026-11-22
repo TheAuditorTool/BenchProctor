@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import ctypes
+import defusedxml.ElementTree
+from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,8 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00201")
 async def BenchmarkTest00201(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = '{}'.format(referer_value)
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JSONResponse({'wrapped': wrapped}, status_code=200)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = (lambda v: v.strip())(db_value)
+    defusedxml.ElementTree.fromstring(str(data))
+    return {"updated": True}

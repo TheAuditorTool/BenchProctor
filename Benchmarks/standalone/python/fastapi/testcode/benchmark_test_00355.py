@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
+import ldap3
 from starlette.responses import JSONResponse
 import os
 import re
@@ -21,13 +21,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00355")
-async def BenchmarkTest00355(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    data = '%s' % (upload_name,)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+@app.post("/BenchmarkTest00355/{id}")
+async def BenchmarkTest00355(request: Request, id: str):
+    path_value = id
+    if not re.fullmatch("^(asc|desc|name|created)$", str(path_value)):
         return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    processed = path_value
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(processed) + ')', attributes=['cn'])
     return {"updated": True}

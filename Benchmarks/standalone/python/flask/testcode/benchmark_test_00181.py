@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import ldap
 from flask import Flask, request, jsonify
-import json
+import os
+import re
 
 
 app = Flask(__name__)
@@ -19,10 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00181", methods=["POST"])
 def BenchmarkTest00181():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
-    try:
-        data = json.loads(graphql_var).get('value', graphql_var)
-    except (json.JSONDecodeError, AttributeError):
-        data = graphql_var
-    exec(str(data))
+    host_value = request.headers.get('Host', '')
+    data = ' '.join(str(host_value).split())
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(processed) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
     return jsonify({"result": "success"})

@@ -2,30 +2,39 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 
+	"github.com/antchfx/xmlquery"
+	"github.com/antchfx/xpath"
 	"github.com/gin-gonic/gin"
-	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00164(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	data := headerValue
-	if _, after, ok := strings.Cut(headerValue, ","); ok {
-		data = after
-	}
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		c.String(http.StatusInternalServerError, ldapErr.Error())
+	uaValue := c.GetHeader("User-Agent")
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", uaValue)
+	data := relayBuilder.String()
+	directoryFile, openErr := os.Open("/var/app/data/users.xml")
+	if openErr != nil {
+		c.String(http.StatusInternalServerError, openErr.Error())
 		return
 	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		c.Header("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	defer directoryFile.Close()
+	xmlDoc, xmlErr := xmlquery.Parse(directoryFile)
+	if xmlErr != nil {
+		c.String(http.StatusInternalServerError, xmlErr.Error())
+		return
+	}
+	roleExpr, exprErr := xpath.Compile("//user[@name='" + data + "']/role")
+	if exprErr != nil {
+		c.String(http.StatusBadRequest, "invalid user name")
+		return
+	}
+	if roleNode := xmlquery.QuerySelector(xmlDoc, roleExpr); roleNode != nil {
+		c.Header("X-User-Role", roleNode.InnerText())
 	}
 	c.JSON(200, gin.H{"code": "OK"})
 }

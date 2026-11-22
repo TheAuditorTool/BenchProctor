@@ -2,17 +2,31 @@
 package testcode
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00142(c *gin.Context) {
-	userID := c.Query("id")
-	var data string
-	for _, token := range strings.Split(userID, ",") {
-		data = token
+	var reqBody struct {
+		Payload string `json:"payload"`
 	}
-	htmlOut := "<div>" + data + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
+	}
+	jsonValue := reqBody.Payload
+	data := strings.Join(strings.FieldsFunc(jsonValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
+	}
+	if result == nil {
+		c.String(404, "not found")
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"name": *result})
 }

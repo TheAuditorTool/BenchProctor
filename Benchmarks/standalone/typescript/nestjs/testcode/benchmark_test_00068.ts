@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Header, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as childProcess from "child_process";
+import * as shared from "./shared";
+const { db } = shared;
+import isoDompurify from "isomorphic-dompurify";
+import * as marked from "marked";
+import * as nunjucks from "nunjucks";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +22,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00068")
-  async BenchmarkTest00068(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    childProcess.execFileSync("echo", [data]);
-    return { created: true };
+  @Header("Content-Type", "text/html")
+  async BenchmarkTest00068(): Promise<unknown> {
+    const userInput = (await db.query("SELECT text FROM comments WHERE post_id = $1", [1])).rows[0].text;
+    const capture = (v: string) => (): string => v.trim();
+    const readInput = capture(userInput);
+    const data: string = readInput();
+    const processed = isoDompurify.sanitize(marked.parse(data) as string);
+    const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: processed });
+    return page;
   }
 }

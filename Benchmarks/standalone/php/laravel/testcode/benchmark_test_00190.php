@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00190Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        $content = file_get_contents('/var/app/data/' . (string)$data);
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        $doc = new \DOMDocument();
+        $doc->loadXML((string)$data, LIBXML_NONET);
+        $name = $doc->getElementsByTagName('name')->item(0)?->textContent;
         return response()->json(['ok' => 1]);
     }
 }

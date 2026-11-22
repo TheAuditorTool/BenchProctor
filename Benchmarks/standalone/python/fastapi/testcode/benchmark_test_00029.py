@@ -1,16 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
-import socket
-import re
 import os
-import redis
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi import FastAPI, Request
+from starlette.responses import JSONResponse
+from pydantic import Field, ValidationError, create_model
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -27,17 +24,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00029")
 async def BenchmarkTest00029(request: Request):
-    redis_value = redis_client.get('user_data')
-    kind = 'json' if str(redis_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(redis_value).strip()
-        case _:
-            data = str(redis_value)
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    s = socket.create_connection((str(target_url), 80))
-    s.close()
+    origin_value = request.headers.get('origin', '')
+    parts = str(origin_value).split(',')
+    data = ' '.join(parts)
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.\\-]+$")))(value=str(data))
+    except ValidationError:
+        return JSONResponse({'error': 'invalid input'}, status_code=400)
+    processed = data
+    request.session.update({'data': str(processed)})
     return {"updated": True}

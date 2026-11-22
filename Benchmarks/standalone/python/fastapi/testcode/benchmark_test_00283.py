@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -21,12 +20,17 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00283")
 async def BenchmarkTest00283(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    kind = 'json' if str(env_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(env_value).strip()
-        case _:
-            data = str(env_value)
-    os.unlink('/var/app/data/' + str(data))
-    return {"updated": True}
+    ua_value = request.headers.get('user-agent', '')
+    pending = list(str(ua_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _bounded
+    requested = int(processed)
+    allocated = min(requested + 1, 2147483647)
+    return JSONResponse({'allocated': allocated}, status_code=200)

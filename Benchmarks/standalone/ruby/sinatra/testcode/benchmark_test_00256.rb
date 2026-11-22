@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "dry/schema"
+require "nokogiri"
 
 class BenchmarkTest00256 < Sinatra::Base
   before do
@@ -19,17 +19,13 @@ class BenchmarkTest00256 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00256" do
-    user_input = request.env["HTTP_REFERER"].to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.%\-]+\z/) }
-    unless schema.call(value: data.to_s).success?
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    system("echo " + processed)
+    user_input = params[:field].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + data.to_s + "']/role")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ roles: roles.map(&:text) })
   end
 end

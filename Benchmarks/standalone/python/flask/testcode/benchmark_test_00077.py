@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-import subprocess
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from flask import Flask, request, jsonify
-from pydantic import Field, ValidationError, create_model
+import json
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -20,13 +22,12 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00077", methods=["POST"])
 def BenchmarkTest00077():
-    referer_value = request.headers.get('Referer', '')
-    parts = str(referer_value).split(',')
-    data = ' '.join(parts)
+    xml_value = request.get_data(as_text=True)
     try:
-        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.%\\-]+$")))(value=str(data))
-    except ValidationError:
-        return jsonify({'error': 'invalid input'}), 400
-    processed = data
-    subprocess.run('echo ' + str(processed), shell=True)
-    return jsonify({"result": "success"})
+        data = json.loads(xml_value).get('value', xml_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = xml_value
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

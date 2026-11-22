@@ -3,21 +3,26 @@ package testcode
 
 import (
 	"net/http"
-	"os/exec"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00082(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	capture := func() string { return strings.TrimSpace(headerValue) }
-	data := capture()
-	cmd := exec.Command("echo", data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	originValue := c.GetHeader("Origin")
+	relayPrefix := ""
+	if len(originValue) > 0 {
+		relayPrefix = strings.ToLower(originValue[:1])
 	}
-	c.Data(200, "text/plain", output)
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = originValue
+	case "f":
+		data = originValue
+	default:
+		data = originValue
+	}
+	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	c.JSON(200, gin.H{"code": "OK"})
 }

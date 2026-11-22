@@ -18,11 +18,13 @@ class BenchmarkTest00267 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00267" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    record = { payload: user_input.to_s }
-    data = record.fetch(:payload)
-    token = rand(1000000)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.cookies["session_token"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    content_type :html
+    erb "<p><%= Rack::Utils.escape_html(comment) %></p>", locals: { comment: data }
   end
 end

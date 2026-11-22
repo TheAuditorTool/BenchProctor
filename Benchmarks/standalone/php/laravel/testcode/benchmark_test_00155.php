@@ -2,19 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00155Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('Authorization', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $userInput = DB::selectOne('SELECT text FROM comments LIMIT 1')->text;
+        $data = sprintf('%s', $userInput);
+        $reader = new \XMLReader();
+        $reader->XML((string)$data, null, LIBXML_NONET);
+        $name = '';
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'name') { $name = $reader->readString(); }
+        }
         return response()->json(['ok' => 1]);
     }
 }

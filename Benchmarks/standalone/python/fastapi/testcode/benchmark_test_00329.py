@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from lxml import etree
-from fastapi.responses import JSONResponse
+import hashlib
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,7 +22,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00329")
 async def BenchmarkTest00329(request: Request):
     upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    data = '%s' % (upload_name,)
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(data) + '"]')
-    return {"updated": True}
+    def normalize(value):
+        return value.strip()
+    data = normalize(upload_name)
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

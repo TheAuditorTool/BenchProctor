@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00075Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +11,19 @@ class BenchmarkTest00075Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00075
-    user_input = request.body.read
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = params[:id].to_s
+    _prefix = user_input[0,1].downcase
+    data = case _prefix
+           when 'h' then user_input.downcase
+           when 'f' then user_input.upcase
+           else user_input.strip
+           end
+    unless data =~ /\A(asc|desc|name|created)\z/
+      render json: { error: "invalid" }, status: 400
+      return
     end
-    data = _normalize_local(user_input)
-    digest = Digest::SHA256.hexdigest(data.to_s)
+    processed = data
+    File.write("/var/uploads/" + processed, "data")
     render json: { status: "ok" }
   end
 end

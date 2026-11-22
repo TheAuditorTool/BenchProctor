@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "active_model"
 
 class BenchmarkTest00162Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,11 +12,20 @@ class BenchmarkTest00162Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00162
-    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    validator = Class.new do
+      include ActiveModel::Validations
+      attr_accessor :value
+      validates :value, format: { with: /\A[a-zA-Z0-9 _.%\-]+\z/ }
+    end.new
+    validator.value = data.to_s
+    unless validator.valid?
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    system("echo " + processed)
     render json: { status: "ok" }
   end
 end

@@ -2,42 +2,30 @@
 package testcode
 
 import (
-	"io"
-	"net"
+	"context"
 	"net/http"
-	"net/url"
 	"regexp"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func BenchmarkTest00222(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	rawBody := string(rawBytes)
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
 	var data string
-	if len(rawBody) > 0 {
-		data = rawBody
-	} else {
-		data = "default"
+	for _, token := range strings.Split(commentText, ",") {
+		data = token
 	}
-	parsedURL, _ := url.Parse(data)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
-	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		http.Error(w, "private range blocked", http.StatusForbidden)
+	validate := validator.New()
+	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
+		return regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$").MatchString(fl.Field().String())
+	})
+	if err := validate.Var(data, "schema"); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	processed := data
+	redisClient.HSet(context.Background(), "session:"+ctxString(r, ctxKeyUser), map[string]any{"display_name": processed, "locale": "en"})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

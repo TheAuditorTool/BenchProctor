@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-import markdown
-import bleach
-from flask import Flask, request
-from flask import jsonify
+import os
+from flask import Flask, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -21,10 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00227", methods=["POST"])
 def BenchmarkTest00227():
-    ua_value = request.headers.get('User-Agent', '')
-    parts = []
-    for token in str(ua_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    processed = bleach.clean(markdown.markdown(data))
-    return '<div>' + str(processed) + '</div>'
+    env_value = os.environ.get('APP_INPUT', '')
+    data = str(env_value).replace('\x00', '')
+    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
+    if result is None:
+        return jsonify({'error': 'not found'}), 404
+    value = result['name']
+    return jsonify({'name': str(value)}), 200

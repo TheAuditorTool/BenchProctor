@@ -11,12 +11,11 @@ class BenchmarkTest00315Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00315
-    user_input = request.headers["Origin"].to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    result = User.find_by(name: data)
-    return render json: { error: "not found" }, status: 404 if result.nil?
-    value = result.name
-    render json: { status: "ok" }
+    user_input = request.user_agent.to_s
+    data = "%s" % user_input
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    limit = plan.fetch(:requests)
+    render json: { requests: limit }
   end
 end

@@ -18,9 +18,9 @@ class BenchmarkTest00033 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00033" do
-    user_input = request.body.read
-    data = JSON.parse(user_input)["value"] rescue ""
-    content_type :html
-    "<div>" + data + "</div>"
+    user_input = params[:multipart_field].to_s
+    response.redirect(user_input, 303)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

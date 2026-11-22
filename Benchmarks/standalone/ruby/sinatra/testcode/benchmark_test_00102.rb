@@ -18,18 +18,9 @@ class BenchmarkTest00102 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00102" do
-    user_input = request.cookies["session_token"].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    content = File.read("/var/app/data/" + user_input)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ content: content })
   end
 end

@@ -2,29 +2,18 @@
 package testcode
 
 import (
-	"fmt"
-	"net/http"
+	"encoding/json"
 	"net/url"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00056(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	jsonValue := reqBody.Payload
-	data := fmt.Sprintf("%s", jsonValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
-		return
-	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	c.Writer.Header().Add("Set-Cookie", "session=" + url.QueryEscape(graphqlVar) + "; Path=/; HttpOnly; SameSite=Strict")
+	c.JSON(200, gin.H{"code": "OK"})
 }

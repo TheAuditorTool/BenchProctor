@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-import bleach
-from flask import Flask, request
-from flask import jsonify
+from dataclasses import dataclass
+from flask import Flask, request, jsonify
+import socket
+import urllib.parse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -20,7 +26,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00303", methods=["POST"])
 def BenchmarkTest00303():
-    user_id = request.args.get('id', '')
-    data = '%s' % str(user_id)
-    processed = bleach.clean(data)
-    return '<div>' + str(processed) + '</div>'
+    auth_header = request.headers.get('Authorization', '')
+    form = FormData(payload=auth_header)
+    data = form.payload
+    s = socket.create_connection((urllib.parse.urlparse(str(data)).hostname, 80))
+    s.close()
+    return jsonify({"result": "success"})

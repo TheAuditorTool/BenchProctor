@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00316 < Sinatra::Base
   before do
@@ -19,10 +18,11 @@ class BenchmarkTest00316 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00316" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = params[:upload][:filename].to_s rescue ""
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -2,11 +2,10 @@
 package testcode
 
 import (
+	"bytes"
+	"html/template"
 	"io"
 	"net/http"
-	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00097(w http.ResponseWriter, r *http.Request) {
@@ -15,13 +14,14 @@ func BenchmarkTest00097(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	xmlBody := string(rawBytes)
-	data := func(v string) string { return strings.TrimSpace(v) }(xmlBody)
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
+	rawBody := string(rawBytes)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(rawBody)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(data)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	w.Write(bioPage.Bytes())
 }

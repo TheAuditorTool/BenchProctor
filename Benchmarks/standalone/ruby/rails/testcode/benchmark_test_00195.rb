@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "nokogiri"
 
 class BenchmarkTest00195Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,12 +12,16 @@ class BenchmarkTest00195Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00195
-    user_input = params.require(:user).permit(:name)[:name].to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    digest = Digest::MD5.hexdigest(data.to_s)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = user_input ? user_input : ''
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = true }
+    render json: { text: handler.text }
   end
 end

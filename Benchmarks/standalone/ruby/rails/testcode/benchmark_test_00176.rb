@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00176Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,14 @@ class BenchmarkTest00176Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00176
-    user_input = Comment.first&.text.to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
+    _ = _doc
     render json: { status: "ok" }
   end
 end

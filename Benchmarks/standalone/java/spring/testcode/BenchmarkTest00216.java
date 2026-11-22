@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.sql.*;
+import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,26 +20,14 @@ public class BenchmarkTest00216 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static java.sql.Connection connection;
-    static {
-        try {
-            connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:bench;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE", "sa", "");
-            try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name VARCHAR DEFAULT '' NOT NULL, role VARCHAR DEFAULT 'user' NOT NULL, bio VARCHAR DEFAULT '' NOT NULL, email VARCHAR DEFAULT '' NOT NULL, password VARCHAR DEFAULT '' NOT NULL, token_hash VARCHAR DEFAULT '' NOT NULL, locked INTEGER DEFAULT 0 NOT NULL)");
-                stmt.execute("MERGE INTO users t USING (VALUES (1, 'alice', 'user', 'Enjoys hiking', 'alice@example.com'), (2, 'bob', 'user', 'Coffee enthusiast', 'bob@example.com'), (3, 'admin', 'admin', 'Site administrator', 'admin@example.com')) s(id, name, role, bio, email) ON t.id = s.id WHEN NOT MATCHED THEN INSERT (id, name, role, bio, email) VALUES (s.id, s.name, s.role, s.bio, s.email)");
-            }
-        } catch (java.sql.SQLException ignored) {}
-    }
-
     @GetMapping("/BenchmarkTest00216")
-    public void BenchmarkTest00216(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fileValue = java.util.Optional.ofNullable(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("/var/app/data.txt")))).orElse("");
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : fileValue.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeQuery("SELECT * FROM users WHERE id = '" + data + "'");
-        }
+    public void BenchmarkTest00216(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        String data = authHeader.replace("\u0000", "");
+        String processed = data.matches("^(admin|operator|viewer|auditor)$") ? data : "admin";
+        XPathFactory xpf = XPathFactory.newInstance();
+        XPath xpath = xpf.newXPath();
+        xpath.evaluate("/users/user[@name='" + processed + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

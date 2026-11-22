@@ -8,12 +8,13 @@ class BenchmarkTest00282Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Origin', '');
-        $data = ($userInput !== null) ? $userInput : '';
-        $doc = new \DOMDocument();
-        @$doc->load('/var/app/data/users.xml');
-        $xpath = new \DOMXPath($doc);
-        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        $userInput = $request->header('X-Forwarded-For', '');
+        $words = preg_split('/\s+/', $userInput);
+        $data = implode(' ', $words);
+        $iv = random_bytes(12);
+        $tag = '';
+        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
+        $ciphertext = base64_encode($iv . $tag . $_ct);
         return response()->json(['ok' => 1]);
     }
 }

@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00231Controller
 {
     public function __invoke()
     {
-        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
-        $parsedBool = $_coerced;
-        session(['data' => (string) $parsedBool]);
+        $userInput = getenv('APP_INPUT') ?: '';
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        if (!preg_match('#^[a-zA-Z0-9 _.%~\\-]+$#', $data)) { error_log('input validation failed'); return response()->json(['error'=>'invalid'], 400); }
+        $processed = $data;
+        $users = simplexml_load_file('/var/app/data/users.xml');
+        $matches = $users->xpath("//user[@name='" . $processed . "']");
         return response()->json(['ok' => 1]);
     }
 }

@@ -5,16 +5,16 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00039', methods: ['POST'])]
 class BenchmarkTest00039Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, Connection $conn)
     {
-        $userInput = $request->headers->get('X-Custom-Header', '');
-        $data = '';
-        foreach (explode(',', $userInput) as $token) { $data = $token; }
-        system('gzip -f /var/app/reports/' . (string)$data);
+        $userInput = json_decode($request->getContent(), true)['payload'] ?? '';
+        [$data] = [$userInput, 'http'];
+        $conn->executeQuery('SELECT * FROM users WHERE id = \'' . $data . '\'');
         return new JsonResponse(["committed" => true]);
     }
 }

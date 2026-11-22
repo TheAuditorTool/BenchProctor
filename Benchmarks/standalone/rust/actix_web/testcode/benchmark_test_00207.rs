@@ -4,20 +4,19 @@ use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00207")]
 pub async fn benchmark_test_00207(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Some(Ok(mut _field)) = payload.next().await {
-            let mut _buf: Vec<u8> = Vec::new();
-            while let Some(Ok(_chunk)) = _field.next().await {
-                _buf.extend_from_slice(&_chunk);
+    let upload_name = {
+        let mut _fname = String::new();
+        while let Some(Ok(_field)) = payload.next().await {
+            if let Some(_cd) = _field.content_disposition() {
+                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
             }
-            _mv = String::from_utf8_lossy(&_buf).to_string();
         }
-        _mv
+        _fname
     };
-    let data = match multipart_value.chars().next() { Some(_) => multipart_value.clone(), None => "default".to_string() };
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = result.unwrap();
-    let _ = value;
+    let (payload, _origin) = (upload_name.clone(), "http");
+    let data = payload;
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), data.clone());
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

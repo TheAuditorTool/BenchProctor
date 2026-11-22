@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "base64"
 
 class BenchmarkTest00301Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,13 +11,10 @@ class BenchmarkTest00301Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00301
-    user_input = cookies[:session_token].to_s
-    data = Base64.decode64(user_input)
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
-    render json: { status: "ok" }
+    user_input = request.headers["Origin"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    response.set_header("Location", data)
+    head :found
   end
 end

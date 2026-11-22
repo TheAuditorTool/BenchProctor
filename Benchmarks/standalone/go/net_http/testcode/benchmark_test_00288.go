@@ -4,8 +4,7 @@ package testcode
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
-	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00288(w http.ResponseWriter, r *http.Request) {
@@ -14,15 +13,6 @@ func BenchmarkTest00288(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewDecoder(r.Body).Decode(&gqlReq)
 	graphqlVar := gqlReq.Variables["input"]
-	var data string
-	if graphqlVar != "" {
-		data = graphqlVar
-	}
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		http.Error(w, "forbidden host", http.StatusForbidden)
-		return
-	}
-	targetUrl := data
-	http.Redirect(w, r, targetUrl, http.StatusFound)
+	data := func(v string) string { return strings.TrimSpace(v) }(graphqlVar)
+	http.RedirectHandler(data, http.StatusFound).ServeHTTP(w, r)
 }

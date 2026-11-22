@@ -2,23 +2,25 @@
 package testcode
 
 import (
-	"encoding/json"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00026(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
+	refererValue := c.GetHeader("Referer")
+	var data string
+	for _, token := range strings.Split(refererValue, ",") {
+		data = token
 	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	data := graphqlVar
-	if _, after, ok := strings.Cut(graphqlVar, ","); ok {
-		data = after
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
 	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	c.JSON(200, gin.H{"code": "OK"})
+	processed := data
+	htmlOut := "<div>" + processed + "</div>"
+	c.Data(200, "text/html", []byte(htmlOut))
 }

@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-import socket
+from lxml import etree
 from fastapi.responses import JSONResponse
 
-
-class UserInput(BaseModel):
-    payload: str = ''
 
 app = FastAPI()
 
@@ -24,12 +20,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00092")
-async def BenchmarkTest00092(request: Request, req: UserInput):
-    json_value = req.payload
-    if json_value:
-        data = json_value
-    else:
-        data = ''
-    s = socket.create_connection((str(data), 80))
-    s.close()
+async def BenchmarkTest00092(request: Request):
+    raw_body = (await request.body()).decode('utf-8')
+    data, _sep, _rest = str(raw_body).partition('\x00')
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(data).encode(), _parser)
     return {"updated": True}

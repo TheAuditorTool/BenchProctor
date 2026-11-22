@@ -2,8 +2,9 @@
 const libxmljs = require("libxmljs");
 
 const BenchmarkTest00222 = async (ctx) => {
-  const userInput = ctx.request.rawBody || "";
-  const data = String(userInput).replace(/\u0000/g, "");
+  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
   libxmljs.parseXml(data, { noent: true, dtdload: true, nonet: false });
   ctx.body = { ack: true };
 }

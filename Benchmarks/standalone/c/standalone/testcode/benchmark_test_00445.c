@@ -17,10 +17,7 @@ void benchmark_test_00445(int argc, char **argv)
     if (user_input == NULL) user_input = "";
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    printf("%s\n", _p);
-    if (strchr(_p, ';') != NULL) { free(_p); return; }
-    free(_p);
+    char _dst[32];
+    sprintf(_dst, "user=%s", data);
+    puts(_dst);
 }

@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import * as fs from "fs";
 import * as crypto from "crypto";
+import * as nodeUtil from "util";
 
 export const BenchmarkTest00337 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.cookies?.session_token as string) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = nodeUtil.format("%s", userInput);
+  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest();
   const _siv = crypto.randomBytes(12);
   const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
   const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);

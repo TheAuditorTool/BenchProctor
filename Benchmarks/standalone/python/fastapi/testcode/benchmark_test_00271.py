@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+import hashlib
+from starlette.responses import JSONResponse
+import json
 
 
 app = FastAPI()
@@ -21,6 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00271")
 async def BenchmarkTest00271(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data, _sep, _rest = str(referer_value).partition('\x00')
-    return HTMLResponse('<div>' + str(data) + '</div>')
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = (lambda v: v.strip())(graphql_var)
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

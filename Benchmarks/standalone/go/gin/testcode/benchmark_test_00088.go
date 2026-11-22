@@ -2,19 +2,16 @@
 package testcode
 
 import (
-	"net/http"
+	"context"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00088(c *gin.Context) {
-	userID := c.Query("id")
-	pending := strings.Split(userID, ",")
-	var data string
-	for len(pending) > 0 {
-		data = pending[0]
-		pending = pending[1:]
-	}
-	c.Redirect(http.StatusFound, data)
+	headerValue := c.GetHeader("X-Custom-Header")
+	segments := strings.Split(headerValue, ",")
+	data := strings.Join(segments, " ")
+	redisClient.HSet(context.Background(), "session:"+c.GetString("user"), map[string]any{"display_name": data, "locale": "en"})
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00326Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,11 +11,12 @@ class BenchmarkTest00326Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00326
-    user_input = request.query_parameters[:q].to_s
-    data = user_input ? user_input : ''
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + parsed_num + "']")
-    render json: { status: "ok" }
+    user_input = params.require(:multipart_data).permit(:multipart_field)[:multipart_field].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    result = User.find_by(name: data)
+    return render json: { error: "not found" }, status: 404 if result.nil?
+    value = result.name
+    render json: { name: value }
   end
 end

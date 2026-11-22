@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
 
 namespace httplib {
@@ -16,6 +15,7 @@ struct Response {
     void set_header(const std::string &key, const std::string &val);
     void set_redirect(const std::string &url, int status);
     int status;
+    std::unordered_multimap<std::string, std::string> headers;
 };
 struct Result {};
 struct Client {
@@ -26,12 +26,9 @@ struct Client {
 
 void benchmark_test_00279(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.body;
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    std::cout << _p << std::endl;
-    delete[] _p;
+    std::string user_input = req.get_param_value("multipart_field");
+    std::string _loc = user_input;
+    for (char &_c : _loc) if (_c == '\r' || _c == '\n') _c = ' ';
+    res.headers.emplace("Refresh", std::string("0; url=") + _loc);
     res.set_content("ok", "text/plain");
 }

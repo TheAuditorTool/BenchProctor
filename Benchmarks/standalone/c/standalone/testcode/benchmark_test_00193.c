@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/md5.h>
 
 void benchmark_test_00193(int argc, char **argv)
 {
@@ -18,10 +19,15 @@ void benchmark_test_00193(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _dst[16];
-    size_t _n = strlen(data);
-    memcpy(_dst, data, _n + 1);
-    printf("%s\n", _dst);
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    unsigned char _digest[16];
+    MD5((const unsigned char *)data, strlen(data), _digest);
 }

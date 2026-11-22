@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
+use tokio::process::Command;
 
 #[actix_web::post("/benchmark_test_00083")]
 pub async fn benchmark_test_00083(req: HttpRequest) -> HttpResponse {
-    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let transform = |v: String| v.trim().to_string();
-    let data = transform(ua_value.clone());
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", data));
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = urlencoding::decode(&referer_value).unwrap_or_default().to_string();
+    let processed = shell_escape::escape(std::borrow::Cow::from(&data)).to_string();
+    Command::new("sh").arg("-c").arg(format!("cat {}", processed)).output().await.ok();
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

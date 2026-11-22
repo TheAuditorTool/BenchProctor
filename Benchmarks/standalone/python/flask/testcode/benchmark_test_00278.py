@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-from app_runtime import db
-import os
-import redis
+from flask import Flask, request, jsonify
+import re
 
 
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -23,12 +26,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00278", methods=["POST"])
 def BenchmarkTest00278():
-    redis_value = redis_client.get('user_data')
-    data = str(redis_value).replace('\x00', '')
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
+    cookie_value = request.cookies.get('session_token', '')
+    data = RequestPayload(cookie_value).value
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    code = compile(str(processed), '<rule>', 'exec')
+    exec(code)
     return jsonify({"result": "success"})

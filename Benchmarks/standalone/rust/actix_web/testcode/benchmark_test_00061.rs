@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
 
-#[actix_web::post("/benchmark_test_00061")]
+#[actix_web::post("/benchmark_test_00061/{id}")]
 pub async fn benchmark_test_00061(req: HttpRequest) -> HttpResponse {
-    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data: String = ua_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| ua_value.clone());
-    let _ = tokio::fs::read_to_string(format!("/var/app/data/{}", data)).await;
+    let path_value = req.match_info().get("id").unwrap_or("").to_string();
+    let rows: u32 = path_value.parse().unwrap_or(0);
+    let _records: Vec<u8> = Vec::with_capacity((rows * 512) as usize);
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

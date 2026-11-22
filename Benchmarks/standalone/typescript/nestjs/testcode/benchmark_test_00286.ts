@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post, BadRequestException } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Request, Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -16,16 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00286/:id")
-  async BenchmarkTest00286(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-    const boundedVal = _coerced;
-    const requested = boundedVal;
-    if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { throw new BadRequestException({ error: "out of range" }); }
-    const buf = Buffer.alloc(requested + 1);
-    return { allocated: buf.length };
+  @Post("BenchmarkTest00286")
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00286(@UploadedFile() file: Express.Multer.File, @Req() req: Request): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    req.session.data = String(data);
+    return { created: true };
   }
 }

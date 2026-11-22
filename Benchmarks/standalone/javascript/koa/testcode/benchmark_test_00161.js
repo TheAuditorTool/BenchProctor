@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const childProcess = require("child_process");
 
 const BenchmarkTest00161 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
-  const [data] = String(userInput).split(',');
-  childProcess.execFileSync("echo", [data]);
+  const userInput = ctx.cookies.get("session_token") || "";
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  ctx.res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict; Secure");
   ctx.body = { ack: true };
 }
 

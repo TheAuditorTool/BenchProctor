@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { Response } from "express";
-import * as net from "net";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,10 +18,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00003")
-  async BenchmarkTest00003(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    net.connect(80, new URL(String(data)).hostname);
-    return { created: true };
+  @UseInterceptors(FileInterceptor("file"))
+  async BenchmarkTest00003(@UploadedFile() file: Express.Multer.File): Promise<unknown> {
+    const userInput = file?.originalname || "";
+    function normalize(value: string): string { return value.normalize("NFC"); }
+    const data: string = normalize(userInput);
+    const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+    return { token };
   }
 }

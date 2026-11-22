@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
@@ -18,9 +18,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00329")
-  async BenchmarkTest00329(@Headers("origin") origin: string): Promise<unknown> {
-    const userInput = origin || "";
-    crypto.createCipheriv("des-ede3-ecb", Buffer.alloc(24), null).update(String(userInput));
-    return { created: true };
+  async BenchmarkTest00329(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const _input = String(userInput);
+    let data;
+    switch (_input.startsWith('{') ? 'json' : 'text') {
+      case 'json': data = _input.normalize('NFC'); break;
+      default: data = _input; break;
+    }
+    const token = crypto.randomInt(2 ** 47).toString(36) + crypto.randomInt(2 ** 47).toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

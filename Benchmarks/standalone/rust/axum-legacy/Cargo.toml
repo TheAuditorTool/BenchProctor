@@ -1,0 +1,54 @@
+[package]
+name = "app-services"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes = "=0.8.4"
+aes-gcm = "=0.10.3"
+ammonia = "=4.2.5"
+aws-config = { version = "=1.13.0", features = ["behavior-version-latest"] }
+aws-sdk-iam = "=1.131.0"
+aws-sdk-s3 = "=1.155.0"
+aws-sdk-sqs = "=1.117.0"
+aws-sdk-sts = "=1.122.0"
+axum = { version = "=0.7.9", features = ["query", "multipart"] }
+base64 = "=0.22.1"
+blowfish = "=0.9.1"
+cbc = { version = "=0.1.2", features = ["alloc"] }
+cookie = "=0.18.2"
+csv = "=1.4.0"
+des = "=0.8.1"
+diesel = { version = "=2.3.14", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+fastrand = "=2.5.0"
+futures-util = "=0.3.34"
+hex = "=0.4.3"
+hmac = "=0.12.1"
+html-escape = "=0.2.15"
+lapin = "=2.5.5"
+ldap3 = { version = "=0.11.5", default-features = false, features = ["sync"] }
+libc = "=0.2.191"
+md-5 = "=0.10.6"
+minijinja = "=2.24.0"
+mongodb = { version = "=2.8.2" }
+pulldown-cmark = "=0.10.3"
+rand = { version = "=0.8.8", features = ["small_rng"] }
+redis = "=0.27.6"
+regex = "=1.13.1"
+reqwest = { version = "=0.12.28", features = ["json"] }
+rocket = { version = "=0.5.1", features = ["json"] }
+rusqlite = { version = "=0.32.1", features = ["bundled"] }
+serde_json = "=1.0.154"
+sha1 = "=0.10.7"
+sha2 = "=0.10.9"
+shell-escape = "=0.1.5"
+sqlx = { version = "=0.8.6", features = ["runtime-tokio", "postgres"] }
+sxd-document = "=0.3.2"
+sxd-xpath = "=0.4.2"
+tokio = { version = "=1.54.1", features = ["full"] }
+url = "=2.5.8"
+urlencoding = "=2.1.3"
+validator = { version = "=0.18.1", features = ["derive"] }
+
+[lib]
+path = "lib.rs"

@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "open-uri"
 
 class BenchmarkTest00311 < Sinatra::Base
   before do
@@ -18,17 +19,15 @@ class BenchmarkTest00311 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00311" do
-    user_input = request.env["HTTP_USER_AGENT"].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
+    user_input = params[:upload][:filename].to_s rescue ""
+    data = "%s" % user_input
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
     end
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    target_url = data
+    URI.open(target_url).read
     content_type :json
     JSON.generate({ status: "ok" })
   end

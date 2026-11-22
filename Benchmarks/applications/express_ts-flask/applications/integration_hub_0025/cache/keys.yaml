@@ -1,6 +1,0 @@
-channels:
-  - name: integrations:inbound:0025
-    payload: json
-keys:
-  - pattern: integrations:record:{id}
-    ttl_seconds: 300

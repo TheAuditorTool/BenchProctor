@@ -3,17 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00261Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->header('Referer', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        $rows = DB::table('users')->whereRaw('id = \'' . $data . '\'')->get();
         return response()->json(['ok' => 1]);
     }
 }

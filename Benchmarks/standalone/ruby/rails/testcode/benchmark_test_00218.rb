@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00218Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,15 +12,13 @@ class BenchmarkTest00218Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00218
-    user_input = request.headers["X-Custom-Header"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    system("echo " + processed)
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    data = user_input.gsub("\u0000", "")
+    aes = OpenSSL::Cipher::AES.new(256, :GCM)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    nonce = aes.random_iv
+    ciphertext = nonce + aes.update(data.to_s) + aes.final + aes.auth_tag
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

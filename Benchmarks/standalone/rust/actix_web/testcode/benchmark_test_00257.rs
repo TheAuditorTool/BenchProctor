@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00257")]
-pub async fn benchmark_test_00257(body: web::Bytes) -> HttpResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = match xml_value.chars().next() { Some(_) => xml_value.clone(), None => "default".to_string() };
-    let requested: u32 = data.parse().unwrap_or(0);
-    let count = (requested * 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+pub async fn benchmark_test_00257(req: HttpRequest) -> HttpResponse {
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    if let Ok(_target) = reqwest::Url::parse(&referer_value) {
+        let _request = reqwest::Request::new(reqwest::Method::GET, _target);
+        let _client = reqwest::Client::new();
+        _client.execute(_request).await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -2,34 +2,27 @@
 package testcode
 
 import (
-	"io"
+	"context"
 	"net/http"
+	"os/exec"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00096(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	relayPrefix := ""
-	if len(headerValue) > 0 {
-		relayPrefix = strings.ToLower(headerValue[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = headerValue
-	case "f":
-		data = headerValue
-	default:
-		data = headerValue
-	}
-	resp, err := http.Get(data)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	refererValue := c.GetHeader("Referer")
+	data := func(v string) string { return strings.TrimSpace(v) }(refererValue)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	processed := data
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", processed)
+	output, _ := cmd.CombinedOutput()
+	c.Data(200, "text/plain", output)
 }

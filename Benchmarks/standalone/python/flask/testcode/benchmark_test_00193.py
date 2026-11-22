@@ -1,15 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-from dataclasses import dataclass
-import requests
-from flask import Flask, jsonify
-import base64
-import pickle
+from lxml import etree
+from flask import Flask, request, jsonify
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
 
@@ -27,8 +24,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00193", methods=["POST"])
 def BenchmarkTest00193():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    form = FormData(payload=api_value)
-    data = form.payload
-    pickle.loads(base64.b64decode(data))
+    ua_value = request.headers.get('User-Agent', '')
+    reader = make_reader(ua_value)
+    data = reader()
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(data) + '"]')
     return jsonify({"result": "success"})

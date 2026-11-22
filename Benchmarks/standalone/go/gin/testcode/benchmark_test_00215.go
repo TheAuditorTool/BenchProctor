@@ -2,24 +2,24 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00215(c *gin.Context) {
-	fieldValue := c.PostForm("field")
-	data := func(v string) string { return strings.TrimSpace(v) }(fieldValue)
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
+	multipartValue := c.PostForm("multipart_field")
+	form := submissionForm{payload: multipartValue}
+	data := form.payload
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		c.String(http.StatusForbidden, "forbidden host")
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	targetUrl := data
+	c.Header("Location", targetUrl)
+	c.Status(http.StatusSeeOther)
 }

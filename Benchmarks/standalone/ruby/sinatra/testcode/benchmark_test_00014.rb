@@ -3,6 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "dry/schema"
+require "net/ldap"
 
 class BenchmarkTest00014 < Sinatra::Base
   before do
@@ -18,13 +20,17 @@ class BenchmarkTest00014 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00014" do
-    user_input = params[:multipart_field].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("DATA_ENC_KEY", "").ljust(32)[0, 32]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    data = format("%<value>s", value: user_input)
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.#%\-]+\z/) }
+    unless schema.call(value: data.to_s).success?
+      halt 400, JSON.generate({ error: "invalid" })
+      return
+    end
+    processed = data
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
     content_type :json
     JSON.generate({ status: "ok" })
   end

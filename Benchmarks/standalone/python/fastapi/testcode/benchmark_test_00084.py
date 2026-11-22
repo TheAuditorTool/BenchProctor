@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
-from starlette.responses import JSONResponse
 import json
-from app_runtime import db
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
+
+class UserInput(BaseModel):
+    payload: str = ''
 
 app = FastAPI()
 
@@ -22,8 +24,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00084")
-async def BenchmarkTest00084(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(graphql_var), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+async def BenchmarkTest00084(request: Request, req: UserInput):
+    json_value = req.payload
+    data = json.loads(json_value).get('value', '')
+    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
+    processed = _coerced
+    eval(str(processed))
+    return {"updated": True}

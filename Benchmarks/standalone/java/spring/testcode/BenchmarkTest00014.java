@@ -19,15 +19,18 @@ public class BenchmarkTest00014 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping("/BenchmarkTest00014")
-    public void BenchmarkTest00014(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("field") String field, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String fieldValue = field != null ? field : "";
-        java.util.function.Supplier<String> valueSupplier = () -> fieldValue.strip();
-        String data = valueSupplier.get();
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    @GetMapping("/BenchmarkTest00014")
+    public void BenchmarkTest00014(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(cookieValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        int quantity = Integer.parseInt(data);
+        int orderTotalCents = quantity * 1250;
+        if (orderTotalCents > 5_000_000) { response.sendError(422, "order exceeds credit limit"); return; }
+        response.setHeader("X-Order-Total", String.valueOf(orderTotalCents));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

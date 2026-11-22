@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+const crypto = require("crypto");
 
 async function BenchmarkTest00229(req, res) {
-  const userInput = (await (await fetch("https://api.partner.example/v1/records")).json()).data || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const knex = require("knex");
-  const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-  await _knex.raw("SELECT * FROM users WHERE id = '" + data + "'");
+  const userInput = req.headers["x-forwarded-for"] || "";
+  const data = `${userInput}`;
+  const _desKey = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY ?? (() => { throw new Error("DATA_ENC_KEY is not set"); })()).digest().subarray(0, 24);
+  crypto.createCipheriv("des-ede3-ecb", _desKey, null).update(String(data));
   res.json({ done: true });
 }
 

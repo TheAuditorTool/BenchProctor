@@ -2,10 +2,7 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00227(w http.ResponseWriter, r *http.Request) {
@@ -15,8 +12,11 @@ func BenchmarkTest00227(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uploadName := header.Filename
-	data := func(v string) string { return strings.TrimSpace(v) }(uploadName)
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	var data string
+	if uploadName != "" {
+		data = uploadName
+	}
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	w.Header().Add("Set-Cookie", sessionCookie.String())
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

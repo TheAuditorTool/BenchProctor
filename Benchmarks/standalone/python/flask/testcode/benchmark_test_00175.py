@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-import defusedxml.ElementTree
+import os
+from flask import Flask, session
+from flask import request, jsonify
 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,7 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00175", methods=["POST"])
 def BenchmarkTest00175():
-    xml_value = request.get_data(as_text=True)
-    data = xml_value if xml_value else 'default'
-    defusedxml.ElementTree.fromstring(str(data))
+    field_value = request.form.get('field', '')
+    pending = list(str(field_value).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    session['data'] = str(data)
     return jsonify({"result": "success"})

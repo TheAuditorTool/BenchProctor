@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import PlainTextResponse
+from fastapi import HTTPException
+from dataclasses import dataclass
+from app_runtime import db
 from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -21,8 +28,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00304")
 async def BenchmarkTest00304(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = str(multipart_value).replace('\x00', '')
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return PlainTextResponse(content)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    form = FormData(payload=comment_value)
+    data = form.payload
+    raise HTTPException(status_code=303, headers={'Location': str(data)})

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -21,16 +19,19 @@ public class BenchmarkTest00023 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00023", consumes="multipart/form-data")
-    public void BenchmarkTest00023(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String uploadName = file != null ? file.getOriginalFilename() : "";
-        String data;
-        if (uploadName.length() > 256) { data = uploadName.substring(0, 256); }
-        else { data = uploadName; }
-        if (!data.matches("^[a-zA-Z0-9 _.%~\\-]+$")) { response.sendError(400); return; }
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+    @PostMapping("/BenchmarkTest00023")
+    public void BenchmarkTest00023(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("comment") String commentText, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
+        java.util.function.Supplier<String> valueSupplier = () -> commentValue.strip();
+        String data = valueSupplier.get();
+        byte[] gcmIv = new byte[12]; new java.security.SecureRandom().nextBytes(gcmIv);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        javax.crypto.SecretKey key = keyGen.generateKey();
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, new javax.crypto.spec.GCMParameterSpec(128, gcmIv));
+        byte[] ct = cipher.doFinal(data.getBytes());
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(ct));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

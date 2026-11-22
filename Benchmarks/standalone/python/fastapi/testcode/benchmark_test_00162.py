@@ -20,12 +20,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00162")
 async def BenchmarkTest00162(request: Request):
-    user_id = request.query_params.get('id', '')
-    pending = list(str(user_id).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
+    auth_header = request.headers.get('authorization', '')
+    data = '%s' % str(auth_header)
     resp = JSONResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), secure=True, httponly=True, samesite='Strict')
+    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
     return resp

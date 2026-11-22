@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::extract::Form;
+use axum::http::HeaderMap;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use std::collections::HashMap;
 
-pub async fn benchmark_test_00179(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
-    let field_value = form.get("field").cloned().unwrap_or_default();
-    let (payload, _origin) = (field_value.clone(), "http");
-    let data = payload;
-    use rand::{Rng, SeedableRng};
-    let _seed: u64 = data.bytes().fold(0u64, |a, b| a.wrapping_add(b as u64));
-    let mut _rng = rand::rngs::StdRng::seed_from_u64(_seed);
-    let _token: u64 = _rng.gen();
-    crate::shared::store_session("csrf_token", &_token.to_string());
+pub async fn benchmark_test_00179(headers: HeaderMap) -> impl IntoResponse {
+    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let mut data = String::new();
+    for token in forwarded_ip.split(',') { data = token.to_string(); }
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
     Json(serde_json::json!({"count": 0})).into_response()
 }

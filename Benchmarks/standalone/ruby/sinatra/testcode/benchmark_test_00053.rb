@@ -3,7 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
 
 class BenchmarkTest00053 < Sinatra::Base
   before do
@@ -19,12 +18,10 @@ class BenchmarkTest00053 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00053" do
-    user_input = request.env["HTTP_HOST"].to_s
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = request.cookies["session_token"].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    response.add_header("set-cookie", Rack::Utils.set_cookie_header("session", { value: data, secure: true, httponly: true, same_site: :strict }))
     content_type :json
     JSON.generate({ status: "ok" })
   end

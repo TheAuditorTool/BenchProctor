@@ -6,21 +6,20 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
+#include <curl/curl.h>
 
 void benchmark_test_00562(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    for (char *_r = data; *_r; ++_r) if (*_r == '\n') *_r = ' ';
-    unsigned char _iv[12];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_aes_256_gcm(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    (void)argc; (void)argv;
+    const char *user_input = getenv("QUERY_STRING");
+    if (user_input == NULL) user_input = "";
+    const char *arg = user_input;
+    if (strncmp(user_input, "https://api.internal.svc/", 25) != 0 && strncmp(user_input, "https://cdn.internal.svc/", 25) != 0) arg = "https://api.internal.svc/data";
+    CURLU *_u = curl_url();
+    curl_url_set(_u, CURLUPART_URL, arg, 0);
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_CURLU, _u);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
+    curl_url_cleanup(_u);
 }

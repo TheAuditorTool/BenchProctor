@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "net/ldap"
 
 class BenchmarkTest00110 < Sinatra::Base
-  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,14 +19,31 @@ class BenchmarkTest00110 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00110" do
-    user_input = params[:multipart_field].to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
+    user_input = params[:field].to_s
+    _prefix = user_input[0,1].downcase
+    data = case _prefix
+           when 'h' then user_input.downcase
+           when 'f' then user_input.upcase
+           else user_input.strip
+           end
+    unless data =~ /\A[a-zA-Z0-9 _.#%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
+      return
     end
-    session[:data] = data.to_s
+    processed = data
+    password = params[:password].to_s
+    if password.empty?
+      halt 400, JSON.generate({ error: "password required" })
+      return
+    end
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
+    account = ldap.bind_as(base: "ou=people,dc=example,dc=com", filter: "(uid=" + processed.to_s + ")", password: password)
+    unless account
+      halt 401, JSON.generate({ error: "invalid credentials" })
+      return
+    end
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ dn: account.first.dn })
   end
 end

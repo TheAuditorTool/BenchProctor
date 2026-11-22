@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+import random
+from app_runtime import db
 
 
 def BenchmarkTest00032(request):
-    xml_value = request.body.decode('utf-8')
-    data = '{}'.format(xml_value)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = '%s' % (comment_value,)
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JsonResponse({'token': str(token)}, status=200)

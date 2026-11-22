@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00030() {
-  user_input="$HTTP_AUTHORIZATION"
-  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
-  data=$(normalize "$user_input")
-  _enum_re='^(asc|desc|name|created)$'
-  if [[ ! "$data" =~ $_enum_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  eval "echo $processed"
+  user_input="$(cat /dev/stdin)"
+  if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
+    data="$_parsed"
+  else
+    data="${user_input}"
+  fi
+  echo "$data" | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -pass env:DATA_ENC_KEY -out /dev/null
 }
 
 benchmark_test_00030 "$@"

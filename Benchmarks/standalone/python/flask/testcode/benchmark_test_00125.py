@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from flask import Flask, request, jsonify
-import re
-from app_runtime import db
+import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -20,10 +21,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00125", methods=["POST"])
 def BenchmarkTest00125():
-    field_value = request.form.get('field', '')
-    data = field_value if field_value else 'default'
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    db.execute('SELECT * FROM users ORDER BY ' + str(processed))
-    return jsonify({"result": "success"})
+    multipart_value = request.form.get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return jsonify({'length': len(ciphertext)}), 200

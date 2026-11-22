@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "base64"
-require "socket"
 
 class BenchmarkTest00277 < Sinatra::Base
   before do
@@ -21,8 +19,9 @@ class BenchmarkTest00277 < Sinatra::Base
   end
   post "/benchmark_test_00277" do
     user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    data = Base64.decode64(user_input)
-    TCPSocket.new(data, 80).close
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
     content_type :json
     JSON.generate({ status: "ok" })
   end

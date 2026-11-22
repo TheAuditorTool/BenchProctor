@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from lxml import etree
+from app_runtime import db
 
 
 def BenchmarkTest00165(request):
-    raw_body = request.body.decode('utf-8')
-    data = str(raw_body).replace('\x00', '')
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    data = bytes.fromhex(db_value).decode('utf-8', 'ignore')
+    exec(str(data))
     return JsonResponse({"saved": True})

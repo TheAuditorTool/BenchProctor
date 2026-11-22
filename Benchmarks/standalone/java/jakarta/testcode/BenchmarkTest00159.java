@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.security.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,17 +30,14 @@ public class BenchmarkTest00159 {
         }
     }
 
-    record FormData(String payload) {}
-
     @GET
     @Path("/BenchmarkTest00159")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00159(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        FormData payload = new FormData(userId);
-        String data = payload.payload();
-        byte[] digest = MessageDigest.getInstance("MD5").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        response.setHeader("X-Hash", java.util.Base64.getEncoder().encodeToString(digest));
+    public Response BenchmarkTest00159(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = originValue.replace("\u0000", "");
+        long randValue = new java.util.SplittableRandom().nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

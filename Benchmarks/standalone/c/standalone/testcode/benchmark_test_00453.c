@@ -12,11 +12,9 @@ void benchmark_test_00453(int argc, char **argv)
     (void)argc; (void)argv;
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    const char *data = "";
-    if (strlen(user_input) > 0) data = user_input;
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    fwrite(_buf, 1, _span, stdout);
-    putchar('\n');
+    size_t _n = strlen(user_input);
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    printf("%d\n", _mode);
 }

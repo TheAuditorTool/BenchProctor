@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
-const fs = require("fs");
 
 async function BenchmarkTest00017(req, res) {
-  const userInput = req.body.field || "";
-  const data = decodeURIComponent(userInput);
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  const userInput = req.body || "";
+  const parts = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data = parts.join(',');
+  const Database = require("better-sqlite3");
+  const appDb = (globalThis._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+  appDb.prepare("SELECT id, name FROM users WHERE name = '" + data + "'").all();
   res.json({ done: true });
 }
 

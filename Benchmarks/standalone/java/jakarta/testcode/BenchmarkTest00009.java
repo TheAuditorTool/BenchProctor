@@ -33,11 +33,13 @@ public class BenchmarkTest00009 {
     @GET
     @Path("/BenchmarkTest00009")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00009(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public Response BenchmarkTest00009(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Authorization") String authorization, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : authHeader.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        String cookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("Set-Cookie", "session=" + cookieValue + "; Path=/; HttpOnly; SameSite=Strict");
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

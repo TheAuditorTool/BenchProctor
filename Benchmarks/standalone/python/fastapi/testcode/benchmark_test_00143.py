@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
+import numpy as np
 from starlette.responses import JSONResponse
-from app_runtime import db
 
 
 app = FastAPI()
@@ -22,13 +21,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00143")
 async def BenchmarkTest00143(request: Request):
-    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
-    kind = 'json' if str(upload_name).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(upload_name).strip()
-        case _:
-            data = str(upload_name)
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data = str(forwarded_ip).replace('\x00', '')
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _bounded
+    quantity = int(processed)
+    total_cents = np.int64(min(quantity, 100000)) * np.int64(1999)
+    return JSONResponse({'total_cents': int(total_cents)}, status_code=200)

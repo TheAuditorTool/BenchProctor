@@ -2,16 +2,21 @@
 package testcode
 
 import (
-	"bytes"
-	"html/template"
+	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00005(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	tmpl, _ := template.New("view").Parse("{{.}}")
-	var buf bytes.Buffer
-	tmpl.Execute(&buf, forwardedIP)
-	c.Data(200, "text/html", buf.Bytes())
+	header, err := c.FormFile("upload")
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad upload")
+		return
+	}
+	uploadName := header.Filename
+	data := fmt.Sprintf("%s", uploadName)
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	c.Writer.Header().Add("Set-Cookie", sessionCookie.String())
+	c.JSON(200, gin.H{"code": "OK"})
 }

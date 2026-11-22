@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
-use axum::http::StatusCode;
+use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00003(headers: HeaderMap) -> impl IntoResponse {
-    let ua_value = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = ua_value.replace("\t", " ");
-    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
-    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+pub async fn benchmark_test_00003(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let user_id = params.get("id").cloned().unwrap_or_default();
+    let data = user_id.split([' ', '\t']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+    let plan_limits: std::collections::HashMap<&str, u32> = std::collections::HashMap::from([("free", 3), ("team", 25), ("enterprise", 500)]);
+    let seat_limit = plan_limits.get(data.as_str()).copied().unwrap();
+    let _ = seat_limit;
     Json(serde_json::json!({"count": 0})).into_response()
 }

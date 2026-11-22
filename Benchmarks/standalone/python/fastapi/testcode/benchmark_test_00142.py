@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
+import subprocess
 from fastapi.responses import JSONResponse
 
 
@@ -21,6 +21,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00142")
 async def BenchmarkTest00142(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    data = ' '.join(str(raw_body).split())
-    return RedirectResponse(url=str(data))
+    cookie_value = request.cookies.get('session_token', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(cookie_value)
+    subprocess.run('echo ' + str(data), shell=True)
+    return {"updated": True}

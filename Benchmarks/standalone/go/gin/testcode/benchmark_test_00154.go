@@ -2,7 +2,6 @@
 package testcode
 
 import (
-	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -11,10 +10,13 @@ import (
 )
 
 func BenchmarkTest00154(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	hexBytes, _ := hex.DecodeString(headerValue)
+	cookieValue, err := c.Cookie("session_token")
+	if err != nil {
+		c.String(http.StatusBadRequest, "missing cookie")
+		return
+	}
+	hexBytes, _ := hex.DecodeString(cookieValue)
 	data := string(hexBytes)
-	hash := md5.Sum([]byte(data))
-	hashStr := fmt.Sprintf("%x", hash)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(c.Writer, "<p>Results for %s</p>", data)
 }

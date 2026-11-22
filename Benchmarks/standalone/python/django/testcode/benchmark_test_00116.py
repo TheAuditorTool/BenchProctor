@@ -2,15 +2,14 @@
 from django.http import JsonResponse
 
 
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
-
 def BenchmarkTest00116(request):
-    raw_body = request.body.decode('utf-8')
-    data = RequestPayload(raw_body).value
-    request.session['data'] = str(data)
-    return JsonResponse({"saved": True})
+    forwarded_ip = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    pending = list(str(forwarded_ip).split(','))
+    collected = []
+    while pending:
+        collected.append(pending.pop(0).strip())
+    data = ','.join(collected)
+    resp = JsonResponse({'status': 'ok'})
+    resp.cookies['session'] = str(data)
+    resp.cookies['session'].update({'secure': True, 'httponly': True, 'samesite': 'Strict', 'path': '/'})
+    return resp

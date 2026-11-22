@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import ldap
-import os
+from Crypto.Hash import MD4
+import json
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 def BenchmarkTest00027(request):
-    xml_value = request.body.decode('utf-8')
-    parts = str(xml_value).split(',')
-    data = ' '.join(parts)
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return JsonResponse({"saved": True})
+    json_value = json.loads(request.body or b'{}').get('payload', '')
+    reader = make_reader(json_value)
+    data = reader()
+    digest = MD4.new(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

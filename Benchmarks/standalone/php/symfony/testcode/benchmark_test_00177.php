@@ -5,16 +5,19 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00177', methods: ['POST'])]
 class BenchmarkTest00177Controller
 {
-    public function __invoke(Request $request, Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $request->request->get('field', '');
-        [$data] = [$userInput, 'http'];
-        $conn->executeQuery('SELECT * FROM users WHERE id = \'' . $data . '\'');
+        $userInput = ($request->files->get('upload')?->getClientOriginalName() ?? '');
+        $data = sprintf('%s', $userInput);
+        $catalog = new \DOMDocument();
+        $catalog->load('/var/app/data/catalog.xml');
+        $item = $catalog->getElementById((string)$data);
+        if ($item === null) { return new JsonResponse(["error" => "not found"], 404); }
+        $price = $item->getAttribute('price');
         return new JsonResponse(["committed" => true]);
     }
 }

@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00297 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  ctx.body = { allocated: buf.length }; return;
+  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
+  const [data] = String(userInput).split(',');
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + parsedNum + "']").select({ node: usersDoc });
+  ctx.body = { ack: true };
 }
 
 module.exports = { BenchmarkTest00297 };

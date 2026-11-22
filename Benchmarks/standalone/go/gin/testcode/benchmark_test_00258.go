@@ -2,27 +2,34 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"os"
-	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00258(c *gin.Context) {
-	var profileBio string
-	DB.QueryRow("SELECT bio FROM profiles LIMIT 1").Scan(&profileBio)
-	data := strings.ReplaceAll(profileBio, "\x00", "")
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid option")
-		return
-	}
-	processed := data
-	content, err := os.ReadFile("/var/app/data/" + processed)
+	cookieValue, err := c.Cookie("session_token")
 	if err != nil {
-		c.String(http.StatusNotFound, "not found")
+		c.String(http.StatusBadRequest, "missing cookie")
 		return
 	}
-	c.Data(200, "text/plain", content)
+	var data string
+	if cookieValue != "" {
+		data = cookieValue
+	}
+	upstreamReq, err := http.NewRequest(http.MethodGet, data, nil)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	upstreamReq.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(upstreamReq)
+	if err != nil {
+		c.String(http.StatusBadGateway, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(200, "text/plain", body)
 }

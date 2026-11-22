@@ -2,22 +2,24 @@
 package testcode
 
 import (
+	"crypto/sha3"
+	"encoding/hex"
+	"io"
 	"net/http"
-	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00088(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	var data string
-	if fieldValue != "" {
-		data = fieldValue
-	}
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	xmlBody := string(rawBytes)
+	segments := strings.Split(xmlBody, ",")
+	data := strings.Join(segments, " ")
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

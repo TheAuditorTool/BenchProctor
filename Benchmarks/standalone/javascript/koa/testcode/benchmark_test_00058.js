@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
+const vm = require("node:vm");
 
 const BenchmarkTest00058 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
-  ctx.cookies.set("session", userInput, { secure: false, httpOnly: true, sameSite: "strict" });
+  const userInput = ctx.request.headers.origin || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  vm.runInNewContext(String(data), { Math });
   ctx.body = { ack: true };
 }
 

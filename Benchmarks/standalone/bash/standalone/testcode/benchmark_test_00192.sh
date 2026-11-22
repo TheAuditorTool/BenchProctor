@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00192() {
-  user_input="$PATH_INFO"
-  _captured="${user_input}"
-  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
-  data=$(make_reader)
+  user_input="$HTTP_AUTHORIZATION"
+  data=""
+  while IFS= read -r line || [ -n "$line" ]; do data+="$line"$'\n'; done <<< "$user_input"
+  data="${data%$'\n'}"
   xmllint --xpath "//user[name='$data']" /var/data/users.xml
 }
 

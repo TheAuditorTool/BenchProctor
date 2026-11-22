@@ -36,7 +36,11 @@ public class BenchmarkTest00033 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00033(@jakarta.validation.constraints.Size(max = 4096) @FormParam("comment") String commentText, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String commentValue = java.util.Optional.ofNullable(commentText).orElse("");
-        String data = String.join(" ", commentValue.split("[ \\t]+"));
-        return Response.ok("<div>" + data + "</div>", MediaType.TEXT_HTML).build();
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : commentValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        long randValue = java.util.random.RandomGenerator.of("SecureRandom").nextLong() ^ data.hashCode();
+        response.setHeader("X-Rand", String.valueOf(randValue));
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

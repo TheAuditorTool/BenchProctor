@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from jinja2 import Environment
+from starlette.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 
 
@@ -20,12 +22,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00189")
 async def BenchmarkTest00189(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    kind = 'json' if str(auth_header).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(auth_header).strip()
-        case _:
-            data = str(auth_header)
-    exec(str(data))
-    return {"updated": True}
+    cookie_value = request.cookies.get('session_token', '')
+    if cookie_value:
+        data = cookie_value
+    else:
+        data = ''
+    page = Environment(autoescape=True).from_string('<div>{{ value }}</div>').render(value=str(data))
+    return HTMLResponse(page)

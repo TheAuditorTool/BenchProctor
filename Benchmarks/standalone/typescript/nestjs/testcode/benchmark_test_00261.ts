@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Response } from "express";
-import * as net from "net";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { parseXmlString } from "libxmljs2";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -17,12 +22,12 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00261/:id")
-  async BenchmarkTest00261(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    function normalize(value: string): string { return value.normalize("NFC"); }
-    const data: string = normalize(userInput);
-    net.connect(80, new URL(String(data)).hostname);
+  @Post("BenchmarkTest00261")
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00261(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    const data = String(userInput).slice(0, 200);
+    parseXmlString(String(data), { noent: false, dtdload: false, nonet: true });
     return { created: true };
   }
 }

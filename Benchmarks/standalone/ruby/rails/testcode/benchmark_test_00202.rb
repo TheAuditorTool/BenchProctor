@@ -11,10 +11,12 @@ class BenchmarkTest00202Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00202
-    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
+    user_input = request.referer.to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    User.find_by_sql("SELECT * FROM users WHERE id = '" + data + "'")
     render json: { status: "ok" }
   end
 end

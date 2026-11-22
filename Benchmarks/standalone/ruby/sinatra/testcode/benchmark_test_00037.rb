@@ -18,9 +18,10 @@ class BenchmarkTest00037 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00037" do
-    user_input = params[:field].to_s
-    data = format("%<value>s", value: user_input)
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    user_input = request.env["HTTP_REFERER"].to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    RubyVM::InstructionSequence.compile(data.to_s).eval
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00169")]
-pub async fn benchmark_test_00169(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = urlencoding::decode(&referer_value).unwrap_or_default().to_string();
-    let processed = ammonia::clean(&data);
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", processed));
+pub async fn benchmark_test_00169(body: web::Bytes) -> HttpResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", raw_body).ok();
+    let result: Option<String> = std::env::var(data.as_str()).ok();
+    let value = result.unwrap();
+    let _ = value;
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

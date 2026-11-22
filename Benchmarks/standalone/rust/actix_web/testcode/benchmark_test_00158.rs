@@ -3,12 +3,11 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00158")]
 pub async fn benchmark_test_00158(req: HttpRequest) -> HttpResponse {
-    let host_value = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let mut data = String::new();
-    for token in host_value.split(',') { data = token.to_string(); }
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = forwarded_ip.replace("\t", " ");
+    let _profile = std::collections::BTreeMap::from([("display_name".to_string(), data.clone()), ("profile_complete".to_string(), "true".to_string())]);
+    if let Ok(mut _session) = crate::shared::SESSION_STORE.lock() {
+        _session.extend(_profile);
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

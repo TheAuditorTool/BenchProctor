@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
+from django.shortcuts import redirect
+import os
 
 
 def BenchmarkTest00136(request):
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    pending = list(str(auth_header).split(','))
-    collected = []
-    while pending:
-        collected.append(pending.pop(0).strip())
-    data = ','.join(collected)
-    resp = JsonResponse({'status': 'ok'})
-    resp.set_cookie('session', str(data), httponly=True, samesite='Strict')
-    return resp
+    env_value = os.environ.get('APP_INPUT', '')
+    parts = str(env_value).split(',')
+    data = ' '.join(parts)
+    return redirect(str(data))

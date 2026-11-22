@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Header, Headers, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as http from "http";
+import * as nunjucks from "nunjucks";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,11 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00229")
-  async BenchmarkTest00229(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const formData = Object.freeze({ payload: userInput });
-    const data = formData.payload;
-    http.get(data);
-    return { created: true };
+  @Header("Content-Type", "text/html")
+  async BenchmarkTest00229(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
+    const userInput = xff || "";
+    const data = `${userInput}`;
+    const page = nunjucks.renderString('<div class="bio">{{ bio | safe }}</div>', { bio: data });
+    return page;
   }
 }

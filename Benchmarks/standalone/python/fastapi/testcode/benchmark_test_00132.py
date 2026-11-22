@@ -1,8 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from dataclasses import dataclass
+from starlette.responses import JSONResponse
+import os
+import hashlib
+from app_runtime import db
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -21,7 +30,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00132")
 async def BenchmarkTest00132(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = (lambda v: v.strip())(multipart_value)
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    form = FormData(payload=db_value)
+    data = form.payload
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)

@@ -20,14 +20,14 @@ public class BenchmarkTest00092 {
     }
 
     @GetMapping("/BenchmarkTest00092")
-    public void BenchmarkTest00092(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Referer") String referer, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String refererValue = referer != null ? referer : "";
-        java.util.Properties store = new java.util.Properties();
-        store.setProperty("value", refererValue);
-        String data = store.getProperty("value", "");
-        com.fasterxml.jackson.databind.ObjectMapper safeMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        safeMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        com.fasterxml.jackson.databind.JsonNode node = safeMapper.readTree(data);
-        response.getWriter().print(node.path("name").asText());
+    public void BenchmarkTest00092(@jakarta.validation.constraints.Size(max = 4096) @CookieValue("session_token") String sessionToken, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.function.Function<String,String> transform = v -> v.strip().replaceAll("[ \\t]+", " ");
+        String data = transform.apply(cookieValue);
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

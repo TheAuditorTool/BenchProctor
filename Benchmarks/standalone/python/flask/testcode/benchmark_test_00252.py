@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
-from urllib.parse import urlparse
-import socket
 from flask import Flask, request, jsonify
-import re
+from lxml import etree
 
 
 app = Flask(__name__)
@@ -22,12 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00252", methods=["POST"])
 def BenchmarkTest00252():
-    user_id = request.args.get('id', '')
-    data = '%s' % str(user_id)
-    parsed = urlparse(data)
-    resolved = socket.gethostbyname(parsed.hostname or data)
-    if re.match("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)", resolved):
-        return jsonify({'error': 'private range blocked'}), 403
-    target_url = data
-    requests.get(str(target_url))
+    raw_body = request.get_data(as_text=True)
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(raw_body).encode(), _parser)
     return jsonify({"result": "success"})

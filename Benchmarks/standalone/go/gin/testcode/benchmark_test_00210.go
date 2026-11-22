@@ -2,20 +2,19 @@
 package testcode
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00210(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	form := submissionForm{payload: forwardedIP}
-	data := form.payload
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	data := func(v string) string { return strings.TrimSpace(v) }(graphqlVar)
+	http.RedirectHandler(data, http.StatusFound).ServeHTTP(c.Writer, c.Request)
 }

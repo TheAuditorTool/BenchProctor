@@ -11,10 +11,9 @@ class BenchmarkTest00273Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00273
-    user_input = cookies[:session_token].to_s
-    tokens = user_input.split(',')
-    data = tokens.join(' ')
-    system("echo " + data)
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    data = "%s" % user_input
+    User.where(id: data).to_a
     render json: { status: "ok" }
   end
 end

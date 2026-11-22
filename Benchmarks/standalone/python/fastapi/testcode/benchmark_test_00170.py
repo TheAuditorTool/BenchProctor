@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import secrets
-from starlette.responses import JSONResponse
-from app_runtime import db
+import base64
+import pickle
+from fastapi.responses import JSONResponse
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = FastAPI()
 
@@ -27,9 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00170")
 async def BenchmarkTest00170(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    reader = make_reader(comment_value)
-    data = reader()
-    token = secrets.token_hex(32)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return JSONResponse({'token': str(token)}, status_code=200)
+    auth_header = request.headers.get('authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    pickle.loads(base64.b64decode(data))
+    return {"updated": True}

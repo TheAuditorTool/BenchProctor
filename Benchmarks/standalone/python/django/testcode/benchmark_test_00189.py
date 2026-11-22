@@ -1,17 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.http import JsonResponse
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from django.http import HttpResponse
+from app_runtime import db
 
 
 def BenchmarkTest00189(request):
-    referer_value = request.META.get('HTTP_REFERER', '')
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
     parts = []
-    for token in str(referer_value).split(','):
+    for token in str(comment_value).split(','):
         parts.append(token.strip())
     data = ','.join(parts)
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return JsonResponse({'length': len(ciphertext)}, status=200)
+    resp = HttpResponse(status=302)
+    resp['Location'] = str(data)
+    return resp

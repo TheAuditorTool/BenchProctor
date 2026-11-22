@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post, BadRequestException } from "@nestjs/common";
-import { Response } from "express";
-import * as childProcess from "child_process";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,13 +17,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00099")
-  async BenchmarkTest00099(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const _raw = userInput;
-    const data = (_raw && _raw.length > 0) ? _raw : 'default';
-    if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    childProcess.execSync("echo " + processed);
+  async BenchmarkTest00099(@Req() req: Request): Promise<unknown> {
+    const userInput = (req.body as string) || "";
+    const pending: string[] = String(userInput).split(',');
+    const collected: string[] = [];
+    while (pending.length) { collected.push(pending.shift() ?? ""); }
+    const data: string = collected.join(',');
+    const _coerced = parseFloat(String(data));
+    const parsedNum = _coerced;
+    req.session.data = String(parsedNum);
     return { created: true };
   }
 }

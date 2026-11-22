@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 async function BenchmarkTest00141(req, res) {
-  const userInput = req.headers["x-forwarded-for"] || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { res.status(400).json({ error: "out of range" }); return; }
-  const buf = Buffer.alloc(requested + 1);
-  res.json({ allocated: buf.length }); return;
+  const userInput = req.body?.field || "";
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  const recordCount = parseInt(String(data), 10);
+  const table = new ArrayBuffer((recordCount * 64) >>> 0);
+  res.json({ allocated: table.byteLength }); return;
 }
 
 module.exports = { BenchmarkTest00141 };

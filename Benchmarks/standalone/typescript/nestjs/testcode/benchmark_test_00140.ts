@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
+import { Controller, Headers, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,15 +17,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00140")
-  async BenchmarkTest00140(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const data = String(userInput).slice(0, 200);
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  async BenchmarkTest00140(@Headers("x-custom-header") hdr: string, @Req() req: Request): Promise<unknown> {
+    const userInput = hdr || "";
+    const _raw = userInput;
+    const data = (_raw && _raw.length > 0) ? _raw : 'default';
+    const _coerced = parseFloat(String(data));
+    const parsedNum = _coerced;
+    req.session.data = String(parsedNum);
     return { created: true };
   }
 }

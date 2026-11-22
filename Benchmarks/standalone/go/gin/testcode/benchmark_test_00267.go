@@ -2,6 +2,12 @@
 package testcode
 
 import (
+	"bytes"
+	"crypto/cipher"
+	"crypto/des"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -10,15 +16,27 @@ import (
 )
 
 func BenchmarkTest00267(c *gin.Context) {
-	originValue := c.GetHeader("Origin")
-	capture := func() string { return strings.TrimSpace(originValue) }
-	data := capture()
-	allowed := map[string]bool{"config.json": true, "index.html": true, "readme.md": true}
-	if !allowed[data] {
-		c.String(http.StatusForbidden, "forbidden")
-		return
+	headerValue := c.GetHeader("X-Custom-Header")
+	relayPrefix := ""
+	if len(headerValue) > 0 {
+		relayPrefix = strings.ToLower(headerValue[:1])
 	}
-	checkedPath := "/var/app/data/" + data
-	os.Remove(checkedPath)
-	c.JSON(200, gin.H{"code": "OK"})
+	var data string
+	switch relayPrefix {
+	case "h":
+		data = headerValue
+	case "f":
+		data = headerValue
+	default:
+		data = headerValue
+	}
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
+	iv := make([]byte, des.BlockSize)
+	rand.Read(iv)
+	padLen := des.BlockSize - len(data)%des.BlockSize
+	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
+	cipherOut := make([]byte, len(ptext))
+	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
+	c.JSON(http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
 }

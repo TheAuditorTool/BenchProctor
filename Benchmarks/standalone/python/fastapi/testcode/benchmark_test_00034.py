@@ -1,8 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
 import json
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import asyncio
+import os
+import pika
+import importlib
 
+
+def _amqp_receive(queue):
+    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
+        channel = connection.channel()
+        channel.queue_declare(queue=queue, durable=True)
+        return channel.basic_get(queue=queue, auto_ack=True)[2]
+def _revive_typed(fields):
+    type_name = fields.pop('__type__', None)
+    if type_name is None:
+        return fields
+    module_name, _, class_name = type_name.rpartition('.')
+    return getattr(importlib.import_module(module_name), class_name)(**fields)
 
 app = FastAPI()
 
@@ -21,10 +37,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00034")
 async def BenchmarkTest00034(request: Request):
-    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
-    try:
-        data = json.loads(graphql_var).get('value', graphql_var)
-    except (json.JSONDecodeError, AttributeError):
-        data = graphql_var
-    exec(str(data))
-    return {"updated": True}
+    msg_value = ((await asyncio.to_thread(_amqp_receive, 'app-events')) or b'').decode()
+    data = ' '.join(str(msg_value).split())
+    parsed = json.JSONDecoder(object_hook=_revive_typed).decode(str(data))
+    return JSONResponse({'parsed': str(parsed)}, status_code=200)

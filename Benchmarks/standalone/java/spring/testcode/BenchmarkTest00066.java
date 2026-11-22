@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.xpath.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,17 +19,17 @@ public class BenchmarkTest00066 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    record FormData(String payload) {}
-
-    @GetMapping("/BenchmarkTest00066")
-    public void BenchmarkTest00066(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        FormData payload = new FormData(originValue);
-        String data = payload.payload();
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        XPathFactory xpf = XPathFactory.newInstance();
-        XPath xpath = xpf.newXPath();
-        xpath.evaluate("/users/user[@name='" + data + "']", new org.xml.sax.InputSource(new java.io.StringReader("<users/>")));
+    @GetMapping("/BenchmarkTest00066/{pathId}")
+    public void BenchmarkTest00066(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String pathValue = pathId;
+        String data = String.join(" ", pathValue.split("[ \\t]+"));
+        byte[] dataKey = java.util.Base64.getDecoder().decode(System.getenv("DATA_ENC_KEY"));
+        org.bouncycastle.crypto.StreamCipher rc4 = new org.bouncycastle.crypto.engines.RC4Engine();
+        rc4.init(true, new org.bouncycastle.crypto.params.KeyParameter(dataKey));
+        byte[] plain = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] sealed = new byte[plain.length];
+        rc4.processBytes(plain, 0, plain.length, sealed, 0);
+        response.setHeader("X-Cipher-Bytes", java.util.Base64.getEncoder().encodeToString(sealed));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

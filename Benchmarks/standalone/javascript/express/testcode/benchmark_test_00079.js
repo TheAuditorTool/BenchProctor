@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
+const path = require("path");
+const fs = require("fs");
 
 async function BenchmarkTest00079(req, res) {
-  const userInput = req.headers.host || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = row.name;
+  const userInput = (req.files && req.files[0] && req.files[0].originalname) || "";
+  const data = String(userInput).split(/[ \t]+/).join(" ");
+  const resolved = path.resolve("/var/app/data", data);
+  if (!resolved.startsWith("/var/app/data/")) { res.status(403).json({error:"forbidden"}); return; }
+  const checkedPath = resolved;
+  fs.writeFileSync(checkedPath, "data");
   res.json({ done: true });
 }
 

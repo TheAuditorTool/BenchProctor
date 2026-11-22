@@ -3,17 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00078Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        $data = "{$userInput}";
-        $result = DB::table('users')->where('id', $data)->first();
-        if ($result === null) { return response()->json(["error" => "not found"], 404); }
-        $value = $result->name;
+        $userInput = $request->header('Referer', '');
+        $asText = function ($v): string { return trim((string) $v); };
+        $data = $asText($userInput);
+        exec('tar -czf /tmp/backup.tgz ' . (string)$data);
         return response()->json(['ok' => 1]);
     }
 }

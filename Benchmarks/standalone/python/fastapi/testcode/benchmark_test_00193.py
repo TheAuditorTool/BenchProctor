@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-import bleach
-from fastapi import Form
+from starlette.responses import RedirectResponse
 from fastapi.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -22,11 +25,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00193")
-async def BenchmarkTest00193(request: Request, field: str = Form('')):
-    field_value = field
-    parts = []
-    for token in str(field_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    processed = bleach.clean(data)
-    return HTMLResponse('<div>' + str(processed) + '</div>')
+async def BenchmarkTest00193(request: Request):
+    origin_value = request.headers.get('origin', '')
+    reader = make_reader(origin_value)
+    data = reader()
+    return RedirectResponse(url=str(data))

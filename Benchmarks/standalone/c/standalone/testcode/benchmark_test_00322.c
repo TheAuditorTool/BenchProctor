@@ -7,15 +7,13 @@
 #include <stdint.h>
 #include <time.h>
 
-static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
-
 void benchmark_test_00322(int argc, char **argv)
 {
     (void)argc; (void)argv;
     const char *user_input = getenv("QUERY_STRING");
     if (user_input == NULL) user_input = "";
-    const char *(*_fn)(const char *) = c_passthrough;
-    const char *data = _fn(user_input);
-    char *_found = strchr(data, '=');
-    printf("%c\n", *_found);
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    const char *_sep = strstr(data, "://");
+    putchar(_sep[3]);
+    putchar('\n');
 }

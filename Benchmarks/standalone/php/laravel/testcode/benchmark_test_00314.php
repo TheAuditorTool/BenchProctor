@@ -8,8 +8,9 @@ class BenchmarkTest00314Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $data = mb_convert_encoding($userInput, 'UTF-8');
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, false, true, false, 'Strict');
+        $userInput = ($request->route('id') ?? $request->input('id', ''));
+        $data = sprintf('%s', $userInput);
+        file_put_contents('/var/uploads/' . $data, 'data');
+        return response()->json(['ok' => 1]);
     }
 }

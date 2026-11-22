@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "resolv"
-require "ipaddr"
-require "open-uri"
+require "open3"
 
 class BenchmarkTest00285 < Sinatra::Base
   before do
@@ -21,17 +19,14 @@ class BenchmarkTest00285 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00285" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      halt 403, JSON.generate({ error: "private range blocked" })
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    data = "%s" % user_input
+    unless data =~ /\A[a-zA-Z0-9 _.%\-]+\z/
+      halt 400, JSON.generate({ error: "invalid" })
       return
     end
-    target_url = data
-    URI.open(target_url).read
+    processed = data
+    Open3.capture2e("echo " + processed)
     content_type :json
     JSON.generate({ status: "ok" })
   end

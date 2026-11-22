@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00124() {
-  user_input="$(sed -n '/^\r*$/{n;s/\r$//;p;q}')"
-  data=$(printf "%s" "${user_input}" | tr -s " ")
-  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "not a number" >&2; exit 1; fi
-  requested=$data
-  alloc_size=$((requested + 1))
-  echo "alloc:$alloc_size"
+  user_input="$(cat /dev/stdin)"
+  printf -v data "%s" "${user_input}"
+  eval echo "~$data"
 }
 
 benchmark_test_00124 "$@"

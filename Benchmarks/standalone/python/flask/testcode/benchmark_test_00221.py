@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
 from flask import Flask, request, jsonify
+import ctypes
 
 
 app = Flask(__name__)
@@ -19,7 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00221", methods=["POST"])
 def BenchmarkTest00221():
-    upload_name = request.files['upload'].filename
-    data = upload_name if upload_name else 'default'
-    parsed = yaml.safe_load(data)
-    return jsonify({'parsed': str(parsed)}), 200
+    field_value = request.form.get('field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(field_value)
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return jsonify({'wrapped': wrapped}), 200

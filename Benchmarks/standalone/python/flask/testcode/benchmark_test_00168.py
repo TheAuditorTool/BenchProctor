@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
+import requests
+from urllib.parse import urlparse
 from flask import Flask, request, jsonify
-from app_runtime import db
+import re
 
 
 app = Flask(__name__)
@@ -20,7 +21,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00168", methods=["POST"])
 def BenchmarkTest00168():
-    multipart_value = request.form.get('multipart_field', '')
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(multipart_value), token))
-    return jsonify({'token': str(token)}), 200
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = (lambda v: v.strip())(json_value)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return jsonify({'error': 'forbidden host'}), 403
+    target_url = data
+    requests.get(str(target_url))
+    return jsonify({"result": "success"})

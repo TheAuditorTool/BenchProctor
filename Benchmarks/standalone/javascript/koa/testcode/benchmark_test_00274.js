@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
-const fs = require("fs");
+const childProcess = require("child_process");
 
 const BenchmarkTest00274 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-  const data = tokens.join(' ');
-  const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-  const _siv = crypto.randomBytes(12);
-  const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-  const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-  const _stag = _scipher.getAuthTag();
-  fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  const userInput = (ctx.request.body && ctx.request.body.payload) || "";
+  let data;
+  try { data = JSON.parse(userInput).value || ""; }
+  catch (e) { data = String(userInput); }
+  if (!["ls", "cat", "date", "whoami"].includes(data)) { ctx.status = 403; ctx.body = {error:'forbidden'}; return; }
+  const allowedBin = data;
+  childProcess.exec("echo " + allowedBin, (_err, stdout) => console.log(stdout));
   ctx.body = { ack: true };
 }
 

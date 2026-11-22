@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
+import os
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import ctypes
+from fastapi.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -22,7 +29,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00027")
 async def BenchmarkTest00027(request: Request):
     header_value = request.headers.get('x-custom-header', '')
-    data = ' '.join(str(header_value).split())
-    requested = int(str(data))
-    wrapped = ctypes.c_int32(requested + 1).value
-    return JSONResponse({'wrapped': wrapped}, status_code=200)
+    reader = make_reader(header_value)
+    data = reader()
+    request.session['data'] = str(data)
+    return {"updated": True}

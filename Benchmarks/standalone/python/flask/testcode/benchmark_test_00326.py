@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
+from flask import Flask, request
+from flask import jsonify
 
 
 app = Flask(__name__)
@@ -18,10 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00326", methods=["POST"])
 def BenchmarkTest00326():
-    origin_value = request.headers.get('Origin', '')
-    parts = []
-    for token in str(origin_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    exec(str(data))
-    return jsonify({"result": "success"})
+    upload_name = request.files['upload'].filename
+    data = f'{upload_name!s}'
+    with open('/var/app/data/' + str(data), 'r') as fh:
+        content = fh.read()
+    return content

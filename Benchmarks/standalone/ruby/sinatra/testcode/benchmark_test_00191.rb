@@ -3,8 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "open-uri"
+require "securerandom"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00191 < Sinatra::Base
   before do
@@ -20,10 +22,14 @@ class BenchmarkTest00191 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00191" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    data = "#{user_input}"
-    URI.open(data).read
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    token = SecureRandom.alphanumeric(24)
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

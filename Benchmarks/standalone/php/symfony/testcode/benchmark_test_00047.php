@@ -11,11 +11,13 @@ class BenchmarkTest00047Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return new JsonResponse(['token' => (string)$token], 200);
+        $userInput = $request->query->get('id', '');
+        $form = new class($userInput) { public function __construct(public readonly string $payload) {} };
+        $data = $form->payload;
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $nodes = $xpath->query("//user[@id='" . $data . "']");
+        return new JsonResponse(["committed" => true]);
     }
 }

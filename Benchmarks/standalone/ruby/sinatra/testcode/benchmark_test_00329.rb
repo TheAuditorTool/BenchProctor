@@ -18,10 +18,11 @@ class BenchmarkTest00329 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00329" do
-    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
+    user_input = request.body.read
     data = sprintf("%s", user_input)
-    response.set_cookie(:session, { value: data, httponly: true, same_site: :strict })
+    partner = OpenSSL::X509::Certificate.new(File.read("/etc/app/partner_cert.pem"))
+    envelope = OpenSSL::PKCS7.encrypt([partner], data.to_s, OpenSSL::Cipher.new("des-ede3-cbc"), OpenSSL::PKCS7::BINARY)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ envelope: envelope.to_pem })
   end
 end

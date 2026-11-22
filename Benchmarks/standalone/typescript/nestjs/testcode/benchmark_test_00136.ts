@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post } from "@nestjs/common";
-import { Response } from "express";
+import { Controller, Headers, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -17,11 +18,16 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00136")
-  async BenchmarkTest00136(@Body("field") field: string): Promise<unknown> {
-    const userInput = field || "";
-    const tokens = String(userInput).split(',').filter((t) => t.length > 0);
-    const data = tokens.join(' ');
-    JSON.parse(data);
-    return { created: true };
+  async BenchmarkTest00136(@Headers("authorization") auth: string, @Req() req: Request): Promise<unknown> {
+    const userInput = auth || "";
+    const data = Buffer.from(userInput, "hex").toString();
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    const password = String(req.body?.password ?? "");
+    if (!password) { throw new BadRequestException({ error: "password required" }); }
+    const authenticated = await new Promise<boolean>((resolve) => {
+      ldapClient.bind("uid=" + data + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+    });
+    return { authenticated };
   }
 }

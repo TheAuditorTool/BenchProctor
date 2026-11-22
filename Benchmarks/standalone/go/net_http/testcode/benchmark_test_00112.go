@@ -3,16 +3,11 @@ package testcode
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
-	"os"
-	"strings"
 )
 
 func BenchmarkTest00112(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", authHeader)
-	data := relayBuilder.String()
-	os.Remove("/var/app/data/" + data)
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	val := rand.Intn(1000000)
+	RespondJSON(w, http.StatusOK, map[string]string{"token": fmt.Sprintf("%d", val)})
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
-import * as nodeUtil from "util";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -20,15 +19,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00228")
-  async BenchmarkTest00228(@Headers("host") host: string): Promise<unknown> {
-    const userInput = host || "";
-    const data = nodeUtil.format("%s", userInput);
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
-    return { created: true };
+  async BenchmarkTest00228(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    let data;
+    try { data = JSON.parse(userInput).value || userInput; }
+    catch (e) { data = userInput; }
+    const requested = parseInt(data, 10);
+    const wrapped = (requested + 1) | 0;
+    const buf = Buffer.alloc(wrapped);
+    return { allocated: buf.length };
   }
 }

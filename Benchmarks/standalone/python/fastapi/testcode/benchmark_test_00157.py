@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-from urllib.parse import urlparse
-from starlette.responses import JSONResponse
-import re
-from app_runtime import db
+from dataclasses import dataclass
+import base64
+import pickle
+from fastapi.responses import JSONResponse
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -24,13 +28,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00157")
 async def BenchmarkTest00157(request: Request):
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    if comment_value:
-        data = comment_value
-    else:
-        data = ''
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    return RedirectResponse(url=str(target_url))
+    raw_body = (await request.body()).decode('utf-8')
+    form = FormData(payload=raw_body)
+    data = form.payload
+    pickle.loads(base64.b64decode(data))
+    return {"updated": True}

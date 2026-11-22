@@ -8,10 +8,16 @@ class BenchmarkTest00057Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Referer', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        $requested = (int) $data;
-        $wrapped = unpack('l', pack('l', $requested + 1))[1];
-        return response()->json(['wrapped' => $wrapped], 200);
+        $userInput = $request->query('id', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        $outbound = new \GuzzleHttp\Psr7\Request('GET', (string)$targetUrl);
+        $http = new \GuzzleHttp\Client(['timeout' => 5]);
+        $upstream = $http->send($outbound);
+        return response()->json(['ok' => 1]);
     }
 }

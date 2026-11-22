@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const ldapjs = require("ldapjs");
+const { db } = require("./shared");
 
 const BenchmarkTest00123 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.variables && ctx.request.body.variables.input) || "";
-  const data = String(userInput).split(/[ \t]+/).join(" ");
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
-  ldapClient.on("error", () => {});
-  ldapClient.search("ou=people,dc=example,dc=com", { filter: "(uid=" + processed + ")", scope: "sub" }, (_err, _res) => (_res ? _res.on("end", () => ldapClient.unbind()).on("error", () => ldapClient.unbind()) : ldapClient.unbind()));
+  const userInput = (await db.query("SELECT bio FROM profiles WHERE user_id = $1", [1])).rows[0].bio;
+  const capture = (v) => () => String(v).trim();
+  const readInput = capture(userInput);
+  const data = readInput();
+  const { DataSource } = require("typeorm");
+  const _dataSource = new DataSource({ type: "sqlite", database: ":memory:" });
+  await _dataSource.initialize();
+  await _dataSource.createQueryBuilder().select("u.id").from("users", "u").where("u.name = '" + data + "'").getRawMany();
   ctx.body = { ack: true };
 }
 

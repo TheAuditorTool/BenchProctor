@@ -2,15 +2,23 @@
 package testcode
 
 import (
-	"os"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00078(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	form := submissionForm{payload: uaValue}
-	data := form.payload
-	os.WriteFile("/var/app/data/"+data, []byte("data"), 0644)
-	c.JSON(200, gin.H{"code": "OK"})
+	authHeader := c.GetHeader("Authorization")
+	var data string
+	for _, token := range strings.Split(authHeader, ",") {
+		data = token
+	}
+	var result *string
+	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
+	var name string
+	if scanErr := row.Scan(&name); scanErr == nil {
+		result = &name
+	}
+	c.JSON(http.StatusOK, map[string]string{"name": *result})
 }

@@ -3,21 +3,24 @@ package testcode
 
 import (
 	"net/http"
-	"os"
-	"strings"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00126(c *gin.Context) {
-	var profileBio string
-	DB.QueryRow("SELECT bio FROM profiles LIMIT 1").Scan(&profileBio)
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(profileBio)
-	content, err := os.ReadFile("/var/app/data/" + data)
-	if err != nil {
-		c.String(http.StatusNotFound, "not found")
-		return
+	headerValue := c.GetHeader("X-Custom-Header")
+	var data string
+	if len(headerValue) > 0 {
+		data = headerValue
+	} else {
+		data = "default"
 	}
-	c.Data(200, "text/plain", content)
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	upstreamHost := upstream.Host
+	c.JSON(http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

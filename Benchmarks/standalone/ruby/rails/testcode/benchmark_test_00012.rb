@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00012Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,10 @@ class BenchmarkTest00012Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00012
-    user_input = User.first&.name.to_s
-    data = sprintf("%s", user_input)
-    result = User.find_by(name: data)
-    value = result.name
+    user_input = request.query_parameters[:q].to_s
+    record = { payload: user_input.to_s }
+    data = record.fetch(:payload)
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     render json: { status: "ok" }
   end
 end

@@ -8,16 +8,9 @@ class BenchmarkTest00176Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->cookie('session_token', '');
-        $_prefix = strtolower(substr($userInput, 0, 1));
-        $data = '';
-        switch ($_prefix) {
-            case 'h': $data = strtolower($userInput); break;
-            case 'f': $data = strtoupper($userInput); break;
-            default: $data = trim($userInput); break;
-        }
-        mt_srand(ctype_digit((string)$data) ? (int)$data : 42);
-        $token = mt_rand();
-        return response()->json(['token' => (string)$token], 200);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        $claims = openssl_decrypt((string)$data, 'aes-256-ecb', getenv('DATA_ENC_KEY'));
+        return response()->json(['ok' => 1]);
     }
 }

@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+const net = require("net");
+const nodeUtil = require("util");
+
+async function BenchmarkTest00158(req, res) {
+  const userInput = req.cookies.session_token || "";
+  const data = nodeUtil.format("%s", userInput);
+  net.connect(80, new URL(String(data)).hostname);
+  res.json({ done: true });
+}
+
+module.exports = { BenchmarkTest00158 };

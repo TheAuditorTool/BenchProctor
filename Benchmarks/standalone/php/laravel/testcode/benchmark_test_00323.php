@@ -8,9 +8,11 @@ class BenchmarkTest00323Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
+        $userInput = $request->input('field', '');
         $data = strtr('{0}', ['{0}' => (string)$userInput]);
-        simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        $outbound = new \GuzzleHttp\Psr7\Request('GET', (string)$data);
+        $http = new \GuzzleHttp\Client(['timeout' => 5]);
+        $upstream = $http->send($outbound);
         return response()->json(['ok' => 1]);
     }
 }

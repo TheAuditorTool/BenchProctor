@@ -35,9 +35,10 @@ public class BenchmarkTest00061 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00061(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("X-Custom-Header") String xCustomHeader, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        java.util.function.Supplier<String> valueSupplier = () -> headerValue.strip();
-        String data = valueSupplier.get();
-        response.sendRedirect(data);
-        return Response.ok().build();
+        java.net.URI parsed = java.net.URI.create(headerValue);
+        String parsedHost = parsed.getHost() == null ? "" : parsed.getHost();
+        if (!parsedHost.matches("^(api\\.svc\\.local|cdn\\.acmecdn\\.net)$")) { return Response.status(403).build(); }
+        String targetUrl = headerValue;
+        return Response.status(Response.Status.FOUND).header("Location", targetUrl).build();
     }
 }

@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00131 < Sinatra::Base
   before do
@@ -18,16 +19,10 @@ class BenchmarkTest00131 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00131" do
-    user_input = request.body.read
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    redirect target_url
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    data = "#{user_input}"
+    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
+    _ = _doc
     content_type :json
     JSON.generate({ status: "ok" })
   end

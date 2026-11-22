@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
+import * as crypto from "crypto";
 
 export const BenchmarkTest00283 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-custom-header"] as string) || "";
-  const parts: string[] = [];
-  for (const token of String(userInput).split(',')) { parts.push(token); }
-  const data: string = parts.join(',');
-  res.send("<div>" + data + "</div>");
+  const userInput = process.env.APP_INPUT || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  const digest = await crypto.subtle.digest("SHA-256", Buffer.from(String(data)));
+  res.json({ fingerprint: Buffer.from(digest).toString("hex") }); return;
 }

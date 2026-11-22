@@ -3,6 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00307 < Sinatra::Base
   before do
@@ -18,17 +22,18 @@ class BenchmarkTest00307 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00307" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    payload, _origin = user_input, 'http'
-    data = payload
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
-    end
-    target_url = data
-    redirect target_url
+    user_input = DB[:users].first&.fetch(:name, "").to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    handler = Class.new(Nokogiri::XML::SAX::Document) do
+      attr_reader :text
+      def characters(string)
+        (@text ||= +"") << string
+      end
+    end.new
+    parser = Nokogiri::XML::SAX::Parser.new(handler)
+    parser.parse(data) { |ctx| ctx.replace_entities = true }
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ text: handler.text })
   end
 end

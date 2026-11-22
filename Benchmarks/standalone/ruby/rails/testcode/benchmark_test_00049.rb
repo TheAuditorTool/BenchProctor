@@ -2,7 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
+require "securerandom"
 
 class BenchmarkTest00049Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,9 +13,11 @@ class BenchmarkTest00049Controller < ApplicationController
   end
   def benchmark_test_00049
     user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    _doc = Nokogiri::XML(data) { |config| config.nonet.nodtdload }
-    _ = _doc
-    render json: { status: "ok" }
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    token = SecureRandom.random_bytes(16).unpack1("H*")
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

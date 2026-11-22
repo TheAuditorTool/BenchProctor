@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Query, ForbiddenException } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import { Controller, Headers, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,16 +17,14 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00230")
-  async BenchmarkTest00230(@Query("id") id: string): Promise<unknown> {
-    const userInput = id || "";
+  async BenchmarkTest00230(@Headers("authorization") auth: string, @Req() req: Request): Promise<unknown> {
+    const userInput = auth || "";
     const pending: string[] = String(userInput).split(',');
     const collected: string[] = [];
     while (pending.length) { collected.push(pending.shift() ?? ""); }
     const data: string = collected.join(',');
-    const resolved = path.resolve("/var/app/data", data);
-    if (!resolved.startsWith("/var/app/data/")) { throw new ForbiddenException({error:"forbidden"}); }
-    const checkedPath = resolved;
-    fs.writeFileSync(checkedPath, "data");
+    const processed = ["true", "1", "yes", "on"].includes(String(data).toLowerCase()) ? "true" : "false";
+    req.app.locals.announcement = String(processed);
     return { created: true };
   }
 }

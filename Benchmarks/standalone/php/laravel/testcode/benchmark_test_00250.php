@@ -8,10 +8,11 @@ class BenchmarkTest00250Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Authorization', '');
-        $asText = function ($v): string { return trim((string) $v); };
-        $data = $asText($userInput);
-        exec('tar -czf /tmp/backup.tgz ' . (string)$data);
+        $userInput = $request->json('payload', '');
+        $data = str_replace("\0", '', $userInput);
+        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        \Illuminate\Support\Facades\Session::put(['data' => (string) $parsedBool, 'data_updated_at' => time()]);
         return response()->json(['ok' => 1]);
     }
 }

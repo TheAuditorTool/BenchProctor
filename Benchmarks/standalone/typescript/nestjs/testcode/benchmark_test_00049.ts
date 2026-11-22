@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
+import * as childProcess from "child_process";
+import { IsString } from "class-validator";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
+class UserInputDto {
+  @IsString()
+  payload!: string;
+}
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -18,11 +23,15 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00049")
-  async BenchmarkTest00049(@Headers("authorization") auth: string): Promise<unknown> {
-    const userInput = auth || "";
-    const transform = (v: string): string => v.trim();
-    const data: string = transform(userInput);
-    fs.writeFileSync("/var/uploads/" + data, "data");
+  @UsePipes(new ValidationPipe())
+  async BenchmarkTest00049(@Body() dto: UserInputDto): Promise<unknown> {
+    const userInput = dto.payload;
+    let data;
+    try { data = JSON.parse(userInput).value || ""; }
+    catch (e) { data = String(userInput); }
+    if (!["ls", "cat", "date", "whoami"].includes(data)) { throw new ForbiddenException({error:'forbidden'}); }
+    const allowedBin = data;
+    childProcess.exec("echo " + allowedBin, (_err: Error | null, stdout: string) => console.log(stdout));
     return { created: true };
   }
 }

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 const BenchmarkTest00339 = async (ctx) => {
-  const userInput = ctx.request.headers["x-forwarded-for"] || "";
+  const userInput = ctx.request.headers["user-agent"] || "";
   const payload = { get value() { return userInput; } };
   const data = payload.value;
-  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
-  ctx.body = { token };
+  const planQuotas = new Map([["basic", { quota: 10 }], ["team", { quota: 50 }], ["enterprise", { quota: 500 }]]);
+  const plan = planQuotas.get(String(data));
+  if (!plan) { ctx.status = 404; ctx.body = { error: "unknown plan" }; return; }
+  const { quota } = plan;
+  ctx.body = { quota }; return;
 }
 
 module.exports = { BenchmarkTest00339 };

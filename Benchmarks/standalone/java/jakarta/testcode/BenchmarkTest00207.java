@@ -30,19 +30,21 @@ public class BenchmarkTest00207 {
         }
     }
 
-    @GET
-    @Path("/BenchmarkTest00207/{pathId}")
+    @POST
+    @Path("/BenchmarkTest00207")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00207(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        String data = String.join(" ", pathValue.split("[ \\t]+"));
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
+    public Response BenchmarkTest00207(@jakarta.validation.constraints.Size(max = 4096) @FormParam("field") String field, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String fieldValue = field != null ? field : "";
+        String prefix = fieldValue.length() > 0 ? fieldValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = fieldValue.toLowerCase(); break;
+            case "f": data = fieldValue.toUpperCase(); break;
+            default: data = fieldValue.strip(); break;
+        }
+        String digestHex = org.apache.commons.codec.digest.DigestUtils.sha1Hex(data);
+        response.setHeader("X-Hash", digestHex);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

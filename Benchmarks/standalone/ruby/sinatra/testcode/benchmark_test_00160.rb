@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "digest"
+require "cgi/escape"
 
 class BenchmarkTest00160 < Sinatra::Base
   before do
@@ -19,9 +19,11 @@ class BenchmarkTest00160 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00160" do
-    user_input = request.env["HTTP_X_CUSTOM_HEADER"].to_s
-    digest = Digest::MD5.hexdigest(user_input.to_s)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.env["HTTP_AUTHORIZATION"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    processed = CGI.escapeHTML(data)
+    content_type :html
+    "<div>" + processed + "</div>"
   end
 end

@@ -22,15 +22,29 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
+struct env_md_st; typedef struct env_md_st EVP_MD;
+typedef struct evp_md_ctx_st EVP_MD_CTX;
+extern "C" EVP_MD_CTX *EVP_MD_CTX_new(void);
+extern "C" void EVP_MD_CTX_free(EVP_MD_CTX *);
+extern "C" const EVP_MD *EVP_md4(void);
+extern "C" const EVP_MD *EVP_sha256(void);
+extern "C" int EVP_DigestInit_ex(EVP_MD_CTX *, const EVP_MD *, void *);
+extern "C" int EVP_DigestUpdate(EVP_MD_CTX *, const void *, size_t);
+extern "C" int EVP_DigestFinal_ex(EVP_MD_CTX *, unsigned char *, unsigned int *);
+struct Payload { std::string value; };
 
 void benchmark_test_00172(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
-    std::string _raw = user_input;
-    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
-    std::string data = _closure();
-    int _x = 0;
-    if (!data.empty()) _x = (int)data[0];
-    std::cout << (_x + (int)data.size()) << std::endl;
+    Payload _pd{user_input};
+    std::string data = _pd.value;
+    EVP_MD_CTX *_mdctx = EVP_MD_CTX_new();
+    unsigned char _digest[64];
+    unsigned int _dlen = 0;
+    EVP_DigestInit_ex(_mdctx, EVP_md4(), nullptr);
+    EVP_DigestUpdate(_mdctx, data.data(), data.size());
+    EVP_DigestFinal_ex(_mdctx, _digest, &_dlen);
+    EVP_MD_CTX_free(_mdctx);
+    std::cout << "digest " << (int)_digest[0] << std::endl;
     res.set_content("ok", "text/plain");
 }

@@ -4,15 +4,26 @@ package testcode
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/microcosm-cc/bluemonday"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func BenchmarkTest00249(w http.ResponseWriter, r *http.Request) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	data := fmt.Sprintf("%s", dbValue)
-	processed := bluemonday.UGCPolicy().Sanitize(data)
-	htmlOut := "<div>" + processed + "</div>"
-	w.Write([]byte(htmlOut))
+	userID := r.URL.Query().Get("id")
+	data := fmt.Sprintf("%s", userID)
+	baseDir := "/var/app/data"
+	cleanPath := filepath.Clean(filepath.Join(baseDir, data))
+	resolvedPath, resolveErr := filepath.EvalSymlinks(cleanPath)
+	if resolveErr != nil {
+		http.Error(w, "access denied", http.StatusForbidden)
+		return
+	}
+	if resolvedPath != baseDir && !strings.HasPrefix(resolvedPath, baseDir+"/") {
+		http.Error(w, "access denied", http.StatusForbidden)
+		return
+	}
+	checkedPath := resolvedPath
+	os.Remove(checkedPath)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

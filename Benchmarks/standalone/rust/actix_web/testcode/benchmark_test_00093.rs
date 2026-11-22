@@ -3,10 +3,23 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00093")]
 pub async fn benchmark_test_00093(req: HttpRequest) -> HttpResponse {
-    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
-    let data = cookie_value.to_string();
-    let _coerced = matches!(data.to_lowercase().as_str(), "true" | "1" | "yes" | "on");
-    let processed = _coerced.to_string();
-    crate::shared::store_session("data", &processed);
+    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let _prefix: String = origin_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
+    let data = match _prefix.as_str() {
+        "h" => origin_value.to_lowercase(),
+        "f" => origin_value.to_uppercase(),
+        _ => origin_value.trim().to_string(),
+    };
+    use aes::cipher::{BlockCipherEncrypt, KeyInit};
+    let data_key = hex::decode(std::env::var("DATA_ENCRYPTION_KEY").unwrap_or_default()).unwrap_or_default();
+    if let Ok(_aes) = aes::Aes256::new_from_slice(&data_key) {
+        let mut _ciphertext = data.as_bytes().to_vec();
+        let _pad = 16 - _ciphertext.len() % 16;
+        _ciphertext.resize(_ciphertext.len() + _pad, _pad as u8);
+        for _block in _ciphertext.chunks_exact_mut(16) {
+            _aes.encrypt_block(_block.try_into().expect("a 16-byte block"));
+        }
+        tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

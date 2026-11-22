@@ -3,17 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00050Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->route('id') ?? $request->input('id', ''));
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $result = DB::table('users')->where('id', $data)->first();
-        $value = $result->name;
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('X-Custom-Header', '');
+        $data = sprintf('%s', $userInput);
+        $response = response()->json(['ok' => 1]);
+        $response->header('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; Secure; HttpOnly; SameSite=Strict');
+        return $response;
     }
 }

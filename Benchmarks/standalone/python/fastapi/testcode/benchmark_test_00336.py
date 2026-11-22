@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import re
-from fastapi import Form
+from starlette.responses import RedirectResponse
+from urllib.parse import urlparse
+import base64
 from starlette.responses import JSONResponse
-import os
+import re
 
 
 app = FastAPI()
@@ -23,12 +23,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00336")
-async def BenchmarkTest00336(request: Request, field: str = Form('')):
-    field_value = field
-    data = str(field_value).replace('\x00', '')
-    if not re.fullmatch("^[a-zA-Z0-9 _.#%\\-]+$", data):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
-    return {"updated": True}
+async def BenchmarkTest00336(request: Request):
+    auth_header = request.headers.get('authorization', '')
+    data = base64.b64decode(auth_header).decode('utf-8', 'ignore')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    return RedirectResponse(url=str(target_url))

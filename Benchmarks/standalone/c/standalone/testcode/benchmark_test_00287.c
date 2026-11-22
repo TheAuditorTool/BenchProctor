@@ -6,21 +6,31 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <regex.h>
+#include <openssl/rand.h>
 
 void benchmark_test_00287(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("APP_INPUT");
-    if (user_input == NULL) user_input = "";
-    regex_t _re;
-    const char *safe = user_input;
-    if (regcomp(&_re, "^[a-zA-Z0-9 #._~-]+$", REG_EXTENDED) == 0) {
-        if (regexec(&_re, user_input, 0, NULL, 0) != 0) safe = "config";
-        regfree(&_re);
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
     }
-    char _path[512];
-    snprintf(_path, sizeof(_path), "/var/app/data/%s", safe);
-    FILE *_f = fopen(_path, "r");
-    if (_f) fclose(_f);
+    const char *user_input = user_input_buf;
+    char data[512];
+    switch (user_input[0]) {
+        case '\0':
+            data[0] = '\0';
+            break;
+        default:
+            snprintf(data, sizeof(data), "%s", user_input);
+            break;
+    }
+    unsigned char _rnd[16];
+    if (RAND_priv_bytes(_rnd, sizeof(_rnd)) != 1) return;
+    char _hex[33];
+    for (int _i = 0; _i < 16; _i++) snprintf(_hex + 2 * _i, 3, "%02x", _rnd[_i]);
+    printf("token for %s: %s\n", data, _hex);
 }

@@ -2,10 +2,12 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00162 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.body.payload as string) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  res.send("<div>" + processed + "</div>");
+  const userInput = (req.params.id as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  let _host = "";
+  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
+  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
+  const targetUrl = data;
+  res.location(String(targetUrl)).sendStatus(303); return;
 }

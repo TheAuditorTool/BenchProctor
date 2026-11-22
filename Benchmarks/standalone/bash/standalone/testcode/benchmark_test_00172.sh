@@ -3,10 +3,10 @@
 
 benchmark_test_00172() {
   user_input="$HTTP_COOKIE"
-  mapfile -t _mapped < <(printf "%s\n" "${user_input}")
-  data="${_mapped[0]}"
-  _rest="${data#*://}"
-  exec 3<>"/dev/tcp/${_rest%%[/:]*}/80"
+  normalize() { local _v="$1"; printf "%s" "$_v" | tr -d "\r\n"; }
+  data=$(normalize "$user_input")
+  reset_code="$RANDOM$RANDOM"
+  echo "$reset_code"
 }
 
 benchmark_test_00172 "$@"

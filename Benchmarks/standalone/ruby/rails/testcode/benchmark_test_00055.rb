@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00055Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,9 @@ class BenchmarkTest00055Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00055
-    user_input = (params[:variables] || {})[:input].to_s
-    data = sprintf("%s", user_input)
-    session[:data] = data.to_s
+    user_input = request.headers["Authorization"].to_s
+    data = Base64.decode64(user_input)
+    Marshal.load(data)
     render json: { status: "ok" }
   end
 end

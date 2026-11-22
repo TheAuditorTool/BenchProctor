@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
 
 async function BenchmarkTest00250(req, res) {
-  const userInput = req.headers["user-agent"] || "";
-  const payload = { get value() { return userInput; } };
-  const data = payload.value;
-  fs.unlinkSync("/var/app/data/" + data);
+  const userInput = req.query.id || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  const { stringifySetCookie } = require("cookie");
+  res.append(
+    "Set-Cookie",
+    stringifySetCookie({ name: "session", value: String(data), path: "/", httpOnly: true, sameSite: "strict" }),
+  );
   res.json({ done: true });
 }
 

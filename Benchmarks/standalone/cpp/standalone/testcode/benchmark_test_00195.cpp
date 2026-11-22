@@ -3,15 +3,14 @@
 #include <string>
 #include <cstdlib>
 
-extern "C" unsigned char *SHA256(const unsigned char *d, unsigned long n, unsigned char *md);
-
 void benchmark_test_00195(int, char **)
 {
-    const char *user_input_env = std::getenv("USER_COMMENT");
+    const char *user_input_env = std::getenv("HTTP_COOKIE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    try { data = user_input; } catch (...) { data.clear(); }
-    unsigned char _digest[32];
-    SHA256(reinterpret_cast<const unsigned char *>(data.c_str()), data.size(), _digest);
-    std::cout << "digest " << (int)_digest[0] << std::endl;
+    std::string data = !user_input.empty() ? user_input : std::string();
+    const int _rec_size = 64;
+    int _count = std::atoi(data.c_str());
+    int _bytes = _count * _rec_size;
+    char *_recs = new (std::nothrow) char[(size_t)_bytes];
+    delete[] _recs;
 }

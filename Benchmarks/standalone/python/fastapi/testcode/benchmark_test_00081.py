@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from app_runtime import db
+from starlette.responses import Response
 from fastapi.responses import JSONResponse
 
 
@@ -22,6 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00081")
 async def BenchmarkTest00081(request: Request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = '{}'.format(db_value)
-    return HTMLResponse('<div>' + str(data) + '</div>')
+    referer_value = request.headers.get('referer', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(referer_value)
+    return Response(status_code=302, headers={'Location': str(data)})

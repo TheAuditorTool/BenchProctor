@@ -3,9 +3,9 @@ import { Request, Response } from "express";
 
 export const BenchmarkTest00089 = async (req: Request, res: Response): Promise<void> => {
   const userInput = (req.cookies?.session_token as string) || "";
-  function normalize(value: string): string { return value.normalize("NFC"); }
-  const data: string = normalize(userInput);
-  if (!/^[a-zA-Z0-9 _.#%\-]+$/.test(data)) { res.status(400).json({error:"invalid"}); return; }
-  const processed = data;
-  res.send("<div>" + processed + "</div>");
+  const capture = (v: string) => (): string => v.trim();
+  const readInput = capture(userInput);
+  const data: string = readInput();
+  res.setHeader("Set-Cookie", "session=" + encodeURIComponent(String(data)) + "; Path=/; HttpOnly; SameSite=Strict; Secure");
+  res.json({ accepted: true });
 }

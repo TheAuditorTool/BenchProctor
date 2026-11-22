@@ -11,10 +11,9 @@ class BenchmarkTest00059Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Authorization', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $digest = md5((string)$data);
+        $userInput = $request->headers->get('X-Forwarded-For', '');
+        $data = strtr('{0}', ['{0}' => (string)$userInput]);
+        $claims = openssl_decrypt((string)$data, 'aes-256-ecb', getenv('DATA_ENC_KEY'));
         return new JsonResponse(["committed" => true]);
     }
 }

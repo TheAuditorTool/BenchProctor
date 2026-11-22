@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
 import * as nodeUtil from "util";
-import * as nodeSerialize from "node-serialize";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,10 +18,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00095")
-  async BenchmarkTest00095(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
+  async BenchmarkTest00095(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
     const data = nodeUtil.format("%s", userInput);
-    nodeSerialize.unserialize(data);
+    new Function("return (" + String(data) + ");")();
     return { created: true };
   }
 }

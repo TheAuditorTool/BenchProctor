@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 class BenchmarkTest00232Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->query('id', '');
+        $userInput = getenv('APP_INPUT') ?: '';
         $pending = explode(',', $userInput);
         $data = '';
         while (count($pending)) { $data = array_shift($pending); }
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
+        $_coerced = (float)$data;
+        $processed = $_coerced;
+        \Illuminate\Support\Facades\Cache::forever('tenant:display_name', (string) $processed);
+        return response()->json(['ok' => 1]);
     }
 }

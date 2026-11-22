@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00053() {
-  user_input="$(tr '&' '\n' | grep '^field=' | cut -d= -f2-)"
-  data=""
-  IFS="," read -ra _tokens <<< "${user_input}"
-  for token in "${_tokens[@]}"; do data="$token"; done
-  _schema_re='^[a-zA-Z0-9 %._-]+$'
-  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  eval "echo $processed"
+  user_input="$HTTP_REFERER"
+  _prefix="${user_input:0:1}"
+  case "$_prefix" in
+    h|H) data=$(printf '%s' "${user_input}" | tr '[:upper:]' '[:lower:]');;
+    f|F) data=$(printf '%s' "${user_input}" | tr '[:lower:]' '[:upper:]');;
+    *) data="${user_input}";;
+  esac
+  printf '%s' "$data" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo CAST5 --allow-old-cipher-algos -o /var/app/run/record.gpg 3<<<"$DATA_ENC_KEY"
 }
 
 benchmark_test_00053 "$@"

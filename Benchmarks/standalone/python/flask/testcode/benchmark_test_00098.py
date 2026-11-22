@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+import ldap
 from flask import Flask, jsonify
+import os
+from pydantic import Field, ValidationError, create_model
 from app_runtime import db
 
 
@@ -19,7 +22,18 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00098", methods=["POST"])
 def BenchmarkTest00098():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = '{}'.format(comment_value)
-    eval(str(data))
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    kind = 'json' if str(db_value).lstrip().startswith('{') else 'text'
+    match kind:
+        case 'json':
+            data = str(db_value).strip()
+        case _:
+            data = str(db_value)
+    try:
+        create_model('_InputModel', value=(str, Field(pattern="^[a-zA-Z0-9 _.#%\\-]+$")))(value=str(data))
+    except ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
+    conn.compare_s('uid=' + str(processed) + ',ou=people,dc=example,dc=com', 'employeeType', b'staff')
     return jsonify({"result": "success"})

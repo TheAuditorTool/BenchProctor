@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from starlette.responses import Response
+from urllib.parse import urlparse
+import base64
 from starlette.responses import JSONResponse
-import json
+import re
 
 
 app = FastAPI()
@@ -22,6 +25,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00102")
 async def BenchmarkTest00102(request: Request):
     raw_body = (await request.body()).decode('utf-8')
-    data = f'{raw_body!s}'
-    parsed = json.loads(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    data = base64.b64decode(raw_body).decode('utf-8', 'ignore')
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    return Response(status_code=302, headers={'Location': str(target_url)})

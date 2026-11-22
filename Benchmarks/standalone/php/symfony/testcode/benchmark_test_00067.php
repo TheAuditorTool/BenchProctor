@@ -11,10 +11,11 @@ class BenchmarkTest00067Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('Origin', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        eval((string)$data);
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('User-Agent', '');
+        $tokens = explode(',', $userInput);
+        $data = implode(' ', $tokens);
+        $resp = new JsonResponse(['ok' => 1]);
+        $resp->headers->set('Set-Cookie', 'session=' . rawurlencode((string)$data) . '; Path=/; HttpOnly; SameSite=Strict');
+        return $resp;
     }
 }

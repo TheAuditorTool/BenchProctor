@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+import json
+from app_runtime import db
 
 
 app = FastAPI()
@@ -22,7 +22,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00043")
 async def BenchmarkTest00043(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(env_value) + ')')
-    return {"updated": True}
+    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
+    try:
+        data = json.loads(db_value).get('value', db_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = db_value
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    if label is None:
+        return JSONResponse({'error': 'unknown plan'}, status_code=404)
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

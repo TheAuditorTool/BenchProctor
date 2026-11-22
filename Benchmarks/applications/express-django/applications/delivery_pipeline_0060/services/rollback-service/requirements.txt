@@ -1,5 +1,0 @@
-django==5.0.6
-jsonschema==4.22.0
-pyyaml==6.0.1
-requests==2.32.3
-uvicorn==0.30.1

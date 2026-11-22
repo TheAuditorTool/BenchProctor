@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Param, Post, NotFoundException } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,15 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00334/:id")
-  async BenchmarkTest00334(@Param("id") pathId: string): Promise<unknown> {
-    const userInput = pathId;
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-    if (!row) { throw new NotFoundException({error:"not found"}); }
-    const value = (row as any).name;
-    return { created: true };
+  @Post("BenchmarkTest00334")
+  async BenchmarkTest00334(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const formData = Object.freeze({ payload: userInput });
+    const data = formData.payload;
+    const digest = await crypto.subtle.digest("SHA-1", Buffer.from(String(data)));
+    return { fingerprint: Buffer.from(digest).toString("hex") };
   }
 }

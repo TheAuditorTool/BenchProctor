@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00274 < Sinatra::Base
   before do
@@ -21,11 +18,15 @@ class BenchmarkTest00274 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00274" do
-    user_input = ENV["APP_INPUT"] || ""
+    user_input = request.env["HTTP_REFERER"].to_s
     data = "%s" % user_input
-    result = DB[:users].where(name: data).first
-    return halt 404, JSON.generate({ error: "not found" }) if result.nil?
-    value = result[:name]
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    redirect target_url
     content_type :json
     JSON.generate({ status: "ok" })
   end

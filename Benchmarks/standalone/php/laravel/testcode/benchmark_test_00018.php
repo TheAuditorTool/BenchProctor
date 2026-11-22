@@ -2,20 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 
 class BenchmarkTest00018Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = file_get_contents('http://api.corp.lan/data');
-        $transform = fn (string $v): string => trim($v);
-        $data = $transform($userInput);
-        $host = parse_url($data, PHP_URL_HOST) ?: '';
-        $resolved = gethostbyname($host);
-        if (preg_match('#^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)#', $resolved)) { return response()->json(['error' => 'private range blocked'], 403); }
-        $targetUrl = $data;
-        $errno = 0; $errstr = '';
-        fsockopen((string)$targetUrl, 80, $errno, $errstr, 30);
+        $userInput = $request->json('variables.input', '');
+        $data = json_decode($userInput, true)['value'] ?? '';
+        $digestBytes = sodium_crypto_generichash((string)$data);
+        $digest = sodium_bin2hex($digestBytes);
         return response()->json(['ok' => 1]);
     }
 }

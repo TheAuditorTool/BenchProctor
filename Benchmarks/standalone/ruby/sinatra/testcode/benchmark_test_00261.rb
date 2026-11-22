@@ -3,6 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "redis"
+require "open-uri"
 
 class BenchmarkTest00261 < Sinatra::Base
   before do
@@ -18,12 +20,9 @@ class BenchmarkTest00261 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00261" do
-    user_input = request.env["HTTP_HOST"].to_s
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(user_input.to_s) + _cipher.final
+    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
+    data = "%s" % user_input
+    URI.open(data).read
     content_type :json
     JSON.generate({ status: "ok" })
   end

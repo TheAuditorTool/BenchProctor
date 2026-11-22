@@ -7,21 +7,23 @@ export const authCheck: (user: unknown, token: unknown) => boolean;
 export const authzCheck: (user: unknown, resource: unknown) => boolean;
 export const mq: { receive: (queue: string) => Promise<string> };
 
-declare module "express" {
-  interface Request {
-    session: {
-      id?: string;
-      user?: unknown;
-      role?: string;
-      token?: unknown;
-      csrfToken?: unknown;
-      adminHash?: unknown;
-      data?: string;
-      expiresAt?: number;
-      tenantId?: string;
-      regenerate: (cb: () => void) => void;
-    };
-    cookies?: Record<string, string>;
-    file?: { originalname: string };
+declare global {
+  namespace Express {
+    interface Request {
+      session: {
+        id?: string;
+        user?: unknown;
+        role?: string;
+        token?: unknown;
+        csrfToken?: unknown;
+        adminHash?: unknown;
+        data?: string;
+        expiresAt?: number;
+        tenantId?: string;
+        regenerate: (cb: () => void) => void;
+      };
+      cookies?: Record<string, string>;
+      file?: { originalname: string };
+    }
   }
 }

@@ -20,14 +20,13 @@ public class BenchmarkTest00104 {
     }
 
     @GetMapping("/BenchmarkTest00104")
-    public void BenchmarkTest00104(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String authHeader = authorization != null ? authorization : "";
-        String data;
-        if (authHeader.length() > 256) { data = authHeader.substring(0, 256); }
-        else { data = authHeader; }
-        if (!("true".equals(data) || "false".equals(data))) { response.sendError(400); return; }
-        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
-        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+    public void BenchmarkTest00104(@jakarta.validation.constraints.Size(max = 4096) @RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = String.join(" ", userId.split("[ \\t]+"));
+        String processed = data.matches("^(status|info|list|show)$") ? data : "status";
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + processed});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

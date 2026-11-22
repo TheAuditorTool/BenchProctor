@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import hashlib
+from fastapi import Form
 from starlette.responses import JSONResponse
 
 
@@ -19,17 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00041")
-async def BenchmarkTest00041(request: Request):
-    header_value = request.headers.get('x-custom-header', '')
-    parts = []
-    for token in str(header_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+async def BenchmarkTest00041(request: Request, field: str = Form('')):
+    field_value = field
+    data = str(field_value).replace('\x00', '')
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return JSONResponse({'digest': str(digest)}, status_code=200)

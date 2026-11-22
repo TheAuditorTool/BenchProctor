@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-import os
+from dataclasses import dataclass
 from starlette.responses import JSONResponse
+import json
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = FastAPI()
 
@@ -22,7 +27,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00325")
 async def BenchmarkTest00325(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = str(env_value).replace('\x00', '')
-    parsed = yaml.safe_load(data)
-    return JSONResponse({'parsed': str(parsed)}, status_code=200)
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    form = FormData(payload=graphql_var)
+    data = form.payload
+    plan_labels = {'basic': 'Basic plan', 'pro': 'Pro plan', 'team': 'Team plan'}
+    label = plan_labels.get(str(data))
+    value = label.upper()
+    return JSONResponse({'plan': value}, status_code=200)

@@ -5,13 +5,12 @@
 
 void benchmark_test_00049(int, char **)
 {
-    const char *user_input_env = std::getenv("MULTIPART_FIELD");
+    const char *user_input_env = std::getenv("QUERY_STRING");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const size_t _rec_size = 64;
-    long _count = std::strtol(data.c_str(), nullptr, 10);
-    if (_count <= 0 || _count > 65536) return;
-    size_t _bytes = (size_t)_count * _rec_size;
-    char *_recs = new (std::nothrow) char[_bytes];
-    delete[] _recs;
+    std::string data;
+    try { data = user_input; } catch (...) { data.clear(); }
+    std::string _ckval = data;
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    for (char &_c : _ckval) if (_c == '\r' || _c == '\n') _c = ' ';
+    std::cout << "Set-Cookie: session=" << _ckval << "; Secure; HttpOnly; SameSite=Strict; Path=/\r\n";
 }

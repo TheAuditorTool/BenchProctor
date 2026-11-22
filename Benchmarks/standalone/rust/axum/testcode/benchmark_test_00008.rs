@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00008(headers: HeaderMap) -> impl IntoResponse {
-    let auth_header = headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = auth_header.to_string();
-    use rand::{Rng, SeedableRng};
-    let _seed: u64 = data.bytes().fold(0u64, |a, b| a.wrapping_add(b as u64));
-    let mut _rng = rand::rngs::StdRng::seed_from_u64(_seed);
-    let _token: u64 = _rng.gen();
-    crate::shared::store_session("csrf_token", &_token.to_string());
+pub async fn benchmark_test_00008(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Ok(Some(_field)) = multipart.next_field().await {
+            _mv = _field.text().await.unwrap_or_default();
+        }
+        _mv
+    };
+    let data = multipart_value.replace("\t", " ");
+    crate::shared::set_cookie(&format!("session={}; HttpOnly; SameSite=Strict", data));
     Json(serde_json::json!({"count": 0})).into_response()
 }

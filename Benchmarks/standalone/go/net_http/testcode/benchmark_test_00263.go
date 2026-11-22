@@ -2,12 +2,14 @@
 package testcode
 
 import (
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/rc4"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"regexp"
-	"strconv"
-
-	"github.com/go-ldap/ldap/v3"
-	"github.com/go-playground/validator/v10"
+	"os"
+	"strings"
 )
 
 func BenchmarkTest00263(w http.ResponseWriter, r *http.Request) {
@@ -17,31 +19,19 @@ func BenchmarkTest00263(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uploadName := header.Filename
-	var data string
-	if len(uploadName) > 0 {
-		data = uploadName
-	} else {
-		data = "default"
-	}
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+	data := strings.ReplaceAll(uploadName, "\x00", "")
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	salt := make([]byte, 16)
+	rand.Read(salt)
+	messageKey := hmac.New(sha256.New, keyHash[:])
+	messageKey.Write(salt)
+	streamCipher, err := rc4.NewCipher(messageKey.Sum(nil)[:16])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	processed := data
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+processed+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	cipherOut := make([]byte, len(data))
+	streamCipher.XORKeyStream(cipherOut, []byte(data))
+	cipherOut = append(salt, cipherOut...)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "rc4", "out": fmt.Sprintf("%x", cipherOut)})
 }

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as xpath from "xpath";
-import * as xmldom from "@xmldom/xmldom";
 
 export const BenchmarkTest00051 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.query.id as string) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + data + "']", xmlDoc);
-  res.json({ accepted: true });
+  const userInput = ((req as any).files?.[0]?.originalname as string) || "";
+  function normalize(value: string): string { return value.normalize("NFC"); }
+  const data: string = normalize(userInput);
+  const token = String(data).slice(0, 8) + "-" + Math.floor(Math.random() * 1e12).toString(36);
+  res.json({ token });
 }

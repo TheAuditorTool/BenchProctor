@@ -2,19 +2,23 @@
 package testcode
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00049(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	data := fieldValue
-	if _, after, ok := strings.Cut(fieldValue, ","); ok {
-		data = after
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	form := submissionForm{payload: dbValue}
+	data := form.payload
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		http.Error(w, "invalid integer", http.StatusBadRequest)
+		return
 	}
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	requested, _ := strconv.Atoi(boundedVal)
+	allocated := requested + 1
+	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
 }

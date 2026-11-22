@@ -2,25 +2,31 @@
 package testcode
 
 import (
-	"io"
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00194(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
+	authHeader := c.GetHeader("Authorization")
+	relayPrefix := ""
+	if len(authHeader) > 0 {
+		relayPrefix = strings.ToLower(authHeader[:1])
 	}
-	xmlBody := string(rawBytes)
 	var data string
-	if xmlBody != "" {
-		data = xmlBody
+	switch relayPrefix {
+	case "h":
+		data = authHeader
+	case "f":
+		data = authHeader
+	default:
+		data = authHeader
 	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	otpValue := rand.Int32N(1000000)
+	otpCode := fmt.Sprintf("%06d", otpValue)
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

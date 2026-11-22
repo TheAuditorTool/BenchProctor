@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+import random
 from starlette.responses import JSONResponse
 from app_runtime import db
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -21,13 +27,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00150")
 async def BenchmarkTest00150(request: Request):
-    origin_value = request.headers.get('origin', '')
-    parts = []
-    for token in str(origin_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    result = db.fetch_one('SELECT name FROM users WHERE id = ?', (str(data),))
-    if result is None:
-        return JSONResponse({'error': 'not found'}, status_code=404)
-    value = result['name']
-    return JSONResponse({'name': str(value)}, status_code=200)
+    raw_body = (await request.body()).decode('utf-8')
+    reader = make_reader(raw_body)
+    data = reader()
+    token = '%032x' % random.SystemRandom().getrandbits(128)
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return JSONResponse({'token': str(token)}, status_code=200)

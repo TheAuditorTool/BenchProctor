@@ -12,11 +12,8 @@ class BenchmarkTest00296Controller < ApplicationController
   end
   def benchmark_test_00296
     user_input = params[:id].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    checked_path = "/var/app/data/" + File.basename(data)
-    File.delete(checked_path)
+    data = "%s" % user_input
+    File.write("/var/uploads/" + data, "data")
     render json: { status: "ok" }
   end
 end

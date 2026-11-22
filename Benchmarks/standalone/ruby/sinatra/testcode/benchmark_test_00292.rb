@@ -18,12 +18,16 @@ class BenchmarkTest00292 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00292" do
-    user_input = request.cookies["session_token"].to_s
-    def _normalize_local(v)
-      v.to_s.strip
+    user_input = params[:upload][:filename].to_s rescue ""
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
     end
-    data = _normalize_local(user_input)
-    eval(data)
+    target_url = data
+    response.redirect(target_url, 303)
     content_type :json
     JSON.generate({ status: "ok" })
   end

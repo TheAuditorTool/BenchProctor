@@ -2,11 +2,10 @@
 const childProcess = require("child_process");
 
 async function BenchmarkTest00304(req, res) {
-  const userInput = req.query.id || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  if (!["ls", "cat", "date", "whoami"].includes(data)) { res.status(403).json({error:'forbidden'}); return; }
-  const allowedBin = data;
-  childProcess.execSync("echo " + allowedBin);
+  const userInput = req.cookies.session_token || "";
+  const _raw = userInput;
+  const data = (_raw && _raw.length > 0) ? _raw : 'default';
+  childProcess.execFile("echo", [String(data)], (_err, stdout) => console.log(stdout));
   res.json({ done: true });
 }
 

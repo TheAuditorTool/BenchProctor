@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Form;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00259(headers: HeaderMap) -> impl IntoResponse {
-    let host_value = headers.get("host").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let _prefix: String = host_value.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => host_value.to_lowercase(),
-        "f" => host_value.to_uppercase(),
-        _ => host_value.trim().to_string(),
-    };
-    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00259(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(field_value.clone());
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), processed.clone());
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

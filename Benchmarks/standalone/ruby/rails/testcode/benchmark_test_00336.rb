@@ -11,9 +11,8 @@ class BenchmarkTest00336Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00336
-    user_input = request.headers["X-Custom-Header"].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    eval(data)
-    render json: { status: "ok" }
+    user_input = request.user_agent.to_s
+    data = "#{user_input}"
+    send_data("<div>" + data + "</div>", type: "text/html", disposition: "inline")
   end
 end

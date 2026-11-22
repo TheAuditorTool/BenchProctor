@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import yaml
-import os
-from fastapi.responses import JSONResponse
+from pathlib import Path
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -20,9 +19,14 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00245")
-async def BenchmarkTest00245(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    data = (lambda v: v.strip())(env_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+@app.post("/BenchmarkTest00245/{id}")
+async def BenchmarkTest00245(request: Request, id: str):
+    path_value = id
+    data, _sep, _rest = str(path_value).partition('\x00')
+    base = Path('/var/app/data').resolve()
+    candidate = (base / data).resolve()
+    if base not in candidate.parents and candidate != base:
+        return JSONResponse({'error': 'forbidden'}, status_code=403)
+    checked_path = str(candidate)
+    Path(checked_path).write_text('data')
     return {"updated": True}

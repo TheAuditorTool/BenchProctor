@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
+#include <ctime>
+#include <random>
 
 void benchmark_test_00505(int, char **)
 {
-    const char *user_input_env = std::getenv("HTTP_USER_AGENT");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data;
-    if (!user_input.empty()) data = user_input;
-    const char _buf[16] = "fixedcontent12";
-    char _out[256];
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    if (_span > sizeof(_out)) _span = sizeof(_out);
-    std::memcpy(_out, _buf, _span);
-    std::cout << std::string(_out, _span).size() << std::endl;
+    char _fmt_buf[512];
+    std::snprintf(_fmt_buf, sizeof(_fmt_buf), "%s", user_input.c_str());
+    std::string data = _fmt_buf;
+    std::mt19937 _gen(static_cast<std::mt19937::result_type>(std::time(nullptr)));
+    std::uniform_int_distribution<int> _dist(0, 999999);
+    int _token = _dist(_gen);
+    std::cout << "token for " << data << ": " << _token << std::endl;
 }

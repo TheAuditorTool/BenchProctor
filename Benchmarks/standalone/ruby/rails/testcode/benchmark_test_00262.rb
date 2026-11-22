@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "base64"
 
 class BenchmarkTest00262Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,16 @@ class BenchmarkTest00262Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00262
-    user_input = request.body.read
-    data = "#{user_input}"
-    File.write("/var/uploads/" + data, "data")
-    render json: { status: "ok" }
+    user_input = request.headers["X-Custom-Header"].to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
+      data = user_input
+    end
+    aes = OpenSSL::Cipher::AES.new(256, :ECB)
+    aes.encrypt
+    aes.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))
+    ciphertext = aes.update(data.to_s) + aes.final
+    render json: { ciphertext: Base64.strict_encode64(ciphertext) }
   end
 end

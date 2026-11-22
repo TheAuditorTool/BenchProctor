@@ -3,13 +3,14 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00144")]
 pub async fn benchmark_test_00144(req: HttpRequest) -> HttpResponse {
-    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let (payload, _origin) = (origin_value.clone(), "http");
-    let data = payload;
-    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
-    let processed = _bounded.to_string();
-    let requested: i64 = processed.parse().unwrap_or(0);
-    let count = requested.clamp(0, 4096) as usize;
-    let _buf: Vec<u8> = vec![0u8; count];
+    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
+    let data: String = cookie_value.parse::<i64>()
+        .map(|n| n.to_string()).unwrap_or_else(|_| cookie_value.clone());
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
+    let processed = data.clone();
+    if let Ok(mut _app_context) = crate::shared::APP_CONTEXT.write() {
+        _app_context.insert("partner_tier".to_string(), processed.clone());
+    }
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

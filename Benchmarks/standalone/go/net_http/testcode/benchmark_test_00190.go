@@ -2,16 +2,22 @@
 package testcode
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 )
 
 func BenchmarkTest00190(w http.ResponseWriter, r *http.Request) {
-	forwardedIP := r.Header.Get("X-Forwarded-For")
-	data := forwardedIP
-	if _, after, ok := strings.Cut(forwardedIP, ","); ok {
-		data = after
+	var reqBody struct {
+		Payload string `json:"payload"`
 	}
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	jsonValue := reqBody.Payload
+	segments := strings.Split(jsonValue, ",")
+	data := strings.Join(segments, " ")
+	htmlOut := "<div>" + data + "</div>"
+	w.Write([]byte(htmlOut))
 }

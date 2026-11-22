@@ -7,12 +7,19 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00461(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(user_input, NULL, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    fwrite(_buf, 1, _span, stdout);
-    putchar('\n');
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *(*_fn)(const char *) = c_passthrough;
+    const char *data = _fn(user_input);
+    const size_t _rec_size = 64;
+    long _count = strtol(data, NULL, 10);
+    if (_count <= 0 || _count > 65536) return;
+    size_t _bytes = (size_t)_count * _rec_size;
+    char *_recs = malloc(_bytes);
+    if (_recs) free(_recs);
 }

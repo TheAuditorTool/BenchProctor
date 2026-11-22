@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00118")]
-pub async fn benchmark_test_00118(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.to_string();
-    let result: Option<String> = std::env::var(data.as_str()).ok();
-    let value = match result { Some(v) => v, None => return HttpResponse::NotFound().finish() };
-    let _ = value;
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00118(req: HttpRequest, web::Query(query): web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let user_id = query.get("id").cloned().unwrap_or_default();
+    let data = match user_id.chars().next() { Some(_) => user_id.clone(), None => "default".to_string() };
+    use actix_web::Responder;
+    actix_web::web::Redirect::to(data.clone()).respond_to(&req).map_into_boxed_body()
 }

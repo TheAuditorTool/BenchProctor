@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00212")]
-pub async fn benchmark_test_00212(body: web::Bytes) -> HttpResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let data = raw_body.to_string();
-    use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-    let legacy_key = hex::decode(std::env::var("LEGACY_3DES_KEY").unwrap_or_default()).unwrap_or_default();
-    let iv: [u8; 8] = rand::random();
-    let _ciphertext = cbc::Encryptor::<des::TdesEde3>::new_from_slices(&legacy_key, &iv).map(|c| c.encrypt_padded_vec_mut::<Pkcs7>(data.as_bytes())).unwrap_or_default();
-    tokio::fs::write("/var/data/cipher.bin", &_ciphertext).await.ok();
+pub async fn benchmark_test_00212(req: HttpRequest) -> HttpResponse {
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = urlencoding::decode(&referer_value).unwrap_or_default().to_string();
+    use sha2::Digest;
+    let mut _hasher = sha2::Sha256::new();
+    _hasher.update(data.as_bytes());
+    let _ = _hasher.finalize();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

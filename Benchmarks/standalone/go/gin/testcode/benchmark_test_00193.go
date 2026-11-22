@@ -2,20 +2,20 @@
 package testcode
 
 import (
-	"strconv"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00193(c *gin.Context) {
-	originValue := c.GetHeader("Origin")
-	var data string
-	if len(originValue) > 0 {
-		data = originValue
-	} else {
-		data = "default"
-	}
-	requested, _ := strconv.Atoi(data)
-	wrapped := int32(requested + 1)
-	c.Header("X-Wrapped", strconv.Itoa(int(wrapped)))
+	multipartValue := c.PostForm("multipart_field")
+	data := strings.ReplaceAll(multipartValue, "\x00", "")
+	digest := sha1.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

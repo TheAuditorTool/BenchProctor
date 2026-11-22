@@ -40,21 +40,36 @@ public class BenchmarkTest00032 {
             }
         } catch (java.sql.SQLException ignored) {}
     }
+    private static String dbReadColumn(String sql) {
+        try (var stmt = connection.createStatement();
+             var rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getString(1) : "";
+        } catch (java.sql.SQLException e) {
+            return "";
+        }
+    }
 
     @GET
     @Path("/BenchmarkTest00032")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00032(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        String data = userId.replace("\u0000", "");
-        String fetched;
-        try (java.sql.PreparedStatement ps = connection.prepareStatement("SELECT name FROM users WHERE id = ?")) {
-            ps.setString(1, data);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                fetched = rs.next() ? rs.getString("name") : null;
-            }
+    public Response BenchmarkTest00032(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userName = java.util.Optional.ofNullable(dbReadColumn("SELECT name FROM users LIMIT 1")).orElse("");
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : userName.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        String boundedVal = data;
+        String formulaSource = "public class Formula implements java.util.function.Supplier<Object> { public Object get() { return " + boundedVal + "; } }";
+        javax.tools.JavaFileObject formulaUnit = new javax.tools.SimpleJavaFileObject(java.net.URI.create("string:///Formula.java"), javax.tools.JavaFileObject.Kind.SOURCE) { @Override public CharSequence getCharContent(boolean ignoreEncodingErrors) { return formulaSource; } };
+        java.nio.file.Path formulaOut = java.nio.file.Files.createTempDirectory("formula");
+        javax.tools.JavaCompiler formulaCompiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        boolean formulaCompiled = formulaCompiler.getTask(null, null, null, java.util.List.of("-d", formulaOut.toString()), null, java.util.List.of(formulaUnit)).call();
+        if (!formulaCompiled) { return Response.status(422).entity("formula did not compile").build(); }
+        try (java.net.URLClassLoader formulaLoader = new java.net.URLClassLoader(new java.net.URL[]{ formulaOut.toUri().toURL() })) {
+            Object formulaValue = ((java.util.function.Supplier<?>) formulaLoader.loadClass("Formula").getDeclaredConstructor().newInstance()).get();
+            response.setHeader("X-Formula-Value", String.valueOf(formulaValue));
         }
-        response.setHeader("X-Name-Length", String.valueOf(fetched.length()));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+import subprocess
 from flask import Flask, request, jsonify
 
 
@@ -19,9 +20,6 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00301", methods=["POST"])
 def BenchmarkTest00301():
     ua_value = request.headers.get('User-Agent', '')
-    parts = str(ua_value).split(',')
-    data = ' '.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    exec(str(processed))
+    data = (lambda v: v.strip())(ua_value)
+    subprocess.run('echo ' + str(data), shell=True)
     return jsonify({"result": "success"})

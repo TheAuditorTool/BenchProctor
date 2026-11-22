@@ -1,0 +1,6 @@
+topics:
+  - name: publishing.events.v0003
+    partitions: 3
+    retention_hours: 24
+    producers:
+    consumers:

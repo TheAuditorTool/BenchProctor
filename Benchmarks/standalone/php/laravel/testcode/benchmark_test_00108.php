@@ -8,10 +8,8 @@ class BenchmarkTest00108Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Referer', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $ciphertext = openssl_encrypt((string)$data, 'des-ecb', getenv('DATA_ENC_KEY'));
-        return response()->json(['ok' => 1]);
+        $userInput = $request->json('payload', '');
+        $data = sprintf('%s', $userInput);
+        return response('<div>' . $data . '</div>')->header('Content-Type', 'text/html');
     }
 }

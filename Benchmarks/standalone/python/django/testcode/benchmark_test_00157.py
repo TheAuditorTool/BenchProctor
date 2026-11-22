@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-from django.contrib.auth.models import User
+import hashlib
 
 
 def BenchmarkTest00157(request):
-    raw_body = request.body.decode('utf-8')
-    parts = []
-    for token in str(raw_body).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    User.objects.filter(id=data).first()
-    return JsonResponse({"saved": True})
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    data, _sep, _rest = str(auth_header).partition('\x00')
+    digest = hashlib.sha256(str(data).encode()).hexdigest()
+    return JsonResponse({'digest': str(digest)}, status=200)

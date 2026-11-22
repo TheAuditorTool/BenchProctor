@@ -3,24 +3,22 @@ package testcode
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"os/exec"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00218(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", dbValue)
+	data := relayBuilder.String()
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		http.Error(w, "invalid option", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	data := fmt.Sprintf("%s", rawBody)
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(output)
+	processed := data
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, "<p>Results for %s</p>", processed)
 }

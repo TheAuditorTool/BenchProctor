@@ -2,24 +2,18 @@
 package testcode
 
 import (
-	"net/http"
+	"context"
+	"os/exec"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00037(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	form := submissionForm{payload: headerValue}
-	data := form.payload
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		c.String(404, "not found")
-		return
-	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	userID := c.Query("id")
+	scriptCtx, cancelScript := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelScript()
+	cmd := exec.CommandContext(scriptCtx, "python3", "-c", userID)
+	output, _ := cmd.CombinedOutput()
+	c.Data(200, "text/plain", output)
 }

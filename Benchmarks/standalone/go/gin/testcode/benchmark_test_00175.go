@@ -3,40 +3,22 @@ package testcode
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00175(c *gin.Context) {
-	forwardedIP := c.GetHeader("X-Forwarded-For")
-	relayPrefix := ""
-	if len(forwardedIP) > 0 {
-		relayPrefix = strings.ToLower(forwardedIP[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = forwardedIP
-	case "f":
-		data = forwardedIP
-	default:
-		data = forwardedIP
-	}
-	baseDir := "/var/app/data"
-	cleanPath := filepath.Clean(filepath.Join(baseDir, data))
-	resolvedPath, resolveErr := filepath.EvalSymlinks(cleanPath)
-	if resolveErr != nil {
-		c.String(http.StatusForbidden, "access denied")
+	headerValue := c.GetHeader("X-Custom-Header")
+	data := func(v string) string { return strings.TrimSpace(v) }(headerValue)
+	const exportRecordSize = 512
+	recordCount, err := strconv.ParseInt(data, 10, 32)
+	if err != nil {
+		c.String(http.StatusBadRequest, "invalid record count")
 		return
 	}
-	if resolvedPath != baseDir && !strings.HasPrefix(resolvedPath, baseDir+"/") {
-		c.String(http.StatusForbidden, "access denied")
-		return
-	}
-	checkedPath := resolvedPath
-	os.WriteFile(checkedPath, []byte("data"), 0644)
+	exportBuf := make([]byte, 0, int32(recordCount)*exportRecordSize)
+	c.Header("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
 	c.JSON(200, gin.H{"code": "OK"})
 }

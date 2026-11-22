@@ -8,9 +8,9 @@ class BenchmarkTest00210Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
+        $userInput = $request->json('payload', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $html = \Illuminate\Support\Facades\Blade::render('<div class="comment">{!! $comment !!}</div>', ['comment' => $data]);
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Header, Headers, Post } from "@nestjs/common";
+import { Controller, Param, Post } from "@nestjs/common";
 import { Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import Database from "better-sqlite3";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -16,13 +19,14 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00184")
-  @Header("Content-Type", "text/html")
-  async BenchmarkTest00184(@Headers("x-custom-header") hdr: string): Promise<unknown> {
-    const userInput = hdr || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    return "<div>" + data + "</div>";
+  @Post("BenchmarkTest00184/:id")
+  async BenchmarkTest00184(@Param("id") pathId: string): Promise<unknown> {
+    const userInput = pathId;
+    const _raw = userInput;
+    const data = (_raw && _raw.length > 0) ? _raw : 'default';
+    const appDb = ((globalThis as unknown as { _appDb?: InstanceType<typeof Database> })._appDb ??= new Database("/var/app/data/app.db", { readonly: true }));
+    const orderColumn = '"' + String(data).replace(/"/g, '""') + '"';
+    appDb.prepare("SELECT id, name FROM users ORDER BY " + orderColumn).all();
+    return { created: true };
   }
 }

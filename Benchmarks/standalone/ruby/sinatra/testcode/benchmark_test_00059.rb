@@ -3,9 +3,9 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
 
 class BenchmarkTest00059 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -19,10 +19,12 @@ class BenchmarkTest00059 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00059" do
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
+    user_input = params[:q].to_s
     record = { payload: user_input.to_s }
     data = record.fetch(:payload)
-    Marshal.load(data)
+    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
+    parsed_bool = _coerced
+    session[:data] = parsed_bool.to_s
     content_type :json
     JSON.generate({ status: "ok" })
   end

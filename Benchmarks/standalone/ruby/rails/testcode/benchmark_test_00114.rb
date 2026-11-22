@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00114Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +12,11 @@ class BenchmarkTest00114Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00114
-    user_input = request.headers["Authorization"].to_s
-    data = user_input.gsub("\u0000", "")
-    File.delete("/var/app/data/" + data)
-    render json: { status: "ok" }
+    user_input = request.body.read
+    data = sprintf("%s", user_input)
+    directory = Nokogiri::XML(File.read("/var/app/data/users.xml"))
+    query = Nokogiri::XML::XPathContext.new(directory)
+    roles = query.evaluate("//user[@name='" + data.to_s + "']/role")
+    render json: { roles: roles.map(&:text) }
   end
 end

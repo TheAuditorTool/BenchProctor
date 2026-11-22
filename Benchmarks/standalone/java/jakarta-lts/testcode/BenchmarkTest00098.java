@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: Apache-2.0
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
+@Path("/")
+@Produces(MediaType.APPLICATION_JSON)
+public class BenchmarkTest00098 {
+
+    @Provider
+    public static class BindingRestrictionFilter implements ContainerRequestFilter {
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            requestContext.getHeaders().remove("X-Internal-Bind");
+        }
+    }
+
+    @Provider
+    public static class FailureMapper implements ExceptionMapper<Exception> {
+        @Override
+        public Response toResponse(Exception ex) {
+            return Response.status(500).entity("request failed").build();
+        }
+    }
+
+    @GET
+    @Path("/BenchmarkTest00098")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response BenchmarkTest00098(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("User-Agent") String userAgent, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String uaValue = userAgent != null ? userAgent : "";
+        String prefix = uaValue.length() > 0 ? uaValue.substring(0, 1).toLowerCase() : "";
+        String data;
+        switch (prefix) {
+            case "h": data = uaValue.toLowerCase(); break;
+            case "f": data = uaValue.toUpperCase(); break;
+            default: data = uaValue.strip(); break;
+        }
+        String ticketRef;
+        try (java.util.Scanner ticketScan = new java.util.Scanner(data)) {
+            ticketRef = ticketScan.findInLine("TCK-[0-9]{6}");
+        }
+        String ticketNumber = ticketRef.substring(4);
+        response.setHeader("X-Ticket-Number", ticketNumber);
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+    }
+}

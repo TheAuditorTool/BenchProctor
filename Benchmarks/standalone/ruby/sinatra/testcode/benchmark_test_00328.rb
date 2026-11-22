@@ -3,8 +3,8 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "base64"
-require "nokogiri"
+require "bunny"
+require "open-uri"
 
 class BenchmarkTest00328 < Sinatra::Base
   before do
@@ -20,9 +20,16 @@ class BenchmarkTest00328 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00328" do
-    user_input = request.body.read
-    data = Base64.decode64(user_input)
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = Bunny.new(ENV.fetch("AMQP_URL", "amqp://guest:guest@broker:5672/%2F")).start.create_channel.queue("app-events", durable: true).pop[2].to_s
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
+      return
+    end
+    target_url = data
+    URI.open(target_url).read
     content_type :json
     JSON.generate({ status: "ok" })
   end

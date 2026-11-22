@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::HeaderMap;
+use axum::extract::Form;
 use axum::response::IntoResponse;
-use axum::response::Json;
+use std::collections::HashMap;
 
-pub async fn benchmark_test_00025(headers: HeaderMap) -> impl IntoResponse {
-    let forwarded_ip = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = if forwarded_ip.len() <= 4096 { forwarded_ip.clone() } else { forwarded_ip.chars().take(4096).collect() };
-    use md5::Digest;
-    let _ = md5::Md5::digest(data.as_bytes());
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00025(Form(form): Form<HashMap<String, String>>) -> impl IntoResponse {
+    let field_value = form.get("field").cloned().unwrap_or_default();
+    let mut data = String::new();
+    for token in field_value.split(',') { data = token.to_string(); }
+    let _chunk = format!("<div>{}</div>", data);
+    return ([("content-type", "text/html; charset=utf-8")], axum::body::Body::from_stream(futures_util::stream::once(async move { Ok::<_, std::convert::Infallible>(_chunk) }))).into_response();
 }

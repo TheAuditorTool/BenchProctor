@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "digest"
 
 class BenchmarkTest00170Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +11,10 @@ class BenchmarkTest00170Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00170
-    user_input = request.referer.to_s
-    data = "%s" % user_input
-    digest = Digest::MD5.hexdigest(data.to_s)
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
     render json: { status: "ok" }
   end
 end

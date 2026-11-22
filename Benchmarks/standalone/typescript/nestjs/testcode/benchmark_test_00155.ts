@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as crypto from "crypto";
+import { Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import lodash from "lodash";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,12 +19,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00155")
-  async BenchmarkTest00155(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const parts: string[] = [];
-    for (const token of String(userInput).split(',')) { parts.push(token); }
-    const data: string = parts.join(',');
-    crypto.createHash("sha256").update(data).digest("hex");
-    return { created: true };
+  async BenchmarkTest00155(): Promise<unknown> {
+    const userInput = process.env.APP_INPUT || "";
+    const data = nodeUtil.format("%s", userInput);
+    const token = lodash.random(1e11, 1e12 - 1).toString(36) + "-" + String(data).slice(0, 8);
+    return { token };
   }
 }

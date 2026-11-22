@@ -7,19 +7,13 @@
 #include <stdint.h>
 #include <time.h>
 
+static const char *c_passthrough(const char *s) { while (*s == ' ') s++; return s; }
+
 void benchmark_test_00457(int argc, char **argv)
 {
     const char *user_input = (argc > 1) ? argv[1] : "";
-    char data[512];
-    switch (user_input[0]) {
-        case '\0':
-            data[0] = '\0';
-            break;
-        default:
-            snprintf(data, sizeof(data), "%s", user_input);
-            break;
-    }
-    srand((unsigned)time(NULL));
-    int _token = rand();
+    const char *data = c_passthrough(user_input);
+    unsigned int _seed = (unsigned int)time(NULL);
+    int _token = rand_r(&_seed);
     printf("token for %s: %d\n", data, _token);
 }

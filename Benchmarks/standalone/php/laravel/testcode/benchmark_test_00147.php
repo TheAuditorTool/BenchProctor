@@ -8,9 +8,8 @@ class BenchmarkTest00147Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('Referer', '');
-        $data = "{$userInput}";
-        $digest = hash('sha256', (string)$data);
+        $userInput = $request->json('payload', '');
+        $content = file_get_contents('/var/app/data/' . (string)$userInput);
         return response()->json(['ok' => 1]);
     }
 }

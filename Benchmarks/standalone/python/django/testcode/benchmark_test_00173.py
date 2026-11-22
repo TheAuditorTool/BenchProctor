@@ -1,19 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import json
-from app_runtime import db
+from django.shortcuts import redirect
+from urllib.parse import urlparse
+import re
 
 
 def BenchmarkTest00173(request):
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    try:
-        data = json.loads(db_value).get('value', db_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = db_value
-    try:
-        _coerced = float(data)
-    except (TypeError, ValueError):
-        return JsonResponse({'error': 'invalid number'}, status=400)
-    processed = _coerced
-    exec(str(processed))
-    return JsonResponse({"saved": True})
+    field_value = request.POST.get('field', '')
+    data = ' '.join(str(field_value).split())
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JsonResponse({'error': 'forbidden host'}, status=403)
+    target_url = data
+    return redirect(str(target_url))

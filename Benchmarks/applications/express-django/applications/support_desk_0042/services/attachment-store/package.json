@@ -1,0 +1,24 @@
+{
+  "name": "attachment-store",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "amqplib": "0.10.9",
+    "express": "4.22.3",
+    "express-session": "1.19.0",
+    "isomorphic-dompurify": "2.36.0",
+    "multer": "2.5.0",
+    "nunjucks": "3.2.4",
+    "pg": "8.23.1",
+    "redis": "4.7.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "prisma": "5.22.0"
+  }
+}

@@ -54,12 +54,10 @@ public class BenchmarkTest00131 {
     @Produces(MediaType.APPLICATION_JSON)
     public Response BenchmarkTest00131(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
         String cachedValue = java.util.Optional.ofNullable(dbReadColumn("SELECT value FROM kv_cache WHERE k = 'user_data' LIMIT 1")).orElse("");
-        java.util.Map.Entry<String,String> tuple = java.util.Map.entry(cachedValue, "query");
-        String data = tuple.getKey();
+        String data = String.format("%s", cachedValue);
         com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        objectMapper.activateDefaultTyping(com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(), com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL);
-        Object polymorphicObj = objectMapper.readValue(data, Object.class);
-        response.setHeader("X-Deserialized-Class", polymorphicObj != null ? polymorphicObj.getClass().getName() : "null");
-        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
+        objectMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(data);
+        return Response.ok(node.path("name").asText(), MediaType.TEXT_HTML).build();
     }
 }

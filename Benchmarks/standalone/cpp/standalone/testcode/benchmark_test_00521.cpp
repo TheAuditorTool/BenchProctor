@@ -6,11 +6,18 @@
 
 void benchmark_test_00521(int, char **)
 {
-    const char *user_input_env = std::getenv("APP_INPUT");
+    const char *user_input_env = std::getenv("PATH_INFO");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
     std::string data;
-    data.reserve(user_input.size());
-    for (char _c : user_input) data.push_back(_c);
-    const char *_found = std::strchr(data.c_str(), '=');
-    std::cout << *_found << std::endl;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    char *_dst = new char[16];
+    std::strcpy(_dst, data.c_str());
+    delete[] _dst;
 }

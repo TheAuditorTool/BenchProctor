@@ -2,27 +2,20 @@
 package testcode
 
 import (
+	"context"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00254(c *gin.Context) {
-	cookieValue, err := c.Cookie("session_token")
-	if err != nil {
-		c.String(http.StatusBadRequest, "missing cookie")
+	redisValue, _ := redisClient.Get(context.Background(), "user_data").Result()
+	data := strings.Join(strings.FieldsFunc(redisValue, func(r rune) bool { return r == ' ' || r == '\t' }), " ")
+	var matched []User
+	if err := gormDB.Raw("SELECT id, name FROM users WHERE name = '" + data + "'").Scan(&matched).Error; err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(cookieValue)
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#%\\-]+$")
-	if !validPattern.MatchString(data) {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
-	}
-	processed := data
-	htmlOut := "<div>" + processed + "</div>"
-	c.Data(200, "text/html", []byte(htmlOut))
+	c.JSON(200, gin.H{"code": "OK"})
 }

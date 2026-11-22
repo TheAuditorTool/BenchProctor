@@ -8,9 +8,18 @@ class BenchmarkTest00095Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->json('payload', '');
-        $data = str_replace("\0", '', $userInput);
-        $content = file_get_contents('/var/app/data/' . (string)$data);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->header('Host', '');
+        $_prefix = strtolower(substr($userInput, 0, 1));
+        $data = '';
+        switch ($_prefix) {
+            case 'h': $data = strtolower($userInput); break;
+            case 'f': $data = strtoupper($userInput); break;
+            default: $data = trim($userInput); break;
+        }
+        $_coerced = max(0, min((int)$data, 1048576));
+        $boundedVal = $_coerced;
+        $records = (int) $boundedVal;
+        $frame = str_repeat("\0", (int) ($records * 16));
+        return response()->json(['frame_bytes' => strlen($frame)], 200);
     }
 }

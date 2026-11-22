@@ -11,11 +11,15 @@ class BenchmarkTest00243Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00243
-    user_input = Comment.first&.text.to_s
-    data = user_input ? user_input : ''
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    session[:data] = parsed_num.to_s
-    render json: { status: "ok" }
+    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
+    end
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    limit = plan.fetch(:requests)
+    render json: { requests: limit }
   end
 end

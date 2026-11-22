@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as net from "net";
+import * as crypto from "crypto";
 
 export const BenchmarkTest00198 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-custom-header"] as string) || "";
-  function normalize(value: string): string { return value.normalize("NFC"); }
-  const data: string = normalize(userInput);
-  net.connect(80, new URL(String(data)).hostname);
-  res.json({ accepted: true });
+  const userInput = (req.body?.multipart_field as string) || "";
+  const formData = Object.freeze({ payload: userInput });
+  const data = formData.payload;
+  const digest = await crypto.subtle.digest("SHA-1", Buffer.from(String(data)));
+  res.json({ fingerprint: Buffer.from(digest).toString("hex") }); return;
 }

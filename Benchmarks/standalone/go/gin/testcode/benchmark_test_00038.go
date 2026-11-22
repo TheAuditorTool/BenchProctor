@@ -2,40 +2,27 @@
 package testcode
 
 import (
-	"encoding/json"
-	"io"
-	"net"
 	"net/http"
-	"net/url"
-	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00038(c *gin.Context) {
-	var gqlReq struct {
-		Variables map[string]string `json:"variables"`
-	}
-	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
-	graphqlVar := gqlReq.Variables["input"]
-	data := func(v string) string { return strings.TrimSpace(v) }(graphqlVar)
-	parsedURL, _ := url.Parse(data)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
-	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		c.String(http.StatusForbidden, "private range blocked")
-		return
-	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
+	var dbValue string
+	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(dbValue)
+	lookupStmt, err := DB.Prepare("SELECT id, name FROM users WHERE name = '" + data + "'")
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	c.JSON(200, gin.H{"code": "OK"})
 }

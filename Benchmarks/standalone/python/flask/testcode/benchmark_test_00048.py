@@ -22,6 +22,5 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00048", methods=["POST"])
 def BenchmarkTest00048():
     ua_value = request.headers.get('User-Agent', '')
-    data = (lambda v: v.strip())(ua_value)
-    session['data'] = str(data)
+    session['data'] = str(ua_value)
     return jsonify({"result": "success"})

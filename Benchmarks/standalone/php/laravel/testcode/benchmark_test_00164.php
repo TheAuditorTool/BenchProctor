@@ -8,12 +8,11 @@ class BenchmarkTest00164Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->header('User-Agent', '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        $_coerced = in_array(strtolower((string)$data), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
-        $parsedBool = $_coerced;
-        eval((string)$parsedBool);
+        $userInput = $request->getContent();
+        $data = mb_convert_encoding($userInput, 'UTF-8');
+        $doc = new \DOMDocument();
+        $doc->loadXML((string)$data, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = $doc->getElementsByTagName('name')->item(0)?->textContent;
         return response()->json(['ok' => 1]);
     }
 }

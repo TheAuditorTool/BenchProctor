@@ -3,10 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "base64"
 
 class BenchmarkTest00236 < Sinatra::Base
   before do
@@ -22,15 +19,16 @@ class BenchmarkTest00236 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00236" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = request.body.read
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    _cipher = OpenSSL::Cipher.new("aes-256-gcm")
+    _cipher.encrypt
+    _cipher.key = Base64.strict_decode64(ENV.fetch("DATA_ENC_KEY"))[0, _cipher.key_len]
+    iv = _cipher.random_iv
+    ciphertext = iv + _cipher.update(data.to_s) + _cipher.final + _cipher.auth_tag
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ ciphertext: Base64.strict_encode64(ciphertext) })
   end
 end

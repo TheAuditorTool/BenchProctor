@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00236")]
-pub async fn benchmark_test_00236(body: web::Bytes) -> HttpResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = match graphql_var.chars().next() { Some(_) => graphql_var.clone(), None => "default".to_string() };
-    crate::shared::ldap_search(&format!("uid={}", data));
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00236(req: HttpRequest) -> HttpResponse {
+    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    fn normalize(value: String) -> String { value.trim().to_string() }
+    let data = normalize(referer_value.clone());
+    HttpResponse::Found().append_header(("Location", data.as_str())).finish()
 }

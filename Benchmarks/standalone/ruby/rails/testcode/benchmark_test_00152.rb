@@ -11,9 +11,11 @@ class BenchmarkTest00152Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00152
-    user_input = ENV["APP_INPUT"] || ""
-    data = format("%<value>s", value: user_input)
-    token = rand(1000000)
+    user_input = params.require(:user).permit(:name)[:name].to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    session[:data] = data.to_s
     render json: { status: "ok" }
   end
 end

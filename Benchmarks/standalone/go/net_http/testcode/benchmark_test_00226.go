@@ -2,28 +2,18 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 func BenchmarkTest00226(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
-	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
-		return
-	}
-	uploadName := header.Filename
+	fieldValue := r.FormValue("field")
 	var data string
-	for _, token := range strings.Split(uploadName, ",") {
+	for _, token := range strings.Split(fieldValue, ",") {
 		data = token
 	}
-	query := fmt.Sprintf(`SELECT * FROM "%s"`, strings.ReplaceAll(data, `"`, `""`))
-	rows, err := DB.Query(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	requested, _ := strconv.Atoi(data)
+	wrapped := int32(requested + 1)
+	w.Header().Set("X-Wrapped", strconv.Itoa(int(wrapped)))
 }

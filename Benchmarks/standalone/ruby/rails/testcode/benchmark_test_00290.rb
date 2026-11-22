@@ -2,6 +2,8 @@
 require "json"
 require "uri"
 require "openssl"
+require "active_model"
+require "net/ldap"
 
 class BenchmarkTest00290Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,9 +13,23 @@ class BenchmarkTest00290Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00290
-    user_input = Comment.first&.text.to_s
-    data = "#{user_input}"
-    JSON.parse(data)
+    user_input = params.require(:request_data).permit(:payload)[:payload].to_s
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    validator = Class.new do
+      include ActiveModel::Validations
+      attr_accessor :value
+      validates :value, format: { with: /\A[a-zA-Z0-9 _.#%\-]+\z/ }
+    end.new
+    validator.value = data.to_s
+    unless validator.valid?
+      render json: { error: "invalid" }, status: 400
+      return
+    end
+    processed = data
+    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
+    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port, auth: { method: :simple, username: ENV.fetch("LDAP_BIND_DN"), password: ENV.fetch("LDAP_BIND_PASSWORD") })
+    ldap.replace_attribute("uid=" + processed.to_s + ",ou=people,dc=example,dc=com", :description, "reviewed")
     render json: { status: "ok" }
   end
 end

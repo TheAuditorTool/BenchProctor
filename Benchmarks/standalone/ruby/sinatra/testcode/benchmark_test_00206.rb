@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "redis"
-require "socket"
 
 class BenchmarkTest00206 < Sinatra::Base
   before do
@@ -20,21 +18,11 @@ class BenchmarkTest00206 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00206" do
-    user_input = Redis.new(url: ENV.fetch("REDIS_URL", "redis://cache:6379")).get("user_data").to_s
-    _prefix = user_input[0,1].downcase
-    data = case _prefix
-           when 'h' then user_input.downcase
-           when 'f' then user_input.upcase
-           else user_input.strip
-           end
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      halt 403, JSON.generate({ error: "forbidden host" })
-      return
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    data = "#{user_input}"
+    content_type :html
+    stream do |out|
+      out << "<div>" + data + "</div>"
     end
-    target_url = data
-    TCPSocket.new(target_url, 80).close
-    content_type :json
-    JSON.generate({ status: "ok" })
   end
 end

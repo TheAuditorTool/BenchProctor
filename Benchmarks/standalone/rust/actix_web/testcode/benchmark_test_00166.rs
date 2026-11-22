@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 #[actix_web::post("/benchmark_test_00166")]
-pub async fn benchmark_test_00166(req: HttpRequest) -> HttpResponse {
-    let cookie_value = req.cookie("session_token").map(|c| c.value().to_string()).unwrap_or_default();
-    let mut pending: std::collections::VecDeque<String> = cookie_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    let _ciphertext = crate::shared::encrypt(&data);
-    tokio::fs::write("/var/data/cipher.bin", _ciphertext.as_bytes()).await.ok();
+pub async fn benchmark_test_00166(body: web::Bytes) -> HttpResponse {
+    let xml_value = String::from_utf8_lossy(&body).to_string();
+    let data = xml_value.to_string();
+    let quantity: u32 = data.parse().unwrap_or(0);
+    let total_cents = quantity * 1299;
+    crate::shared::db_exec_bind("INSERT INTO logs (data) VALUES ($1)", &total_cents.to_string());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -2,34 +2,26 @@
 package testcode
 
 import (
-	"bytes"
-	"crypto/cipher"
-	"crypto/des"
-	"crypto/rand"
-	"crypto/sha256"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"os"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00285(w http.ResponseWriter, r *http.Request) {
-	cookieObj, err := r.Cookie("session_token")
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(graphqlVar)
+	const unitPriceCents int32 = 129999
+	quantity, err := strconv.ParseInt(data, 10, 32)
 	if err != nil {
-		http.Error(w, "missing cookie", http.StatusBadRequest)
+		http.Error(w, "invalid quantity", http.StatusBadRequest)
 		return
 	}
-	cookieValue := cookieObj.Value
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", cookieValue)
-	data := relayBuilder.String()
-	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
-	cipherBlock, _ := des.NewTripleDESCipher(keyHash[:24])
-	iv := make([]byte, des.BlockSize)
-	rand.Read(iv)
-	padLen := des.BlockSize - len(data)%des.BlockSize
-	ptext := append([]byte(data), bytes.Repeat([]byte{byte(padLen)}, padLen)...)
-	cipherOut := make([]byte, len(ptext))
-	cipher.NewCBCEncrypter(cipherBlock, iv).CryptBlocks(cipherOut, ptext)
-	RespondJSON(w, http.StatusOK, map[string]string{"alg": "3des-cbc", "out": fmt.Sprintf("%x%x", iv, cipherOut)})
+	lineTotal := int32(quantity) * unitPriceCents
+	DB.Exec("INSERT INTO invoice_lines (sku, qty, total_cents) VALUES ($1, $2, $3)", "SKU-4410", quantity, lineTotal)
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

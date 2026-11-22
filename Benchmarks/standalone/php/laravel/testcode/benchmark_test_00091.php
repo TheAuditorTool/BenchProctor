@@ -8,10 +8,9 @@ class BenchmarkTest00091Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        try { $data = json_decode($userInput, true, 512, JSON_THROW_ON_ERROR)['value'] ?? $userInput; }
-        catch (\JsonException $e) { $data = $userInput; }
-        (new \Symfony\Component\Yaml\Parser())->parse($data, \Symfony\Component\Yaml\Yaml::PARSE_OBJECT | \Symfony\Component\Yaml\Yaml::PARSE_OBJECT_FOR_MAP);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $content = file_get_contents('/var/app/data/' . (string)$data);
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as crypto from "crypto";
+import * as nodeUtil from "util";
+import lodash from "lodash";
 
 export const BenchmarkTest00276 = async (req: Request, res: Response): Promise<void> => {
   const userInput = process.env.APP_INPUT || "";
-  const data = userInput != null ? userInput : '';
-  crypto.createHash("sha256").update(data).digest("hex");
-  res.json({ accepted: true });
+  const data = nodeUtil.format("%s", userInput);
+  const token = lodash.random(1e11, 1e12 - 1).toString(36) + "-" + String(data).slice(0, 8);
+  res.json({ token }); return;
 }

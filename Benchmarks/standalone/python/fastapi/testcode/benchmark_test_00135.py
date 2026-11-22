@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
-import os
-from starlette.responses import JSONResponse
+from lxml import etree
+from fastapi.responses import JSONResponse
 
+
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = FastAPI()
 
@@ -22,10 +26,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00135")
 async def BenchmarkTest00135(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    if env_value:
-        data = env_value
-    else:
-        data = ''
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+    ua_value = request.headers.get('user-agent', '')
+    reader = make_reader(ua_value)
+    data = reader()
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(data) + '"]')
+    return {"updated": True}

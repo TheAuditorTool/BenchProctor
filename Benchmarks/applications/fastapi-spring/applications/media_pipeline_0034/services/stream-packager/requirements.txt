@@ -1,0 +1,7 @@
+fastapi==0.161.1
+itsdangerous==2.2.0
+python-multipart==0.0.32
+redis==8.1.0
+requests==2.34.2
+starlette==1.9.0
+uvicorn==0.54.0

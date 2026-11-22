@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
+import random
 from flask import Flask, request, jsonify
-import os
-import hashlib
-from Crypto.Cipher import DES
-from Crypto.Util.Padding import pad
+from app_runtime import db
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -22,8 +27,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00285", methods=["POST"])
 def BenchmarkTest00285():
-    header_value = request.headers.get('X-Custom-Header', '')
-    data, _sep, _rest = str(header_value).partition('\x00')
-    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
-    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
-    return jsonify({'length': len(ciphertext)}), 200
+    user_id = request.args.get('id', '')
+    data = RequestPayload(user_id).value
+    token = random.randbytes(16).hex()
+    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
+    return jsonify({'token': str(token)}), 200

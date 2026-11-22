@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "nokogiri"
 
 class BenchmarkTest00015Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -12,9 +11,9 @@ class BenchmarkTest00015Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00015
-    user_input = request.body.read
-    data = user_input.gsub("\u0000", "")
-    Nokogiri::XML(data) { |config| config.dtdload.noent.nonet }
+    user_input = request.user_agent.to_s
+    data = "#{user_input}"
+    Rails.application.config.x.announcement = data.to_s
     render json: { status: "ok" }
   end
 end

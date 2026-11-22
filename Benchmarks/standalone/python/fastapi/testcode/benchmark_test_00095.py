@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pathlib import Path
-from starlette.responses import JSONResponse
-from starlette.responses import PlainTextResponse
+import requests
+from app_runtime import db
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,13 +22,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00095")
 async def BenchmarkTest00095(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = f'{referer_value!s}'
-    base = Path('/var/app/data').resolve()
-    candidate = (base / data).resolve()
-    if base not in candidate.parents and candidate != base:
-        return JSONResponse({'error': 'forbidden'}, status_code=403)
-    checked_path = str(candidate)
-    with open(checked_path, 'r') as fh:
-        content = fh.read()
-    return PlainTextResponse(content)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = '{}'.format(comment_value)
+    requests.get(str(data))
+    return {"updated": True}

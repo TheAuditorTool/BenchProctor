@@ -3,10 +3,11 @@ use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00117")]
 pub async fn benchmark_test_00117() -> HttpResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    let data: String = comment_value.parse::<i64>()
-        .map(|n| n.to_string()).unwrap_or_else(|_| comment_value.clone());
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
+    let env_value = std::env::var("APP_SETTING").unwrap_or_default();
+    use std::fmt::Write;
+    let mut data = String::new();
+    write!(&mut data, "{}", env_value).ok();
+    let _token = fastrand::u64(..);
+    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

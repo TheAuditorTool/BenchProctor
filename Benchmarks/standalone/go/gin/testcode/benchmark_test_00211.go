@@ -2,36 +2,22 @@
 package testcode
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
+	"net/url"
+	"os"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00211(c *gin.Context) {
-	var dbValue string
-	DB.QueryRow("SELECT name FROM users LIMIT 1").Scan(&dbValue)
-	relayPrefix := ""
-	if len(dbValue) > 0 {
-		relayPrefix = strings.ToLower(dbValue[:1])
+	userID := c.Query("id")
+	data, _ := url.QueryUnescape(userID)
+	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid option")
+		return
 	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = dbValue
-	case "f":
-		data = dbValue
-	default:
-		data = dbValue
-	}
-	tokenLen, _ := strconv.Atoi(data)
-	if tokenLen < 16 || tokenLen > 64 {
-		tokenLen = 32
-	}
-	buf := make([]byte, tokenLen)
-	rand.Read(buf)
-	c.JSON(http.StatusOK, map[string]string{"token": hex.EncodeToString(buf)})
+	processed := data
+	os.WriteFile("/var/app/data/"+processed, []byte("data"), 0644)
+	c.JSON(200, gin.H{"code": "OK"})
 }

@@ -2,28 +2,37 @@
 package testcode
 
 import (
-	"net"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00045(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(headerValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	var relayBuilder strings.Builder
+	fmt.Fprintf(&relayBuilder, "%s", commentText)
+	data := relayBuilder.String()
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	blockCipher, err := aes.NewCipher(keyHash[:])
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	targetUrl := data
-	conn, err := net.Dial("tcp", targetUrl)
-	if err == nil {
-		defer conn.Close()
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	c.JSON(200, gin.H{"code": "OK"})
+	nonce := make([]byte, gcm.NonceSize())
+	rand.Read(nonce)
+	cipherOut := gcm.Seal(nonce, nonce, []byte(data), nil)
+	c.JSON(http.StatusOK, map[string]string{"alg": "aes-gcm", "out": fmt.Sprintf("%x", cipherOut)})
 }

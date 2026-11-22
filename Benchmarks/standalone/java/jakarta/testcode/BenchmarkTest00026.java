@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -35,12 +33,10 @@ public class BenchmarkTest00026 {
     @GET
     @Path("/BenchmarkTest00026")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00026(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String originValue = origin != null ? origin : "";
-        java.util.Properties container = new java.util.Properties();
-        container.setProperty("value", originValue);
-        String data = container.getProperty("value", "");
-        Files.write(Paths.get("/var/uploads/" + data), "data".getBytes());
+    public Response BenchmarkTest00026(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String userId = id != null ? id : "";
+        String data = String.join(" ", userId.split("[ \\t]+"));
+        request.getServletContext().setAttribute("siteBanner", data);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

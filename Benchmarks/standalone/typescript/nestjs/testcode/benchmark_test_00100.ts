@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, Req } from "@nestjs/common";
-import { Request, Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import { Body, Controller, Post } from "@nestjs/common";
+import { Response } from "express";
+import * as crypto from "crypto";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,11 +18,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00100")
-  async BenchmarkTest00100(@Req() req: Request): Promise<unknown> {
-    const userInput = ((req as any).rawBody as string) || "";
-    const data = Buffer.from(userInput, "base64").toString();
-    const checkedPath = "/var/app/data/" + path.basename(data);
-    fs.unlinkSync(checkedPath);
-    return { created: true };
+  async BenchmarkTest00100(@Body("multipart_field") mf: string): Promise<unknown> {
+    const userInput = mf || "";
+    const payload = { get value() { return userInput; } };
+    const data = payload.value;
+    const digest = await crypto.subtle.digest("SHA-1", Buffer.from(String(data)));
+    return { fingerprint: Buffer.from(digest).toString("hex") };
   }
 }

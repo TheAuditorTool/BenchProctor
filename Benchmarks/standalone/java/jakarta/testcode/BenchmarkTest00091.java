@@ -5,9 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -33,16 +30,21 @@ public class BenchmarkTest00091 {
         }
     }
 
-    @POST
+    private static String normalize(String v) { return v.strip(); }
+
+    @GET
     @Path("/BenchmarkTest00091")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00091(@FormDataParam("file") org.glassfish.jersey.media.multipart.FormDataContentDisposition fileDetail, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String uploadName = fileDetail.getFileName();
-        String data = uploadName.isEmpty() ? "default" : uploadName;
-        java.nio.file.Path baseName = java.nio.file.Paths.get(data).getFileName();
-        String checkedPath = "/var/app/data/" + (baseName == null ? "index" : baseName.toString());
-        Files.write(Paths.get(checkedPath), "data".getBytes());
+    public Response BenchmarkTest00091(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        String data = normalize(cookieValue);
+        String setCookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        jakarta.servlet.http.Cookie sessionCookie = new jakarta.servlet.http.Cookie("session", setCookieValue);
+        sessionCookie.setPath("/");
+        sessionCookie.setSecure(true);
+        sessionCookie.setHttpOnly(true);
+        sessionCookie.setAttribute("SameSite", "Strict");
+        response.addCookie(sessionCookie);
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

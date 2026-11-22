@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
+import requests
 from flask import Flask, jsonify
-from app_runtime import db
+import os
+from sqlalchemy import create_engine
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = Flask(__name__)
 
@@ -20,7 +23,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00127", methods=["POST"])
 def BenchmarkTest00127():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = '{}'.format(env_value)
-    db.execute('SELECT * FROM "' + str(data).replace('"', '""') + '"')
+    api_value = requests.get('https://api.partner.example.com/v1/profile').text
+    data = '{}'.format(api_value)
+    with _engine.connect() as conn:
+        conn.exec_driver_sql("SELECT * FROM users WHERE name = '" + str(data) + "'")
     return jsonify({"result": "success"})

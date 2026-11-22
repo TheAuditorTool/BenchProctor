@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import hashlib
 from flask import Flask, request, jsonify
+from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,12 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00214", methods=["POST"])
 def BenchmarkTest00214():
-    multipart_value = request.form.get('multipart_field', '')
-    kind = 'json' if str(multipart_value).lstrip().startswith('{') else 'text'
-    match kind:
-        case 'json':
-            data = str(multipart_value).strip()
-        case _:
-            data = str(multipart_value)
-    digest = hashlib.md5(str(data).encode()).hexdigest()
-    return jsonify({'digest': str(digest)}), 200
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data, _sep, _rest = str(json_value).partition('\x00')
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    return jsonify({"result": "success"})

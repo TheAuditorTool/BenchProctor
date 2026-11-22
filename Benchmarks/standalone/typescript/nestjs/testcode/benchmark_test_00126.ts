@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Body, Controller, Post, ForbiddenException } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
+import { Controller, Param, Post, Req, BadRequestException } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as ldapjs from "ldapjs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,14 +17,17 @@ class FailureFilter implements ExceptionFilter {
 @Controller("benchmark")
 @UseFilters(FailureFilter)
 export class BenchmarkController {
-  @Post("BenchmarkTest00126")
-  async BenchmarkTest00126(@Body("multipart_field") mf: string): Promise<unknown> {
-    const userInput = mf || "";
-    const data = String(userInput).replace(/\u0000/g, "");
-    const resolved = path.resolve("/var/app/data", data);
-    if (!resolved.startsWith("/var/app/data/")) { throw new ForbiddenException({error:"forbidden"}); }
-    const checkedPath = resolved;
-    const fileContent = fs.readFileSync(checkedPath, "utf8");
-    return fileContent;
+  @Post("BenchmarkTest00126/:id")
+  async BenchmarkTest00126(@Param("id") pathId: string, @Req() req: Request): Promise<unknown> {
+    const userInput = pathId;
+    const data = `${userInput}`;
+    const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+    ldapClient.on("error", () => {});
+    const password = String(req.body?.password ?? "");
+    if (!password) { throw new BadRequestException({ error: "password required" }); }
+    const authenticated = await new Promise<boolean>((resolve) => {
+      ldapClient.bind("uid=" + data + ",ou=people,dc=example,dc=com", password, (err: Error | null) => { ldapClient.unbind(); resolve(!err); });
+    });
+    return { authenticated };
   }
 }

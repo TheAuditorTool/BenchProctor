@@ -1,6 +1,0 @@
-channels:
-  - name: risk:inbound:0030
-    payload: json
-keys:
-  - pattern: risk:record:{id}
-    ttl_seconds: 300

@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00134(body: Bytes) -> impl IntoResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = match graphql_var.chars().next() { Some(_) => graphql_var.clone(), None => "default".to_string() };
-    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+pub async fn benchmark_test_00134() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let (payload, _origin) = (db_value.clone(), "http");
+    let data = payload;
+    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
+    if !_RE_ENUM.is_match(&data) { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    crate::shared::store_session("data", &processed);
     Json(serde_json::json!({"count": 0})).into_response()
 }

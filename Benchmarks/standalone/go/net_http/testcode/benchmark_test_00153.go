@@ -2,20 +2,24 @@
 package testcode
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
+	"io"
 	"net/http"
-	"os/exec"
 	"strings"
 )
 
 func BenchmarkTest00153(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	capture := func() string { return strings.TrimSpace(refererValue) }
-	data := capture()
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
+	rawBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	w.Write(output)
+	xmlBody := string(rawBytes)
+	capture := func() string { return strings.TrimSpace(xmlBody) }
+	data := capture()
+	digest := sha512.New()
+	io.WriteString(digest, data)
+	hashStr := hex.EncodeToString(digest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

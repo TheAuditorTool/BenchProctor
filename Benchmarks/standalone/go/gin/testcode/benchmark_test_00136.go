@@ -2,24 +2,36 @@
 package testcode
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"strings"
+	"os"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00136(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
+	var reqBody struct {
+		Payload string `json:"payload"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.String(http.StatusBadRequest, "bad request")
 		return
 	}
-	uploadName := header.Filename
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(uploadName)
-	sum := sha256.Sum256([]byte(data))
-	hashStr := fmt.Sprintf("%x", sum)
-	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
+	jsonValue := reqBody.Payload
+	var parsed map[string]interface{}
+	json.Unmarshal([]byte(jsonValue), &parsed)
+	data, _ := parsed["value"].(string)
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.#~\\-]+$")
+	if !validPattern.MatchString(data) {
+		c.String(http.StatusBadRequest, "invalid input")
+		return
+	}
+	processed := data
+	content, err := os.ReadFile("/var/app/data/" + processed)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	c.Data(200, "text/plain", content)
 }

@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as shared from "./shared";
-const { db } = shared;
+import * as ldapjs from "ldapjs";
 
 export const BenchmarkTest00319 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.headers["x-forwarded-for"] as string) || "";
-  const data = String(userInput).slice(0, 200);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  const value = (row as any).name;
+  const userInput = ((req.body?.variables?.input) as string) || "";
+  const pending: string[] = String(userInput).split(',');
+  const collected: string[] = [];
+  while (pending.length) { collected.push(pending.shift() ?? ""); }
+  const data: string = collected.join(',');
+  const ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL || "ldap://directory:1389" });
+  ldapClient.on("error", () => {});
+  ldapClient.compare("uid=" + data + ",ou=people,dc=example,dc=com", "employeeType", "manager", (_err: Error | null, _matched?: boolean) => ldapClient.unbind());
   res.json({ accepted: true });
 }

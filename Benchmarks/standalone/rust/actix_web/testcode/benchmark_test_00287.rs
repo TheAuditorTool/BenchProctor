@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpResponse, web};
-use rand::rngs::OsRng;
+use tokio::net::TcpStream;
 
 #[actix_web::post("/benchmark_test_00287")]
 pub async fn benchmark_test_00287(body: web::Bytes) -> HttpResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = serde_json::from_str::<serde_json::Value>(&graphql_var)
-        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
-    use rand::Rng;
-    let _token: u64 = OsRng.gen();
-    crate::shared::store_session(&format!("csrf_token:{}", data), &_token.to_string());
+    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
+    let data = json_value.to_string();
+    let _sock_host = if data.contains("://") { url::Url::parse(&data).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default() } else { data.clone() };
+    TcpStream::connect(format!("{}:80", _sock_host)).await.ok();
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

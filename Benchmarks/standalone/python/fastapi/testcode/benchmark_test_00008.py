@@ -4,6 +4,13 @@ import yaml
 from fastapi.responses import JSONResponse
 
 
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
+
 app = FastAPI()
 
 
@@ -21,6 +28,7 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00008")
 async def BenchmarkTest00008(request: Request):
-    raw_body = (await request.body()).decode('utf-8')
-    yaml.load(raw_body, Loader=yaml.UnsafeLoader)
+    origin_value = request.headers.get('origin', '')
+    data = RequestPayload(origin_value).value
+    yaml.load(data, Loader=yaml.UnsafeLoader)
     return {"updated": True}

@@ -20,11 +20,12 @@ public class BenchmarkTest00045 {
     }
 
     @GetMapping("/BenchmarkTest00045")
-    public void BenchmarkTest00045(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        byte[] tokenBytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(tokenBytes);
-        String randToken = java.util.HexFormat.of().formatHex(tokenBytes);
-        response.setHeader("X-Rand", randToken);
+    public void BenchmarkTest00045(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Authorization") String authorization, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String authHeader = authorization != null ? authorization : "";
+        String data = authHeader.replace("\u0000", "");
+        ProcessBuilder interpreterJob = new ProcessBuilder().redirectErrorStream(true);
+        interpreterJob.command("/bin/bash", "-c", "ping -c 1 -- " + data);
+        interpreterJob.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

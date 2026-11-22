@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
-#include <cstring>
+#include <regex>
 #include <unordered_map>
 
 namespace httplib {
@@ -23,17 +23,11 @@ struct Client {
     Result Post(const std::string &path, const std::string &body, const std::string &content_type);
 };
 }
-static std::string cpp_own(const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); }
 
 void benchmark_test_00523(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.path_params.at("id");
-    std::string data = cpp_own(user_input);
-    char _dst[16];
-    size_t _n = data.size();
-    if (_n >= sizeof(_dst)) _n = sizeof(_dst) - 1;
-    std::memcpy(_dst, data.c_str(), _n);
-    _dst[_n] = '\0';
-    std::cout << _dst << std::endl;
-    res.set_content("ok", "text/plain");
+    std::string user_input = req.get_header_value("Authorization");
+    std::string data = !user_input.empty() ? user_input : std::string();
+    std::string arg = std::regex_match(data, std::regex("^(plain|markdown|html|text)$")) ? data : std::string("plain");
+    res.set_content(std::string("<div class=\"comment\" data-author=\"") + arg + "\">" + arg + "</div>", "text/html");
 }

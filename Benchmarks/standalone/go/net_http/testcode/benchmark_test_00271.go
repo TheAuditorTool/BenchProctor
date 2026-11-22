@@ -2,32 +2,34 @@
 package testcode
 
 import (
-	"encoding/json"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/rc4"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func BenchmarkTest00271(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	jsonValue := reqBody.Payload
+	multipartValue := r.FormValue("multipart_field")
 	var data string
-	if jsonValue != "" {
-		data = jsonValue
+	for _, token := range strings.Split(multipartValue, ",") {
+		data = token
 	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		http.Error(w, "not found", 404)
+	keyHash := sha256.Sum256([]byte(os.Getenv("DATA_ENC_KEY")))
+	salt := make([]byte, 16)
+	rand.Read(salt)
+	messageKey := hmac.New(sha256.New, keyHash[:])
+	messageKey.Write(salt)
+	streamCipher, err := rc4.NewCipher(messageKey.Sum(nil)[:16])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	cipherOut := make([]byte, len(data))
+	streamCipher.XORKeyStream(cipherOut, []byte(data))
+	cipherOut = append(salt, cipherOut...)
+	RespondJSON(w, http.StatusOK, map[string]string{"alg": "rc4", "out": fmt.Sprintf("%x", cipherOut)})
 }

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from app_runtime import db
-from fastapi.responses import JSONResponse
+from lxml import etree
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
@@ -21,7 +22,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00098")
 async def BenchmarkTest00098(request: Request):
-    user_id = request.query_params.get('id', '')
-    data = (lambda v: v.strip())(user_id)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    ua_value = request.headers.get('user-agent', '')
+    data = '%s' % (ua_value,)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(processed) + '"]')
+    find_user(tree)
     return {"updated": True}

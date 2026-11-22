@@ -25,9 +25,15 @@ struct Client {
 
 void benchmark_test_00508(const httplib::Request &req, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    int _x;
-    if (!user_input.empty()) _x = (int)user_input[0];
-    std::cout << (_x + (int)user_input.size()) << std::endl;
+    std::string user_input = req.path_params.at("id");
+    std::string data;
+    data.reserve(user_input.size());
+    for (char _c : user_input) data.push_back(_c);
+    size_t _n = data.size();
+    int _mode;
+    if (_n > 64) _mode = 2;
+    else if (_n > 0) _mode = 1;
+    else _mode = 0;
+    std::cout << _mode << std::endl;
     res.set_content("ok", "text/plain");
 }

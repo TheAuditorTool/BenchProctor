@@ -2,29 +2,29 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"regexp"
+	"net/url"
 	"strings"
-
-	"github.com/antchfx/xmlquery"
 )
 
 func BenchmarkTest00069(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", refererValue)
-	data := relayBuilder.String()
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
+	}
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	capture := func() string { return strings.TrimSpace(graphqlVar) }
+	data := capture()
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	if upstream == nil {
+		http.Error(w, "unknown service", http.StatusNotFound)
 		return
 	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	upstreamHost := upstream.Host
+	RespondJSON(w, http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

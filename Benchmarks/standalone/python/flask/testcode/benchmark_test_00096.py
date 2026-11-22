@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
-from flask import Flask, request, jsonify
+import json
+from flask import Flask, jsonify
 from app_runtime import db
 
 
@@ -20,11 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00096", methods=["POST"])
 def BenchmarkTest00096():
-    ua_value = request.headers.get('User-Agent', '')
-    parts = []
-    for token in str(ua_value).split(','):
-        parts.append(token.strip())
-    data = ','.join(parts)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    try:
+        data = json.loads(comment_value).get('value', comment_value)
+    except (json.JSONDecodeError, AttributeError):
+        data = comment_value
+    parsed = json.loads(data)
+    return jsonify({'parsed': str(parsed)}), 200

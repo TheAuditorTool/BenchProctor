@@ -3,15 +3,35 @@
 #include <string>
 #include <cstdlib>
 
+typedef struct _xmlDoc xmlDoc; typedef xmlDoc *xmlDocPtr;
+typedef struct _xmlXPathContext xmlXPathContext; typedef xmlXPathContext *xmlXPathContextPtr;
+typedef struct _xmlXPathObject xmlXPathObject; typedef xmlXPathObject *xmlXPathObjectPtr;
+extern "C" xmlDocPtr xmlReadMemory(const char *, int, const char *, const char *, int);
+extern "C" void xmlFreeDoc(xmlDocPtr);
+extern "C" xmlXPathContextPtr xmlXPathNewContext(xmlDocPtr);
+extern "C" xmlXPathObjectPtr xmlXPathEvalExpression(const unsigned char *, xmlXPathContextPtr);
+extern "C" void xmlXPathFreeObject(xmlXPathObjectPtr);
+extern "C" void xmlXPathFreeContext(xmlXPathContextPtr);
+enum { XML_PARSE_NOENT = 2, XML_PARSE_DTDLOAD = 4, XML_PARSE_DTDVALID = 16, XML_PARSE_NONET = 2048, XML_PARSE_HUGE = 524288 };
+typedef struct _xmlTextReader xmlTextReader; typedef xmlTextReader *xmlTextReaderPtr;
+extern "C" xmlTextReaderPtr xmlReaderForMemory(const char *, int, const char *, const char *, int);
+extern "C" int xmlTextReaderRead(xmlTextReaderPtr);
+extern "C" const unsigned char *xmlTextReaderConstValue(xmlTextReaderPtr);
+extern "C" void xmlFreeTextReader(xmlTextReaderPtr);
+
 void benchmark_test_00448(int, char **)
 {
-    const char *user_input_env = std::getenv("UPLOAD_FILENAME");
+    const char *user_input_env = std::getenv("DB_ROW_VALUE");
     std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
-    std::string data = !user_input.empty() ? user_input : std::string();
-    const size_t _rec_size = 64;
-    long _count = std::strtol(data.c_str(), nullptr, 10);
-    if (_count <= 0 || _count > 65536) return;
-    size_t _bytes = (size_t)_count * _rec_size;
-    char *_recs = new (std::nothrow) char[_bytes];
-    delete[] _recs;
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    std::string _xdoc = data;
+    xmlTextReaderPtr _xr = xmlReaderForMemory(_xdoc.c_str(), (int)_xdoc.size(), "payload.xml", nullptr, XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
+    if (_xr) {
+        while (xmlTextReaderRead(_xr) == 1) {
+            const unsigned char *_xv = xmlTextReaderConstValue(_xr);
+            if (_xv) std::cout << reinterpret_cast<const char *>(_xv);
+        }
+        xmlFreeTextReader(_xr);
+    }
 }

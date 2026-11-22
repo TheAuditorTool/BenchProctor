@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import * as net from "net";
-import { createClient } from "redis";
+import * as shared from "./shared";
+const { db } = shared;
+import * as nodeUtil from "util";
 
 export const BenchmarkTest00195 = async (req: Request, res: Response): Promise<void> => {
-  const _cache = createClient({ url: "redis://cache:6379" });
-  await _cache.connect();
-  const userInput = (await _cache.get("user_data")) || "";
-  const data = Buffer.from(userInput, "utf-8").toString();
-  let _host = "";
-  try { _host = new URL(String(data)).hostname; } catch (e) { res.status(403).json({error:"host not allowed"}); return; }
-  if (!/^(api\.trustmesh\.internal|assets\.trustcdn\.io)$/.test(_host)) { res.status(403).json({error:"host not allowed"}); return; }
-  const targetUrl = data;
-  net.connect(80, new URL(String(targetUrl)).hostname);
-  res.json({ accepted: true });
+  const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+  const data = nodeUtil.format("%s", userInput);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.end("<section>" + processed + "</section>"); return;
 }

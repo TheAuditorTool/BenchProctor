@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import hashlib
 from flask import Flask, request, jsonify
-from lxml import etree
 
 
 app = Flask(__name__)
@@ -19,8 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00075", methods=["POST"])
 def BenchmarkTest00075():
-    raw_body = request.get_data(as_text=True)
-    data = '{}'.format(raw_body)
-    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
-    etree.fromstring(str(data).encode(), _parser)
-    return jsonify({"result": "success"})
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    if graphql_var:
+        data = graphql_var
+    else:
+        data = ''
+    digest = hashlib.sha1(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

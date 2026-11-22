@@ -2,19 +2,14 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
-
-	"github.com/antchfx/xmlquery"
+	"net/url"
 )
 
 func BenchmarkTest00256(w http.ResponseWriter, r *http.Request) {
-	fieldValue := r.FormValue("field")
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+fieldValue+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	userID := r.URL.Query().Get("id")
+	data, _ := url.QueryUnescape(userID)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, "<p>Results for %s</p>", data)
 }

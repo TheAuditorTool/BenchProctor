@@ -11,11 +11,11 @@ class BenchmarkTest00148Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00148
-    user_input = User.first&.name.to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    _coerced = %w[true 1 yes on].include?(data.to_s.downcase) ? "true" : "false"
-    parsed_bool = _coerced
-    session[:data] = parsed_bool.to_s
-    render json: { status: "ok" }
+    user_input = request.query_parameters[:q].to_s
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    hasher = OpenSSL::Digest.new("SHA256")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
+    render json: { digest: digest }
   end
 end

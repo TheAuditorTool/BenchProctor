@@ -19,12 +19,18 @@ public class BenchmarkTest00029 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00029")
-    public void BenchmarkTest00029(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("X-Custom-Header") String xCustomHeader, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String headerValue = xCustomHeader != null ? xCustomHeader : "";
-        java.util.function.Supplier<String> valueSupplier = () -> headerValue.strip();
-        String data = valueSupplier.get();
-        new ProcessBuilder("echo", data).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    @PostMapping(path="/BenchmarkTest00029", consumes="multipart/form-data")
+    public void BenchmarkTest00029(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String multipartValue = multipartField != null ? multipartField : "";
+        java.util.Deque<String> pending = new java.util.ArrayDeque<>(java.util.Arrays.asList(multipartValue.split(",")));
+        java.util.List<String> lowered = new java.util.ArrayList<>();
+        while (!pending.isEmpty()) { lowered.add(pending.poll().toLowerCase()); }
+        String data = String.join(",", lowered);
+        java.util.Map<String, String> regionEndpoints = java.util.Map.of("us-east", "https://us-east.api.svc.local", "eu-west", "https://eu-west.api.svc.local");
+        String regionEndpoint = regionEndpoints.get(data);
+        if (regionEndpoint == null) { response.sendError(404, "unknown region"); return; }
+        boolean secureEndpoint = regionEndpoint.startsWith("https://");
+        response.setHeader("X-Region-Secure", String.valueOf(secureEndpoint));
         response.setContentType("application/json");
         response.getWriter().print("{\"id\":0}");
     }

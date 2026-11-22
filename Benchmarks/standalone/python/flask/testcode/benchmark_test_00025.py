@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import ldap
-from flask import Flask, request, jsonify
-import json
 import os
+from flask import Flask, jsonify
+import json
+import hashlib
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
 
 
 app = Flask(__name__)
@@ -21,11 +23,11 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00025", methods=["POST"])
 def BenchmarkTest00025():
-    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    env_value = os.environ.get('APP_INPUT', '')
     try:
-        data = json.loads(graphql_var).get('value', graphql_var)
+        data = json.loads(env_value).get('value', env_value)
     except (json.JSONDecodeError, AttributeError):
-        data = graphql_var
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return jsonify({"result": "success"})
+        data = env_value
+    _des_key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()[:8]
+    ciphertext = DES.new(_des_key, DES.MODE_ECB).encrypt(pad(str(data).encode(), 8))
+    return jsonify({'length': len(ciphertext)}), 200

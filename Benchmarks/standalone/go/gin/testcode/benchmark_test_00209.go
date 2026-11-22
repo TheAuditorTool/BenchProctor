@@ -2,23 +2,34 @@
 package testcode
 
 import (
+	"io"
 	"net/http"
-	"strings"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00209(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
+	rawBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad request")
+		return
+	}
+	rawBody := string(rawBytes)
 	var data string
-	for _, token := range strings.Split(multipartValue, ",") {
-		data = token
+	if rawBody != "" {
+		data = rawBody
 	}
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	proc, err := os.StartProcess("/bin/sh", []string{"sh", "-c", "echo " + data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	c.JSON(http.StatusOK, map[string]string{"name": *result})
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

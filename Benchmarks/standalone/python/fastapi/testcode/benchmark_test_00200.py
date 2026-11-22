@@ -1,9 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import requests
+import numpy as np
 from starlette.responses import JSONResponse
-from app_runtime import db
+import json
 
+
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -22,12 +29,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00200")
 async def BenchmarkTest00200(request: Request):
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = '%s' % str(api_value)
+    graphql_var = json.loads((await request.body()).decode()).get('variables', {}).get('input', '')
+    data = RequestPayload(graphql_var).value
     try:
-        _coerced = int(data)
+        _bounded = max(0, min(int(data), 2147483647))
     except (TypeError, ValueError):
         return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
-    return {"updated": True}
+    processed = _bounded
+    quantity = int(processed)
+    total_cents = np.int64(min(quantity, 100000)) * np.int64(1999)
+    return JSONResponse({'total_cents': int(total_cents)}, status_code=200)

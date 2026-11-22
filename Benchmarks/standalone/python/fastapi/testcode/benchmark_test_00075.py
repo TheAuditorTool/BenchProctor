@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
-from urllib.parse import unquote
-from starlette.responses import JSONResponse
+import base64
 import os
-import re
+from sqlalchemy import create_engine
+from fastapi.responses import JSONResponse
 
+
+_engine = create_engine("sqlite:///" + os.environ.get("DATABASE_PATH", "app.db"))
 
 app = FastAPI()
 
@@ -24,11 +25,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00075")
 async def BenchmarkTest00075(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = unquote(multipart_value)
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return JSONResponse({'error': 'forbidden'}, status_code=400)
-    processed = data
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(processed) + ')')
+    cookie_value = request.cookies.get('session_token', '')
+    data = base64.b64decode(cookie_value).decode('utf-8', 'ignore')
+    with _engine.connect() as conn:
+        conn.exec_driver_sql("SELECT * FROM users WHERE name = '" + str(data) + "'")
     return {"updated": True}

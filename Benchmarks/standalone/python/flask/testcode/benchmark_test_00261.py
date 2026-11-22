@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from flask import Flask, session
-from flask import jsonify
+import io
+import xml.sax
+import defusedxml.sax
+from urllib.parse import unquote
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -19,12 +20,11 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00261/<path_param>", methods=["POST"])
-def BenchmarkTest00261(path_param):
-    path_value = path_param
-    parts = str(path_value).split(',')
-    data = ' '.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    session['data'] = str(processed)
+@app.route("/BenchmarkTest00261", methods=["POST"])
+def BenchmarkTest00261():
+    multipart_value = request.form.get('multipart_field', '')
+    data = unquote(multipart_value)
+    parser = defusedxml.sax.make_parser()
+    parser.setContentHandler(xml.sax.ContentHandler())
+    parser.parse(io.StringIO(str(data)))
     return jsonify({"result": "success"})

@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+const jsYaml = require("js-yaml");
 
 const BenchmarkTest00296 = async (ctx) => {
-  const userInput = ctx.request.headers.host || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  const _coerced = Math.max(0, Math.min(parseInt(String(data), 10) || 0, 1048576));
-  const boundedVal = _coerced;
-  const requested = boundedVal;
-  if (!Number.isFinite(requested) || requested < 0 || requested > 1048576) { ctx.status = 400; ctx.body = { error: "out of range" }; return; }
-  const buf = Buffer.alloc(requested + 1);
-  ctx.body = { allocated: buf.length }; return;
+  const userInput = (ctx.request.body && ctx.request.body.multipart_field) || "";
+  const parts = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data = parts.join(',');
+  const reportSpec = jsYaml.load(String(data), { schema: jsYaml.CORE_SCHEMA });
+  ctx.body = { title: String(reportSpec?.title ?? "") }; return;
 }
 
 module.exports = { BenchmarkTest00296 };

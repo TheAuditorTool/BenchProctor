@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, redirect
-from flask import request
-from flask import jsonify
+import subprocess
+import re
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -22,4 +22,8 @@ def _handle_unexpected(exc):
 def BenchmarkTest00218():
     json_value = (request.get_json(silent=True) or {}).get('payload', '')
     data = json_value if json_value else 'default'
-    return redirect(str(data))
+    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = data
+    subprocess.Popen('echo ' + str(processed), shell=True).wait()
+    return jsonify({"result": "success"})

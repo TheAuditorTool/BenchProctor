@@ -2,9 +2,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00161() {
-  user_input="$(cat /dev/stdin)"
-  printf -v data "%s" "${user_input}"
-  printf "%s" "$data" | openssl enc -des-ede3-cbc -K "$DATA_ENC_KEY" -iv "$(openssl rand -hex 8)" -out /var/app/run/record.enc
+  user_input="$HTTP_USER_AGENT"
+  if _parsed=$(printf "%d" "${user_input}" 2>/dev/null); then
+    data="$_parsed"
+  else
+    data="${user_input}"
+  fi
+  if [[ ! "$data" =~ ^-?[0-9]+$ ]]; then echo "invalid"; exit 1; fi
+  bounded_val="$data"
+  if [ "$bounded_val" -lt 0 ] || [ "$bounded_val" -gt 2147483647 ]; then echo "out of range" >&2; exit 1; fi
+  if [[ ! "$bounded_val" =~ ^[0-9]{1,18}$ ]]; then echo "not a number" >&2; exit 1; fi
+  quantity=$bounded_val
+  if (( quantity > 100000 )); then echo "quantity too large" >&2; exit 1; fi
+  local -i total_cents=quantity*1299
+  printf 'order total: %d cents\n' "$total_cents"
 }
 
 benchmark_test_00161 "$@"

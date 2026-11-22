@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
+import urllib.request
 from flask import Flask, request, jsonify
-import os
 
 
 app = Flask(__name__)
@@ -21,6 +20,8 @@ def _handle_unexpected(exc):
 @app.route("/BenchmarkTest00338", methods=["POST"])
 def BenchmarkTest00338():
     field_value = request.form.get('field', '')
-    data = '{}'.format(field_value)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    data = f'{field_value!s}'
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return jsonify({"result": "success"})

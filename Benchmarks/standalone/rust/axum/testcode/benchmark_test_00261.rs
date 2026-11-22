@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::http::StatusCode;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
+use base64::Engine;
+use base64::engine::general_purpose;
 
-pub async fn benchmark_test_00261() -> impl IntoResponse {
-    let comment_value = crate::shared::db_fetch_one("SELECT text FROM comments LIMIT 1");
-    struct FormData { payload: String }
-    let data = FormData { payload: comment_value.clone() }.payload;
-    let base = std::path::Path::new("/var/app/data");
-    let candidate = tokio::fs::canonicalize(base.join(&data)).await.unwrap_or_default();
-    if !candidate.starts_with(base) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let checked_path = candidate.to_string_lossy().to_string();
-    tokio::fs::remove_file(&checked_path).await.ok();
+pub async fn benchmark_test_00261(headers: HeaderMap) -> impl IntoResponse {
+    let cookie_value = headers.get("cookie").and_then(|v| v.to_str().ok()).and_then(|s| s.split(';').find(|c| c.trim_start().starts_with("session_token="))).map(|c| c.trim_start().trim_start_matches("session_token=").to_string()).unwrap_or_default();
+    let data = String::from_utf8_lossy(&general_purpose::STANDARD.decode(&cookie_value).unwrap_or_default()).to_string();
+    reqwest::get(&data).await.ok();
     Json(serde_json::json!({"count": 0})).into_response()
 }

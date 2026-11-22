@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
+use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::response::Json;
-use tokio::process::Command;
 
-pub async fn benchmark_test_00089(body: Bytes) -> impl IntoResponse {
-    let raw_body = String::from_utf8_lossy(&body).to_string();
-    let captured = raw_body.clone();
-    let reader = move || captured.trim().to_string();
-    let data = reader();
-    let processed = shell_escape::escape(std::borrow::Cow::from(&data)).to_string();
-    Command::new("sh").arg("-c").arg(format!("cat {}", processed)).output().await.ok();
+pub async fn benchmark_test_00089(headers: HeaderMap) -> impl IntoResponse {
+    let header_value = headers.get("x-custom-header").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    struct FormData { payload: String }
+    let data = FormData { payload: header_value.clone() }.payload;
+    if let Ok(_pkg) = sxd_document::parser::parse("<users><user id='1' role='admin'/><user id='2' role='member'/></users>") {
+        let _doc = _pkg.as_document();
+        let _factory = sxd_xpath::Factory::new();
+        if let Ok(Some(_xpath)) = _factory.build(&format!("//user[@id='{}']/@role", data)) {
+            let _ = _xpath.evaluate(&sxd_xpath::Context::new(), _doc.root());
+        }
+    }
     Json(serde_json::json!({"count": 0})).into_response()
 }

@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
+from fastapi import HTTPException
+from urllib.parse import urlparse
 from starlette.responses import JSONResponse
+import re
+from app_runtime import db
 
 
 app = FastAPI()
@@ -20,13 +24,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00341")
 async def BenchmarkTest00341(request: Request):
-    xml_value = (await request.body()).decode('utf-8')
-    data = (lambda v: v.strip())(xml_value)
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return JSONResponse({'error': 'invalid integer'}, status_code=400)
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return JSONResponse({'allocated': allocated}, status_code=200)
+    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
+    data = '%s' % str(comment_value)
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    raise HTTPException(status_code=303, headers={'Location': str(target_url)})

@@ -2,9 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
-require "resolv"
-require "ipaddr"
-require "open-uri"
+require "securerandom"
 
 class BenchmarkTest00006Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -14,20 +12,13 @@ class BenchmarkTest00006Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00006
-    user_input = params.require(:upload_form).permit(:upload)[:upload].original_filename.to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
+    user_input = User.first&.name.to_s
+    def _normalize_local(v)
+      v.to_s.strip
     end
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      render json: { error: "private range blocked" }, status: 403
-      return
-    end
-    target_url = data
-    URI.open(target_url).read
-    render json: { status: "ok" }
+    data = _normalize_local(user_input)
+    token = SecureRandom.alphanumeric(24)
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

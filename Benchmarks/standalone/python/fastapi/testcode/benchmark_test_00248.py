@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
-from fastapi.responses import JSONResponse
+import re
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,6 +22,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00248")
 async def BenchmarkTest00248(request: Request):
     raw_body = (await request.body()).decode('utf-8')
-    data = str(raw_body).replace('\x00', '')
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
-    return {"updated": True}
+    data, _sep, _rest = str(raw_body).partition('\x00')
+    match = re.match(r'^[^@]+@([^@]+)$', str(data))
+    if match is None:
+        return JSONResponse({'error': 'not an email address'}, status_code=400)
+    domain = match.group(1)
+    return JSONResponse({'domain': domain}, status_code=200)

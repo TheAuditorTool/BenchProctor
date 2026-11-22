@@ -8,12 +8,10 @@ class BenchmarkTest00193Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->query('id', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        $_coerced = (float)$data;
-        $processed = $_coerced;
-        eval((string)$processed);
-        return response()->json(['ok' => 1]);
+        $userInput = $request->input('field', '');
+        $data = '';
+        foreach (explode(',', $userInput) as $token) { $data = $token; }
+        $sessionCookie = cookie('session', (string)$data, 0, '/', null, false, true, false, 'strict');
+        return response()->json(['ok' => 1])->withCookie($sessionCookie);
     }
 }

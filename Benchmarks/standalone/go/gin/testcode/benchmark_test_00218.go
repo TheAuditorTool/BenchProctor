@@ -2,29 +2,34 @@
 package testcode
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00218(c *gin.Context) {
-	header, err := c.FormFile("upload")
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad upload")
-		return
-	}
-	uploadName := header.Filename
+	refererValue := c.GetHeader("Referer")
 	var data string
-	for _, token := range strings.Split(uploadName, ",") {
+	for _, token := range strings.Split(refererValue, ",") {
 		data = token
 	}
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		c.String(http.StatusInternalServerError, xmlErr.Error())
+	var _num int
+	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
+		c.String(http.StatusBadRequest, "invalid integer")
 		return
 	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+data+"']")
+	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
+	const exportRecordSize = 512
+	const maxExportRecords = 10000
+	recordCount, err := strconv.ParseInt(boundedVal, 10, 64)
+	if err != nil || recordCount < 1 || recordCount > maxExportRecords {
+		c.String(http.StatusBadRequest, "invalid record count")
+		return
+	}
+	exportBuf := make([]byte, 0, recordCount*exportRecordSize)
+	c.Header("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
 	c.JSON(200, gin.H{"code": "OK"})
 }

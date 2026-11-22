@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Request, Response } from "express";
-import knex from "knex";
+import * as fs from "fs";
 
 export const BenchmarkTest00021 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = (req.query.id as string) || "";
-  const _raw = userInput;
-  const data = (_raw && _raw.length > 0) ? _raw : 'default';
-  const _knex = knex({ client: "sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true });
-  await _knex.raw("SELECT * FROM users WHERE id = '" + data + "'");
-  res.json({ accepted: true });
+  const userInput = (req.headers.authorization as string) || "";
+  const parts: string[] = [];
+  for (const token of String(userInput).split(',')) { parts.push(token); }
+  const data: string = parts.join(',');
+  const fileContent = fs.readFileSync("/var/app/data/" + data, "utf8");
+  res.send(fileContent);
 }

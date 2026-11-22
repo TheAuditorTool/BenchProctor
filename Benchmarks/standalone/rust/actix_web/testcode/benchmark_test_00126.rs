@@ -4,21 +4,18 @@ use futures_util::StreamExt;
 
 #[actix_web::post("/benchmark_test_00126")]
 pub async fn benchmark_test_00126(mut payload: actix_multipart::Multipart) -> HttpResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Some(Ok(_field)) = payload.next().await {
-            if let Some(_cd) = _field.content_disposition() {
-                if let Some(_f) = _cd.get_filename() { _fname = _f.to_string(); break; }
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Some(Ok(mut _field)) = payload.next().await {
+            let mut _buf: Vec<u8> = Vec::new();
+            while let Some(Ok(_chunk)) = _field.next().await {
+                _buf.extend_from_slice(&_chunk);
             }
+            _mv = String::from_utf8_lossy(&_buf).to_string();
         }
-        _fname
+        _mv
     };
-    let _prefix: String = upload_name.chars().next().map(|c| c.to_lowercase().to_string()).unwrap_or_default();
-    let data = match _prefix.as_str() {
-        "h" => upload_name.to_lowercase(),
-        "f" => upload_name.to_uppercase(),
-        _ => upload_name.trim().to_string(),
-    };
-    crate::shared::set_cookie(&format!("session={}; Secure; HttpOnly; SameSite=Strict", data));
+    let data = multipart_value.replace("\t", " ");
+    crate::shared::set_cookie(&format!("session={}; HttpOnly; SameSite=Strict", data));
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

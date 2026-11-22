@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import ldap
+import numpy as np
+from urllib.parse import unquote
 from fastapi import Form
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -24,7 +24,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
 @app.post("/BenchmarkTest00128")
 async def BenchmarkTest00128(request: Request, field: str = Form('')):
     field_value = field
-    data = str(field_value).replace('\x00', '')
-    conn = ldap.initialize(os.environ.get('LDAP_URL', 'ldap://directory:1389'))
-    conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=' + str(data) + ')')
-    return {"updated": True}
+    data = unquote(field_value)
+    try:
+        _bounded = max(0, min(int(data), 2147483647))
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid integer'}, status_code=400)
+    processed = _bounded
+    quantity = int(processed)
+    total_cents = np.int64(min(quantity, 100000)) * np.int64(1999)
+    return JSONResponse({'total_cents': int(total_cents)}, status_code=200)

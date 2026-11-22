@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00116")]
-pub async fn benchmark_test_00116(body: web::Bytes) -> HttpResponse {
-    let json_value = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("payload").and_then(|p| p.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    struct FormData { payload: String }
-    let data = FormData { payload: json_value.clone() }.payload;
-    use md5::Digest;
-    let _ = md5::Md5::digest(data.as_bytes());
-    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
+pub async fn benchmark_test_00116(req: HttpRequest) -> HttpResponse {
+    let origin_value = req.headers().get("origin").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let _cookie = actix_web::cookie::Cookie::build("session", origin_value.clone()).secure(true).http_only(true).same_site(actix_web::cookie::SameSite::Strict).finish();
+    return HttpResponse::Ok().cookie(_cookie).json(serde_json::json!({"stored": true}));
 }

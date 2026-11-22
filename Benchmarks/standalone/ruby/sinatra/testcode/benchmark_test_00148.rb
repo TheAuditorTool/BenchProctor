@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "digest"
 
 class BenchmarkTest00148 < Sinatra::Base
   before do
@@ -18,15 +19,10 @@ class BenchmarkTest00148 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00148" do
-    user_input = request.body.read
-    data = user_input.force_encoding("UTF-8")
-    unless data =~ /\A(asc|desc|name|created)\z/
-      halt 400, JSON.generate({ error: "invalid" })
-      return
-    end
-    processed = data
-    eval(processed)
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
+    data = JSON.parse(user_input)["value"] rescue ""
+    digest = Digest::SHA256.base64digest(data.to_s)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

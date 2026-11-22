@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use actix_web::{HttpRequest, HttpResponse};
-use url::Url;
 
-#[actix_web::post("/benchmark_test_00111/{id}")]
+#[actix_web::post("/benchmark_test_00111")]
 pub async fn benchmark_test_00111(req: HttpRequest) -> HttpResponse {
-    let path_value = req.match_info().get("id").unwrap_or("").to_string();
-    let mut pending: std::collections::VecDeque<String> = path_value.split(',').map(String::from).collect();
-    let mut data = String::new();
-    while let Some(item) = pending.pop_front() { data = item; }
-    let parsed = Url::parse(&data).unwrap_or_else(|_| Url::parse("http://invalid").unwrap());
-    static _RE_HOST: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(api\\.priv\\.local|cdn\\.edgecdn\\.io)$").unwrap());
-    if !_RE_HOST.is_match(parsed.host_str().unwrap_or("")) { return HttpResponse::Forbidden().finish(); }
-    let target_url = data.clone();
-    HttpResponse::Found().append_header(("Location", target_url.as_str())).finish()
+    let ua_value = req.headers().get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let data = ua_value.to_string();
+    let _coerced = data.parse::<f64>().unwrap_or(0.0);
+    let processed = _coerced.to_string();
+    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

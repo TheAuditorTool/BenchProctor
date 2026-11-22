@@ -5,8 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -35,16 +33,22 @@ public class BenchmarkTest00031 {
     @GET
     @Path("/BenchmarkTest00031")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00031(@jakarta.validation.constraints.Size(max = 4096) @QueryParam("id") String id, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String userId = id != null ? id : "";
-        java.util.List<String> tokens = new java.util.ArrayList<>();
-        for (String token : userId.split(",")) { tokens.add(token.trim()); }
-        String data = String.join(",", tokens);
-        java.nio.file.Path base = java.nio.file.Paths.get("/var/app/data");
-        java.nio.file.Path resolved = base.resolve(data).normalize();
-        if (!resolved.startsWith(base)) { return Response.status(403).build(); }
-        String checkedPath = resolved.toString();
-        Files.write(Paths.get(checkedPath), "data".getBytes());
+    public Response BenchmarkTest00031(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        String data = String.join(" ", originValue.split("[ \\t]+"));
+        try { Double.parseDouble(data); }
+        catch (NumberFormatException e) { return Response.status(400).build(); }
+        String boundedVal = data;
+        String formulaSource = "public class Formula implements java.util.function.Supplier<Object> { public Object get() { return " + boundedVal + "; } }";
+        javax.tools.JavaFileObject formulaUnit = new javax.tools.SimpleJavaFileObject(java.net.URI.create("string:///Formula.java"), javax.tools.JavaFileObject.Kind.SOURCE) { @Override public CharSequence getCharContent(boolean ignoreEncodingErrors) { return formulaSource; } };
+        java.nio.file.Path formulaOut = java.nio.file.Files.createTempDirectory("formula");
+        javax.tools.JavaCompiler formulaCompiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        boolean formulaCompiled = formulaCompiler.getTask(null, null, null, java.util.List.of("-d", formulaOut.toString()), null, java.util.List.of(formulaUnit)).call();
+        if (!formulaCompiled) { return Response.status(422).entity("formula did not compile").build(); }
+        try (java.net.URLClassLoader formulaLoader = new java.net.URLClassLoader(new java.net.URL[]{ formulaOut.toUri().toURL() })) {
+            Object formulaValue = ((java.util.function.Supplier<?>) formulaLoader.loadClass("Formula").getDeclaredConstructor().newInstance()).get();
+            response.setHeader("X-Formula-Value", String.valueOf(formulaValue));
+        }
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

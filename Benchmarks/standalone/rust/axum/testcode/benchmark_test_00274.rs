@@ -4,18 +4,24 @@ use axum::response::IntoResponse;
 use axum::response::Json;
 
 pub async fn benchmark_test_00274(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let upload_name = {
-        let mut _fname = String::new();
-        while let Ok(Some(_field)) = multipart.next_field().await {
-            if let Some(_f) = _field.file_name() { _fname = _f.to_string(); break; }
+    let multipart_value = {
+        let mut _mv = String::new();
+        if let Ok(Some(_field)) = multipart.next_field().await {
+            _mv = _field.text().await.unwrap_or_default();
         }
-        _fname
+        _mv
     };
-    let data = upload_name.replace("\t", " ");
-    let base_dir = "/var/app/data";
-    let full_path = tokio::fs::canonicalize(format!("{}/{}", base_dir, data)).await.unwrap_or_default();
-    if !full_path.starts_with(base_dir) { return (StatusCode::FORBIDDEN, "").into_response(); }
-    let checked_path = full_path.to_string_lossy().to_string();
-    tokio::fs::remove_file(&checked_path).await.ok();
+    struct FormData { payload: String }
+    let data = FormData { payload: multipart_value.clone() }.payload;
+    fn _schema_check(v: &str) -> Result<(), validator::ValidationError> {
+        static _RE_SCHEMA: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.#%\\-]+$").unwrap());
+        if _RE_SCHEMA.is_match(v) { Ok(()) } else { Err(validator::ValidationError::new("schema")) }
+    }
+    #[derive(validator::Validate)]
+    struct _SchemaInput<'a> { #[validate(custom(function = "_schema_check"))] value: &'a str }
+    use validator::Validate;
+    if (_SchemaInput { value: &data }).validate().is_err() { return (StatusCode::BAD_REQUEST, "").into_response(); }
+    let processed = data.clone();
+    crate::shared::ldap_search(&format!("uid={}", processed));
     Json(serde_json::json!({"count": 0})).into_response()
 }

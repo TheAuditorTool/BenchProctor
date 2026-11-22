@@ -12,9 +12,8 @@ class BenchmarkTest00177Controller < ApplicationController
   end
   def benchmark_test_00177
     user_input = User.first&.name.to_s
-    data = ''
-    user_input.split(',').each { |token| data = token }
-    Marshal.load(data)
+    data = [user_input].pack("H*").force_encoding("UTF-8") rescue user_input
+    Object.new.instance_eval(data.to_s)
     render json: { status: "ok" }
   end
 end

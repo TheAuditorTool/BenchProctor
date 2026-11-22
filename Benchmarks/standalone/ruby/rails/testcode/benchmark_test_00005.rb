@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "rexml/document"
 
 class BenchmarkTest00005Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,18 +12,14 @@ class BenchmarkTest00005Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00005
-    user_input = cookies[:session_token].to_s
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    host = URI.parse(data).host rescue ""
-    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
-      render json: { error: "forbidden host" }, status: 403
-      return
-    end
-    target_url = data
-    redirect_to target_url, allow_other_host: true
+    user_input = request.user_agent.to_s
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    _coerced = Float(data, exception: false).to_s
+    parsed_num = _coerced
+    directory = REXML::Document.new(File.read("/var/app/data/users.xml"))
+    account = REXML::XPath.first(directory, "//user[@name='" + parsed_num.to_s + "']")
+    render json: { found: !account.nil? }
   end
 end

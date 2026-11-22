@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-use axum::body::Bytes;
 use axum::response::IntoResponse;
-use axum::response::Json;
 
-pub async fn benchmark_test_00121(body: Bytes) -> impl IntoResponse {
-    let xml_value = String::from_utf8_lossy(&body).to_string();
-    let data = xml_value.replace("\t", " ");
-    use sha2::Digest;
-    let _ = sha2::Sha256::digest(data.as_bytes());
-    Json(serde_json::json!({"count": 0})).into_response()
+pub async fn benchmark_test_00121() -> impl IntoResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = db_value.to_string();
+    return ([("content-type", "text/html")], format!("<div>{}</div>", data)).into_response();
 }

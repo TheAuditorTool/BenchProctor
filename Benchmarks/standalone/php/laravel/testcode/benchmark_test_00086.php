@@ -8,13 +8,12 @@ class BenchmarkTest00086Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->file('upload')?->getClientOriginalName() ?? '');
-        $payload = new class($userInput) { public function __construct(private string $raw) {} public function value(): string { return $this->raw; } };
-        $data = $payload->value();
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return response()->json(['allocated' => $allocated], 200);
+        $userInput = $request->header('Authorization', '');
+        $data = base64_decode($userInput);
+        $scheme = strtolower((string) parse_url($data, PHP_URL_SCHEME));
+        $host = parse_url($data, PHP_URL_HOST) ?: '';
+        if (!in_array($scheme, ['http', 'https'], true) || preg_match('/[\x00-\x20\\\\]/', (string) $data) || !preg_match('#^(api\\.corp\\.lan|cdn\\.shopcdn\\.io)$#', $host)) { return response()->json(['error' => 'forbidden host'], 403); }
+        $targetUrl = $data;
+        return redirect($targetUrl);
     }
 }

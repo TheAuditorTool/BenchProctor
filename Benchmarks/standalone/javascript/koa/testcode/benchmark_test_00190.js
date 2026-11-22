@@ -3,13 +3,10 @@ const xpath = require("xpath");
 const xmldom = require("@xmldom/xmldom");
 
 const BenchmarkTest00190 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  function normalize(value) { return String(value).normalize("NFC"); }
-  const data = normalize(userInput);
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
+  const userInput = ctx.cookies.get("session_token") || "";
+  const [data] = String(userInput).split(',');
   const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  xpath.select("//user[name='" + data + "']", xmlDoc);
   ctx.body = { ack: true };
 }
 

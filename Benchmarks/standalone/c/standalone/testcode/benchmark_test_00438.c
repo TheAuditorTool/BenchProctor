@@ -6,12 +6,14 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <openssl/sha.h>
 
 void benchmark_test_00438(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(user_input, NULL, 10);
-    fwrite(_buf, 1, _span, stdout);
-    putchar('\n');
+    (void)argc; (void)argv;
+    const char *user_input = getenv("APP_INPUT");
+    if (user_input == NULL) user_input = "";
+    const char *data = (strlen(user_input) > 0) ? user_input : "";
+    unsigned char _digest[32];
+    SHA256((const unsigned char *)data, strlen(data), _digest);
 }

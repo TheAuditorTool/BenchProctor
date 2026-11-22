@@ -2,13 +2,11 @@
 import { Request, Response } from "express";
 
 export const BenchmarkTest00193 = async (req: Request, res: Response): Promise<void> => {
-  const userInput = ((req.body.variables?.input) as string) || "";
-  const pending: string[] = String(userInput).split(',');
-  const collected: string[] = [];
-  while (pending.length) { collected.push(pending.shift() ?? ""); }
-  const data: string = collected.join(',');
-  const requested = parseInt(data, 10);
-  const wrapped = (requested + 1) | 0;
-  const buf = Buffer.alloc(wrapped);
-  res.json({ allocated: buf.length }); return;
+  const userInput = (req.headers["x-forwarded-for"] as string) || "";
+  const transform = (v: string): string => v.trim();
+  const data: string = transform(userInput);
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { res.status(400).json({error:"invalid"}); return; }
+  const processed = data;
+  new Function("return (" + String(processed) + ");")();
+  res.json({ accepted: true });
 }

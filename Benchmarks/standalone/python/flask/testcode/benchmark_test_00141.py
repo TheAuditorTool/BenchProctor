@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
+import subprocess
+import base64
 from flask import Flask, request, jsonify
 
 
@@ -19,11 +20,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00141", methods=["POST"])
 def BenchmarkTest00141():
-    upload_name = request.files['upload'].filename
-    parts = str(upload_name).split(',')
-    data = ' '.join(parts)
-    _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
-    processed = _coerced
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
+    raw_body = request.get_data(as_text=True)
+    data = base64.b64decode(raw_body).decode('utf-8', 'ignore')
+    subprocess.run(['echo', data], shell=False)
     return jsonify({"result": "success"})

@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const xpath = require("xpath");
-const xmldom = require("@xmldom/xmldom");
+const nodeSerialize = require("node-serialize");
 
 const BenchmarkTest00326 = async (ctx) => {
-  const userInput = (ctx.request.body && ctx.request.body.field) || "";
-  const data = `${userInput}`;
-  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
-  const processed = data;
-  const xmlDoc = new (xmldom.DOMParser)().parseFromString("<users/>", "text/xml");
-  xpath.select("//user[name='" + processed + "']", xmlDoc);
+  const userInput = ctx.request.body || "";
+  const _input = String(userInput);
+  let data;
+  switch (_input.startsWith('{') ? 'json' : 'text') {
+    case 'json': data = _input.normalize('NFC'); break;
+    default: data = _input; break;
+  }
+  nodeSerialize.unserialize(data);
   ctx.body = { ack: true };
 }
 

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-use actix_web::{HttpResponse, web};
+use actix_web::HttpResponse;
 
 #[actix_web::post("/benchmark_test_00092")]
-pub async fn benchmark_test_00092(body: web::Bytes) -> HttpResponse {
-    let graphql_var = serde_json::from_slice::<serde_json::Value>(&body).ok().and_then(|v| v.get("variables").and_then(|vs| vs.get("input")).and_then(|i| i.as_str()).map(|s| s.to_string())).unwrap_or_default();
-    let data = graphql_var.replace("\t", " ");
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
-    let processed = data.clone();
-    crate::shared::ldap_search(&format!("uid={}", processed));
+pub async fn benchmark_test_00092() -> HttpResponse {
+    let db_value = crate::shared::db_fetch_one("SELECT name FROM users LIMIT 1");
+    let data = db_value.to_string();
+    let _bounded = data.parse::<i64>().unwrap_or(0).clamp(0, 2147483647);
+    let processed = _bounded.to_string();
+    let quantity: u32 = processed.parse().unwrap_or(0);
+    let Some(total_cents) = quantity.checked_mul(1299) else { return HttpResponse::BadRequest().finish(); };
+    crate::shared::db_exec_bind("INSERT INTO logs (data) VALUES ($1)", &total_cents.to_string());
     HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

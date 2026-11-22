@@ -9,6 +9,11 @@ import org.springframework.web.bind.WebDataBinder;
 @RestController
 @Validated
 public class BenchmarkTest00143 {
+    private static class GraphQLRequest {
+        public String query;
+        public java.util.Map<String, Object> variables;
+        public GraphQLRequest() {}
+    }
     @InitBinder
     public void restrictBinding(WebDataBinder binder) {
         binder.setDisallowedFields("id");
@@ -19,19 +24,13 @@ public class BenchmarkTest00143 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @GetMapping("/BenchmarkTest00143")
-    public void BenchmarkTest00143(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        java.util.function.Supplier<String> valueSupplier = () -> envValue.strip();
-        String data = valueSupplier.get();
-        java.util.Hashtable<String,String> env = new java.util.Hashtable<>();
-        env.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(javax.naming.Context.PROVIDER_URL, System.getenv().getOrDefault("LDAP_URL", "ldap://directory:1389"));
-        javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-        try {
-            ctx.search("ou=people,dc=example,dc=com", "(uid=" + data + ")", new javax.naming.directory.SearchControls());
-        } finally { ctx.close(); }
-        response.setContentType("application/json");
-        response.getWriter().print("{\"id\":0}");
+    @PostMapping(path="/BenchmarkTest00143", consumes="application/json")
+    public void BenchmarkTest00143(@RequestBody GraphQLRequest req, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String graphqlVar = (req != null && req.variables != null ? String.valueOf(req.variables.get("payload")) : "");
+        String data;
+        try { data = String.valueOf(Integer.parseInt(graphqlVar)); }
+        catch (NumberFormatException e) { data = graphqlVar; }
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.setHeader("Location", data);
     }
 }

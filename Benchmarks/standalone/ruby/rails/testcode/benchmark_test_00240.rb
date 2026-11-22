@@ -2,8 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "active_model"
-require "net/ldap"
 
 class BenchmarkTest00240Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,26 +11,11 @@ class BenchmarkTest00240Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00240
-    user_input = request.body.read
-    begin
-      data = JSON.parse(user_input)['value'] || user_input
-    rescue JSON::ParserError
-      data = user_input
-    end
-    validator = Class.new do
-      include ActiveModel::Validations
-      attr_accessor :value
-      validates :value, format: { with: /\A[a-zA-Z0-9 _.#%\-]+\z/ }
-    end.new
-    validator.value = data.to_s
-    unless validator.valid?
-      render json: { error: "invalid" }, status: 400
-      return
-    end
-    processed = data
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + processed.to_s + ")")
+    user_input = User.first&.name.to_s
+    data = "#{user_input}"
+    _coerced = Integer(data, exception: false).to_s
+    parsed_id = _coerced
+    ActiveRecord::Base.connection.exec_query("SELECT * FROM users WHERE id = '" + parsed_id + "'", "SQL", [], prepare: true)
     render json: { status: "ok" }
   end
 end

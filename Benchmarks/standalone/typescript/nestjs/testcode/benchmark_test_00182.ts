@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
+import { Controller, Post } from "@nestjs/common";
 import { Response } from "express";
-import * as fs from "fs";
+import * as shared from "./shared";
+const { db } = shared;
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
+import { parseXmlString } from "libxmljs2";
 
 @Catch()
 class FailureFilter implements ExceptionFilter {
@@ -18,11 +20,10 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00182")
-  async BenchmarkTest00182(@Headers("user-agent") ua: string): Promise<unknown> {
-    const userInput = ua || "";
-    const payload = { get value() { return userInput; } };
-    const data = payload.value;
-    fs.unlinkSync("/var/app/data/" + data);
+  async BenchmarkTest00182(): Promise<unknown> {
+    const userInput = (await db.query("SELECT name FROM users WHERE id = $1", [1])).rows[0].name;
+    const [data] = String(userInput).split(',');
+    parseXmlString(String(data), { noent: true, dtdload: true, nonet: false });
     return { created: true };
   }
 }

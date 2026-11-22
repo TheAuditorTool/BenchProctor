@@ -5,6 +5,7 @@ require "uri"
 require "openssl"
 
 class BenchmarkTest00043 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -18,16 +19,10 @@ class BenchmarkTest00043 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00043" do
-    user_input = request.body.read
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    unless %w[ls cat date whoami].include?(data.to_s)
-      halt 400, JSON.generate({ error: "forbidden" })
-      return
-    end
-    system(data.to_s)
+    user_input = params[:multipart_field].to_s
+    data = user_input ? user_input : ''
+    session.update(display_name: data.to_s, updated_at: Time.now.to_i)
+    content_type :json
+    JSON.generate({ status: "ok" })
   end
 end

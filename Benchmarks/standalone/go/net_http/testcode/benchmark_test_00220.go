@@ -2,19 +2,32 @@
 package testcode
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00220(w http.ResponseWriter, r *http.Request) {
-	headerValue := r.Header.Get("X-Custom-Header")
-	data := strings.ReplaceAll(headerValue, "\x00", "")
-	if !regexp.MustCompile("^(asc|desc|name|created)$").MatchString(data) {
-		http.Error(w, "invalid option", http.StatusBadRequest)
+	refererValue := r.Header.Get("Referer")
+	segments := strings.Split(refererValue, ",")
+	data := strings.Join(segments, " ")
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9_.#\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
 	processed := data
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, processed))
+	lookupStmt, err := DB.Prepare("SELECT id, name FROM users WHERE name = '" + processed + "'")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer lookupStmt.Close()
+	rows, err := lookupStmt.Query()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

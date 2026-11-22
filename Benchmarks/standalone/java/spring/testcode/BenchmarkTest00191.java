@@ -19,15 +19,16 @@ public class BenchmarkTest00191 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    record FormData(String payload) {}
-
-    @GetMapping("/BenchmarkTest00191")
-    public void BenchmarkTest00191(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        FormData payload = new FormData(envValue);
-        String data = payload.payload();
-        request.getSession().setAttribute("displayName", data);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    @PostMapping(path="/BenchmarkTest00191", consumes="text/plain")
+    public void BenchmarkTest00191(@jakarta.validation.constraints.Size(max = 4096) @RequestBody String rawBody, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String rawData = rawBody != null ? rawBody : "";
+        String data;
+        if (rawData.length() > 256) { data = rawData.substring(0, 256); }
+        else { data = rawData; }
+        ProcessBuilder pb = new ProcessBuilder(new String[]{"sh", "-c", "echo " + data});
+        pb.redirectErrorStream(true);
+        pb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

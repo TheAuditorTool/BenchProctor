@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00146() {
-  user_input="$(redis-cli GET user_data)"
-  data="${user_input//$'\x00'/}"
-  _schema_re='^[a-zA-Z0-9#._-]+$'
-  if [[ ! "$data" =~ $_schema_re ]]; then echo "invalid"; exit 1; fi
-  processed="$data"
-  mysql -e "SELECT * FROM users WHERE id = '$processed'"
+  user_input="$HTTP_AUTHORIZATION"
+  data=$(echo "$user_input" | xxd -r -p 2>/dev/null || echo "")
+  wget -q -O - -T 10 --max-redirect=0 -- "$data"
 }
 
 benchmark_test_00146 "$@"

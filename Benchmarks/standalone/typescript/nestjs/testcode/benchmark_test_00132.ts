@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, createParamDecorator, ExecutionContext, Post } from "@nestjs/common";
+import { Controller, Headers, Post, ForbiddenException } from "@nestjs/common";
 import { Response } from "express";
-import * as childProcess from "child_process";
+import * as fs from "fs";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
-const Cookies = createParamDecorator(
-  (data: string, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.cookies?.[data] ?? "";
-  },
-);
 @Catch()
 class FailureFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -24,12 +18,13 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00132")
-  async BenchmarkTest00132(@Cookies("session_token") cookieToken: string): Promise<unknown> {
-    const userInput = cookieToken || "";
-    const capture = (v: string) => (): string => v.trim();
-    const readInput = capture(userInput);
-    const data: string = readInput();
-    childProcess.execSync("echo " + data);
+  async BenchmarkTest00132(@Headers("authorization") auth: string): Promise<unknown> {
+    const userInput = auth || "";
+    const data = String(userInput).split(/[ \t]+/).join(" ");
+    const allowedFiles = new Set(["config.json", "index.html", "readme.md"]);
+    if (!allowedFiles.has(data)) { throw new ForbiddenException({error:"forbidden"}); }
+    const checkedPath = "/var/app/data/" + data;
+    fs.unlinkSync(checkedPath);
     return { created: true };
   }
 }

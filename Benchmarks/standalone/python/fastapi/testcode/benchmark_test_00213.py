@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import PlainTextResponse
-import json
+import urllib.request
+from fastapi import Form
 from fastapi.responses import JSONResponse
 
 
@@ -20,13 +20,11 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00213/{id}")
-async def BenchmarkTest00213(request: Request, id: str):
-    path_value = id
-    try:
-        data = json.loads(path_value).get('value', path_value)
-    except (json.JSONDecodeError, AttributeError):
-        data = path_value
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return PlainTextResponse(content)
+@app.post("/BenchmarkTest00213")
+async def BenchmarkTest00213(request: Request, field: str = Form('')):
+    field_value = field
+    data = f'{field_value!s}'
+    outbound = urllib.request.Request(str(data), headers={'User-Agent': 'report-fetcher/1.0'})
+    with urllib.request.urlopen(outbound, timeout=10) as upstream:
+        upstream.read()
+    return {"updated": True}

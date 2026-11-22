@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Headers, Post } from "@nestjs/common";
-import { Response } from "express";
-import * as fs from "fs";
-import * as crypto from "crypto";
+import { Controller, Post, Req } from "@nestjs/common";
+import { Request, Response } from "express";
+import * as shared from "./shared";
+const { db } = shared;
+import * as nodeUtil from "util";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -19,15 +20,11 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00328")
-  async BenchmarkTest00328(@Headers("x-forwarded-for") xff: string): Promise<unknown> {
-    const userInput = xff || "";
-    const data = userInput != null ? userInput : '';
-    const _sk = crypto.createHash("sha256").update(process.env.DATA_ENC_KEY || "").digest();
-    const _siv = crypto.randomBytes(12);
-    const _scipher = crypto.createCipheriv("aes-256-gcm", _sk, _siv);
-    const _sct = Buffer.concat([_scipher.update(String(data), "utf8"), _scipher.final()]);
-    const _stag = _scipher.getAuthTag();
-    fs.writeFileSync("/var/data/cipher.bin", Buffer.concat([_siv, _stag, _sct]));
+  async BenchmarkTest00328(@Req() req: Request): Promise<unknown> {
+    const userInput = ((req as any).rawBody as string) || "";
+    const data = nodeUtil.format("%s", userInput);
+    const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
+    const value = (row as any).name;
     return { created: true };
   }
 }

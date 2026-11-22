@@ -12,10 +12,19 @@ static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captur
 
 void benchmark_test_00283(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    FILE *_src_fp = fopen("/tmp/data", "r");
+    if (_src_fp != NULL) {
+        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
+        fclose(_src_fp);
+    }
+    const char *user_input = user_input_buf;
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    struct { int id; int flags; } _rec = { 0, 0 };
-    _rec.id = atoi(data);
-    printf("%d %d\n", _rec.id, _rec.flags);
+    char _path[512];
+    snprintf(_path, sizeof(_path), "/var/app/data/%s", data);
+    FILE *_f = fopen(_path, "w");
+    if (_f) fclose(_f);
 }

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-const crypto = require("crypto");
+const fs = require("fs");
+const xpath = require("xpath");
+const xmldom = require("@xmldom/xmldom");
 
 async function BenchmarkTest00121(req, res) {
-  const userInput = (req.body.variables && req.body.variables.input) || "";
-  const data = String(userInput).replace(/\u0000/g, "");
-  crypto.createHash("sha256").update(data).digest("hex");
+  const userInput = req.body?.multipart_field || "";
+  const [data] = String(userInput).split(',');
+  const _coerced = parseFloat(String(data));
+  const parsedNum = _coerced;
+  const usersDoc = new (xmldom.DOMParser)().parseFromString(fs.readFileSync("/var/app/data/users.xml", "utf8"), "text/xml");
+  xpath.parse("//user[name='" + parsedNum + "']").select({ node: usersDoc });
   res.json({ done: true });
 }
 

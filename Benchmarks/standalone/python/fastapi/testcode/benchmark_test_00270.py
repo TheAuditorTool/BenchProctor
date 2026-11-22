@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+import os
+import re
+from starlette.responses import JSONResponse
 
 
 app = FastAPI()
@@ -19,8 +20,12 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00270")
-async def BenchmarkTest00270(request: Request):
-    referer_value = request.headers.get('referer', '')
-    data = str(referer_value).replace('\x00', '')
-    return HTMLResponse('<div>' + str(data) + '</div>')
+@app.post("/BenchmarkTest00270/{id}")
+async def BenchmarkTest00270(request: Request, id: str):
+    path_value = id
+    data = '{}'.format(path_value)
+    if not re.fullmatch("^[a-zA-Z0-9 _.%\\-]+$", data):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    os.system('echo ' + str(processed))
+    return {"updated": True}

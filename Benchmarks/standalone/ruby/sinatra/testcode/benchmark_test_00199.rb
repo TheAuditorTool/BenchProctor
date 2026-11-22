@@ -18,10 +18,10 @@ class BenchmarkTest00199 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00199" do
-    user_input = JSON.parse(request.body.read).fetch("payload", "")
-    data = user_input.gsub("\u0000", "")
-    content = File.read("/var/app/data/" + data)
-    content_type :json
-    JSON.generate({ status: "ok" })
+    user_input = request.env["HTTP_USER_AGENT"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    content_type :html
+    "<div>" + data + "</div>"
   end
 end

@@ -2,26 +2,25 @@
 package testcode
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
 	"net/http"
-	"os/exec"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func BenchmarkTest00286(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.%\\-]+$")
-	if !validPattern.MatchString(uaValue) {
-		c.String(http.StatusBadRequest, "invalid input")
-		return
-	}
-	processed := uaValue
-	cmd := exec.Command("sh", "-c", "echo "+processed)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+	var commentText string
+	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
+	data := fmt.Sprintf("%s", commentText)
+	processed := bluemonday.UGCPolicy().Sanitize(data)
+	bioTmpl := template.Must(template.New("bio").Parse(`<section class="bio">{{.}}</section>`))
+	var bioPage bytes.Buffer
+	if err := bioTmpl.Execute(&bioPage, template.HTML(processed)); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Data(200, "text/plain", output)
+	c.Data(200, "text/html", bioPage.Bytes())
 }

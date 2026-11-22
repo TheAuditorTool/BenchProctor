@@ -1,16 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-from lxml import etree
-from dataclasses import dataclass
-from flask import Flask, request, jsonify
-import re
+import os
+from flask import Flask, make_response
+from flask import request, jsonify
+import urllib.parse
 
 
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
+def make_reader(raw):
+    def read():
+        return raw.strip()
+    return read
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -26,12 +27,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00057", methods=["POST"])
 def BenchmarkTest00057():
-    header_value = request.headers.get('X-Custom-Header', '')
-    form = FormData(payload=header_value)
-    data = form.payload
-    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
-        return jsonify({'error': 'forbidden'}), 400
-    processed = data
-    tree = etree.fromstring(b'<users><user name="admin"/></users>')
-    tree.xpath('/users/user[@name="' + str(processed) + '"]')
-    return jsonify({"result": "success"})
+    host_value = request.headers.get('Host', '')
+    reader = make_reader(host_value)
+    data = reader()
+    encoded_session = urllib.parse.quote(str(data), safe='')
+    resp = make_response(jsonify({'status': 'ok'}))
+    resp.headers['Set-Cookie'] = 'session=' + encoded_session + '; Secure; HttpOnly; SameSite=Strict; Path=/'
+    return resp

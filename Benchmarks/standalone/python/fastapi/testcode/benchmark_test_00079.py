@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import subprocess
 from fastapi.responses import JSONResponse
 
 
@@ -19,10 +18,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "internal"})
 
 
-@app.post("/BenchmarkTest00079")
-async def BenchmarkTest00079(request: Request):
-    cookie_value = request.cookies.get('session_token', '')
-    parts = str(cookie_value).split(',')
-    data = ' '.join(parts)
-    subprocess.Popen('echo ' + str(data), shell=True).wait()
+@app.post("/BenchmarkTest00079/{id}")
+async def BenchmarkTest00079(request: Request, id: str):
+    path_value = id
+    parts = []
+    for token in str(path_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    code = compile(str(data), '<rule>', 'exec')
+    exec(code)
     return {"updated": True}

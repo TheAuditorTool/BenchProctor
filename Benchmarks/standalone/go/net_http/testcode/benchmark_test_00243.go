@@ -2,18 +2,15 @@
 package testcode
 
 import (
-	"context"
+	"fmt"
+	"html/template"
 	"net/http"
+	"strings"
 )
 
 func BenchmarkTest00243(w http.ResponseWriter, r *http.Request) {
-	_, header, err := r.FormFile("upload")
-	if err != nil {
-		http.Error(w, "bad upload", http.StatusBadRequest)
-		return
-	}
-	uploadName := header.Filename
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(uploadName)
-	r = r.WithContext(context.WithValue(r.Context(), ctxKeyData, data))
+	refererValue := r.Header.Get("Referer")
+	data := func(v string) string { return strings.TrimSpace(v) }(refererValue)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, "<p>Results for %s</p>", template.HTMLEscapeString(data))
 }

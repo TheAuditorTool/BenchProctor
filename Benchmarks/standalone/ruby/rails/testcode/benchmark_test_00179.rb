@@ -11,13 +11,16 @@ class BenchmarkTest00179Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00179
-    user_input = Rails.application.config.app_value.to_s
-    if user_input.to_s.empty?
-      data = ''
-    else
+    user_input = User.first&.name.to_s
+    begin
+      data = JSON.parse(user_input)['value'] || user_input
+    rescue JSON::ParserError
       data = user_input
     end
-    ActiveRecord::Base.connection.execute("SELECT * FROM users WHERE id = '" + data + "'")
-    render json: { status: "ok" }
+    plans = { "free" => { requests: 100 }, "team" => { requests: 5_000 } }
+    plan = plans[data.to_s]
+    return render json: { error: "not found" }, status: 404 if plan.nil?
+    limit = plan.fetch(:requests)
+    render json: { requests: limit }
   end
 end

@@ -2,44 +2,30 @@
 package testcode
 
 import (
-	"io"
-	"net"
 	"net/http"
-	"net/url"
-	"regexp"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00020(c *gin.Context) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.String(http.StatusBadRequest, "bad request")
-		return
-	}
-	jsonValue := reqBody.Payload
+	authHeader := c.GetHeader("Authorization")
 	var data string
-	if jsonValue != "" {
-		data = jsonValue
+	if len(authHeader) > 0 {
+		data = authHeader
+	} else {
+		data = "default"
 	}
-	parsedURL, _ := url.Parse(data)
-	checkedHost := parsedURL.Hostname()
-	if resolvedAddrs, lookupErr := net.LookupHost(checkedHost); lookupErr == nil && len(resolvedAddrs) > 0 {
-		checkedHost = resolvedAddrs[0]
-	}
-	if regexp.MustCompile("^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|::1$|::[fF]{4}:(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)|[fF][cCdD]|[fF][eE]80:)").MatchString(checkedHost) {
-		c.String(http.StatusForbidden, "private range blocked")
-		return
-	}
-	targetUrl := data
-	resp, err := http.Get(targetUrl)
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	c.Data(200, "text/plain", body)
+	procState, err := proc.Wait()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

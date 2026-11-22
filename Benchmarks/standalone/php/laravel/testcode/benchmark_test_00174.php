@@ -8,8 +8,13 @@ class BenchmarkTest00174Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->input('multipart_field', '');
-        $data = (!empty($userInput)) ? $userInput : '';
-        return response()->json(['ok' => 1])->cookie('session', (string)$data, 0, '/', null, true, true, false, 'Strict');
+        $userInput = $request->header('Host', '');
+        $_coerced = in_array(strtolower((string)$userInput), ['true', '1', 'yes', 'on'], true) ? 'true' : 'false';
+        $parsedBool = $_coerced;
+        $doc = new \DOMDocument();
+        @$doc->load('/var/app/data/users.xml');
+        $xpath = new \DOMXPath($doc);
+        $nodes = $xpath->query("//user[@id='" . $parsedBool . "']");
+        return response()->json(['ok' => 1]);
     }
 }

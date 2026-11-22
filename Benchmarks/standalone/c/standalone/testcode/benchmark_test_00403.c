@@ -10,13 +10,15 @@
 void benchmark_test_00403(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    const char *user_input = getenv("QUERY_STRING");
+    const char *user_input = getenv("APP_INPUT");
     if (user_input == NULL) user_input = "";
     char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char *_dst = malloc(32);
-    if (_dst == NULL) return;
-    sprintf(_dst, "user=%s", data);
-    puts(_dst);
-    free(_dst);
+    size_t _len = strlen(user_input);
+    size_t _w = 0;
+    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
+    data[_w] = '\0';
+    char *_p = malloc(strlen(data) + 1);
+    if (_p == NULL) return;
+    strcpy(_p, data);
+    printf("%s\n", _p);
 }

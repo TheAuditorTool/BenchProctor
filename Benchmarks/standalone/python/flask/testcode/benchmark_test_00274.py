@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
-import defusedxml.ElementTree
-from app_runtime import db
+import hashlib
+from flask import Flask, request, jsonify
+import json
 
 
 app = Flask(__name__)
@@ -20,7 +20,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00274", methods=["POST"])
 def BenchmarkTest00274():
-    db_value = db.fetch_one('SELECT name FROM users LIMIT 1')
-    data = str(db_value).replace('\x00', '')
-    defusedxml.ElementTree.fromstring(str(data))
-    return jsonify({"result": "success"})
+    graphql_var = (request.get_json(silent=True) or {}).get('variables', {}).get('input', '')
+    try:
+        data = json.loads(graphql_var).get('value', graphql_var)
+    except (json.JSONDecodeError, AttributeError):
+        data = graphql_var
+    digest = hashlib.sha1(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

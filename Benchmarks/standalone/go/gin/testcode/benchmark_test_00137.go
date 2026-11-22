@@ -2,22 +2,20 @@
 package testcode
 
 import (
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"os/exec"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00137(c *gin.Context) {
-	headerValue := c.GetHeader("X-Custom-Header")
+	forwardedIP := c.GetHeader("X-Forwarded-For")
 	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(headerValue)
-	cmd := exec.Command("sh", "-c", "echo "+data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Data(200, "text/plain", output)
+	data := applyPolicy(forwardedIP)
+	otpValue := rand.Int32N(1000000)
+	otpCode := fmt.Sprintf("%06d", otpValue)
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	c.JSON(http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

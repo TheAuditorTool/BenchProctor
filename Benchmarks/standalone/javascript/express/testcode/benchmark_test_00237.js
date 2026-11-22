@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const { db } = require("./shared");
-const nodeUtil = require("util");
+const { escapeHtml } = require("./shared");
 
 async function BenchmarkTest00237(req, res) {
-  const userInput = req.headers["x-custom-header"] || "";
-  const data = nodeUtil.format("%s", userInput);
-  const row = (await db.query("SELECT id, name FROM users")).rows.find((r) => r.name === String(data));
-  if (!row) { res.status(404).json({error:"not found"}); return; }
-  const value = row.name;
-  res.json({ done: true });
+  const userInput = req.headers.referer || "";
+  const trim = (v) => String(v).trim();
+  const data = trim(userInput);
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.end("<section>" + escapeHtml(data) + "</section>"); return;
 }
 
 module.exports = { BenchmarkTest00237 };

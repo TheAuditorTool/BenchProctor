@@ -2,18 +2,13 @@
 package testcode
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00044(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	var relayBuilder strings.Builder
-	fmt.Fprintf(&relayBuilder, "%s", authHeader)
-	data := relayBuilder.String()
-	os.Remove("/var/app/data/" + data)
-	c.JSON(200, gin.H{"code": "OK"})
+	headerValue := c.GetHeader("X-Custom-Header")
+	data := strings.ReplaceAll(headerValue, "\x00", "")
+	c.Set("data", data)
 }

@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 from django.http import JsonResponse
-import yaml
-import os
-import pika
+from dataclasses import dataclass
+import base64
+import pickle
 
 
-def _amqp_receive(queue):
-    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
-        channel = connection.channel()
-        channel.queue_declare(queue=queue, durable=True)
-        return channel.basic_get(queue=queue, auto_ack=True)[2]
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 def BenchmarkTest00131(request):
-    msg_value = (_amqp_receive('app-events') or b'').decode()
-    data = (lambda v: v.strip())(msg_value)
-    yaml.load(data, Loader=yaml.UnsafeLoader)
+    raw_body = request.body.decode('utf-8')
+    form = FormData(payload=raw_body)
+    data = form.payload
+    pickle.loads(base64.b64decode(data))
     return JsonResponse({"saved": True})

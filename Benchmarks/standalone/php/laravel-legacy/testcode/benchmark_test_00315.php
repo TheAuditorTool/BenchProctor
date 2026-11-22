@@ -1,0 +1,17 @@
+<?php
+// SPDX-License-Identifier: Apache-2.0
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class BenchmarkTest00315Controller
+{
+    public function __invoke(Request $request)
+    {
+        $userInput = $request->json('variables.input', '');
+        $thunk = function () use ($userInput) { return trim($userInput); };
+        $data = $thunk();
+        $claims = openssl_decrypt((string)$data, 'aes-256-ecb', getenv('DATA_ENC_KEY'));
+        return response()->json(['ok' => 1]);
+    }
+}

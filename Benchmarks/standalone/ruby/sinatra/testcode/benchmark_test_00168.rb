@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "rexml/document"
 
 class BenchmarkTest00168 < Sinatra::Base
   before do
@@ -18,10 +19,12 @@ class BenchmarkTest00168 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00168" do
-    user_input = params[:multipart_field].to_s
-    data = user_input.split(/[ \t]+/).join(" ")
-    token = rand(1000000)
+    user_input = request.cookies["session_token"].to_s
+    _coerced = Float(user_input, exception: false).to_s
+    parsed_num = _coerced
+    directory = REXML::Document.new(File.read("/var/app/data/users.xml"))
+    account = REXML::XPath.first(directory, "//user[@name='" + parsed_num.to_s + "']")
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ found: !account.nil? })
   end
 end

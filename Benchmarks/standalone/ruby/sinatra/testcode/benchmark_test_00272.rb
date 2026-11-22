@@ -18,14 +18,15 @@ class BenchmarkTest00272 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00272" do
-    user_input = request.env["HTTP_AUTHORIZATION"].to_s
-    data = format("%<value>s", value: user_input)
-    unless %w[config.json index.html readme.md].include?(data.to_s)
-      halt 403, JSON.generate({ error: "forbidden" })
+    user_input = request.cookies["session_token"].to_s
+    data = user_input.gsub("\u0000", "")
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
       return
     end
-    checked_path = data
-    File.write(checked_path, "data")
+    target_url = data
+    response.redirect(target_url, 303)
     content_type :json
     JSON.generate({ status: "ok" })
   end

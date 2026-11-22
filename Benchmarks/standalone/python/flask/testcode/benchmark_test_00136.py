@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+import numpy as np
 from flask import Flask, request, jsonify
-from app_runtime import db
 
 
 app = Flask(__name__)
@@ -19,9 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00136", methods=["POST"])
 def BenchmarkTest00136():
-    referer_value = request.headers.get('Referer', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(referer_value)
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
-    return jsonify({"result": "success"})
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = '%s' % (json_value,)
+    quantity = int(str(data))
+    total_cents = np.int32(quantity) * np.int32(1999)
+    return jsonify({'total_cents': int(total_cents)}), 200

@@ -2,31 +2,35 @@
 package testcode
 
 import (
-	"fmt"
-	"io"
 	"net/http"
 	"strconv"
-	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func BenchmarkTest00202(w http.ResponseWriter, r *http.Request) {
-	rawBytes, err := io.ReadAll(r.Body)
+	cookieObj, err := r.Cookie("session_token")
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	rawBody := string(rawBytes)
-	data := rawBody
-	if _, after, ok := strings.Cut(rawBody, ","); ok {
-		data = after
+	cookieValue := cookieObj.Value
+	var data string
+	if len(cookieValue) > 0 {
+		data = cookieValue
+	} else {
+		data = "default"
 	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
+	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
+	if ldapErr != nil {
+		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	defer ldapConn.Close()
+	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
+	sr, _ := ldapConn.Search(searchReq)
+	if sr != nil {
+		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-import hashlib
-import os
 from starlette.responses import JSONResponse
+import json
 
 
 app = FastAPI()
@@ -22,8 +21,15 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00177")
 async def BenchmarkTest00177(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    parts = str(env_value).split(',')
-    data = ' '.join(parts)
-    digest = hashlib.sha256(str(data).encode()).hexdigest()
-    return JSONResponse({'digest': str(digest)}, status_code=200)
+    raw_body = (await request.body()).decode('utf-8')
+    try:
+        data = json.loads(raw_body).get('value', raw_body)
+    except (json.JSONDecodeError, AttributeError):
+        data = raw_body
+    try:
+        _coerced = float(data)
+    except (TypeError, ValueError):
+        return JSONResponse({'error': 'invalid number'}, status_code=400)
+    processed = _coerced
+    request.app.state.active_tenant = str(processed)
+    return {"updated": True}

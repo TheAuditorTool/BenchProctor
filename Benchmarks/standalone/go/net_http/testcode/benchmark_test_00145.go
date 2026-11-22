@@ -2,22 +2,28 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 )
 
 func BenchmarkTest00145(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	unpack := func(v string) (string, bool) { return v, v != "" }
-	data, _ := unpack(uaValue)
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
+	authHeader := r.Header.Get("Authorization")
+	var data string
+	if len(authHeader) > 0 {
+		data = authHeader
+	} else {
+		data = "default"
+	}
+	proc, err := os.StartProcess("/bin/echo", []string{"echo", data}, &os.ProcAttr{Files: []*os.File{nil, os.Stdout, os.Stderr}})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	procState, err := proc.Wait()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"exit": strconv.Itoa(procState.ExitCode())})
 }

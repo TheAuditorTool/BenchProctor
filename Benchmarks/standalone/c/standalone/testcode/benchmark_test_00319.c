@@ -9,19 +9,20 @@
 
 struct c_ctx { const char *captured; };
 static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
-#define FREE_AND_NULL(_ptr) do { free(_ptr); (_ptr) = NULL; } while (0)
 
 void benchmark_test_00319(int argc, char **argv)
 {
-    const char *user_input = (argc > 1) ? argv[1] : "";
+    (void)argc; (void)argv;
+    char user_input_buf[256];
+    user_input_buf[0] = '\0';
+    if (fgets(user_input_buf, sizeof(user_input_buf), stdin) == NULL) user_input_buf[0] = '\0';
+    user_input_buf[strcspn(user_input_buf, "\n")] = '\0';
+    const char *user_input = user_input_buf;
     struct c_ctx _clx = { user_input };
     const char *data = c_capture(&_clx);
-    char *_p = malloc(strlen(data) + 1);
-    if (_p == NULL) return;
-    strcpy(_p, data);
-    char *_cleanup_ptr = _p;
-    printf("%s\n", _p);
-    FREE_AND_NULL(_p);
-    _cleanup_ptr = NULL;
-    if (_cleanup_ptr) free(_cleanup_ptr);
+    const int _rec_size = 64;
+    int _count = atoi(data);
+    int _bytes = _count * _rec_size;
+    char *_recs = malloc((size_t)_bytes);
+    if (_recs) free(_recs);
 }

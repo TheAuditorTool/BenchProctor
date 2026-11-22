@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "digest"
 
 class BenchmarkTest00249 < Sinatra::Base
   before do
@@ -18,14 +19,11 @@ class BenchmarkTest00249 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00249" do
-    user_input = request.env["HTTP_ORIGIN"].to_s
-    data = sprintf("%s", user_input)
-    _cipher = OpenSSL::Cipher.new("des-ede3-cbc")
-    _cipher.encrypt
-    _cipher.key = ENV.fetch("LEGACY_DES_KEY", "").ljust(24)[0, 24]
-    _cipher.random_iv
-    ciphertext = _cipher.update(data.to_s) + _cipher.final
+    user_input = params[:field].to_s
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    digest = Digest::MD5.hexdigest(data.to_s)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

@@ -2,18 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class BenchmarkTest00357Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
-        $userInput = getenv('APP_INPUT') ?: '';
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $result = DB::table('users')->where('id', $data)->first();
-        if ($result === null) { return response()->json(["error" => "not found"], 404); }
-        $value = $result->name;
+        $userInput = $request->header('Host', '');
+        ini_set('yaml.decode_php', '0');
+        $document = yaml_parse((string)$userInput);
         return response()->json(['ok' => 1]);
     }
 }

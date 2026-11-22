@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 benchmark_test_00115() {
-  dd if=/dev/urandom bs=16 count=1 2>/dev/null | xxd -p
+  user_input="$HTTP_USER_AGENT"
+  _captured="${user_input}"
+  make_reader() { printf "%s" "$_captured" | sed 's/[[:space:]]*$//'; }
+  data=$(make_reader)
+  printf '%s' "$data" | openssl dgst -sha3-256
 }
 
 benchmark_test_00115 "$@"

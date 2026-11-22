@@ -1,11 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+import hashlib
 from flask import Flask, request, jsonify
 
-
-def make_reader(raw):
-    def read():
-        return raw.strip()
-    return read
 
 app = Flask(__name__)
 
@@ -23,13 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00149", methods=["POST"])
 def BenchmarkTest00149():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    reader = make_reader(json_value)
-    data = reader()
-    allowed = {'config.json', 'index.html', 'readme.md'}
-    if data not in allowed:
-        return jsonify({'error': 'forbidden'}), 403
-    checked_path = '/var/app/data/' + data
-    with open(checked_path, 'w') as fh:
-        fh.write('data')
-    return jsonify({"result": "success"})
+    field_value = request.form.get('field', '')
+    parts = str(field_value).split(',')
+    data = ' '.join(parts)
+    digest = hashlib.md5(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

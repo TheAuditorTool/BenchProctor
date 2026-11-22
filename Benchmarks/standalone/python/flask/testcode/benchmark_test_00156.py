@@ -1,16 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
-from dataclasses import dataclass
-from flask import Flask, request, jsonify
-from app_runtime import db
+import os
+from flask import Flask, session
+import jsonschema
+from flask import request, jsonify
 
-
-@dataclass
-class FormData:
-    payload: str
-    content_type: str = 'text/plain'
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex()
 
 
 @app.after_request
@@ -26,9 +22,13 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00156", methods=["POST"])
 def BenchmarkTest00156():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    form = FormData(payload=json_value)
-    data = form.payload
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    origin_value = request.headers.get('Origin', '')
+    parts = str(origin_value).split(',')
+    data = ' '.join(parts)
+    try:
+        jsonschema.validate(str(data), {'type': 'string', 'pattern': "^[a-zA-Z0-9 _.\\-]+$"})
+    except jsonschema.ValidationError:
+        return jsonify({'error': 'invalid input'}), 400
+    processed = data
+    session.update({'data': str(processed)})
+    return jsonify({"result": "success"})

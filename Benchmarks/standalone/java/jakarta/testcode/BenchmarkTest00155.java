@@ -33,12 +33,13 @@ public class BenchmarkTest00155 {
     @GET
     @Path("/BenchmarkTest00155")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00155(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String envValue = java.util.Optional.ofNullable(System.getenv("APP_INPUT")).orElse("");
-        String data;
-        if (envValue.length() > 256) { data = envValue.substring(0, 256); }
-        else { data = envValue; }
-        Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + data}).waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+    public Response BenchmarkTest00155(@jakarta.validation.constraints.Size(max = 4096) @HeaderParam("Origin") String origin, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : originValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        Object codeResult = new jakarta.el.ELProcessor().eval(data);
+        response.setHeader("X-Code-Result", String.valueOf(codeResult));
         return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

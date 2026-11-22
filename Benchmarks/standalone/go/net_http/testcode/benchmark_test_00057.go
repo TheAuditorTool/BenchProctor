@@ -2,32 +2,21 @@
 package testcode
 
 import (
+	"encoding/hex"
 	"net/http"
-	"regexp"
 	"strings"
 
-	"github.com/antchfx/xmlquery"
-	"github.com/go-playground/validator/v10"
+	"golang.org/x/crypto/md4"
 )
 
 func BenchmarkTest00057(w http.ResponseWriter, r *http.Request) {
-	originValue := r.Header.Get("Origin")
-	capture := func() string { return strings.TrimSpace(originValue) }
-	data := capture()
-	validate := validator.New()
-	validate.RegisterValidation("schema", func(fl validator.FieldLevel) bool {
-		return regexp.MustCompile("^[a-zA-Z0-9 _.%~\\-]+$").MatchString(fl.Field().String())
-	})
-	if err := validate.Var(data, "schema"); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
+	hostValue := r.Host
+	data := hostValue
+	if _, after, ok := strings.Cut(hostValue, ","); ok {
+		data = after
 	}
-	processed := data
-	xmlDoc, xmlErr := xmlquery.Parse(strings.NewReader("<root><user/></root>"))
-	if xmlErr != nil {
-		http.Error(w, xmlErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	xmlquery.FindOne(xmlDoc, "//user[@name='"+processed+"']")
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	legacyDigest := md4.New()
+	legacyDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(legacyDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

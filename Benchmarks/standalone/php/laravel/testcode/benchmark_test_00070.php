@@ -8,13 +8,9 @@ class BenchmarkTest00070Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        if (!preg_match('#^(asc|desc|name|created)$#', (string)$data)) { error_log('enum validation failed'); return response()->json(['error'=>'invalid'], 400); }
-        $processed = $data;
-        $actions = ['asc' => 'sort_asc', 'desc' => 'sort_desc', 'name' => 'by_name', 'created' => 'by_date'];
-        $result = $actions[(string)$processed] ?? 'noop';
-        return response()->json(['ok' => 1]);
+        $userInput = $request->cookie('session_token', '');
+        $data = (!empty($userInput)) ? $userInput : '';
+        $html = \Illuminate\Support\Facades\Blade::render('<div class="comment">{{ $comment }}</div>', ['comment' => $data]);
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

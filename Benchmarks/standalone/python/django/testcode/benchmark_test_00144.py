@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-from django.shortcuts import redirect
+from django.http import JsonResponse
+import ctypes
 
 
 def BenchmarkTest00144(request):
-    multipart_value = request.POST.get('multipart_field', '')
-    data, _sep, _rest = str(multipart_value).partition('\x00')
-    return redirect(str(data))
+    field_value = request.POST.get('field', '')
+    def normalize(value):
+        return value.strip()
+    data = normalize(field_value)
+    requested = int(str(data))
+    wrapped = ctypes.c_int32(requested + 1).value
+    return JsonResponse({'wrapped': wrapped}, status=200)

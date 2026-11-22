@@ -2,28 +2,29 @@
 package testcode
 
 import (
+	"fmt"
+	"math/rand/v2"
 	"net/http"
-	"strconv"
-
-	"github.com/go-ldap/ldap/v3"
+	"strings"
 )
 
 func BenchmarkTest00235(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
+	authHeader := r.Header.Get("Authorization")
+	relayPrefix := ""
+	if len(authHeader) > 0 {
+		relayPrefix = strings.ToLower(authHeader[:1])
+	}
 	var data string
-	if userID != "" {
-		data = userID
+	switch relayPrefix {
+	case "h":
+		data = authHeader
+	case "f":
+		data = authHeader
+	default:
+		data = authHeader
 	}
-	ldapConn, ldapErr := ldap.DialURL(envOr("LDAP_URL", "ldap://directory:1389"))
-	if ldapErr != nil {
-		http.Error(w, ldapErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer ldapConn.Close()
-	searchReq := ldap.NewSearchRequest("ou=people,dc=example,dc=com", ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false, "(uid="+data+")", []string{"cn"}, nil)
-	sr, _ := ldapConn.Search(searchReq)
-	if sr != nil {
-		w.Header().Set("X-LDAP-Count", strconv.Itoa(len(sr.Entries)))
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	otpValue := rand.Int32N(1000000)
+	otpCode := fmt.Sprintf("%06d", otpValue)
+	DB.Exec("INSERT INTO login_challenges (account, code) VALUES ($1, $2)", data, otpCode)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "challenge_sent"})
 }

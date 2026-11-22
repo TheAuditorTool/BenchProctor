@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-import requests
-from flask import Flask, jsonify
-from app_runtime import db
+from Crypto.Hash import SHA256
+from flask import Flask, request, jsonify
 
 
 app = Flask(__name__)
@@ -20,12 +19,7 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00161", methods=["POST"])
 def BenchmarkTest00161():
-    api_value = requests.get('https://api.partner.example.com/v1/profile').text
-    data = '%s' % str(api_value)
-    try:
-        _coerced = int(data)
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _coerced
-    db.execute('SELECT * FROM users WHERE id = ' + str(processed))
-    return jsonify({"result": "success"})
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = json_value if json_value else 'default'
+    digest = SHA256.new(str(data).encode()).hexdigest()
+    return jsonify({'digest': str(digest)}), 200

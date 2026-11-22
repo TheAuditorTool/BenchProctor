@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/BenchmarkTest00142', methods: ['POST'])]
@@ -11,10 +11,10 @@ class BenchmarkTest00142Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->headers->get('X-Custom-Header', '');
-        $words = preg_split('/\s+/', $userInput);
-        $data = implode(' ', $words);
-        eval((string)$data);
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('Authorization', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        $processed = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+        return new Response('<div>' . $processed . '</div>', 200, ['Content-Type' => 'text/html']);
     }
 }

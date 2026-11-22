@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-import random
-from flask import Flask, request, jsonify
-from app_runtime import db
+import requests
+from flask import Flask, jsonify
+import os
+import pika
 
+
+def _amqp_receive(queue):
+    with pika.BlockingConnection(pika.URLParameters(os.environ.get("AMQP_URL", "amqp://guest:guest@broker:5672/%2F"))) as connection:
+        channel = connection.channel()
+        channel.queue_declare(queue=queue, durable=True)
+        return channel.basic_get(queue=queue, auto_ack=True)[2]
 
 app = Flask(__name__)
 
@@ -20,8 +27,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00046", methods=["POST"])
 def BenchmarkTest00046():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = '%s' % str(json_value)
-    token = '%032x' % random.getrandbits(128)
-    db.execute('INSERT INTO reset_tokens (account, token) VALUES (?, ?)', (str(data), token))
-    return jsonify({'token': str(token)}), 200
+    msg_value = (_amqp_receive('app-events') or b'').decode()
+    parts = str(msg_value).split(',')
+    data = ' '.join(parts)
+    requests.get(str(data))
+    return jsonify({"result": "success"})

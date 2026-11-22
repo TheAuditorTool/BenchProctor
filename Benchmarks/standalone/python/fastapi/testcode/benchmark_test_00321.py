@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from fastapi import Form
-import defusedxml.ElementTree
-from fastapi.responses import JSONResponse
+from starlette.responses import HTMLResponse
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
@@ -21,11 +21,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00321")
-async def BenchmarkTest00321(request: Request, field: str = Form('')):
-    field_value = field
-    if field_value:
-        data = field_value
-    else:
-        data = ''
-    defusedxml.ElementTree.fromstring(str(data))
-    return {"updated": True}
+async def BenchmarkTest00321(request: Request):
+    ua_value = request.headers.get('user-agent', '')
+    data = '%s' % (ua_value,)
+    if not re.fullmatch("^(asc|desc|name|created)$", str(data)):
+        return JSONResponse({'error': 'forbidden'}, status_code=400)
+    processed = data
+    return HTMLResponse('<div>' + str(processed) + '</div>')

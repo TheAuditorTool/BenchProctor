@@ -2,34 +2,26 @@
 package testcode
 
 import (
-	"fmt"
+	"context"
 	"net/http"
-	"strconv"
+	"regexp"
 	"strings"
 )
 
 func BenchmarkTest00213(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("id")
-	relayPrefix := ""
-	if len(userID) > 0 {
-		relayPrefix = strings.ToLower(userID[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = userID
-	case "f":
-		data = userID
-	default:
-		data = userID
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	cookieValue := cookieObj.Value
+	data := func(v string) string { return strings.TrimSpace(v) }(cookieValue)
+	validPattern := regexp.MustCompile("^[a-zA-Z0-9 _.\\-]+$")
+	if !validPattern.MatchString(data) {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
+	}
+	processed := data
+	redisClient.HSet(context.Background(), "session:"+ctxString(r, ctxKeyUser), map[string]any{"display_name": processed, "locale": "en"})
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

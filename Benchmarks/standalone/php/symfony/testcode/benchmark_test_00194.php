@@ -11,13 +11,11 @@ class BenchmarkTest00194Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = ($request->attributes->get('id') ?? $request->query->get('id', ''));
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $_coerced = max(0, min((int)$data, 1048576));
-        $boundedVal = $_coerced;
-        $requested = (int) $boundedVal;
-        $allocated = $requested + 1;
-        return new JsonResponse(['allocated' => $allocated], 200);
+        $userInput = $request->getContent();
+        $data = sprintf('%s', $userInput);
+        $doc = new \DOMDocument();
+        $doc->loadXML((string)$data, LIBXML_NOENT | LIBXML_DTDLOAD);
+        $name = $doc->getElementsByTagName('name')->item(0)?->textContent;
+        return new JsonResponse(["committed" => true]);
     }
 }

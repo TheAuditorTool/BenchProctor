@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, request, jsonify
-from app_runtime import db
+import ldap3
+from flask import Flask, jsonify
+import os
+import re
 
 
 app = Flask(__name__)
@@ -17,9 +19,12 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00176", methods=["POST"])
-def BenchmarkTest00176():
-    json_value = (request.get_json(silent=True) or {}).get('payload', '')
-    data = ' '.join(str(json_value).split())
-    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+@app.route("/BenchmarkTest00176/<path_param>", methods=["POST"])
+def BenchmarkTest00176(path_param):
+    path_value = path_param
+    if not re.fullmatch("^(asc|desc|name|created)$", str(path_value)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = path_value
+    conn = ldap3.Connection(ldap3.Server(os.environ.get('LDAP_URL', 'ldap://directory:1389')), auto_bind=True)
+    conn.search('dc=example,dc=com', '(uid=' + str(processed) + ')', attributes=['cn'])
     return jsonify({"result": "success"})

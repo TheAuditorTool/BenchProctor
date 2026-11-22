@@ -2,26 +2,18 @@
 package testcode
 
 import (
-	"fmt"
+	"encoding/hex"
 	"net/http"
-	"strconv"
-	"strings"
+
+	"golang.org/x/crypto/md4"
 )
 
 func BenchmarkTest00115(w http.ResponseWriter, r *http.Request) {
-	var commentText string
-	DB.QueryRow("SELECT text FROM comments LIMIT 1").Scan(&commentText)
-	var data string
-	for _, token := range strings.Split(commentText, ",") {
-		data = token
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		http.Error(w, "invalid integer", http.StatusBadRequest)
-		return
-	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	w.Header().Set("X-Alloc-Size", strconv.Itoa(allocated))
+	authHeader := r.Header.Get("Authorization")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(authHeader)
+	legacyDigest := md4.New()
+	legacyDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(legacyDigest.Sum(nil))
+	RespondJSON(w, http.StatusOK, map[string]string{"hash": hashStr})
 }

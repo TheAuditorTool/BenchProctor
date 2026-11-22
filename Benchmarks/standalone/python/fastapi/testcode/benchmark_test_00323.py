@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from cryptography.fernet import Fernet
-from starlette.responses import JSONResponse
-import os
+from lxml import etree
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -22,7 +21,8 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00323")
 async def BenchmarkTest00323(request: Request):
-    multipart_value = (await request.form()).get('multipart_field', '')
-    data = f'{multipart_value!s}'
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return JSONResponse({'length': len(ciphertext)}, status_code=200)
+    forwarded_ip = request.headers.get('x-forwarded-for', '')
+    data = str(forwarded_ip).replace('\x00', '')
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    etree.XPathEvaluator(tree)('/users/user[@name="' + str(data) + '"]')
+    return {"updated": True}

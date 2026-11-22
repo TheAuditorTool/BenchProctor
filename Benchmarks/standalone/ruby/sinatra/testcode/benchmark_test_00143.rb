@@ -3,7 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/ldap"
+require "nokogiri"
 
 class BenchmarkTest00143 < Sinatra::Base
   before do
@@ -19,11 +19,9 @@ class BenchmarkTest00143 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00143" do
-    user_input = request.body.read
-    data = user_input.split(/[ \t]+/).join(" ")
-    _ldap_url = URI(ENV.fetch("LDAP_URL", "ldap://directory:1389"))
-    ldap = Net::LDAP.new(host: _ldap_url.host, port: _ldap_url.port)
-    ldap.search(base: "dc=example,dc=com", filter: "(cn=" + data.to_s + ")")
+    user_input = request.env["HTTP_REFERER"].to_s
+    data = "#{user_input}"
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + data + "']")
     content_type :json
     JSON.generate({ status: "ok" })
   end

@@ -2,36 +2,17 @@
 package testcode
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00074(c *gin.Context) {
-	uaValue := c.GetHeader("User-Agent")
-	relayPrefix := ""
-	if len(uaValue) > 0 {
-		relayPrefix = strings.ToLower(uaValue[:1])
-	}
-	var data string
-	switch relayPrefix {
-	case "h":
-		data = uaValue
-	case "f":
-		data = uaValue
-	default:
-		data = uaValue
-	}
-	var _num int
-	if _, _err := fmt.Sscanf(data, "%d", &_num); _err != nil {
-		c.String(http.StatusBadRequest, "invalid integer")
-		return
-	}
-	boundedVal := strconv.Itoa(max(0, min(_num, 2147483647)))
-	requested, _ := strconv.Atoi(boundedVal)
-	allocated := requested + 1
-	c.Header("X-Alloc-Size", strconv.Itoa(allocated))
+	authHeader := c.GetHeader("Authorization")
+	capture := func() string { return strings.TrimSpace(authHeader) }
+	data := capture()
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	c.Writer.Header().Add("Set-Cookie", sessionCookie.String())
+	c.JSON(200, gin.H{"code": "OK"})
 }

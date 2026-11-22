@@ -2,29 +2,21 @@
 package testcode
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 func BenchmarkTest00006(w http.ResponseWriter, r *http.Request) {
-	var reqBody struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	jsonValue := reqBody.Payload
-	applyPolicy := func(v string) string { return strings.TrimSpace(v) }
-	data := applyPolicy(jsonValue)
-	resp, err := http.Get(data)
+	refererValue := r.Header.Get("Referer")
+	unpack := func(v string) (string, bool) { return v, v != "" }
+	data, _ := unpack(refererValue)
+	const exportRecordSize = 512
+	recordCount, err := strconv.ParseInt(data, 10, 32)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "invalid record count", http.StatusBadRequest)
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Write(body)
+	exportBuf := make([]byte, 0, int32(recordCount)*exportRecordSize)
+	w.Header().Set("X-Export-Capacity", strconv.Itoa(cap(exportBuf)))
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

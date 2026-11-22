@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-from starlette.responses import PlainTextResponse
-from fastapi.responses import JSONResponse
+import ctypes
+from starlette.responses import JSONResponse
 
 
-class UserInput(BaseModel):
-    payload: str = ''
+class RequestPayload:
+    def __init__(self, raw):
+        self._raw = raw
+    @property
+    def value(self):
+        return self._raw if self._raw is not None else ''
 
 app = FastAPI()
 
@@ -24,9 +27,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00068")
-async def BenchmarkTest00068(request: Request, req: UserInput):
-    json_value = req.payload
-    data = '{}'.format(json_value)
-    with open('/var/app/data/' + str(data), 'r') as fh:
-        content = fh.read()
-    return PlainTextResponse(content)
+async def BenchmarkTest00068(request: Request):
+    origin_value = request.headers.get('origin', '')
+    data = RequestPayload(origin_value).value
+    count = int(str(data))
+    records = ctypes.create_string_buffer(ctypes.c_uint32(count * 64).value)
+    return JSONResponse({'allocated': len(records)}, status_code=200)

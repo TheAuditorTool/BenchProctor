@@ -3,8 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "resolv"
-require "ipaddr"
 require "open-uri"
 
 class BenchmarkTest00180 < Sinatra::Base
@@ -21,16 +19,12 @@ class BenchmarkTest00180 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00180" do
-    user_input = params[:upload][:filename].to_s rescue ""
-    if user_input.to_s.empty?
-      data = ''
-    else
-      data = user_input
-    end
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      halt 403, JSON.generate({ error: "private range blocked" })
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    host = URI.parse(data).host rescue ""
+    unless host =~ /\A(api\.intra\.net|cdn\.railscdn\.org)\z/
+      halt 403, JSON.generate({ error: "forbidden host" })
       return
     end
     target_url = data

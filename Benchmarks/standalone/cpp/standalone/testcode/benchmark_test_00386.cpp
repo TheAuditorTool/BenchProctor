@@ -2,16 +2,26 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
+#include <unordered_map>
 
-void benchmark_test_00386(int argc, char **argv)
+struct RatePlan { int limit; };
+
+void benchmark_test_00386(int, char **)
 {
-    std::string user_input = (argc > 1) ? std::string(argv[1]) : std::string();
-    std::string data = user_input;
-    for (char &_c : data) if (_c == '\n') _c = ' ';
-    const char _buf[16] = "fixedcontent12";
-    size_t _span = std::strtoul(data.c_str(), nullptr, 10);
-    if (_span > sizeof(_buf)) _span = sizeof(_buf);
-    std::cout.write(_buf, static_cast<std::streamsize>(_span));
-    std::cout << std::endl;
+    const char *user_input_env = std::getenv("HTTP_X_FORWARDED_FOR");
+    std::string user_input = user_input_env ? std::string(user_input_env) : std::string();
+    std::string data;
+    switch (user_input.empty() ? '\0' : user_input[0]) {
+        case '\0':
+            data.clear();
+            break;
+        default:
+            data = user_input;
+            break;
+    }
+    static const RatePlan _basic{10}, _pro{100};
+    std::unordered_map<std::string, const RatePlan *> _plans{{"basic", &_basic}, {"pro", &_pro}};
+    const RatePlan *_plan = _plans[data];
+    int _limit = _plan->limit;
+    std::cout << "limit " << _limit << std::endl;
 }

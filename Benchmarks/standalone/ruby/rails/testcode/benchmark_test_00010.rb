@@ -2,7 +2,6 @@
 require "json"
 require "uri"
 require "openssl"
-require "redcarpet"
 
 class BenchmarkTest00010Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -13,8 +12,12 @@ class BenchmarkTest00010Controller < ApplicationController
   end
   def benchmark_test_00010
     user_input = params.require(:user).permit(:name)[:name].to_s
-    data = sprintf("%s", user_input)
-    processed = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(filter_html: true, no_styles: true, safe_links_only: true)).render(data)
-    render html: ("<div>" + processed + "</div>").html_safe
+    pending = user_input.split(',')
+    data = ''
+    data = pending.shift until pending.empty?
+    prng = Random.new
+    token = prng.bytes(16).unpack1("H*")
+    ActiveRecord::Base.connection.exec_insert(ActiveRecord::Base.sanitize_sql_array(["INSERT INTO reset_tokens (account, token) VALUES (?, ?)", data.to_s, token]))
+    render json: { reset: "sent" }
   end
 end

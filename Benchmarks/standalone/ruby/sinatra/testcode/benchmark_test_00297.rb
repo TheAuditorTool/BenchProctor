@@ -3,8 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "cgi"
-require "nokogiri"
+require "net/http"
+require "sequel"
+
+DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00297 < Sinatra::Base
   before do
@@ -20,11 +22,10 @@ class BenchmarkTest00297 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00297" do
-    user_input = params[:multipart_field].to_s
-    data = CGI.unescape(user_input)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + parsed_num + "']")
+    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
+    data = ''
+    user_input.split(',').each { |token| data = token }
+    DB[:users].where(id: data).all
     content_type :json
     JSON.generate({ status: "ok" })
   end

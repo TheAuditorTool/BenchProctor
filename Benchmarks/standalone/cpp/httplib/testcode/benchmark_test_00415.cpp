@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
 #include <unordered_map>
 
 namespace httplib {
@@ -29,9 +28,11 @@ void benchmark_test_00415(const httplib::Request &req, httplib::Response &res)
 {
     std::string user_input = req.body;
     std::string data;
-    if (!user_input.empty()) data = user_input;
-    std::srand((unsigned)std::time(nullptr));
-    int _token = std::rand();
-    std::cout << "token for " << data << ": " << _token << std::endl;
+    try { data = user_input; } catch (...) { data.clear(); }
+    long _req = std::strtol(data.c_str(), nullptr, 10);
+    if (_req < 0 || _req > 65535) { res.status = 400; res.set_content("bad request", "text/plain"); return; }
+    long _alloc = _req + 1;
+    char *_buf = new (std::nothrow) char[(size_t)_alloc];
+    if (_buf) { _buf[0] = 0; std::cout << "alloc:" << _alloc << std::endl; delete[] _buf; }
     res.set_content("ok", "text/plain");
 }

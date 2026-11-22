@@ -3,14 +3,21 @@ package testcode
 
 import (
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
 func BenchmarkTest00296(w http.ResponseWriter, r *http.Request) {
-	refererValue := r.Header.Get("Referer")
-	var data string
-	if refererValue != "" {
-		data = refererValue
+	multipartValue := r.FormValue("multipart_field")
+	form := submissionForm{payload: multipartValue}
+	data := form.payload
+	parsedURL, parseErr := url.Parse(data)
+	if parseErr != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.User != nil || strings.ContainsAny(data, "\\ \t\r\n") || !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
+		http.Error(w, "forbidden host", http.StatusForbidden)
+		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: "session", Value: data, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
-	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
+	targetUrl := data
+	w.Header().Set("Location", targetUrl)
+	w.WriteHeader(http.StatusSeeOther)
 }

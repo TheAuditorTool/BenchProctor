@@ -2,20 +2,20 @@
 package testcode
 
 import (
+	"encoding/hex"
+	"fmt"
 	"net/http"
 )
 
 func BenchmarkTest00144(w http.ResponseWriter, r *http.Request) {
-	forwardedIP := r.Header.Get("X-Forwarded-For")
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", forwardedIP)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
-	}
-	if result == nil {
-		http.Error(w, "not found", 404)
+	cookieObj, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "missing cookie", http.StatusBadRequest)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	cookieValue := cookieObj.Value
+	hexBytes, _ := hex.DecodeString(cookieValue)
+	data := string(hexBytes)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, "<p>Results for %s</p>", data)
 }

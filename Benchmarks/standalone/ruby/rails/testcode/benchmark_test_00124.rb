@@ -11,13 +11,12 @@ class BenchmarkTest00124Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00124
-    user_input = request.referer.to_s
+    user_input = cookies[:session_token].to_s
     if user_input.to_s.empty?
       data = ''
     else
       data = user_input
     end
-    eval(data)
-    render json: { status: "ok" }
+    render inline: "<p><%= comment %></p>", locals: { comment: data }
   end
 end

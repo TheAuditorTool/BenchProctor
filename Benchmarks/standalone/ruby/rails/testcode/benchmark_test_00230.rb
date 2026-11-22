@@ -11,13 +11,13 @@ class BenchmarkTest00230Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00230
-    user_input = User.first&.name.to_s
-    data = "%s" % user_input
-    unless data =~ /\A(asc|desc|name|created)\z/
-      render json: { error: "invalid" }, status: 400
-      return
+    user_input = request.headers["X-Forwarded-For"].to_s
+    if user_input.to_s.empty?
+      data = ''
+    else
+      data = user_input
     end
-    processed = data
-    render html: ("<div>" + processed + "</div>").html_safe
+    content = File.read("/var/app/data/" + data)
+    render json: { content: content }
   end
 end

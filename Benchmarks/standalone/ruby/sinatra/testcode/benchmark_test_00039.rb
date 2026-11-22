@@ -3,9 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
+require "nokogiri"
 
 class BenchmarkTest00039 < Sinatra::Base
   before do
@@ -21,14 +19,15 @@ class BenchmarkTest00039 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00039" do
-    user_input = ENV["APP_INPUT"] || ""
-    data = "%s" % user_input
-    unless data =~ /\A[a-zA-Z0-9_.#\-]+\z/
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
+    attrs = { value: user_input.to_s }
+    data = attrs[:value]
+    unless data =~ /\A[a-zA-Z0-9 _.%~\-]+\z/
       halt 400, JSON.generate({ error: "invalid" })
       return
     end
     processed = data
-    DB.fetch("SELECT * FROM users WHERE id = '" + processed + "'").all
+    Nokogiri::XML("<root/>").xpath("/root/item[@id='" + processed + "']")
     content_type :json
     JSON.generate({ status: "ok" })
   end

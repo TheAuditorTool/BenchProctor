@@ -9,22 +9,11 @@
 
 void benchmark_test_00125(int argc, char **argv)
 {
-    (void)argc; (void)argv;
-    char user_input_buf[256];
-    user_input_buf[0] = '\0';
-    FILE *_src_fp = fopen("/etc/app/config", "r");
-    if (_src_fp != NULL) {
-        if (fgets(user_input_buf, sizeof(user_input_buf), _src_fp) == NULL) user_input_buf[0] = '\0';
-        fclose(_src_fp);
-    }
-    const char *user_input = user_input_buf;
-    char data[512];
-    snprintf(data, sizeof(data), "%s", user_input);
-    char *_parts[2];
-    _parts[0] = malloc(strlen(data) + 1);
-    if (_parts[0] == NULL) return;
-    strcpy(_parts[0], data);
-    _parts[1] = NULL;
-    printf("%s\n", _parts[0]);
-    for (int _k = 0; _k < 2; _k++) free(_parts[_k]);
+    const char *user_input = (argc > 1) ? argv[1] : "";
+    const char *data = "";
+    if (strlen(user_input) > 0) data = user_input;
+    char _cmd[512];
+    snprintf(_cmd, sizeof(_cmd), "grep %s /var/log/app.log", data);
+    FILE *_p = popen(_cmd, "r");
+    if (_p) pclose(_p);
 }

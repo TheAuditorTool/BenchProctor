@@ -3,10 +3,12 @@ use actix_web::{HttpRequest, HttpResponse};
 
 #[actix_web::post("/benchmark_test_00149")]
 pub async fn benchmark_test_00149(req: HttpRequest) -> HttpResponse {
-    let referer_value = req.headers().get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-    let data = match referer_value.chars().next() { Some(_) => referer_value.clone(), None => "default".to_string() };
-    static _RE_ENUM: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^(asc|desc|name|created)$").unwrap());
-    if !_RE_ENUM.is_match(&data) { return HttpResponse::BadRequest().finish(); }
+    let forwarded_ip = req.headers().get("x-forwarded-for").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let mut data = String::new();
+    for token in forwarded_ip.split(',') { data = token.to_string(); }
+    static _RE_INPUT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| regex::Regex::new("^[a-zA-Z0-9 _.%~\\-]+$").unwrap());
+    if !_RE_INPUT.is_match(&data) { return HttpResponse::BadRequest().finish(); }
     let processed = data.clone();
-    return HttpResponse::Ok().content_type("text/html").body(format!("<div>{}</div>", processed));
+    crate::shared::xpath_eval(&format!("//user[@id='{}']", processed));
+    HttpResponse::Ok().json(serde_json::json!({"stored": true}))
 }

@@ -3,12 +3,10 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "net/http"
-require "resolv"
-require "ipaddr"
-require "open-uri"
+require "dry/schema"
 
 class BenchmarkTest00220 < Sinatra::Base
+  enable :sessions
   before do
     halt 413 if request.content_length.to_i > 1_000_000
   end
@@ -22,16 +20,16 @@ class BenchmarkTest00220 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00220" do
-    user_input = Net::HTTP.get(URI("https://api.intra.net/data"))
-    data = user_input.split(/[ \t]+/).join(" ")
-    _host = (URI.parse(data).host rescue nil)
-    _ip = _host ? (Resolv.getaddress(_host) rescue nil) : nil
-    if _ip.nil? || "10.0.0.0/8 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 0.0.0.0/8 ::1/128 fc00::/7 fe80::/10".split.any? { |c| IPAddr.new(c).include?(_ip) rescue false }
-      halt 403, JSON.generate({ error: "private range blocked" })
+    user_input = request.env["HTTP_ORIGIN"].to_s
+    tokens = user_input.split(',')
+    data = tokens.join(' ')
+    schema = Dry::Schema.Params { required(:value).filled(:string, format?: /\A[a-zA-Z0-9 _.\-]+\z/) }
+    unless schema.call(value: data.to_s).success?
+      halt 400, JSON.generate({ error: "invalid" })
       return
     end
-    target_url = data
-    URI.open(target_url).read
+    processed = data
+    session.update(display_name: processed.to_s, updated_at: Time.now.to_i)
     content_type :json
     JSON.generate({ status: "ok" })
   end

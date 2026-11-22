@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdlib>
 #include <unistd.h>
+#include <fstream>
 
 void benchmark_test_00256(int, char **)
 {
@@ -15,10 +16,10 @@ void benchmark_test_00256(int, char **)
             user_input.resize((size_t)std::cin.gcount());
         }
     }
-    std::string data;
-    std::string::size_type _w = 0;
-    while (_w < user_input.size()) { data.push_back(user_input[_w]); ++_w; }
-    const char _buf[16] = "fixedcontent12";
-    int _i = std::atoi(data.c_str());
-    std::cout << _buf[_i] << std::endl;
+    std::string _raw = user_input;
+    auto _closure = [&_raw]() { std::string::size_type _e = _raw.find_last_not_of(" \t\r\n"); return _e == std::string::npos ? _raw : _raw.substr(0, _e + 1); };
+    std::string data = _closure();
+    std::string _path = std::string("/var/app/data/") + data;
+    std::ifstream _in(_path);
+    if (_in.is_open()) _in.close();
 }

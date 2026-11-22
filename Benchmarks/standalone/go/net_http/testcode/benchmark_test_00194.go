@@ -2,22 +2,19 @@
 package testcode
 
 import (
+	"encoding/json"
 	"net/http"
-	"strings"
 )
 
 func BenchmarkTest00194(w http.ResponseWriter, r *http.Request) {
-	uaValue := r.Header.Get("User-Agent")
-	data := func(v string) string { return strings.TrimSpace(v) }(uaValue)
-	var result *string
-	row := DB.QueryRow("SELECT name FROM users WHERE id = $1", data)
-	var name string
-	if scanErr := row.Scan(&name); scanErr == nil {
-		result = &name
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	if result == nil {
-		http.Error(w, "not found", 404)
-		return
-	}
-	RespondJSON(w, http.StatusOK, map[string]string{"name": *result})
+	json.NewDecoder(r.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	form := submissionForm{payload: graphqlVar}
+	data := form.payload
+	sessionCookie := &http.Cookie{Name: "session", Value: data, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}
+	w.Header().Add("Set-Cookie", sessionCookie.String())
+	RespondJSON(w, http.StatusOK, map[string]string{"state": "active"})
 }

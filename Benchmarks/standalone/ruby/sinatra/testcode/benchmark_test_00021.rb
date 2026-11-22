@@ -18,11 +18,10 @@ class BenchmarkTest00021 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00021" do
-    user_input = params[:q].to_s
-    pending = user_input.split(',')
-    data = ''
-    data = pending.shift until pending.empty?
-    response.set_cookie(:session, { value: data, secure: true, httponly: true, same_site: :strict })
+    user_input = ENV["APP_INPUT"] || ""
+    reader = -> { user_input.to_s.strip }
+    data = reader.call
+    JSON.parse(data)
     content_type :json
     JSON.generate({ status: "ok" })
   end

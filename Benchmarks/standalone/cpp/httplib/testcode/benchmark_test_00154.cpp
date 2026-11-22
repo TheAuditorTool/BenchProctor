@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <iostream>
 #include <string>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace httplib {
@@ -24,15 +26,21 @@ struct Client {
 };
 }
 
-void benchmark_test_00154(const httplib::Request &req, httplib::Response &res)
+void benchmark_test_00154(const httplib::Request &, httplib::Response &res)
 {
-    std::string user_input = req.get_header_value("User-Agent");
-    auto _fn = [](const std::string &s) { std::string::size_type _b = s.find_first_not_of(" \t\r\n"); return _b == std::string::npos ? s : s.substr(_b); };
-    std::string data = _fn(user_input);
-    char *_p = new char[data.size() + 1];
-    std::strcpy(_p, data.c_str());
-    delete[] _p;
-    char _first = _p[0];
-    std::cout << _first << std::endl;
+    std::string user_input;
+    if (FILE *_fp = std::fopen("/etc/app/config", "r")) {
+        char _b[256];
+        if (std::fgets(_b, sizeof(_b), _fp)) {
+            _b[std::strcspn(_b, "\n")] = 0;
+            user_input = _b;
+        }
+        std::fclose(_fp);
+    }
+    std::string data = user_input;
+    for (char &_c : data) if (_c == '\n') _c = ' ';
+    char _dst[32];
+    std::snprintf(_dst, sizeof(_dst), "user=%s", data.c_str());
+    std::cout << _dst << std::endl;
     res.set_content("ok", "text/plain");
 }

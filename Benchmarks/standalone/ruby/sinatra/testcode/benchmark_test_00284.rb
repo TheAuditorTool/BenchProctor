@@ -21,11 +21,12 @@ class BenchmarkTest00284 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00284" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    data = user_input ? user_input : ''
-    result = DB[:users].where(name: data).first
-    value = result[:name]
+    user_input = request.env["HTTP_X_FORWARDED_FOR"].to_s
+    payload, _origin = user_input, 'http'
+    data = payload
+    token = rand(1000000)
+    DB[:reset_tokens].insert(account: data.to_s, token: token)
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ reset: "sent" })
   end
 end

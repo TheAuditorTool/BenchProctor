@@ -1,6 +1,0 @@
-topics:
-  - name: billing.events.v0046
-    partitions: 3
-    retention_hours: 24
-    producers:
-    consumers:

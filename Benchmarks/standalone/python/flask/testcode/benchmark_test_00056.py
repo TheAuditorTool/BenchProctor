@@ -1,6 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-import yaml
-import os
 from flask import Flask, jsonify
 
 
@@ -18,9 +16,13 @@ def _handle_unexpected(exc):
     return jsonify({"error": "internal"}), 500
 
 
-@app.route("/BenchmarkTest00056", methods=["POST"])
-def BenchmarkTest00056():
-    env_value = os.environ.get('APP_INPUT', '')
-    data = str(env_value).replace('\x00', '')
-    parsed = yaml.safe_load(data)
-    return jsonify({'parsed': str(parsed)}), 200
+@app.route("/BenchmarkTest00056/<path_param>", methods=["POST"])
+def BenchmarkTest00056(path_param):
+    path_value = path_param
+    parts = []
+    for token in str(path_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    code = compile(str(data), '<rule>', 'exec')
+    exec(code)
+    return jsonify({"result": "success"})

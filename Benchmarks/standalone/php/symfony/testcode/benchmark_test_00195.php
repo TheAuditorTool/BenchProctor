@@ -2,21 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\DBAL\Connection;
 
 #[Route('/BenchmarkTest00195', methods: ['POST'])]
 class BenchmarkTest00195Controller
 {
-    public function __invoke(Connection $conn)
+    public function __invoke(Request $request)
     {
-        $userInput = $conn->fetchOne('SELECT name FROM users LIMIT 1');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        $result = $conn->fetchAssociative('SELECT name FROM users WHERE id = ?', [$data]);
-        if ($result === false) { return new JsonResponse(["error" => "not found"], 404); }
-        $value = $result['name'];
-        return new JsonResponse(["committed" => true]);
+        $userInput = $request->headers->get('User-Agent', '');
+        $transform = fn (string $v): string => trim($v);
+        $data = $transform($userInput);
+        return new Response('<div>' . $data . '</div>', 200, ['Content-Type' => 'text/html']);
     }
 }

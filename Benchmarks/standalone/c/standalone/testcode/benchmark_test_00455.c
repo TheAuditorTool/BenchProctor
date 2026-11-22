@@ -6,22 +6,39 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
+#include <regex.h>
+
+typedef struct ldap LDAP;
+typedef struct ldapmsg LDAPMessage;
+#define LDAP_SCOPE_SUBTREE 2
+#define LDAP_OPT_PROTOCOL_VERSION 0x0011
+#define LDAP_VERSION3 3
+extern int ldap_initialize(LDAP **_ldp, const char *_uri);
+extern int ldap_set_option(LDAP *_ld, int _option, const void *_invalue);
+extern int ldap_simple_bind_s(LDAP *_ld, const char *_who, const char *_passwd);
+extern int ldap_search_ext_s(LDAP *_ld, const char *_base, int _scope, const char *_filter, char **_attrs, int _attrsonly, void *_sc, void *_cc, void *_tmo, int _slim, LDAPMessage **_res);
+struct c_ctx { const char *captured; };
+static const char *c_capture(const struct c_ctx *c) { const char *_s = c->captured; while (*_s == ' ') _s++; return _s; }
 
 void benchmark_test_00455(int argc, char **argv)
 {
     const char *user_input = (argc > 2) ? argv[2] : "";
-    char data[512];
-    size_t _li = 0;
-    for (; user_input[_li] != '\0' && _li < sizeof(data) - 1; ++_li) data[_li] = user_input[_li];
-    data[_li] = '\0';
-    unsigned char _iv[8];
-    RAND_bytes(_iv, sizeof(_iv));
-    EVP_CIPHER_CTX *_ctx = EVP_CIPHER_CTX_new();
-    unsigned char _ct[512];
-    int _ctl = 0;
-    EVP_EncryptInit_ex(_ctx, EVP_des_ede3_cbc(), NULL, (const unsigned char *)getenv("DATA_ENC_KEY"), _iv);
-    EVP_EncryptUpdate(_ctx, _ct, &_ctl, (const unsigned char *)data, (int)strlen(data));
-    EVP_CIPHER_CTX_free(_ctx);
+    struct c_ctx _clx = { user_input };
+    const char *data = c_capture(&_clx);
+    regex_t _re;
+    const char *arg = data;
+    if (regcomp(&_re, "^[a-zA-Z0-9 #%._-]+$", REG_EXTENDED) == 0) {
+        if (regexec(&_re, data, 0, NULL, 0) != 0) arg = "config";
+        regfree(&_re);
+    }
+    LDAP *_ld = NULL;
+    const char *_ldap_url = getenv("LDAP_URL");
+    ldap_initialize(&_ld, _ldap_url != NULL ? _ldap_url : "ldap://directory:1389");
+    int _ldap_version = LDAP_VERSION3;
+    ldap_set_option(_ld, LDAP_OPT_PROTOCOL_VERSION, &_ldap_version);
+    ldap_simple_bind_s(_ld, NULL, NULL);
+    char _filter[512];
+    snprintf(_filter, sizeof(_filter), "(uid=%s)", arg);
+    LDAPMessage *_res = NULL;
+    ldap_search_ext_s(_ld, "ou=people,dc=example,dc=com", LDAP_SCOPE_SUBTREE, _filter, NULL, 0, NULL, NULL, NULL, 0, &_res);
 }

@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <curl/curl.h>
+
+struct c_payload { const char *value; };
 
 void benchmark_test_00093(int argc, char **argv)
 {
@@ -18,13 +21,13 @@ void benchmark_test_00093(int argc, char **argv)
         fclose(_src_fp);
     }
     const char *user_input = user_input_buf;
-    char data[512];
-    size_t _len = strlen(user_input);
-    size_t _w = 0;
-    while (_w < _len && _w < sizeof(data) - 1) { data[_w] = user_input[_w]; ++_w; }
-    data[_w] = '\0';
-    char _buf[16] = "fixedcontent12";
-    size_t _span = (size_t)strtoul(data, NULL, 10);
-    fwrite(_buf, 1, _span, stdout);
-    putchar('\n');
+    struct c_payload _pd;
+    _pd.value = user_input;
+    const char *data = _pd.value;
+    const char *arg = data;
+    if (strncmp(data, "https://api.internal.svc/", 25) != 0 && strncmp(data, "https://cdn.internal.svc/", 25) != 0) arg = "https://api.internal.svc/data";
+    CURL *_curl = curl_easy_init();
+    curl_easy_setopt(_curl, CURLOPT_URL, arg);
+    curl_easy_perform(_curl);
+    curl_easy_cleanup(_curl);
 }

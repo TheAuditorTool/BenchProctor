@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Controller, Post, BadRequestException } from "@nestjs/common";
+import { Controller, Post, Query, Res } from "@nestjs/common";
 import { Response } from "express";
-import * as childProcess from "child_process";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, UseFilters } from "@nestjs/common";
 
 @Catch()
@@ -18,12 +17,12 @@ class FailureFilter implements ExceptionFilter {
 @UseFilters(FailureFilter)
 export class BenchmarkController {
   @Post("BenchmarkTest00190")
-  async BenchmarkTest00190(): Promise<unknown> {
-    const userInput = process.env.APP_INPUT || "";
-    const data = userInput != null ? userInput : '';
-    if (!/^[a-zA-Z0-9 _.%\-]+$/.test(data)) { throw new BadRequestException({error:"invalid"}); }
-    const processed = data;
-    childProcess.execSync("echo " + processed);
+  async BenchmarkTest00190(@Query("id") id: string, @Res({ passthrough: true }) res: Response): Promise<unknown> {
+    const userInput = id || "";
+    const parts: string[] = [];
+    for (const token of String(userInput).split(',')) { parts.push(token); }
+    const data: string = parts.join(',');
+    res.cookie("session", data, { httpOnly: true, sameSite: "strict" });
     return { created: true };
   }
 }

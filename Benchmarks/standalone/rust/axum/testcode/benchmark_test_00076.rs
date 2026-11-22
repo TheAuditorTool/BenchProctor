@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+use axum::body::Bytes;
 use axum::response::IntoResponse;
 use axum::response::Json;
 
-pub async fn benchmark_test_00076(mut multipart: axum::extract::Multipart) -> impl IntoResponse {
-    let multipart_value = {
-        let mut _mv = String::new();
-        if let Ok(Some(_field)) = multipart.next_field().await {
-            _mv = _field.text().await.unwrap_or_default();
-        }
-        _mv
-    };
-    let data = multipart_value.replace("\t", " ");
-    use md5::Digest;
-    let _ = md5::Md5::digest(data.as_bytes());
+pub async fn benchmark_test_00076(body: Bytes) -> impl IntoResponse {
+    let raw_body = String::from_utf8_lossy(&body).to_string();
+    let data = serde_json::from_str::<serde_json::Value>(&raw_body)
+        .ok().and_then(|v| v["value"].as_str().map(|s| s.to_string())).unwrap_or_default();
+    crate::shared::ldap_search(&format!("uid={}", data));
     Json(serde_json::json!({"count": 0})).into_response()
 }

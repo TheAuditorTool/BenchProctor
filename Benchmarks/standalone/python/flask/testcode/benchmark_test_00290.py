@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-from cryptography.fernet import Fernet
+from lxml import etree
+from dataclasses import dataclass
 from flask import Flask, request, jsonify
-import os
 
+
+@dataclass
+class FormData:
+    payload: str
+    content_type: str = 'text/plain'
 
 app = Flask(__name__)
 
@@ -20,9 +25,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00290", methods=["POST"])
 def BenchmarkTest00290():
-    upload_name = request.files['upload'].filename
-    def normalize(value):
-        return value.strip()
-    data = normalize(upload_name)
-    ciphertext = Fernet(os.environ['DATA_ENC_KEY'].encode()).encrypt(str(data).encode())
-    return jsonify({'length': len(ciphertext)}), 200
+    field_value = request.form.get('field', '')
+    form = FormData(payload=field_value)
+    data = form.payload
+    tree = etree.fromstring(b'<users><user name="admin"/></users>')
+    find_user = etree.XPath('/users/user[@name="' + str(data) + '"]')
+    find_user(tree)
+    return jsonify({"result": "success"})

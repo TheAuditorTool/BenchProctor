@@ -2,33 +2,61 @@
   "benchmark": "benchproctor",
   "frameworks": [
     "actix_web",
-    "axum"
+    "actix_web-legacy",
+    "axum",
+    "axum-legacy"
   ],
   "language": "rust",
   "scorer": {
     "file": "score_sarif.py",
-    "sha256": "7d5a53cad07e41fc5369e14cf07519d0b4c505d5a655c96d4811b6331651028a"
+    "sha256": "04649417e1d0343e3fbb72715ed96bc11b76f3e3f49a2cbc5a321118a43ae363"
   },
   "suites": {
     "actix_web": {
       "categories": 15,
-      "csv_sha256": "71fab46ca66519df3adf4c73b595023039cbf389962de2b5605b445b05de08c6",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 600,
-      "safe": 300,
-      "total": 600,
-      "vulnerable": 300
+      "csv_sha256": "dc57bafdae514557b90048fa589c761b5ba9fca7d69afef74791f737fe9ae18d",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "actix-web 4.18, rand 0.10, RustCrypto 0.11, edition 2024",
+      "published_files": 300,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
+    },
+    "actix_web-legacy": {
+      "categories": 15,
+      "csv_sha256": "d3cb0772b2c9c684e632d353b06f06c43d69e99edaa9c1ec3feca730d1b85584",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "actix-web 4 with rand 0.8, the RustCrypto 0.10 suite, edition 2021",
+      "published_files": 300,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
     },
     "axum": {
       "categories": 15,
-      "csv_sha256": "982dbd1ebc48698368a30eaf983d723dfdb7aa7e5e1de935c490022c98f5e8a7",
-      "expectedresults_csv": "expectedresults-2026.11.19.csv",
-      "published_files": 600,
-      "safe": 300,
-      "total": 600,
-      "vulnerable": 300
+      "csv_sha256": "5c2f20b59d5079349752c13056e68a2f820e86dcd07af1f5150d21595f1bb01c",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "modern",
+      "line": "axum 0.8 ({param} paths)",
+      "published_files": 300,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
+    },
+    "axum-legacy": {
+      "categories": 15,
+      "csv_sha256": "f6a83e0c5ccfd2b1e9c8ac2fd97c0c84a3842189e5be1d4ba1f7b9a0d90e78e6",
+      "expectedresults_csv": "expectedresults-2026.11.22.csv",
+      "generation": "legacy",
+      "line": "axum 0.7 (:param paths), rand 0.8, RustCrypto 0.10",
+      "published_files": 300,
+      "safe": 150,
+      "total": 300,
+      "vulnerable": 150
     }
   },
   "tier": "curated",
-  "version": "2026.11.19"
+  "version": "2026.11.22"
 }

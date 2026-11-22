@@ -1,0 +1,4 @@
+django==6.1.2
+jsonschema==4.26.0
+redis==8.1.0
+uvicorn==0.54.0

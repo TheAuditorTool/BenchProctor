@@ -2,6 +2,7 @@
 require "json"
 require "uri"
 require "openssl"
+require "cgi/escape"
 
 class BenchmarkTest00100Controller < ApplicationController
   before_action { head :payload_too_large if request.content_length.to_i > 1_000_000 }
@@ -11,10 +12,10 @@ class BenchmarkTest00100Controller < ApplicationController
     render json: { error: "internal" }, status: 500
   end
   def benchmark_test_00100
-    user_input = request.body.read
-    reader = -> { user_input.to_s.strip }
-    data = reader.call
-    cookies[:session] = { value: data, secure: true, httponly: true, same_site: :strict }
-    render json: { status: "ok" }
+    user_input = request.headers["Authorization"].to_s
+    transform = ->(v) { v.to_s.unicode_normalize(:nfc) }
+    data = transform.call(user_input)
+    processed = CGI.escapeHTML(data)
+    render html: ("<div>" + processed + "</div>").html_safe
   end
 end

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from app_runtime import db
 
 
@@ -19,13 +19,10 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00190", methods=["POST"])
 def BenchmarkTest00190():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = ' '.join(str(comment_value).split())
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return jsonify({'allocated': allocated}), 200
+    referer_value = request.headers.get('Referer', '')
+    parts = []
+    for token in str(referer_value).split(','):
+        parts.append(token.strip())
+    data = ','.join(parts)
+    db.execute("SELECT * FROM users WHERE id = '" + str(data) + "'")
+    return jsonify({"result": "success"})

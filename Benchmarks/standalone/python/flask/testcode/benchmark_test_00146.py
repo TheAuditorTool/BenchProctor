@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from flask import Flask, request, jsonify
+from lxml import etree
 
 
 app = Flask(__name__)
@@ -18,15 +19,8 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00146", methods=["POST"])
 def BenchmarkTest00146():
-    ua_value = request.headers.get('User-Agent', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(ua_value)
-    try:
-        _bounded = max(0, min(int(data), 2147483647))
-    except (TypeError, ValueError):
-        return jsonify({'error': 'invalid integer'}), 400
-    processed = _bounded
-    requested = int(processed)
-    allocated = min(requested + 1, 2147483647)
-    return jsonify({'allocated': allocated}), 200
+    json_value = (request.get_json(silent=True) or {}).get('payload', '')
+    data = (lambda v: v.strip())(json_value)
+    _parser = etree.XMLParser(resolve_entities=True, no_network=False)
+    etree.fromstring(str(data).encode(), _parser)
+    return jsonify({"result": "success"})

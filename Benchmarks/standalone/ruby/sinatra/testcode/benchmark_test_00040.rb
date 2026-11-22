@@ -3,9 +3,6 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
-require "sequel"
-
-DB = Sequel.connect(ENV.fetch("DATABASE_URL", "sqlite:///tmp/app.db")) unless defined?(DB)
 
 class BenchmarkTest00040 < Sinatra::Base
   before do
@@ -21,15 +18,12 @@ class BenchmarkTest00040 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00040" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    def _normalize_local(v)
-      v.to_s.strip
-    end
-    data = _normalize_local(user_input)
-    _coerced = Float(data, exception: false).to_s
-    parsed_num = _coerced
-    eval(parsed_num)
+    user_input = JSON.parse(request.body.read).fetch("payload", "")
+    data = format("%<value>s", value: user_input)
+    hasher = OpenSSL::Digest.new("SHA256")
+    hasher.update(data.to_s)
+    digest = hasher.hexdigest
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ digest: digest })
   end
 end

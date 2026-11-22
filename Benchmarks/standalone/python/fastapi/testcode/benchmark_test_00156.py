@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
+from fastapi import Form
 from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("APP_SECRET_KEY") or os.urandom(32).hex())
 
 
 @app.middleware("http")
@@ -22,12 +20,10 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 
 @app.post("/BenchmarkTest00156")
-async def BenchmarkTest00156(request: Request):
-    auth_header = request.headers.get('authorization', '')
-    def normalize(value):
-        return value.strip()
-    data = normalize(auth_header)
+async def BenchmarkTest00156(request: Request, field: str = Form('')):
+    field_value = field
+    data = str(field_value).replace('\x00', '')
     _coerced = 'true' if str(data).lower() in ('true', '1', 'yes', 'on') else 'false'
     processed = _coerced
-    request.session['data'] = str(processed)
+    request.app.state.active_tenant = str(processed)
     return {"updated": True}

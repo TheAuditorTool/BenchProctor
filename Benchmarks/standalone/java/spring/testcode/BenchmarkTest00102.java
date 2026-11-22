@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -19,18 +21,15 @@ public class BenchmarkTest00102 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    @PostMapping(path="/BenchmarkTest00102", consumes="multipart/form-data")
-    public void BenchmarkTest00102(@jakarta.validation.constraints.Size(max = 4096) @RequestPart("multipart_field") String multipartField, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String multipartValue = multipartField != null ? multipartField : "";
-        String data;
-        try { data = String.valueOf(Integer.parseInt(multipartValue)); }
-        catch (NumberFormatException e) { data = multipartValue; }
-        record SchemaInput(@jakarta.validation.constraints.Pattern(regexp = "^[a-zA-Z0-9 _.\\-]+$") String value) {}
-        jakarta.validation.Validator schemaValidator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
-        if (!schemaValidator.validate(new SchemaInput(data)).isEmpty()) { response.sendError(400, "schema invalid"); return; }
-        String validatedName = data.matches("[A-Za-z][A-Za-z .'-]{0,63}") ? data.strip() : "guest";
-        request.getSession().setAttribute("displayName", validatedName);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    @GetMapping("/BenchmarkTest00102")
+    public void BenchmarkTest00102(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String uploadedName = java.util.Optional.ofNullable((String) request.getAttribute("uploadName")).orElse("");
+        java.io.StringWriter sw = new java.io.StringWriter();
+        new java.io.PrintWriter(sw).printf("%s", uploadedName);
+        String data = sw.toString();
+        String content = Files.readString(Paths.get("/var/app/data/" + data), java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("X-File-Bytes", String.valueOf(content.length()));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

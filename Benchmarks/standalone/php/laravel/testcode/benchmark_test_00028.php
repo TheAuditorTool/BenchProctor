@@ -2,16 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BenchmarkTest00028Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $userInput = $request->header('X-Custom-Header', '');
-        $thunk = function () use ($userInput) { return trim($userInput); };
-        $data = $thunk();
-        shell_exec('bash -c "grep -r ' . $data . ' /var/app/logs"');
+        $userInput = DB::selectOne('SELECT name FROM users LIMIT 1')->name;
+        $data = "{$userInput}";
+        $_coerced = (int)$data;
+        $parsedId = $_coerced;
+        $dbh = DB::getPdo();
+        $stmt = $dbh->prepare('SELECT * FROM users WHERE id = \'' . $parsedId . '\'');
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return response()->json(['ok' => 1]);
     }
 }

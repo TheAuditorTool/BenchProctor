@@ -31,16 +31,15 @@ public class BenchmarkTest00037 {
     }
 
     @GET
-    @Path("/BenchmarkTest00037/{pathId}")
+    @Path("/BenchmarkTest00037")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response BenchmarkTest00037(@jakarta.validation.constraints.Size(max = 4096) @PathParam("pathId") String pathId, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        java.io.StringWriter sw = new java.io.StringWriter();
-        new java.io.PrintWriter(sw).printf("%s", pathValue);
-        String data = sw.toString();
-        com.fasterxml.jackson.databind.ObjectMapper safeMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        safeMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        com.fasterxml.jackson.databind.JsonNode node = safeMapper.readTree(data);
-        return Response.ok(node.path("name").asText(), MediaType.TEXT_HTML).build();
+    public Response BenchmarkTest00037(@jakarta.validation.constraints.Size(max = 4096) @CookieParam("session_token") String sessionToken, @Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception {
+        String cookieValue = sessionToken != null ? sessionToken : "";
+        java.util.Properties store = new java.util.Properties();
+        store.setProperty("value", cookieValue);
+        String data = store.getProperty("value", "");
+        String setCookieValue = java.net.URLEncoder.encode(data, java.nio.charset.StandardCharsets.UTF_8);
+        response.setHeader("Set-Cookie", "session=" + setCookieValue + "; Path=/; Secure; HttpOnly; SameSite=Strict");
+        return Response.ok("{\"ready\":true}", MediaType.APPLICATION_JSON).build();
     }
 }

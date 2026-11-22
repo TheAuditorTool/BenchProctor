@@ -2,29 +2,26 @@
 package testcode
 
 import (
-	"io"
+	"encoding/base64"
 	"net/http"
-	"os/exec"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00245(c *gin.Context) {
-	rawBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.String(http.StatusBadRequest, "bad request")
+	authHeader := c.GetHeader("Authorization")
+	decodedBytes, _ := base64.StdEncoding.DecodeString(authHeader)
+	data := string(decodedBytes)
+	upstreams := map[string]*url.URL{
+		"billing": {Scheme: "https", Host: "billing.svc.cluster"},
+		"reports": {Scheme: "https", Host: "reports.svc.cluster"},
+	}
+	upstream := upstreams[data]
+	if upstream == nil {
+		c.String(http.StatusNotFound, "unknown service")
 		return
 	}
-	rawBody := string(rawBytes)
-	var data string
-	if rawBody != "" {
-		data = rawBody
-	}
-	cmd := exec.Command("echo", data)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Data(200, "text/plain", output)
+	upstreamHost := upstream.Host
+	c.JSON(http.StatusOK, map[string]string{"upstream": upstreamHost})
 }

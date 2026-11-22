@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-import os
-from app_runtime import db
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
+import re
+from pathlib import Path
 
-
-class RequestPayload:
-    def __init__(self, raw):
-        self._raw = raw
-    @property
-    def value(self):
-        return self._raw if self._raw is not None else ''
 
 app = Flask(__name__)
 
@@ -27,9 +20,9 @@ def _handle_unexpected(exc):
 
 @app.route("/BenchmarkTest00208", methods=["POST"])
 def BenchmarkTest00208():
-    comment_value = db.fetch_one('SELECT text FROM comments LIMIT 1')
-    data = RequestPayload(comment_value).value
-    checked_path = os.path.join('/var/app/data', os.path.basename(data))
-    with open(checked_path, 'r') as fh:
-        content = fh.read()
-    return content
+    cookie_value = request.cookies.get('session_token', '')
+    if not re.fullmatch("^(asc|desc|name|created)$", str(cookie_value)):
+        return jsonify({'error': 'forbidden'}), 400
+    processed = cookie_value
+    Path('/var/app/data/' + str(processed)).write_text('data')
+    return jsonify({"result": "success"})

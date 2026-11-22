@@ -2,22 +2,24 @@
 package testcode
 
 import (
+	"crypto/sha3"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
-	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BenchmarkTest00179(c *gin.Context) {
-	multipartValue := c.PostForm("multipart_field")
-	data := func(v string) string { return strings.TrimSpace(v) }(multipartValue)
-	parsedURL, _ := url.Parse(data)
-	if !regexp.MustCompile("^(api\\.svc\\.cluster|cdn\\.gocdn\\.net)$").MatchString(parsedURL.Hostname()) {
-		c.String(http.StatusForbidden, "forbidden host")
-		return
+	var gqlReq struct {
+		Variables map[string]string `json:"variables"`
 	}
-	targetUrl := data
-	c.Redirect(http.StatusFound, targetUrl)
+	json.NewDecoder(c.Request.Body).Decode(&gqlReq)
+	graphqlVar := gqlReq.Variables["input"]
+	data := strings.ReplaceAll(graphqlVar, "\x00", "")
+	strongDigest := sha3.New256()
+	strongDigest.Write([]byte(data))
+	hashStr := hex.EncodeToString(strongDigest.Sum(nil))
+	c.JSON(http.StatusOK, map[string]string{"hash": hashStr})
 }

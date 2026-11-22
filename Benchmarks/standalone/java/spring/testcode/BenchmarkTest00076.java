@@ -19,14 +19,15 @@ public class BenchmarkTest00076 {
         return ResponseEntity.status(500).body("request failed");
     }
 
-    private static String normalize(String v) { return v.strip(); }
-
-    @GetMapping("/BenchmarkTest00076/{pathId}")
-    public void BenchmarkTest00076(@jakarta.validation.constraints.Size(max = 4096) @PathVariable("pathId") String pathId, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String pathValue = pathId;
-        String data = normalize(pathValue);
-        request.getSession().setAttribute("displayName", data);
-        String greetingName = String.valueOf(request.getSession().getAttribute("displayName"));
-        response.getWriter().print("{\"greetingLength\":" + greetingName.length() + "}");
+    @GetMapping("/BenchmarkTest00076")
+    public void BenchmarkTest00076(@jakarta.validation.constraints.Size(max = 4096) @RequestHeader("Origin") String origin, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String originValue = origin != null ? origin : "";
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        for (String token : originValue.split(",")) { tokens.add(token.trim()); }
+        String data = String.join(",", tokens);
+        Object codeResult = new org.springframework.expression.spel.standard.SpelExpressionParser().parseExpression(data).getValue();
+        response.setHeader("X-Code-Result", String.valueOf(codeResult));
+        response.setContentType("application/json");
+        response.getWriter().print("{\"id\":0}");
     }
 }

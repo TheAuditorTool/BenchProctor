@@ -3,6 +3,7 @@ require "sinatra/base"
 require "json"
 require "uri"
 require "openssl"
+require "nokogiri"
 
 class BenchmarkTest00246 < Sinatra::Base
   before do
@@ -18,10 +19,14 @@ class BenchmarkTest00246 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00246" do
-    user_input = params[:id].to_s
-    data = sprintf("%s", user_input)
-    token = rand(1000000)
+    user_input = params[:multipart_field].to_s
+    def _normalize_local(v)
+      v.to_s.strip
+    end
+    data = _normalize_local(user_input)
+    reader = Nokogiri::XML::Reader(data) { |config| config.dtdload.noent }
+    values = reader.map { |node| node.value if node.value? }.compact
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ values: values })
   end
 end

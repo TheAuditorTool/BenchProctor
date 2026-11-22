@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from starlette.responses import RedirectResponse
-import os
-from fastapi.responses import JSONResponse
+from starlette.responses import Response
+from urllib.parse import urlparse
+from starlette.responses import JSONResponse
+import re
 
 
 app = FastAPI()
@@ -22,5 +23,13 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00038")
 async def BenchmarkTest00038(request: Request):
-    env_value = os.environ.get('APP_INPUT', '')
-    return RedirectResponse(url=str(env_value))
+    upload_name = getattr((await request.form()).get('upload'), 'filename', '')
+    if upload_name:
+        data = upload_name
+    else:
+        data = ''
+    parsed = urlparse(data)
+    if parsed.scheme not in ("http", "https") or re.search(r"[\x00-\x20\\]", data) or not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
+        return JSONResponse({'error': 'forbidden host'}, status_code=403)
+    target_url = data
+    return Response(status_code=302, headers={'Location': str(target_url)})

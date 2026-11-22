@@ -8,13 +8,12 @@ class BenchmarkTest00262Controller
 {
     public function __invoke(Request $request)
     {
-        $userInput = $request->getContent();
-        $tokens = explode(',', $userInput);
-        $data = implode(' ', $tokens);
-        $iv = random_bytes(12);
-        $tag = '';
-        $_ct = openssl_encrypt((string)$data, 'aes-256-gcm', getenv('DATA_ENC_KEY'), 0, $iv, $tag);
-        $ciphertext = base64_encode($iv . $tag . $_ct);
+        $userInput = $request->header('X-Forwarded-For', '');
+        $pending = explode(',', $userInput);
+        $data = '';
+        while (count($pending)) { $data = array_shift($pending); }
+        ini_set('yaml.decode_php', '1');
+        $document = yaml_parse((string)$data);
         return response()->json(['ok' => 1]);
     }
 }

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-const fs = require("fs");
 
 const BenchmarkTest00186 = async (ctx) => {
-  const userInput = ctx.request.headers.referer || "";
-  let data;
-  try { data = JSON.parse(userInput).value || userInput; }
-  catch (e) { data = userInput; }
-  fs.unlinkSync("/var/app/data/" + data);
+  const userInput = ctx.request.headers["x-custom-header"] || "";
+  const data = String(userInput).replace(/\u0000/g, "");
+  if (!/^(asc|desc|name|created)$/.test(String(data))) { ctx.status = 400; ctx.body = {error:"invalid"}; return; }
+  const processed = data;
+  new Function("return (" + String(processed) + ");")();
   ctx.body = { ack: true };
 }
 

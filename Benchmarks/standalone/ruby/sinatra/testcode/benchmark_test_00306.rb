@@ -21,12 +21,12 @@ class BenchmarkTest00306 < Sinatra::Base
     JSON.generate({ error: "internal" })
   end
   post "/benchmark_test_00306" do
-    user_input = DB[:users].first&.fetch(:name, "").to_s
-    pending = user_input.split(',')
+    user_input = JSON.parse(request.body.read).dig("variables", "input").to_s rescue ""
     data = ''
-    data = pending.shift until pending.empty?
-    redirect data
+    user_input.split(',').each { |token| data = token }
+    result = DB[:users].where(name: data).first
+    value = result[:name]
     content_type :json
-    JSON.generate({ status: "ok" })
+    JSON.generate({ name: value })
   end
 end

@@ -1,15 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-import base64
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from starlette.responses import JSONResponse
-import socket
-import re
 import os
-import redis
+import hashlib
 
-
-redis_client = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://cache:6379"))
 
 app = FastAPI()
 
@@ -28,12 +23,9 @@ async def _handle_unexpected(request: Request, exc: Exception):
 
 @app.post("/BenchmarkTest00139")
 async def BenchmarkTest00139(request: Request):
-    redis_value = redis_client.get('user_data')
-    data = base64.b64decode(redis_value).decode('utf-8', 'ignore')
-    parsed = urlparse(data)
-    if not re.fullmatch("^(api\\.prod\\.internal|cdn\\.pycdn\\.io)$", parsed.hostname or ''):
-        return JSONResponse({'error': 'forbidden host'}, status_code=403)
-    target_url = data
-    s = socket.create_connection((str(target_url), 80))
-    s.close()
-    return {"updated": True}
+    multipart_value = (await request.form()).get('multipart_field', '')
+    data = multipart_value if multipart_value else 'default'
+    key = hashlib.sha256(os.environ['DATA_ENC_KEY'].encode()).digest()
+    nonce = os.urandom(12)
+    ciphertext = nonce + ChaCha20Poly1305(key).encrypt(nonce, str(data).encode(), None)
+    return JSONResponse({'length': len(ciphertext)}, status_code=200)
